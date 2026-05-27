@@ -1,0 +1,91 @@
+# ─── secrets & local env ────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets.json
+credentials.json
+
+# ─── system junk ────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ─── editors / IDEs ─────────────────────────────────────────────────
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── node / web build artifacts ─────────────────────────────────────
+node_modules/
+dist/
+build/
+.next/
+.parcel-cache/
+.cache/
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── ios / xcode ────────────────────────────────────────────────────
+# build output
+ios/build/
+ios/DerivedData/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# user-specific xcode files
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad
+*.xccheckout
+
+# swift package manager
+.swiftpm/
+.build/
+Packages/
+Package.resolved
+
+# cocoapods (in case)
+Pods/
+
+# fastlane
+fastlane/report.xml
+fastlane/screenshots
+fastlane/test_output
+
+# ─── python (transcribe.py support) ─────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+
+# ─── claude / agent local state ─────────────────────────────────────
+.claude/settings.local.json
+
+# ─── design source files (binary, optional) ─────────────────────────
+*.sketch
+*.fig
+*.afdesign
+
+# ─── large captures we don't need in git ────────────────────────────
+*.mov
+*.mp4
+research/voice-notes/*.ogg
+research/voice-notes/*.opus

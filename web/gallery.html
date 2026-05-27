@@ -1,0 +1,1214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>The List — Influencer App</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.453.0/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  :root{
+    --bg:        #0B0A08;
+    --bg-elev:   #14120E;
+    --bg-elev2:  #1C1A14;
+    --ink:       #F2EDE2;
+    --ink-2:     #C9C2B2;
+    --ink-mute:  #7F786A;
+    --line:      rgba(242,237,226,0.10);
+    --line-2:    rgba(242,237,226,0.18);
+    --acid:      #D9F25E;
+    --acid-ink:  #0B0A08;
+    --blood:     #B73247;
+    --plum:      #4A1E27;
+    --page:      #050402;
+  }
+  /* Light mode — bone paper, ink-dark, acid stays for the burn */
+  html.light{
+    --bg:        #F5F1E6;
+    --bg-elev:   #FFFFFF;
+    --bg-elev2:  #ECE7D9;
+    --ink:       #0B0A08;
+    --ink-2:     #3A352C;
+    --ink-mute:  #8A8273;
+    --line:      rgba(11,10,8,0.10);
+    --line-2:    rgba(11,10,8,0.18);
+    --acid:      #B8D437;
+    --acid-ink:  #0B0A08;
+    --blood:     #9A2638;
+    --plum:      #3A1620;
+    --page:      #EFEADD;
+  }
+  html, body { background: var(--page); color: var(--ink); font-family: 'Geist', ui-sans-serif, system-ui; -webkit-font-smoothing: antialiased; }
+  .font-display { font-family: 'Instrument Serif', 'Times New Roman', serif; font-weight: 400; letter-spacing: -0.01em; }
+  .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .ital { font-style: italic; }
+
+  /* Hide scrollbars inside phone screens */
+  .noscroll::-webkit-scrollbar { display:none; }
+  .noscroll { scrollbar-width: none; }
+
+  /* iPhone bezel */
+  .iphone {
+    width: 393px; height: 852px;
+    border-radius: 54px;
+    padding: 11px;
+    background: linear-gradient(140deg,#2a2722 0%, #0c0a08 45%, #1d1a16 100%);
+    box-shadow:
+      inset 0 0 0 1.5px #3a3631,
+      inset 0 0 0 3px #0a0807,
+      0 60px 80px -40px rgba(0,0,0,.9),
+      0 30px 60px -30px rgba(0,0,0,.6);
+    position: relative;
+  }
+  .iphone::before {
+    content:""; position:absolute; inset:11px; border-radius:43px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+    pointer-events:none;
+  }
+  .iphone-screen {
+    width: 100%; height: 100%; border-radius: 43px;
+    overflow: hidden; position: relative; background: var(--bg);
+    isolation: isolate;
+  }
+  /* Dynamic island */
+  .island { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:120px; height:34px; background:#000; border-radius:20px; z-index:50; }
+  .island::after { content:""; position:absolute; right:10px; top:50%; transform:translateY(-50%); width:8px; height:8px; border-radius:50%; background:#0a0a0a; box-shadow: inset 0 0 2px rgba(255,255,255,.2); }
+
+  /* status bar */
+  .statusbar { position:absolute; top:0; left:0; right:0; height:54px; padding: 16px 28px 0; display:flex; justify-content:space-between; align-items:flex-start; z-index:40; font-family:'Geist'; font-weight:600; font-size:15px; letter-spacing:-0.01em; color: var(--ink); pointer-events:none; }
+  .statusbar svg { width: 16px; height: 11px; }
+
+  /* tab bar */
+  .tabbar { position:absolute; left:0; right:0; bottom:0; height: 88px; padding: 10px 18px 30px; display:grid; grid-template-columns:repeat(4,1fr); gap: 4px; background: linear-gradient(180deg, rgba(11,10,8,0) 0%, rgba(11,10,8,.85) 35%, rgba(11,10,8,.95) 100%); backdrop-filter: blur(18px); z-index: 30; border-top: 1px solid var(--line); }
+  html.light .tabbar { background: linear-gradient(180deg, rgba(245,241,230,0) 0%, rgba(245,241,230,.92) 35%, rgba(245,241,230,1) 100%); }
+  .tabbar button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color: var(--ink-mute); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; padding: 6px 0; border-radius: 14px; transition: color .15s; }
+  .tabbar button.active { color: var(--ink); }
+  .tabbar button.active .dot { background: var(--acid); }
+  .tabbar .dot { width: 4px; height: 4px; border-radius: 50%; background: transparent; }
+
+  /* hairline rule */
+  .hr { height: 1px; background: var(--line); }
+  .hr-2 { height: 1px; background: var(--line-2); }
+
+  /* Editorial number stamps */
+  .stamp { font-family:'JetBrains Mono'; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-mute); }
+
+  /* Acid chip / pill */
+  .chip-acid { background: var(--acid); color: var(--acid-ink); }
+  .chip-blood { background: var(--blood); color: var(--ink); }
+  .chip-outline { border: 1px solid var(--line-2); color: var(--ink); }
+
+  /* Pressable */
+  .press { transition: transform .12s ease, opacity .12s ease, background .2s, border-color .2s; }
+  .press:active { transform: scale(.97); opacity: .85; }
+
+  /* Editorial split caps */
+  .smallcaps { text-transform: uppercase; letter-spacing: 0.22em; font-size: 10px; font-weight: 500; }
+
+  /* Marquee */
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .marquee { animation: marquee 22s linear infinite; }
+
+  /* Confirm pulse */
+  @keyframes pulseRing {
+    0% { box-shadow: 0 0 0 0 rgba(217,242,94,.55); }
+    100% { box-shadow: 0 0 0 32px rgba(217,242,94,0); }
+  }
+  .pulse-ring { animation: pulseRing 1.8s cubic-bezier(.4,.2,.2,1) infinite; }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* Countdown */
+  .countdown-digit {
+    font-family:'Instrument Serif';
+    font-feature-settings: "tnum";
+  }
+
+  /* Page chrome */
+  .page-bg {
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(217,242,94,.04), transparent 60%),
+      radial-gradient(1200px 800px at 100% 100%, rgba(183,50,71,.05), transparent 60%),
+      var(--page);
+  }
+  html.light .page-bg {
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(184,212,55,.10), transparent 60%),
+      radial-gradient(1200px 800px at 100% 100%, rgba(154,38,56,.06), transparent 60%),
+      var(--page);
+  }
+  /* Lift density just slightly — the magazine wants air */
+  .iphone-screen { letter-spacing: -0.005em; }
+  .iphone-screen .px-5 { padding-left: 1.5rem; padding-right: 1.5rem; }
+  .iphone-screen section + section,
+  .iphone-screen .py-4 { padding-top: 1.25rem; padding-bottom: 1.25rem; }
+  /* Theme toggle pill */
+  .theme-toggle {
+    position: fixed; top: 24px; right: 24px; z-index: 100;
+    display:flex; align-items:center; gap:8px;
+    padding: 8px 14px; border-radius: 999px;
+    background: var(--bg-elev); border: 1px solid var(--line-2);
+    color: var(--ink); font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    cursor: pointer; transition: all .2s;
+  }
+  .theme-toggle:hover { border-color: var(--acid); color: var(--acid); }
+  .theme-toggle .dot { width:6px; height:6px; border-radius:50%; background: var(--acid); }
+
+  /* Image placeholder with subtle film grain */
+  .grain::after {
+    content:""; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 3px 3px; mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  /* Tiny vertical text */
+  .vt { writing-mode: vertical-rl; transform: rotate(180deg); }
+
+  /* swipe-applicants stack offset */
+  .stack-card { transition: transform .35s cubic-bezier(.2,.7,.2,1), opacity .25s; }
+</style>
+</head>
+<body class="page-bg min-h-screen">
+
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useMemo, useRef } = React;
+
+/* ---------- Real imagery (curated stable Unsplash IDs) ---------- */
+const IMG = {
+  // venues
+  beachClub:   "https://images.unsplash.com/photo-1505761671935-60b3a7427bad?w=900&q=80&auto=format&fit=crop",
+  pool:        "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=900&q=80&auto=format&fit=crop",
+  rooftop:     "https://images.unsplash.com/photo-1551918120-9739cb430c6d?w=900&q=80&auto=format&fit=crop",
+  restaurant:  "https://images.unsplash.com/photo-1592861956120-e524fc739696?w=900&q=80&auto=format&fit=crop",
+  club:        "https://images.unsplash.com/photo-1545128485-c400e7702796?w=900&q=80&auto=format&fit=crop",
+  clubRed:     "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900&q=80&auto=format&fit=crop",
+  gym:         "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&q=80&auto=format&fit=crop",
+  lounge:      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=900&q=80&auto=format&fit=crop",
+  dj:          "https://images.unsplash.com/photo-1545128485-c400e7702796?w=900&q=80&auto=format&fit=crop",
+  neon:        "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200&q=80&auto=format&fit=crop",
+  cocktail:    "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=900&q=80&auto=format&fit=crop",
+  beirut:      "https://images.unsplash.com/photo-1620553967747-50fdadc4b606?w=1200&q=80&auto=format&fit=crop",
+  // people
+  sara:        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&q=80&auto=format&fit=crop",
+  saraFull:    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&q=80&auto=format&fit=crop",
+  p1:          "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&q=80&auto=format&fit=crop",
+  p2:          "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80&auto=format&fit=crop",
+  p3:          "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&q=80&auto=format&fit=crop",
+  p4:          "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&q=80&auto=format&fit=crop",
+  p5:          "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80&auto=format&fit=crop",
+  p6:          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80&auto=format&fit=crop",
+  p7:          "https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=400&q=80&auto=format&fit=crop",
+};
+
+/* ---------- UI atoms ---------- */
+function Icon({ name, size=18, stroke=1.5, className="" }) {
+  const ref = useRef(null);
+  useEffect(()=>{
+    if (ref.current && window.lucide) {
+      ref.current.innerHTML = "";
+      const el = document.createElement("i");
+      el.setAttribute("data-lucide", name);
+      el.setAttribute("stroke-width", stroke);
+      el.style.width = size+"px";
+      el.style.height = size+"px";
+      ref.current.appendChild(el);
+      window.lucide.createIcons({ attrs: { "stroke-width": stroke, width: size, height: size } });
+    }
+  }, [name, size, stroke]);
+  return <span ref={ref} className={"inline-flex "+className} style={{lineHeight:0}} />;
+}
+
+function StatusBar({ light=true }) {
+  return (
+    <div className="statusbar" style={{color: light ? "var(--ink)" : "#000"}}>
+      <span>9:41</span>
+      <div className="flex items-center gap-1.5">
+        {/* signal */}
+        <svg viewBox="0 0 18 12" fill="none">
+          <rect x="0" y="8" width="3" height="4" rx=".5" fill="currentColor"/>
+          <rect x="5" y="5" width="3" height="7" rx=".5" fill="currentColor"/>
+          <rect x="10" y="2" width="3" height="10" rx=".5" fill="currentColor"/>
+          <rect x="15" y="0" width="3" height="12" rx=".5" fill="currentColor" opacity=".4"/>
+        </svg>
+        {/* wifi */}
+        <svg viewBox="0 0 16 12" fill="none" className="w-4 h-3">
+          <path d="M1 4.5A11 11 0 0 1 15 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          <path d="M3.5 7A7.5 7.5 0 0 1 12.5 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          <path d="M6 9.4A3.2 3.2 0 0 1 10 9.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          <circle cx="8" cy="11" r="0.9" fill="currentColor"/>
+        </svg>
+        {/* battery */}
+        <svg viewBox="0 0 26 12" className="w-7 h-3">
+          <rect x="0.5" y="0.5" width="22" height="11" rx="3" stroke="currentColor" fill="none"/>
+          <rect x="2" y="2" width="19" height="8" rx="1.5" fill="currentColor"/>
+          <rect x="23" y="4" width="2" height="4" rx="1" fill="currentColor"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function HomeIndicator({ light=true }) {
+  return (
+    <div className="absolute left-0 right-0 bottom-2 flex justify-center z-50 pointer-events-none">
+      <div className="w-32 h-1 rounded-full" style={{background: light ? "rgba(242,237,226,.85)":"rgba(0,0,0,.55)"}}/>
+    </div>
+  );
+}
+
+function TabBar({ active, onChange }) {
+  const tabs = [
+    { id:"home", label:"Tonight", icon:"sparkle" },
+    { id:"explore", label:"Index", icon:"layout-grid" },
+    { id:"events", label:"My List", icon:"bookmark" },
+    { id:"profile", label:"Me", icon:"user" },
+  ];
+  return (
+    <div className="tabbar">
+      {tabs.map(t=>(
+        <button key={t.id} className={"press "+(active===t.id?"active":"")} onClick={()=>onChange(t.id)}>
+          <Icon name={t.icon} size={20} stroke={1.4}/>
+          <span>{t.label}</span>
+          <span className="dot"/>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- Screen frame ---------- */
+function PhoneFrame({ idx, label, sub, children, screenLabel }) {
+  return (
+    <div className="flex flex-col items-start" data-screen-label={screenLabel}>
+      <div className="flex items-baseline gap-4 mb-5 px-1" style={{width:393}}>
+        <span className="stamp" style={{color:"var(--acid)"}}>{String(idx).padStart(2,"0")}</span>
+        <div className="flex-1">
+          <div className="font-display text-[28px] leading-none">{label}</div>
+          <div className="text-[11px] mt-1.5" style={{color:"var(--ink-mute)", letterSpacing:".06em"}}>{sub}</div>
+        </div>
+      </div>
+      <div className="iphone">
+        <div className="iphone-screen">
+          <div className="island" />
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   01 — HOME / TONIGHT
+   ============================================================ */
+function ScreenHome({ goEvent, onTab, tab }) {
+  return (
+    <div className="absolute inset-0 noscroll overflow-y-auto" style={{background:"var(--bg)"}}>
+      <StatusBar/>
+      {/* Top hero */}
+      <div className="relative h-[440px]">
+        <img src={IMG.club} alt="" className="absolute inset-0 w-full h-full object-cover" style={{filter:"contrast(1.05) saturate(.85)"}}/>
+        <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(11,10,8,.55) 0%, rgba(11,10,8,0) 30%, rgba(11,10,8,.2) 60%, rgba(11,10,8,.95) 100%)"}}/>
+        <div className="absolute inset-0 grain" />
+
+        {/* top row */}
+        <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
+          <div className="flex items-center gap-2.5">
+            <img src={IMG.sara} alt="" className="w-9 h-9 rounded-full object-cover ring-1 ring-white/30"/>
+            <div>
+              <div className="text-[10px] uppercase tracking-[.22em]" style={{color:"var(--ink-2)"}}>Beirut</div>
+              <div className="text-[13px] font-medium">Saturday · 16:04</div>
+            </div>
+          </div>
+          <button className="press w-9 h-9 rounded-full border border-white/20 flex items-center justify-center backdrop-blur-md" style={{background:"rgba(11,10,8,.35)"}}>
+            <Icon name="bell" size={16} stroke={1.4}/>
+            <span className="absolute w-1.5 h-1.5 rounded-full" style={{background:"var(--acid)", marginLeft:18, marginTop:-12}}/>
+          </button>
+        </div>
+
+        {/* Editorial title */}
+        <div className="absolute bottom-6 left-5 right-5 z-10">
+          <div className="smallcaps mb-3" style={{color:"var(--acid)"}}>The List · No. 048</div>
+          <div className="font-display text-[56px] leading-[0.92] tracking-tight">Tonight,<br/><span className="ital">by invitation.</span></div>
+          <div className="text-[12px] mt-3 max-w-[280px]" style={{color:"var(--ink-2)"}}>Twelve rooms across Beirut are open. Apply before the doors close.</div>
+        </div>
+      </div>
+
+      {/* Featured strip */}
+      <div className="px-5 pt-7 pb-3 flex items-end justify-between">
+        <div>
+          <div className="smallcaps" style={{color:"var(--ink-mute)"}}>Featured · Tonight</div>
+          <div className="font-display text-[26px] leading-none mt-1">Rooms open now</div>
+        </div>
+        <span className="stamp">04 / 12</span>
+      </div>
+
+      {/* Hero card */}
+      <button className="press block w-full px-5 pb-4 text-left" onClick={goEvent}>
+        <div className="relative rounded-[20px] overflow-hidden grain" style={{height:280, background:"var(--bg-elev)"}}>
+          <img src={IMG.pool} alt="" className="absolute inset-0 w-full h-full object-cover"/>
+          <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(11,10,8,.1) 50%, rgba(11,10,8,.95) 100%)"}}/>
+          {/* Live dot */}
+          <div className="absolute top-4 left-4 flex items-center gap-2 px-2.5 py-1 rounded-full" style={{background:"rgba(11,10,8,.55)", backdropFilter:"blur(8px)"}}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--acid)", boxShadow:"0 0 8px var(--acid)"}}/>
+            <span className="text-[10px] uppercase tracking-[.22em]">Open · 04h left</span>
+          </div>
+          {/* Bookmark */}
+          <span role="button" className="absolute top-4 right-4 w-9 h-9 rounded-full border border-white/25 flex items-center justify-center" style={{background:"rgba(11,10,8,.35)", backdropFilter:"blur(8px)"}}>
+            <Icon name="bookmark" size={15} stroke={1.4}/>
+          </span>
+          {/* Bottom info */}
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <div className="font-display text-[32px] leading-[0.95]">Pool Day</div>
+                <div className="text-[13px] mt-1" style={{color:"var(--ink-2)"}}>Cyan Beach Club · Jiyeh</div>
+              </div>
+              <div className="text-right">
+                <div className="stamp" style={{color:"var(--ink-2)"}}>Sun · 14:00</div>
+                <div className="text-[13px] mt-0.5"><span className="font-display text-[20px]" style={{color:"var(--acid)"}}>20</span> seats</div>
+              </div>
+            </div>
+            {/* Applicant progress */}
+            <div className="mt-4">
+              <div className="h-[2px] rounded-full" style={{background:"rgba(242,237,226,.15)"}}>
+                <div className="h-full rounded-full" style={{width:"68%", background:"var(--acid)"}}/>
+              </div>
+              <div className="flex justify-between mt-1.5">
+                <span className="stamp">137 applied</span>
+                <span className="stamp">Closes 21:00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </button>
+
+      {/* Filter row */}
+      <div className="px-5 pt-3 pb-1">
+        <div className="flex gap-2 overflow-x-auto noscroll">
+          {["All","Clubs","Restaurants","Beach","Gym","Rooftop","Private"].map((f,i)=>(
+            <button key={f} className={"press flex-shrink-0 px-3.5 h-8 rounded-full text-[12px] "+(i===0?"":"")} style={i===0?{background:"var(--ink)", color:"var(--bg)"}:{border:"1px solid var(--line-2)", color:"var(--ink-2)"}}>{f}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Index list — mini cards */}
+      <div className="px-5 pt-5 pb-2 flex items-end justify-between">
+        <div className="font-display text-[22px] leading-none">Also tonight</div>
+        <span className="stamp">11 more</span>
+      </div>
+      {[
+        {title:"Pyrite", venue:"Mar Mikhael · Club", time:"23:00", remain:8, total:30, img:IMG.clubRed, tag:"DJ Cosmo"},
+        {title:"Tasting Menu", venue:"Em Sherif · Achrafieh", time:"20:30", remain:3, total:12, img:IMG.restaurant, tag:"Chef"},
+        {title:"Rooftop Sundown", venue:"Le Gray · DT Beirut", time:"19:00", remain:14, total:25, img:IMG.rooftop, tag:"Acoustic"},
+      ].map((e,i)=>(
+        <button key={i} className="press w-full px-5 py-3 flex items-center gap-4 text-left border-t" style={{borderColor:"var(--line)"}}>
+          <div className="relative w-[78px] h-[100px] rounded-[10px] overflow-hidden flex-shrink-0">
+            <img src={e.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="stamp" style={{color:"var(--ink-mute)"}}>{e.tag}</div>
+            <div className="font-display text-[22px] leading-tight mt-0.5">{e.title}</div>
+            <div className="text-[12px] mt-1" style={{color:"var(--ink-2)"}}>{e.venue}</div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="stamp" style={{color:"var(--ink)"}}>{e.time}</span>
+              <span className="stamp">·</span>
+              <span className="stamp"><span style={{color:"var(--acid)"}}>{e.remain}</span> / {e.total} left</span>
+            </div>
+          </div>
+          <Icon name="arrow-up-right" size={18} stroke={1.3} className="opacity-50"/>
+        </button>
+      ))}
+      <div className="h-32"/>
+
+      <TabBar active={tab} onChange={onTab}/>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+/* ============================================================
+   02 — EXPLORE / INDEX
+   ============================================================ */
+function ScreenExplore({ goEvent, onTab, tab }) {
+  const [day, setDay] = useState(2);
+  const days = [
+    {n:"24", d:"Sat", note:""},
+    {n:"25", d:"Sun", note:"4"},
+    {n:"26", d:"Mon", note:""},
+    {n:"27", d:"Tue", note:"2"},
+    {n:"28", d:"Wed", note:"7"},
+    {n:"29", d:"Thu", note:""},
+    {n:"30", d:"Fri", note:"9"},
+    {n:"31", d:"Sat", note:""},
+  ];
+  return (
+    <div className="absolute inset-0 noscroll overflow-y-auto" style={{background:"var(--bg)"}}>
+      <StatusBar/>
+      <div className="px-5 pt-[60px] pb-4">
+        <div className="flex items-center justify-between">
+          <span className="smallcaps" style={{color:"var(--ink-mute)"}}>Index</span>
+          <div className="flex gap-2">
+            <button className="press w-9 h-9 rounded-full flex items-center justify-center" style={{border:"1px solid var(--line-2)"}}><Icon name="search" size={15} stroke={1.4}/></button>
+            <button className="press w-9 h-9 rounded-full flex items-center justify-center" style={{border:"1px solid var(--line-2)"}}><Icon name="map" size={15} stroke={1.4}/></button>
+          </div>
+        </div>
+        <div className="font-display text-[44px] leading-[0.95] mt-3">All open<br/>rooms <span className="ital" style={{color:"var(--ink-mute)"}}>in Beirut.</span></div>
+      </div>
+
+      {/* Calendar strip */}
+      <div className="px-5 pb-4">
+        <div className="flex gap-2 overflow-x-auto noscroll">
+          {days.map((d,i)=>(
+            <button key={i} onClick={()=>setDay(i)} className={"press flex-shrink-0 w-[58px] h-[78px] rounded-[14px] flex flex-col items-center justify-center relative"} style={day===i?{background:"var(--acid)", color:"var(--acid-ink)"}:{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+              <span className="font-display text-[26px] leading-none">{d.n}</span>
+              <span className="text-[10px] uppercase tracking-[.18em] mt-1.5">{d.d}</span>
+              {d.note && day!==i && <span className="absolute top-2 right-2 w-1 h-1 rounded-full" style={{background:"var(--acid)"}}/>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Filter chips */}
+      <div className="px-5 flex gap-2 pb-5 overflow-x-auto noscroll">
+        <button className="press h-8 px-3 rounded-full text-[11px] flex items-center gap-1.5" style={{background:"var(--ink)", color:"var(--bg)"}}><Icon name="sliders-horizontal" size={12} stroke={1.6}/> Filters · 2</button>
+        <button className="press h-8 px-3 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink-2)"}}>Sun, 25 May</button>
+        <button className="press h-8 px-3 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink-2)"}}>Beach Club</button>
+        <button className="press h-8 px-3 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink-2)"}}>10 km</button>
+      </div>
+
+      {/* Count */}
+      <div className="px-5 flex items-end justify-between pb-3">
+        <div className="font-display text-[22px] leading-none">04 rooms</div>
+        <span className="stamp">Sorted · Closes soonest</span>
+      </div>
+
+      {/* Editorial list */}
+      {[
+        {title:"Pool Day", venue:"Cyan Beach Club", area:"Jiyeh · 22 km", time:"Sun · 14:00", img:IMG.pool, remain:20, applied:137, type:"Beach", state:"Hot"},
+        {title:"Garden Lunch", venue:"Tawlet", area:"Mar Mikhael", time:"Sun · 13:00", img:IMG.restaurant, remain:8, applied:42, type:"Restaurant"},
+        {title:"Sunset Pilates", venue:"Studio Nord", area:"Saifi", time:"Sun · 17:30", img:IMG.gym, remain:12, applied:24, type:"Wellness"},
+        {title:"Pyrite : Resident", venue:"Pyrite", area:"Mar Mikhael · Club", time:"Sun · 23:00", img:IMG.clubRed, remain:8, applied:218, type:"Club", state:"Hot"},
+      ].map((e,i)=>(
+        <button key={i} onClick={goEvent} className="press w-full text-left">
+          <div className="mx-5 mb-5">
+            <div className="relative rounded-[16px] overflow-hidden grain" style={{height:200}}>
+              <img src={e.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+              <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(11,10,8,.3) 0%, rgba(11,10,8,0) 35%, rgba(11,10,8,.85) 100%)"}}/>
+              <div className="absolute top-3 left-3 flex gap-1.5">
+                <span className="text-[10px] uppercase tracking-[.2em] px-2 py-1 rounded-full" style={{background:"rgba(11,10,8,.55)", backdropFilter:"blur(8px)"}}>{e.type}</span>
+                {e.state && <span className="text-[10px] uppercase tracking-[.2em] px-2 py-1 rounded-full chip-acid">{e.state}</span>}
+              </div>
+              <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+                <div>
+                  <div className="font-display text-[26px] leading-none">{e.title}</div>
+                  <div className="text-[11px] mt-1" style={{color:"var(--ink-2)"}}>{e.venue} · {e.area}</div>
+                </div>
+                <div className="text-right">
+                  <div className="stamp">{e.time}</div>
+                </div>
+              </div>
+            </div>
+            {/* meta row */}
+            <div className="flex items-center justify-between mt-2.5 px-1">
+              <div className="flex -space-x-2">
+                {[IMG.p1, IMG.p2, IMG.p3, IMG.p4].map((p,j)=>(<img key={j} src={p} className="w-6 h-6 rounded-full object-cover ring-2" style={{ringColor:"var(--bg)", border:"2px solid var(--bg)"}} alt=""/>))}
+                <span className="text-[10px] ml-3 self-center" style={{color:"var(--ink-mute)"}}>{e.applied} applied</span>
+              </div>
+              <div className="text-[11px]" style={{color:"var(--ink)"}}>
+                <span className="font-display text-[18px]" style={{color:"var(--acid)"}}>{e.remain}</span><span style={{color:"var(--ink-mute)"}}> seats remain</span>
+              </div>
+            </div>
+          </div>
+        </button>
+      ))}
+      <div className="h-24"/>
+      <TabBar active={tab} onChange={onTab}/>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+/* ============================================================
+   03 — EVENT DETAIL
+   ============================================================ */
+function ScreenEventDetail({ goBack, onApply, applied }) {
+  return (
+    <div className="absolute inset-0 noscroll overflow-y-auto" style={{background:"var(--bg)"}}>
+      <StatusBar/>
+      {/* Hero */}
+      <div className="relative h-[520px]">
+        <img src={IMG.pool} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+        <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(11,10,8,.45) 0%, rgba(11,10,8,0) 25%, rgba(11,10,8,0) 55%, rgba(11,10,8,.85) 100%)"}}/>
+        <div className="absolute inset-0 grain"/>
+
+        {/* nav */}
+        <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
+          <button onClick={goBack} className="press w-10 h-10 rounded-full flex items-center justify-center border border-white/25" style={{background:"rgba(11,10,8,.45)", backdropFilter:"blur(8px)"}}>
+            <Icon name="arrow-left" size={18} stroke={1.4}/>
+          </button>
+          <div className="flex gap-2">
+            <button className="press w-10 h-10 rounded-full flex items-center justify-center border border-white/25" style={{background:"rgba(11,10,8,.45)", backdropFilter:"blur(8px)"}}><Icon name="bookmark" size={16} stroke={1.4}/></button>
+            <button className="press w-10 h-10 rounded-full flex items-center justify-center border border-white/25" style={{background:"rgba(11,10,8,.45)", backdropFilter:"blur(8px)"}}><Icon name="share" size={16} stroke={1.4}/></button>
+          </div>
+        </div>
+
+        {/* photo dots */}
+        <div className="absolute bottom-[140px] left-5 right-5 flex gap-1.5 z-10">
+          {[0,1,2,3,4].map(i=>(<div key={i} className="flex-1 h-[2px] rounded-full" style={{background: i===0?"var(--ink)":"rgba(242,237,226,.3)"}}/>))}
+        </div>
+
+        {/* Title */}
+        <div className="absolute bottom-0 left-5 right-5 pb-6 z-10">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] uppercase tracking-[.22em] px-2 py-1 rounded-full chip-acid">Beach</span>
+            <span className="text-[10px] uppercase tracking-[.22em]" style={{color:"var(--ink-2)"}}>Cyan Beach Club</span>
+          </div>
+          <div className="font-display text-[60px] leading-[0.9] tracking-tight">Pool Day<br/><span className="ital" style={{color:"var(--acid)"}}>vol. III</span></div>
+          <div className="text-[12px] mt-3 max-w-[280px]" style={{color:"var(--ink-2)"}}>An afternoon for the in-crowd. Mediterranean lunch, residents on the decks, full cabana for invitees.</div>
+        </div>
+      </div>
+
+      {/* Date / time / spots — editorial rail */}
+      <div className="px-5 pt-6">
+        <div className="grid grid-cols-3 gap-0" style={{borderTop:"1px solid var(--line-2)", borderBottom:"1px solid var(--line-2)"}}>
+          <div className="py-4 border-r" style={{borderColor:"var(--line)"}}>
+            <div className="stamp">When</div>
+            <div className="font-display text-[22px] leading-none mt-1.5">Sun</div>
+            <div className="text-[12px]" style={{color:"var(--ink-2)"}}>25 May</div>
+          </div>
+          <div className="py-4 px-3 border-r" style={{borderColor:"var(--line)"}}>
+            <div className="stamp">Doors</div>
+            <div className="font-display text-[22px] leading-none mt-1.5">14:00</div>
+            <div className="text-[12px]" style={{color:"var(--ink-2)"}}>til 21:00</div>
+          </div>
+          <div className="py-4 pl-3">
+            <div className="stamp">Seats</div>
+            <div className="font-display text-[22px] leading-none mt-1.5"><span style={{color:"var(--acid)"}}>20</span><span style={{color:"var(--ink-mute)"}}> / 20</span></div>
+            <div className="text-[12px]" style={{color:"var(--ink-2)"}}>137 applied</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Location */}
+      <div className="px-5 pt-5">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{border:"1px solid var(--line-2)"}}>
+            <Icon name="map-pin" size={14} stroke={1.5}/>
+          </div>
+          <div className="flex-1">
+            <div className="text-[14px] font-medium">Cyan Beach Club</div>
+            <div className="text-[12px]" style={{color:"var(--ink-mute)"}}>Coastal Highway, Jiyeh · 22 km south of city</div>
+          </div>
+          <button className="press text-[11px] px-3 h-8 rounded-full" style={{border:"1px solid var(--line-2)"}}>Map</button>
+        </div>
+      </div>
+
+      {/* Editorial divider */}
+      <div className="px-5 pt-6 pb-3 flex items-center gap-3">
+        <span className="stamp">§ 01</span>
+        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
+        <span className="font-display text-[14px] ital" style={{color:"var(--ink-2)"}}>The room</span>
+      </div>
+
+      <p className="px-5 text-[14px] leading-[1.65]" style={{color:"var(--ink-2)"}}>
+        Resident DJ <span style={{color:"var(--ink)"}}>Karim Sahli</span> from 16:00. Mediterranean menu at sunset. Dress: <span style={{color:"var(--ink)"}}>swimwear and an attitude.</span>
+      </p>
+
+      {/* What's required */}
+      <div className="px-5 pt-6 pb-3 flex items-center gap-3">
+        <span className="stamp">§ 02</span>
+        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
+        <span className="font-display text-[14px] ital" style={{color:"var(--ink-2)"}}>The exchange</span>
+      </div>
+
+      <div className="px-5 space-y-4">
+        {[
+          {n:"01", t:"One Story, on the day", s:"Posted between 14:00 — 21:00"},
+          {n:"02", t:"Tag @cyanbeachclub", s:"And the venue handle in caption"},
+        ].map((r,i)=>(
+          <div key={i} className="flex items-center gap-4 py-3" style={{borderBottom:"1px solid var(--line)"}}>
+            <span className="font-mono text-[11px]" style={{color:"var(--acid)"}}>{r.n}</span>
+            <div className="flex-1">
+              <div className="text-[14px]">{r.t}</div>
+              <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{r.s}</div>
+            </div>
+            <Icon name="check" size={14} stroke={1.5} className="opacity-30"/>
+          </div>
+        ))}
+      </div>
+
+      <div className="h-40"/>
+
+      {/* Apply CTA — sticky-ish bottom */}
+      <div className="absolute left-0 right-0 bottom-0 pt-6 px-5 pb-7" style={{background:"linear-gradient(180deg, rgba(11,10,8,0) 0%, rgba(11,10,8,.92) 35%, var(--bg) 70%)"}}>
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <div className="stamp" style={{color:"var(--ink-mute)"}}>Closes in</div>
+            <div className="font-display text-[22px] leading-none mt-0.5" style={{color:"var(--acid)"}}>04 : 56 : 12</div>
+          </div>
+          <button onClick={onApply} disabled={applied} className="press flex items-center gap-3 h-[56px] px-6 rounded-full" style={{background: applied? "var(--bg-elev2)" : "var(--ink)", color: applied? "var(--ink)":"var(--bg)"}}>
+            <span className="font-display text-[20px]">{applied ? "On the list" : "Apply"}</span>
+            <Icon name={applied?"check":"arrow-right"} size={18} stroke={1.5}/>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   04 — MY EVENTS
+   ============================================================ */
+function ScreenMyEvents({ onTab, tab }) {
+  const [seg, setSeg] = useState("invited"); // invited | confirmed | past
+  return (
+    <div className="absolute inset-0 noscroll overflow-y-auto" style={{background:"var(--bg)"}}>
+      <StatusBar/>
+      {/* Header */}
+      <div className="px-5 pt-[60px] pb-3 flex items-center justify-between">
+        <div>
+          <div className="smallcaps" style={{color:"var(--ink-mute)"}}>Personal</div>
+          <div className="font-display text-[40px] leading-none mt-1">My List</div>
+        </div>
+        <button className="press w-10 h-10 rounded-full border flex items-center justify-center" style={{borderColor:"var(--line-2)"}}>
+          <Icon name="calendar" size={16} stroke={1.4}/>
+        </button>
+      </div>
+
+      {/* Hairline */}
+      <div className="hr-2 mx-5"/>
+
+      {/* Segmented */}
+      <div className="px-5 pt-4 pb-3 grid grid-cols-3 gap-0">
+        {[
+          {id:"invited", label:"Invited", count:"03"},
+          {id:"confirmed", label:"Confirmed", count:"02"},
+          {id:"past", label:"Past", count:"24"},
+        ].map(s=>(
+          <button key={s.id} onClick={()=>setSeg(s.id)} className="press py-3 text-left">
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-display text-[26px]" style={{color: seg===s.id ? "var(--ink)":"var(--ink-mute)"}}>{s.count}</span>
+              {s.id==="invited" && <span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--acid)"}}/>}
+            </div>
+            <div className="text-[11px] mt-0.5 uppercase tracking-[.18em]" style={{color: seg===s.id ? "var(--ink)":"var(--ink-mute)"}}>{s.label}</div>
+            <div className="mt-3 h-[2px] rounded-full" style={{background: seg===s.id ? "var(--acid)" : "transparent"}}/>
+          </button>
+        ))}
+      </div>
+
+      <div className="hr mx-5"/>
+
+      {/* INVITED list */}
+      {seg==="invited" && (
+        <div className="px-5 pt-5 space-y-4">
+          {/* big invite card */}
+          <div className="rounded-[18px] overflow-hidden" style={{background:"var(--bg-elev)"}}>
+            <div className="relative h-[160px]">
+              <img src={IMG.pool} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+              <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(11,10,8,0) 30%, rgba(11,10,8,.95) 100%)"}}/>
+              <div className="absolute top-3 left-3 flex items-center gap-2 px-2.5 py-1 rounded-full chip-acid">
+                <Icon name="sparkles" size={11} stroke={1.8}/>
+                <span className="text-[10px] uppercase tracking-[.2em] font-medium">You're invited</span>
+              </div>
+              <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+                <div>
+                  <div className="font-display text-[26px] leading-none">Pool Day</div>
+                  <div className="text-[11px] mt-1" style={{color:"var(--ink-2)"}}>Cyan Beach Club · Sun 14:00</div>
+                </div>
+                <div className="font-mono text-[10px] text-right">
+                  <div style={{color:"var(--ink-mute)"}}>Confirm in</div>
+                  <div style={{color:"var(--acid)"}} className="text-[14px]">23 : 41 : 02</div>
+                </div>
+              </div>
+            </div>
+            <div className="p-4">
+              <div className="text-[12px] mb-3" style={{color:"var(--ink-2)"}}>Cyan picked you out of 137. Confirm to lock the seat. Decline frees it instantly.</div>
+              <div className="grid grid-cols-2 gap-2">
+                <button className="press h-12 rounded-full text-[13px]" style={{border:"1px solid var(--line-2)", color:"var(--ink-2)"}}>Decline</button>
+                <button className="press h-12 rounded-full text-[13px] font-medium" style={{background:"var(--acid)", color:"var(--acid-ink)"}}>Confirm seat</button>
+              </div>
+            </div>
+          </div>
+
+          {/* other invites — compact */}
+          {[
+            {t:"Sunset Pilates", v:"Studio Nord · Tue 17:30", img:IMG.gym, left:"42 : 11 : 03"},
+            {t:"Tasting Menu", v:"Em Sherif · Wed 20:30", img:IMG.restaurant, left:"19 : 22 : 50"},
+          ].map((e,i)=>(
+            <div key={i} className="flex items-center gap-3 py-3" style={{borderBottom: i===0?"1px solid var(--line)":"none"}}>
+              <img src={e.img} className="w-14 h-14 rounded-[10px] object-cover" alt=""/>
+              <div className="flex-1 min-w-0">
+                <div className="text-[14px]">{e.t}</div>
+                <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{e.v}</div>
+                <div className="font-mono text-[10px] mt-0.5" style={{color:"var(--acid)"}}>{e.left}</div>
+              </div>
+              <div className="flex gap-1.5">
+                <button className="press w-9 h-9 rounded-full flex items-center justify-center" style={{border:"1px solid var(--line-2)"}}><Icon name="x" size={14} stroke={1.5}/></button>
+                <button className="press w-9 h-9 rounded-full flex items-center justify-center" style={{background:"var(--ink)", color:"var(--bg)"}}><Icon name="check" size={14} stroke={1.8}/></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* CONFIRMED */}
+      {seg==="confirmed" && (
+        <div className="px-5 pt-5 space-y-3">
+          <div className="rounded-[16px] p-4" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)"}}>
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-[10px] flex flex-col items-center justify-center flex-shrink-0" style={{background:"var(--acid)", color:"var(--bg)"}}>
+                <span className="font-display text-[18px] leading-none">28</span>
+                <span className="text-[8px] uppercase tracking-[.15em] mt-0.5">May</span>
+              </div>
+              <div className="flex-1">
+                <div className="text-[14px] font-medium">Rooftop Sundown</div>
+                <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Le Gray · Wed 19:00</div>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-[10px] uppercase tracking-[.18em] px-2 py-0.5 rounded-full" style={{background:"rgba(217,242,94,.12)", color:"var(--acid)"}}>Locked</span>
+                  <span className="stamp">+1 plus-one</span>
+                </div>
+              </div>
+              <Icon name="qr-code" size={20} stroke={1.4} className="opacity-70"/>
+            </div>
+          </div>
+          <div className="rounded-[16px] p-4" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)"}}>
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-[10px] flex flex-col items-center justify-center flex-shrink-0" style={{background:"var(--ink)", color:"var(--bg)"}}>
+                <span className="font-display text-[18px] leading-none">02</span>
+                <span className="text-[8px] uppercase tracking-[.15em] mt-0.5">Jun</span>
+              </div>
+              <div className="flex-1">
+                <div className="text-[14px] font-medium">Private Tasting</div>
+                <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Chef Akl · Sun 20:00</div>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-[10px] uppercase tracking-[.18em] px-2 py-0.5 rounded-full" style={{background:"rgba(217,242,94,.12)", color:"var(--acid)"}}>Locked</span>
+                </div>
+              </div>
+              <Icon name="qr-code" size={20} stroke={1.4} className="opacity-70"/>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PAST */}
+      {seg==="past" && (
+        <div className="px-5 pt-5 space-y-0">
+          {[
+            {t:"Pyrite", v:"Mar Mikhael", date:"17 May", score:"9.4", img:IMG.clubRed},
+            {t:"Sunday Roast", v:"Anjar Estate", date:"11 May", score:"9.1", img:IMG.restaurant},
+            {t:"Garden Lunch", v:"Tawlet", date:"04 May", score:"8.7", img:IMG.cocktail},
+            {t:"Pool Day vol. II", v:"Cyan", date:"27 Apr", score:"9.6", img:IMG.pool},
+          ].map((e,i)=>(
+            <div key={i} className="flex items-center gap-3 py-3" style={{borderBottom: i<3?"1px solid var(--line)":"none"}}>
+              <img src={e.img} className="w-14 h-14 rounded-[10px] object-cover grayscale" alt=""/>
+              <div className="flex-1">
+                <div className="text-[14px]">{e.t}</div>
+                <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{e.v} · {e.date}</div>
+              </div>
+              <div className="text-right">
+                <div className="font-display text-[18px]" style={{color:"var(--acid)"}}>{e.score}</div>
+                <div className="stamp">Venue rating</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="h-32"/>
+      <TabBar active={tab} onChange={onTab}/>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+/* ============================================================
+   05 — PROFILE
+   ============================================================ */
+function ScreenProfile({ onTab, tab }) {
+  return (
+    <div className="absolute inset-0 noscroll overflow-y-auto" style={{background:"var(--bg)"}}>
+      <StatusBar/>
+      {/* Editorial header */}
+      <div className="relative h-[460px]">
+        <img src={IMG.saraFull} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+        <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(11,10,8,.3) 0%, rgba(11,10,8,0) 40%, rgba(11,10,8,.95) 100%)"}}/>
+
+        <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full" style={{background:"rgba(11,10,8,.55)", backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,.1)"}}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--acid)"}}/>
+            <span className="stamp" style={{color:"var(--ink)"}}>Verified · Tier 1</span>
+          </div>
+          <div className="flex gap-2">
+            <button className="press w-9 h-9 rounded-full flex items-center justify-center border border-white/25" style={{background:"rgba(11,10,8,.45)", backdropFilter:"blur(8px)"}}><Icon name="settings" size={15} stroke={1.4}/></button>
+          </div>
+        </div>
+
+        {/* Vertical caption like editorial spread */}
+        <div className="absolute right-3 top-[130px] vt z-10">
+          <span className="stamp">Beirut · MMXXVI · No. 048</span>
+        </div>
+
+        <div className="absolute bottom-5 left-5 right-5 z-10">
+          <div className="smallcaps mb-2" style={{color:"var(--ink-2)"}}>Member since '24</div>
+          <div className="font-display text-[54px] leading-[0.9]">Sara<br/>Capriotti.</div>
+          <div className="flex items-center gap-2 mt-3">
+            <Icon name="instagram" size={13} stroke={1.5} className="opacity-70"/>
+            <span className="text-[13px]" style={{color:"var(--ink-2)"}}>@capriottisara</span>
+            <span className="text-[10px]" style={{color:"var(--ink-mute)"}}>· bookings via mgmt</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stat strip */}
+      <div className="grid grid-cols-3" style={{borderBottom:"1px solid var(--line-2)"}}>
+        <div className="p-4 border-r" style={{borderColor:"var(--line)"}}>
+          <div className="font-display text-[34px] leading-none">28<span style={{fontSize:18, color:"var(--ink-mute)"}}>k</span></div>
+          <div className="stamp mt-1">Followers</div>
+        </div>
+        <div className="p-4 border-r" style={{borderColor:"var(--line)"}}>
+          <div className="font-display text-[34px] leading-none">5.8<span style={{fontSize:18, color:"var(--ink-mute)"}}>%</span></div>
+          <div className="stamp mt-1">Engagement</div>
+        </div>
+        <div className="p-4">
+          <div className="font-display text-[34px] leading-none" style={{color:"var(--acid)"}}>9.4</div>
+          <div className="stamp mt-1">Reputation</div>
+        </div>
+      </div>
+
+      {/* Audience */}
+      <div className="px-5 pt-6 pb-3 flex items-center gap-3">
+        <span className="stamp">§ Audience</span>
+        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
+        <span className="text-[11px]" style={{color:"var(--ink-mute)"}}>Synced 3h ago</span>
+      </div>
+
+      <div className="px-5 space-y-3">
+        {/* gender bar */}
+        <div>
+          <div className="flex justify-between text-[11px]" style={{color:"var(--ink-2)"}}>
+            <span>Female · 62%</span>
+            <span>Male · 38%</span>
+          </div>
+          <div className="mt-1.5 h-[6px] rounded-full overflow-hidden flex" style={{background:"var(--bg-elev2)"}}>
+            <div style={{width:"62%", background:"var(--acid)"}}/>
+            <div style={{width:"38%", background:"var(--ink-2)"}}/>
+          </div>
+        </div>
+        {/* age */}
+        <div className="pt-2">
+          <div className="text-[11px] mb-2" style={{color:"var(--ink-2)"}}>Age</div>
+          <div className="flex items-end gap-1.5 h-[60px]">
+            {[
+              {l:"13—17", v:8},
+              {l:"18—24", v:46},
+              {l:"25—34", v:78},
+              {l:"35—44", v:32},
+              {l:"45+", v:11},
+            ].map((b,i)=>(
+              <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
+                <div className="w-full rounded-t-[3px]" style={{height: b.v+"%", background: i===2?"var(--acid)":"var(--ink-2)", opacity: i===2?1:0.4}}/>
+                <span className="font-mono text-[9px] mt-1.5" style={{color:"var(--ink-mute)"}}>{b.l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* geography */}
+        <div className="pt-2">
+          <div className="text-[11px] mb-2" style={{color:"var(--ink-2)"}}>Top cities</div>
+          <div className="space-y-2">
+            {[
+              {c:"Beirut, LB", v:42},
+              {c:"Dubai, AE", v:18},
+              {c:"Paris, FR", v:9},
+              {c:"London, UK", v:6},
+            ].map((g,i)=>(
+              <div key={i} className="flex items-center gap-3">
+                <span className="text-[12px] w-[100px]">{g.c}</span>
+                <div className="flex-1 h-[3px] rounded-full" style={{background:"var(--bg-elev2)"}}>
+                  <div className="h-full rounded-full" style={{width:g.v+"%", background:"var(--ink)"}}/>
+                </div>
+                <span className="font-mono text-[10px] w-[30px] text-right" style={{color:"var(--ink-mute)"}}>{g.v}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* History */}
+      <div className="px-5 pt-7 pb-3 flex items-center gap-3">
+        <span className="stamp">§ History</span>
+        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
+        <span className="text-[11px]" style={{color:"var(--ink-mute)"}}>24 attended</span>
+      </div>
+      <div className="px-5 pb-3">
+        <div className="flex gap-2 overflow-x-auto noscroll">
+          {[IMG.pool, IMG.clubRed, IMG.restaurant, IMG.rooftop, IMG.cocktail].map((p,i)=>(
+            <div key={i} className="relative w-[88px] h-[112px] rounded-[10px] overflow-hidden flex-shrink-0">
+              <img src={p} className="absolute inset-0 w-full h-full object-cover grayscale" alt=""/>
+              <div className="absolute inset-0" style={{background:"linear-gradient(180deg, transparent 50%, rgba(0,0,0,.9) 100%)"}}/>
+              <div className="absolute bottom-2 left-2 right-2">
+                <div className="font-display text-[14px] leading-none">{["Pyrite","Cyan","Em Sherif","Le Gray","Tawlet"][i]}</div>
+                <div className="font-mono text-[9px]" style={{color:"var(--acid)"}}>{["9.6","9.4","9.1","8.9","8.7"][i]}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Reputation breakdown */}
+      <div className="px-5 pt-5 pb-3 flex items-center gap-3">
+        <span className="stamp">§ Reputation</span>
+        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
+        <span className="text-[11px]" style={{color:"var(--ink-mute)"}}>By venues</span>
+      </div>
+      <div className="px-5 space-y-2.5 pb-3">
+        {[
+          {k:"Punctuality", v:9.8},
+          {k:"Story delivery", v:9.5},
+          {k:"Presentation", v:9.6},
+          {k:"Venue feedback", v:8.7},
+        ].map((r,i)=>(
+          <div key={i} className="flex items-center gap-3">
+            <span className="text-[13px] flex-1">{r.k}</span>
+            <div className="flex-1 h-[3px] rounded-full" style={{background:"var(--bg-elev2)"}}>
+              <div className="h-full rounded-full" style={{width:(r.v*10)+"%", background:"var(--acid)"}}/>
+            </div>
+            <span className="font-display text-[16px] w-[36px] text-right" style={{color:"var(--ink)"}}>{r.v}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="h-28"/>
+      <TabBar active={tab} onChange={onTab}/>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+/* ============================================================
+   06 — NOTIFICATION TAKEOVER — "You're in"
+   ============================================================ */
+function ScreenPicked({ onConfirm, onLater }) {
+  const [h, setH] = useState(23), [m, setM] = useState(59), [s, setS] = useState(48);
+  useEffect(()=>{
+    const t = setInterval(()=>{
+      setS(prev => {
+        if (prev>0) return prev-1;
+        setM(mm => {
+          if (mm>0) return mm-1;
+          setH(hh=>Math.max(hh-1,0));
+          return 59;
+        });
+        return 59;
+      });
+    }, 1000);
+    return ()=>clearInterval(t);
+  }, []);
+  return (
+    <div className="absolute inset-0 noscroll" style={{background:"var(--bg)"}}>
+      {/* full-bleed photo */}
+      <img src={IMG.pool} className="absolute inset-0 w-full h-full object-cover" alt="" style={{filter:"brightness(.55) saturate(.7)"}}/>
+      <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(11,10,8,.4) 0%, rgba(11,10,8,.85) 60%, var(--bg) 100%)"}}/>
+      <div className="absolute inset-0 grain"/>
+
+      <StatusBar/>
+
+      {/* Brand mark */}
+      <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
+        <div className="smallcaps" style={{color:"var(--acid)"}}>The List</div>
+        <div className="stamp">DSPTCH · 04:21</div>
+      </div>
+
+      {/* Center stamp circle */}
+      <div className="absolute left-1/2 top-[140px] -translate-x-1/2 z-10">
+        <div className="relative">
+          <div className="w-[180px] h-[180px] rounded-full flex items-center justify-center pulse-ring" style={{background:"var(--acid)"}}>
+            <div className="text-center">
+              <div className="font-display text-[44px] leading-none" style={{color:"var(--acid-ink)"}}>You're</div>
+              <div className="font-display ital text-[48px] leading-none mt-1" style={{color:"var(--acid-ink)"}}>in.</div>
+            </div>
+          </div>
+          {/* small badges around */}
+          <div className="absolute -top-2 -right-3 px-2 py-1 rounded-full font-mono text-[9px]" style={{background:"var(--bg)", border:"1px solid var(--line-2)", color:"var(--acid)"}}>SEAT · 14/20</div>
+          <div className="absolute -bottom-1 -left-4 px-2 py-1 rounded-full font-mono text-[9px]" style={{background:"var(--bg)", border:"1px solid var(--line-2)", color:"var(--ink)"}}>Picked of 137</div>
+        </div>
+      </div>
+
+      {/* Editorial copy */}
+      <div className="absolute left-5 right-5 top-[360px] z-10 text-center">
+        <div className="font-display text-[36px] leading-[1] tracking-tight">Pool Day, vol. III</div>
+        <div className="text-[12px] mt-2" style={{color:"var(--ink-2)"}}>Cyan Beach Club · Sunday 25 May · 14:00</div>
+      </div>
+
+      {/* Countdown */}
+      <div className="absolute left-5 right-5 top-[450px] z-10">
+        <div className="text-center mb-3 stamp" style={{color:"var(--ink-mute)"}}>Confirm in</div>
+        <div className="flex justify-center items-baseline gap-2">
+          {[
+            {v:String(h).padStart(2,"0"), l:"hrs"},
+            {v:":", l:""},
+            {v:String(m).padStart(2,"0"), l:"min"},
+            {v:":", l:""},
+            {v:String(s).padStart(2,"0"), l:"sec"},
+          ].map((c,i)=>(
+            <div key={i} className="flex flex-col items-center">
+              <span className={"countdown-digit "+(c.l===""?"text-[48px]":"text-[60px]")+" leading-none"} style={{color: c.l==="" ? "var(--ink-mute)":"var(--ink)"}}>{c.v}</span>
+              {c.l && <span className="stamp mt-1" style={{color:"var(--ink-mute)"}}>{c.l}</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom — terms reminder + CTAs */}
+      <div className="absolute left-0 right-0 bottom-0 px-5 pb-9 z-10">
+        <div className="rounded-[14px] p-3 mb-4" style={{background:"rgba(11,10,8,.55)", backdropFilter:"blur(12px)", border:"1px solid var(--line-2)"}}>
+          <div className="flex items-start gap-3">
+            <Icon name="info" size={14} stroke={1.5} className="opacity-70 mt-0.5"/>
+            <div className="text-[11px] leading-[1.45]" style={{color:"var(--ink-2)"}}>
+              In exchange — <span style={{color:"var(--ink)"}}>1 Story</span> between 14:00 — 21:00, <span style={{color:"var(--ink)"}}>@cyanbeachclub</span> tagged, 90-min minimum stay.
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-[1fr_2fr] gap-2.5">
+          <button onClick={onLater} className="press h-[56px] rounded-full text-[13px]" style={{border:"1px solid var(--line-2)", color:"var(--ink-2)", background:"rgba(11,10,8,.4)", backdropFilter:"blur(8px)"}}>Decline</button>
+          <button onClick={onConfirm} className="press h-[56px] rounded-full flex items-center justify-center gap-3" style={{background:"var(--ink)", color:"var(--bg)"}}>
+            <span className="font-display text-[20px]">Confirm my seat</span>
+            <Icon name="arrow-right" size={18} stroke={1.6}/>
+          </button>
+        </div>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+
+/* ============================================================
+   ROOT
+   ============================================================ */
+function App() {
+  const [homeTab, setHomeTab] = useState("home");
+  const [meTab, setMeTab] = useState("events");
+  const [profileTab, setProfileTab] = useState("profile");
+  const [exploreTab, setExploreTab] = useState("explore");
+  const [applied, setApplied] = useState(false);
+  const [picked, setPicked] = useState(false);
+
+  const [light, setLight] = useState(false);
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', light);
+  }, [light]);
+
+  return (
+    <div className="min-h-screen w-full">
+      <button className="theme-toggle" onClick={() => setLight(l => !l)}>
+        <span className="dot"></span>
+        {light ? 'Light mode' : 'Dark mode'} · switch
+      </button>
+      {/* Project chrome */}
+      <header className="px-12 pt-10 pb-8 flex items-end justify-between">
+        <div>
+          <div className="smallcaps mb-2" style={{color:"var(--acid)"}}>Case Study · MMXXVI</div>
+          <div className="font-display text-[64px] leading-[0.95]">The List — <span className="ital" style={{color:"var(--ink-mute)"}}>influencer side.</span></div>
+          <div className="text-[13px] mt-3 max-w-[640px]" style={{color:"var(--ink-2)"}}>
+            A members-only entry point for Beirut's most-followed. Six screens, one editorial system. Built to feel like a magazine you swipe through, not a coupon app.
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="stamp">Drop 048 · v0.3</div>
+          <div className="stamp mt-1" style={{color:"var(--acid)"}}>iPhone 15 Pro · 393 × 852</div>
+        </div>
+      </header>
+
+      {/* Marquee */}
+      <div className="overflow-hidden py-3 mb-10" style={{borderTop:"1px solid var(--line-2)", borderBottom:"1px solid var(--line-2)"}}>
+        <div className="flex marquee whitespace-nowrap font-display text-[20px]">
+          {Array.from({length:2}).map((_,k)=>(
+            <span key={k} className="flex gap-10 pr-10">
+              <span>Beirut</span><span style={{color:"var(--ink-mute)"}}>·</span>
+              <span className="ital">Bottega meets Berghain</span><span style={{color:"var(--ink-mute)"}}>·</span>
+              <span>No purple-pink gradients</span><span style={{color:"var(--ink-mute)"}}>·</span>
+              <span>Editorial-grade</span><span style={{color:"var(--ink-mute)"}}>·</span>
+              <span style={{color:"var(--acid)"}}>By invitation only</span><span style={{color:"var(--ink-mute)"}}>·</span>
+              <span>The List</span><span style={{color:"var(--ink-mute)"}}>·</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Screens row */}
+      <div className="overflow-x-auto pb-16 noscroll">
+        <div className="flex gap-12 px-12 min-w-max">
+          <PhoneFrame idx={1} label="Tonight" sub="Home · featured events for tonight" screenLabel="01 Tonight">
+            <ScreenHome goEvent={()=>{}} tab={homeTab} onTab={setHomeTab}/>
+          </PhoneFrame>
+          <PhoneFrame idx={2} label="Index" sub="Explore · all upcoming, by date / type" screenLabel="02 Index">
+            <ScreenExplore goEvent={()=>{}} tab={exploreTab} onTab={setExploreTab}/>
+          </PhoneFrame>
+          <PhoneFrame idx={3} label="The room" sub="Event detail · apply with one tap" screenLabel="03 Event detail">
+            <ScreenEventDetail goBack={()=>{}} applied={applied} onApply={()=>{ setApplied(true); setTimeout(()=>setPicked(true), 600); }}/>
+          </PhoneFrame>
+          <PhoneFrame idx={4} label="My List" sub="My Events · invited / confirmed / past" screenLabel="04 My List">
+            <ScreenMyEvents tab={meTab} onTab={setMeTab}/>
+          </PhoneFrame>
+          <PhoneFrame idx={5} label="Me" sub="Profile · audience, reputation, history" screenLabel="05 Profile">
+            <ScreenProfile tab={profileTab} onTab={setProfileTab}/>
+          </PhoneFrame>
+          <PhoneFrame idx={6} label="You're in." sub="Picked notification · the 24h window" screenLabel="06 Picked">
+            <ScreenPicked onConfirm={()=>setPicked(false)} onLater={()=>setPicked(false)}/>
+          </PhoneFrame>
+        </div>
+      </div>
+
+      {/* footer notes */}
+      <div className="px-12 pb-16 grid grid-cols-3 gap-8 max-w-[1400px]" style={{borderTop:"1px solid var(--line)"}}>
+        <div className="pt-8">
+          <div className="smallcaps mb-2" style={{color:"var(--acid)"}}>§ Type</div>
+          <div className="text-[13px]" style={{color:"var(--ink-2)"}}>Instrument Serif sets the editorial voice. Geist holds the UI. JetBrains Mono carries the metadata stamps. No Inter, no Roboto.</div>
+        </div>
+        <div className="pt-8">
+          <div className="smallcaps mb-2" style={{color:"var(--acid)"}}>§ Palette</div>
+          <div className="flex gap-2 mb-2">
+            {[
+              {c:"#0B0A08", l:"Coal"},
+              {c:"#F2EDE2", l:"Cream"},
+              {c:"#D9F25E", l:"Acid"},
+              {c:"#B73247", l:"Oxblood"},
+              {c:"#7F786A", l:"Ash"},
+            ].map((s,i)=>(
+              <div key={i}>
+                <div className="w-9 h-9 rounded-[6px]" style={{background:s.c, border:"1px solid var(--line)"}}/>
+                <div className="font-mono text-[9px] mt-1.5" style={{color:"var(--ink-mute)"}}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="pt-8">
+          <div className="smallcaps mb-2" style={{color:"var(--acid)"}}>§ Notes</div>
+          <div className="text-[13px]" style={{color:"var(--ink-2)"}}>Apply on screen 03 to advance Sara's storyline — the picked-notification countdown ticks live on screen 06. Tabs and segments are wired.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

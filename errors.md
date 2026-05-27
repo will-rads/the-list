@@ -1,0 +1,86 @@
+# Errors — known pitfalls, don't repeat
+
+Things that have already gone wrong, or known traps. New entries on top, dated `YYYY-MM-DD`.
+
+---
+
+## 2026-05-27 — `gh` CLI not in default PATH after winget user-scope install
+
+After `winget install --id GitHub.cli --scope user`, the binary lands at:
+
+```
+C:\Users\user\AppData\Local\Microsoft\WinGet\Packages\GitHub.cli_Microsoft.Winget.Source_8wekyb3d8bbwe\bin\gh.exe
+```
+
+Current shell doesn't see it (PATH not refreshed). Either:
+- Restart shell so `gh` resolves, OR
+- Call the full path explicitly: `& '<full path>\gh.exe' <command>`
+
+---
+
+## 2026-05-27 — Claude Code preview tool screenshot times out on big pages
+
+`mcp__Claude_Preview__preview_screenshot` times out (30s) when the page is ≥ 2700px wide or ≥ 2700px tall, even when all images have loaded. Workarounds:
+- Resize viewport down to ~1500×1000 first
+- Take multiple screenshots scrolling the page in chunks
+- Page must be < ~1500px effective render size for reliable screenshots
+
+---
+
+## 2026-05-27 — Bash heredoc / multi-quote pattern fails on Windows
+
+In Claude Code on Windows, Bash tool sometimes errors with "unexpected EOF while looking for matching quote" on commands that wrap Windows paths with spaces. Pattern:
+
+```bash
+ls "C:\Users\user\Documents\Me\the-list\"   # FAILS
+```
+
+The trailing `\"` makes the shell think the next quote is opening a new string. Use **PowerShell tool** instead of Bash for any path containing spaces, OR use forward-slash form `/c/Users/user/Documents/Me/the-list/`.
+
+---
+
+## 2026-05-26 — Babel/Tailwind CDN warnings are noise, not errors
+
+The HTML prototypes use `https://cdn.tailwindcss.com` + `@babel/standalone`. Console logs are flooded with:
+
+> You are using the in-browser Babel transformer. Be sure to precompile your scripts for production.
+> cdn.tailwindcss.com should not be used in production.
+
+These are **expected for prototypes**. Do not refactor to local Tailwind / build pipeline until production. Save the refactor for the SwiftUI port.
+
+---
+
+## 2026-05-26 — Don't horizontal-scroll the preview iframe
+
+`window.scrollTo(x, y)` only respects `y` in the Claude Preview iframe — `x` is silently ignored if the root has `overflow-x: hidden` or the body is scaled. Don't waste time scrolling sideways; resize the viewport wider instead, or use CSS transform: scale().
+
+---
+
+## 2026-05-26 — Instrument Serif italic = AI tell
+
+Claude Design defaulted to Instrument Serif italic for display headings. By mid-2026 every AI-generated "editorial" landing page uses it. It's the new Inter. Avoid for v1.
+
+---
+
+## 2026-05-26 — Don't swap visual identity for one user's preference round
+
+When Will said "I prefer your version" → instinct was to delete the Claude-design version. Wrong move. Better: keep both files as references, swap only the specific assets the user liked (the curated images). Preserve optionality during prototype phase.
+
+---
+
+## 2026-05-19 — Don't send long bulk WhatsApp from Radwan
+
+Radwan: *"If I send the message now, three-quarters of them will just read the first sentence and stop."*
+
+When the soft pre-launch outreach happens, **Dima sends, not Radwan, not Will**. She has the trust with the database. Wrong sender = ignored message.
+
+---
+
+## Standing don'ts
+
+- Don't push to GitHub without confirmation.
+- Don't commit secrets. `.env` is gitignored. Edit `.env.example` for new keys.
+- Don't refactor Tailwind / Babel CDN to local until SwiftUI port.
+- Don't add a font without checking AGENTS.md for the no-go list (Inter, Instrument Serif).
+- Don't rebuild what already exists in `web/` or `docs/` — check first.
+- Don't propose Android in v1.

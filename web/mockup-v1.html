@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The List — Influencer App / Mockup v1</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://api.fontshare.com" />
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,500,900&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Phosphor icons -->
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Satoshi', 'sans-serif'],
+          mono: ['"Geist Mono"', 'ui-monospace', 'monospace'],
+        },
+        colors: {
+          carbon: '#0A0A0A',
+          lifted: '#1A1A1A',
+          bone: '#F5F1EA',
+          muted: '#8A8A8A',
+          mutedLight: '#5A5A5A',
+          ice: '#9FD8E8',
+          iceDim: '#6FB5C9',
+          hairlineDark: 'rgba(245,241,234,0.08)',
+          hairlineLight: 'rgba(10,10,10,0.08)',
+        },
+        letterSpacing: {
+          'tightest-2': '-0.045em',
+          'mono-wide': '0.22em',
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  :root {
+    --ice: #9FD8E8;
+  }
+
+  html, body {
+    background: #050505;
+    color: #F5F1EA;
+    font-family: 'Satoshi', sans-serif;
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Page chrome */
+  .page-bg {
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(159,216,232,0.04), transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(159,216,232,0.03), transparent 50%),
+      #050505;
+  }
+
+  /* Phone frame — hairline outline, no glossy chrome */
+  .phone {
+    width: 393px;
+    height: 852px;
+    border-radius: 54px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow:
+      0 0 0 1px rgba(245,241,234,0.10),
+      0 40px 80px -20px rgba(0,0,0,0.6),
+      0 20px 40px -10px rgba(0,0,0,0.4);
+  }
+  .phone-light {
+    box-shadow:
+      0 0 0 1px rgba(10,10,10,0.10),
+      0 40px 80px -20px rgba(0,0,0,0.25),
+      0 20px 40px -10px rgba(0,0,0,0.15);
+  }
+  .phone-inner {
+    position: absolute;
+    inset: 0;
+    border-radius: 54px;
+    overflow: hidden;
+  }
+
+  /* iPhone-style dynamic island */
+  .dynamic-island {
+    position: absolute;
+    top: 11px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 124px;
+    height: 36px;
+    background: #000;
+    border-radius: 999px;
+    z-index: 50;
+  }
+
+  /* Status bar */
+  .status-bar {
+    height: 54px;
+    padding: 18px 32px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'Satoshi', sans-serif;
+    font-weight: 500;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    position: relative;
+    z-index: 40;
+  }
+  .status-bar .right { display: flex; align-items: center; gap: 6px; }
+
+  /* Card / image grain & desaturation */
+  .editorial-img {
+    filter: grayscale(22%) contrast(1.1) brightness(0.88) saturate(0.92);
+  }
+  .editorial-img-light {
+    filter: grayscale(18%) contrast(1.08) brightness(0.95) saturate(0.95);
+  }
+
+  /* Hairline divider */
+  .hairline { height: 1px; background: rgba(245,241,234,0.08); }
+  .hairline-light { height: 1px; background: rgba(10,10,10,0.08); }
+
+  /* Tab bar bg */
+  .tab-bar-dark {
+    background: linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,0.85) 30%, rgba(10,10,10,0.98) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .tab-bar-light {
+    background: linear-gradient(180deg, rgba(245,241,234,0) 0%, rgba(245,241,234,0.85) 30%, rgba(245,241,234,0.98) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* Mono label */
+  .mono-label {
+    font-family: 'Geist Mono', monospace;
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  .mono-sm {
+    font-family: 'Geist Mono', monospace;
+    font-weight: 400;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .timer-mono {
+    font-family: 'Geist Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+
+  /* Display type */
+  .display-32 {
+    font-family: 'Satoshi', sans-serif;
+    font-weight: 900;
+    font-size: 32px;
+    line-height: 0.95;
+    letter-spacing: -0.045em;
+  }
+  .display-44 {
+    font-family: 'Satoshi', sans-serif;
+    font-weight: 900;
+    font-size: 44px;
+    line-height: 0.92;
+    letter-spacing: -0.05em;
+  }
+  .display-56 {
+    font-family: 'Satoshi', sans-serif;
+    font-weight: 900;
+    font-size: 56px;
+    line-height: 0.9;
+    letter-spacing: -0.055em;
+  }
+  .sub-18 {
+    font-family: 'Satoshi', sans-serif;
+    font-weight: 500;
+    font-size: 18px;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+  .body-15 {
+    font-family: 'Satoshi', sans-serif;
+    font-weight: 300;
+    font-size: 15px;
+    line-height: 1.45;
+    letter-spacing: -0.005em;
+  }
+  .btn-text {
+    font-family: 'Satoshi', sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* Apply button — the ONLY full ice block */
+  .btn-apply-dark {
+    background: var(--ice);
+    color: #0A0A0A;
+    transition: transform 0.15s ease, box-shadow 0.3s ease;
+  }
+  .btn-apply-dark:hover { transform: translateY(-1px); }
+  .btn-apply-light {
+    background: var(--ice);
+    color: #0A0A0A;
+  }
+
+  /* Active tab indicator */
+  .tab-active-dot {
+    width: 4px;
+    height: 4px;
+    background: var(--ice);
+    border-radius: 50%;
+    margin: 4px auto 0;
+  }
+
+  /* Notification dot */
+  .notif-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--ice);
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px #0A0A0A, 0 0 12px var(--ice);
+  }
+  .notif-dot-light {
+    width: 6px;
+    height: 6px;
+    background: var(--ice);
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px #FFFFFF, 0 0 8px var(--ice);
+  }
+
+  /* Hero radial wash (single subtle one allowed) */
+  .hero-wash {
+    background: radial-gradient(ellipse at 50% 30%, rgba(159,216,232,0.05) 0%, transparent 60%);
+  }
+
+  /* Notification screen — ice glow */
+  .ice-glow {
+    box-shadow:
+      inset 0 0 0 1px rgba(159,216,232,0.5),
+      0 0 80px rgba(159,216,232,0.18),
+      0 0 200px rgba(159,216,232,0.12);
+  }
+  .ice-glow-light {
+    box-shadow:
+      inset 0 0 0 1px rgba(159,216,232,0.65),
+      0 0 80px rgba(159,216,232,0.25);
+  }
+
+  /* Card hover */
+  .pressable {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    cursor: pointer;
+  }
+  .pressable:active { transform: scale(0.98); }
+  .pressable:hover { opacity: 0.92; }
+
+  /* Donut chart — uses conic-gradient with ice + muted */
+  .donut-dark {
+    background: conic-gradient(var(--ice) 0% 64%, #2A2A2A 64% 100%);
+    border-radius: 50%;
+  }
+  .donut-light {
+    background: conic-gradient(var(--ice) 0% 64%, #E5E0D6 64% 100%);
+    border-radius: 50%;
+  }
+  .donut-inner-dark {
+    background: #1A1A1A;
+    border-radius: 50%;
+  }
+  .donut-inner-light {
+    background: #FFFFFF;
+    border-radius: 50%;
+  }
+
+  /* Tag pill */
+  .tag-dark {
+    border: 1px solid rgba(245,241,234,0.15);
+    padding: 6px 12px;
+    border-radius: 4px;
+  }
+  .tag-light {
+    border: 1px solid rgba(10,10,10,0.15);
+    padding: 6px 12px;
+    border-radius: 4px;
+  }
+
+  /* Subtle grain overlay */
+  .grain {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Scroll-bar hide */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Live pulse */
+  @keyframes pulse-ice {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+  }
+  .pulse-ice { animation: pulse-ice 1.8s ease-in-out infinite; }
+
+  /* Row label strip */
+  .row-label {
+    font-family: 'Satoshi', sans-serif;
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.38em;
+    text-transform: uppercase;
+  }
+
+  /* Sticky-edges hide */
+  .clip-screen {
+    clip-path: inset(0 round 54px);
+  }
+</style>
+</head>
+
+<body class="page-bg min-h-screen">
+
+<!-- ====== TITLE ====== -->
+<header class="px-16 pt-20 pb-12 max-w-[3300px] mx-auto">
+  <div class="flex items-end justify-between">
+    <div>
+      <p class="mono-sm text-ice mb-4">THE LIST · MOCKUP V1 · BEIRUT</p>
+      <h1 class="display-56 text-bone">
+        Influencer-side app.<br/>
+        <span class="text-muted font-light">Six screens. Two modes.</span>
+      </h1>
+    </div>
+    <div class="text-right text-muted body-15 max-w-md">
+      An invite-only access network for Lebanon's nightlife. Models, DJs and tastemakers apply to events at clubs, beach clubs and restaurants. Venues swipe to pick. Picked guests post a Story in exchange for the spot.
+    </div>
+  </div>
+</header>
+
+<!-- ====== DARK MODE ROW ====== -->
+<div class="w-full bg-black/30 border-y border-white/5 py-3 mb-16">
+  <div class="px-16 flex items-center justify-between">
+    <p class="row-label text-bone">Dark Mode · Default</p>
+    <p class="mono-sm text-muted">393 × 852 / iPhone 15 Pro</p>
+  </div>
+</div>
+
+<section class="px-16 mb-28 overflow-x-auto no-scrollbar">
+  <div class="flex gap-10 pb-10">
+
+    <!-- ============================================== -->
+    <!-- 1. HOME — DARK -->
+    <!-- ============================================== -->
+    <figure class="flex flex-col items-center gap-4">
+      <div class="phone bg-carbon">
+        <div class="phone-inner bg-carbon">
+          <div class="dynamic-island"></div>
+
+          <!-- status bar -->
+          <div class="status-bar text-bone">
+            <span>9:41</span>
+            <span class="right">
+              <i class="ph-fill ph-cell-signal-full text-base"></i>
+              <i class="ph-fill ph-wifi-high text-base"></i>
+              <i class="ph-fill ph-battery-full text-base"></i>
+            </span>
+          </div>
+
+          <!-- header -->
+          <div class="px-8 pt-2 flex items-center justify-between">
+            <div>
+              <p class="mono-sm text-muted">23:14 · BEIRUT</p>
+              <p class="sub-18 text-bone mt-1">Hello, Sara —</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center pressable">
+                <i class="ph ph-magnifying-glass text-bone text-lg"></i>
+              </div>
+              <div class="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center relative pressable">
+                <i class="ph ph-bell text-bone text-lg"></i>
+                <span class="absolute top-2 right-2 notif-dot"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- hero -->
+          <div class="px-8 mt-8 hero-wash">
+            <p class="mono-sm text-ice">TONIGHT · 02 EVENTS LIVE</p>
+            <h2 class="display-44 text-bone mt-3">Pool Day<br/>at Sporting.</h2>
+            <p class="body-15 text-muted mt-3">Beach club residency — Sunday May 25. The Cohort welcomes a curated 30.</p>
+          </div>
+
+          <!-- featured image card -->
+          <div class="px-8 mt-6">
+            <div class="relative overflow-hidden rounded-sm">
+              <img class="w-full h-[260px] object-cover editorial-img" src="https://images.unsplash.com/photo-1540541338287-41700207dee6?w=900&q=80&auto=format&fit=crop" alt="" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+              <!-- meta strip -->
+              <div class="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
+                <div>
+                  <p class="mono-sm text-bone">SUN · 25.05 · 14:00</p>
+                  <p class="sub-18 text-bone mt-1">Sporting Club Beirut</p>
+                </div>
+                <div class="text-right">
+                  <p class="mono-sm text-ice">20/137</p>
+                  <p class="mono-sm text-muted mt-1">SPOTS</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- second event tease -->
+          <div class="px-8 mt-6">
+            <div class="hairline mb-5"></div>
+            <div class="flex gap-4">
+              <img class="w-16 h-20 object-cover editorial-img" src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&q=80&auto=format&fit=crop" alt="" />
+              <div class="flex-1 min-w-0">
+                <p class="mono-sm text-muted">FRI · 23.05 · 22:00</p>
+                <p class="sub-18 text-bone mt-1 truncate">Rouge Lounge</p>
+                <p class="mono-sm text-muted mt-2">12/58 · MAR MIKHAEL</p>
+              </div>
+              <i class="ph ph-arrow-up-right text-bone text-lg mt-1"></i>
+            </div>
+          </div>
+
+          <!-- tab bar -->
+          <div class="absolute bottom-0 left-0 right-0 tab-bar-dark pt-6 pb-8 px-8">
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col items-center">
+                <i class="ph-fill ph-house text-bone text-xl"></i>
+                <p class="mono-sm text-bone mt-1.5" style="font-size:9px;">HOME</p>
+                <div class="tab-active-dot"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-compass text-muted text-xl"></i>
+                <p class="mono-sm text-muted mt-1.5" style="font-size:9px;">EXPLORE</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-calendar-blank text-muted text-xl"></i>
+                <p class="mono-sm text-muted mt-1.5" style="font-size:9px;">EVENTS</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-user text-muted text-xl"></i>
+                <p class="mono-sm text-muted mt-1.5" style="font-size:9px;">PROFILE</p>
+                <div style="height:8px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grain"></div>
+        </div>
+      </div>
+      <figcaption class="mono-sm text-muted mt-3">01 · HOME</figcaption>
+    </figure>
+
+    <!-- ============================================== -->
+    <!-- 2. EXPLORE — DARK -->
+    <!-- ============================================== -->
+    <figure class="flex flex-col items-center gap-4">
+      <div class="phone bg-carbon">
+        <div class="phone-inner bg-carbon">
+          <div class="dynamic-island"></div>
+
+          <div class="status-bar text-bone">
+            <span>9:41</span>
+            <span class="right">
+              <i class="ph-fill ph-cell-signal-full text-base"></i>
+              <i class="ph-fill ph-wifi-high text-base"></i>
+              <i class="ph-fill ph-battery-full text-base"></i>
+            </span>
+          </div>
+
+          <div class="px-8 pt-2">
+            <p class="mono-sm text-muted">012 EVENTS · BEIRUT REGION</p>
+            <h2 class="display-32 text-bone mt-2">Explore.</h2>
+          </div>
+
+          <!-- calendar strip -->
+          <div class="mt-6 pl-8">
+            <div class="flex gap-2 overflow-hidden">
+              <!-- days -->
+              <div class="flex-shrink-0 w-14 h-20 border border-white/10 flex flex-col items-center justify-center pressable">
+                <p class="mono-sm text-muted">FRI</p>
+                <p class="display-32 text-muted mt-1" style="font-size:22px;">23</p>
+              </div>
+              <div class="flex-shrink-0 w-14 h-20 border border-white/10 flex flex-col items-center justify-center pressable">
+                <p class="mono-sm text-muted">SAT</p>
+                <p class="display-32 text-muted mt-1" style="font-size:22px;">24</p>
+              </div>
+              <div class="flex-shrink-0 w-14 h-20 bg-bone flex flex-col items-center justify-center pressable relative">
+                <p class="mono-sm text-carbon">SUN</p>
+                <p class="display-32 text-carbon mt-1" style="font-size:22px;">25</p>
+                <div class="absolute -top-1 -right-1 w-2 h-2 bg-ice rounded-full"></div>
+              </div>
+              <div class="flex-shrink-0 w-14 h-20 border border-white/10 flex flex-col items-center justify-center pressable">
+                <p class="mono-sm text-muted">MON</p>
+                <p class="display-32 text-muted mt-1" style="font-size:22px;">26</p>
+              </div>
+              <div class="flex-shrink-0 w-14 h-20 border border-white/10 flex flex-col items-center justify-center pressable">
+                <p class="mono-sm text-muted">TUE</p>
+                <p class="display-32 text-muted mt-1" style="font-size:22px;">27</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- filters -->
+          <div class="px-8 mt-6 flex items-center gap-2">
+            <div class="tag-dark flex items-center gap-2">
+              <i class="ph ph-funnel-simple text-muted text-sm"></i>
+              <p class="mono-sm text-bone">ALL</p>
+            </div>
+            <div class="tag-dark"><p class="mono-sm text-muted">BEACH</p></div>
+            <div class="tag-dark"><p class="mono-sm text-muted">CLUB</p></div>
+            <div class="tag-dark"><p class="mono-sm text-muted">RESTO</p></div>
+          </div>
+
+          <!-- list -->
+          <div class="px-8 mt-6 space-y-5">
+
+            <div class="pressable">
+              <div class="relative">
+                <img class="w-full h-44 object-cover editorial-img" src="https://images.unsplash.com/photo-1505761671935-60b3a7427bad?w=900&q=80&auto=format&fit=crop" alt=""/>
+                <div class="absolute top-3 left-3 mono-sm text-bone bg-black/60 backdrop-blur-md px-2 py-1">14:00</div>
+              </div>
+              <div class="flex items-start justify-between mt-3">
+                <div>
+                  <p class="sub-18 text-bone">Pool Day · Sporting</p>
+                  <p class="mono-sm text-muted mt-1">BEACH · RAOUCHE</p>
+                </div>
+                <p class="mono-sm text-ice mt-1">20/137</p>
+              </div>
+            </div>
+
+            <div class="hairline"></div>
+
+            <div class="pressable">
+              <div class="relative">
+                <img class="w-full h-44 object-cover editorial-img" src="https://images.unsplash.com/photo-1592861956120-e524fc739696?w=900&q=80&auto=format&fit=crop" alt=""/>
+                <div class="absolute top-3 left-3 mono-sm text-bone bg-black/60 backdrop-blur-md px-2 py-1">20:30</div>
+              </div>
+              <div class="flex items-start justify-between mt-3">
+                <div>
+                  <p class="sub-18 text-bone">Tasting · Em Sherif</p>
+                  <p class="mono-sm text-muted mt-1">RESTO · ACHRAFIEH</p>
+                </div>
+                <p class="mono-sm text-muted mt-1">08/42</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- tab bar -->
+          <div class="absolute bottom-0 left-0 right-0 tab-bar-dark pt-6 pb-8 px-8">
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-house text-muted text-xl"></i>
+                <p class="mono-sm text-muted mt-1.5" style="font-size:9px;">HOME</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center">
+                <i class="ph-fill ph-compass text-bone text-xl"></i>
+                <p class="mono-sm text-bone mt-1.5" style="font-size:9px;">EXPLORE</p>
+                <div class="tab-active-dot"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-calendar-blank text-muted text-xl"></i>
+                <p class="mono-sm text-muted mt-1.5" style="font-size:9px;">EVENTS</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-user text-muted text-xl"></i>
+                <p class="mono-sm text-muted mt-1.5" style="font-size:9px;">PROFILE</p>
+                <div style="height:8px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grain"></div>
+        </div>
+      </div>
+      <figcaption class="mono-sm text-muted mt-3">02 · EXPLORE</figcaption>
+    </figure>
+
+    <!-- ============================================== -->
+    <!-- 3. EVENT DETAIL — DARK -->
+    <!-- ============================================== -->
+    <figure class="flex flex-col items-center gap-4">
+      <div class="phone bg-carbon">
+        <div class="phone-inner bg-carbon">
+          <div class="dynamic-island"></div>
+
+          <!-- full bleed hero -->
+          <div class="absolute top-0 left-0 right-0 h-[420px]">
+            <img class="w-full h-full object-cover editorial-img" src="https://images.unsplash.com/photo-1505761671935-60b3a7427bad?w=900&q=80&auto=format&fit=crop" alt="" />
+            <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-carbon"></div>
+          </div>
+
+          <div class="status-bar text-bone relative z-30">
+            <span>9:41</span>
+            <span class="right">
+              <i class="ph-fill ph-cell-signal-full text-base"></i>
+              <i class="ph-fill ph-wifi-high text-base"></i>
+              <i class="ph-fill ph-battery-full text-base"></i>
+            </span>
+          </div>
+
+          <div class="px-8 pt-2 flex items-center justify-between relative z-30">
+            <div class="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center pressable bg-black/30 backdrop-blur-md">
+              <i class="ph ph-arrow-left text-bone text-lg"></i>
+            </div>
+            <div class="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center pressable bg-black/30 backdrop-blur-md">
+              <i class="ph ph-bookmark-simple text-bone text-lg"></i>
+            </div>
+          </div>
+
+          <!-- title block sitting in lower hero -->
+          <div class="px-8 pt-44 relative z-30">
+            <p class="mono-sm text-ice">SUN · 25.05.26 · 14:00 – 20:00</p>
+            <h2 class="display-44 text-bone mt-3">Pool Day<br/>at Sporting.</h2>
+          </div>
+
+          <!-- body content -->
+          <div class="px-8 mt-6 relative z-30">
+            <!-- spots block -->
+            <div class="flex items-stretch">
+              <div class="flex-1">
+                <p class="mono-sm text-muted">SPOTS</p>
+                <p class="display-32 text-bone mt-2">20<span class="text-muted">/137</span></p>
+              </div>
+              <div class="w-px bg-white/10 mx-5"></div>
+              <div class="flex-1">
+                <p class="mono-sm text-muted">CLOSES</p>
+                <p class="display-32 text-ice mt-2 timer-mono" style="font-family:'Geist Mono';font-weight:500;font-size:22px;">04:12:36</p>
+              </div>
+            </div>
+
+            <div class="hairline mt-6"></div>
+
+            <!-- requirements -->
+            <div class="mt-6">
+              <p class="mono-sm text-muted mb-3">YOUR PART</p>
+              <div class="flex items-start gap-3">
+                <i class="ph ph-instagram-logo text-bone text-lg mt-0.5"></i>
+                <p class="body-15 text-bone">1 Story · tag <span class="text-ice">@sportingbeirut</span> · post within event window.</p>
+              </div>
+            </div>
+
+            <div class="hairline mt-6"></div>
+
+            <div class="mt-5">
+              <p class="body-15 text-muted">Day pass · welcome drink · cabana for the cohort. Dress code: resort.</p>
+            </div>
+          </div>
+
+          <!-- sticky apply bar -->
+          <div class="absolute bottom-0 left-0 right-0 px-8 pt-4 pb-8 bg-gradient-to-t from-carbon via-carbon to-transparent">
+            <button class="btn-apply-dark btn-text w-full py-5 pressable">APPLY · FREE</button>
+          </div>
+
+          <div class="grain"></div>
+        </div>
+      </div>
+      <figcaption class="mono-sm text-muted mt-3">03 · EVENT DETAIL</figcaption>
+    </figure>
+
+    <!-- ============================================== -->
+    <!-- 4. MY EVENTS — DARK -->
+    <!-- ============================================== -->
+    <figure class="flex flex-col items-center gap-4">
+      <div class="phone bg-carbon">
+        <div class="phone-inner bg-carbon">
+          <div class="dynamic-island"></div>
+
+          <div class="status-bar text-bone">
+            <span>9:41</span>
+            <span class="right">
+              <i class="ph-fill ph-cell-signal-full text-base"></i>
+              <i class="ph-fill ph-wifi-high text-base"></i>
+              <i class="ph-fill ph-battery-full text-base"></i>
+            </span>
+          </div>
+
+          <div class="px-8 pt-2">
+            <p class="mono-sm text-muted">YOU · 02 PENDING</p>
+            <h2 class="display-32 text-bone mt-2">My Events.</h2>
+          </div>
+
+          <!-- tab switcher -->
+          <div class="mt-7 px-8">
+            <div class="flex items-end gap-6 border-b border-white/10">
+              <div class="pb-3 relative">
+                <p class="mono-sm text-bone">INVITED</p>
+                <p class="mono-sm text-ice absolute -top-2 right-[-12px]" style="font-size:9px;">2</p>
+                <div class="absolute bottom-[-1px] left-0 right-0 h-px bg-ice"></div>
+              </div>
+              <div class="pb-3 pressable"><p class="mono-sm text-muted">CONFIRMED</p></div>
+              <div class="pb-3 pressable"><p class="mono-sm text-muted">PAST</p></div>
+            </div>
+          </div>
+
+          <!-- invite card 1 -->
+          <div class="px-8 mt-7">
+            <div class="border border-white/10 p-5">
+              <div class="flex items-start gap-4">
+                <img class="w-20 h-24 object-cover editorial-img" src="https://images.unsplash.com/photo-1540541338287-41700207dee6?w=400&q=80&auto=format&fit=crop" alt=""/>
+                <div class="flex-1 min-w-0">
+                  <p class="mono-sm text-ice">YOU'RE IN</p>
+                  <p class="sub-18 text-bone mt-1">Pool Day · Sporting</p>
+                  <p class="mono-sm text-muted mt-1">SUN 25.05 · 14:00</p>
+                  <div class="mt-3 flex items-center gap-2">
+                    <i class="ph ph-clock text-ice text-sm"></i>
+                    <p class="mono-sm text-ice timer-mono">23:48:11 LEFT</p>
+                  </div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 mt-4">
+                <button class="btn-text py-3 border border-white/15 text-bone pressable" style="font-size:13px;">DECLINE</button>
+                <button class="btn-apply-dark btn-text py-3 pressable" style="font-size:13px;">CONFIRM</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- invite card 2 -->
+          <div class="px-8 mt-4">
+            <div class="border border-white/10 p-5">
+              <div class="flex items-start gap-4">
+                <img class="w-20 h-24 object-cover editorial-img" src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=80&auto=format&fit=crop" alt=""/>
+                <div class="flex-1 min-w-0">
+                  <p class="mono-sm text-ice">YOU'RE IN</p>
+                  <p class="sub-18 text-bone mt-1">Rouge Lounge</p>
+                  <p class="mono-sm text-muted mt-1">FRI 23.05 · 22:00</p>
+                  <div class="mt-3 flex items-center gap-2">
+                    <i class="ph ph-clock text-ice text-sm"></i>
+                    <p class="mono-sm text-ice timer-mono">07:22:09 LEFT</p>
+                  </div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 mt-4">
+                <button class="btn-text py-3 border border-white/15 text-bone pressable" style="font-size:13px;">DECLINE</button>
+                <button class="btn-apply-dark btn-text py-3 pressable" style="font-size:13px;">CONFIRM</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- tab bar -->
+          <div class="absolute bottom-0 left-0 right-0 tab-bar-dark pt-6 pb-8 px-8">
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-house text-muted text-xl"></i>
+                <p class="mono-sm text-muted mt-1.5" style="font-size:9px;">HOME</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-compass text-muted text-xl"></i>
+                <p class="mono-sm text-muted mt-1.5" style="font-size:9px;">EXPLORE</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center">
+                <i class="ph-fill ph-calendar-blank text-bone text-xl"></i>
+                <p class="mono-sm text-bone mt-1.5" style="font-size:9px;">EVENTS</p>
+                <div class="tab-active-dot"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-user text-muted text-xl"></i>
+                <p class="mono-sm text-muted mt-1.5" style="font-size:9px;">PROFILE</p>
+                <div style="height:8px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grain"></div>
+        </div>
+      </div>
+      <figcaption class="mono-sm text-muted mt-3">04 · MY EVENTS</figcaption>
+    </figure>
+
+    <!-- ============================================== -->
+    <!-- 5. PROFILE — DARK -->
+    <!-- ============================================== -->
+    <figure class="flex flex-col items-center gap-4">
+      <div class="phone bg-carbon">
+        <div class="phone-inner bg-carbon">
+          <div class="dynamic-island"></div>
+
+          <div class="status-bar text-bone">
+            <span>9:41</span>
+            <span class="right">
+              <i class="ph-fill ph-cell-signal-full text-base"></i>
+              <i class="ph-fill ph-wifi-high text-base"></i>
+              <i class="ph-fill ph-battery-full text-base"></i>
+            </span>
+          </div>
+
+          <div class="px-8 pt-2 flex items-start justify-between">
+            <div>
+              <p class="mono-sm text-muted">MEMBER · 087</p>
+              <h2 class="display-32 text-bone mt-2">Sara<br/>Capriotti.</h2>
+            </div>
+            <div class="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center pressable">
+              <i class="ph ph-gear text-bone text-lg"></i>
+            </div>
+          </div>
+
+          <!-- portrait -->
+          <div class="mt-6 px-8">
+            <div class="relative">
+              <img class="w-full h-56 object-cover editorial-img" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&q=80&auto=format&fit=crop" alt=""/>
+              <div class="absolute bottom-3 left-3 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5">
+                <i class="ph-fill ph-instagram-logo text-bone text-sm"></i>
+                <p class="mono-sm text-bone">@SARACAPS · 28.4K</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- stats grid -->
+          <div class="px-8 mt-6">
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <p class="mono-sm text-muted">EVENTS</p>
+                <p class="display-32 text-bone mt-1" style="font-size:22px;">14</p>
+              </div>
+              <div>
+                <p class="mono-sm text-muted">STORIES</p>
+                <p class="display-32 text-bone mt-1" style="font-size:22px;">22</p>
+              </div>
+              <div>
+                <p class="mono-sm text-muted">SCORE</p>
+                <p class="display-32 text-ice mt-1" style="font-size:22px;">9.4</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-8 mt-6"><div class="hairline"></div></div>
+
+          <!-- audience -->
+          <div class="px-8 mt-6 flex items-center gap-5">
+            <div class="relative w-20 h-20">
+              <div class="donut-dark absolute inset-0"></div>
+              <div class="donut-inner-dark absolute" style="inset:8px;"></div>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <p class="mono-sm text-bone">64%</p>
+              </div>
+            </div>
+            <div class="flex-1">
+              <p class="mono-sm text-muted">AUDIENCE</p>
+              <p class="sub-18 text-bone mt-1">64F · 36M</p>
+              <p class="mono-sm text-muted mt-2">BEIRUT · DUBAI · PARIS</p>
+            </div>
+          </div>
+
+          <!-- tab bar -->
+          <div class="absolute bottom-0 left-0 right-0 tab-bar-dark pt-6 pb-8 px-8">
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-house text-muted text-xl"></i>
+                <p class="mono-sm text-muted mt-1.5" style="font-size:9px;">HOME</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-compass text-muted text-xl"></i>
+                <p class="mono-sm text-muted mt-1.5" style="font-size:9px;">EXPLORE</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-calendar-blank text-muted text-xl"></i>
+                <p class="mono-sm text-muted mt-1.5" style="font-size:9px;">EVENTS</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center">
+                <i class="ph-fill ph-user text-bone text-xl"></i>
+                <p class="mono-sm text-bone mt-1.5" style="font-size:9px;">PROFILE</p>
+                <div class="tab-active-dot"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grain"></div>
+        </div>
+      </div>
+      <figcaption class="mono-sm text-muted mt-3">05 · PROFILE</figcaption>
+    </figure>
+
+    <!-- ============================================== -->
+    <!-- 6. NOTIFICATION — DARK -->
+    <!-- ============================================== -->
+    <figure class="flex flex-col items-center gap-4">
+      <div class="phone bg-carbon ice-glow">
+        <div class="phone-inner bg-carbon">
+          <div class="dynamic-island"></div>
+
+          <!-- soft ice wash -->
+          <div class="absolute inset-0" style="background: radial-gradient(ellipse at 50% 30%, rgba(159,216,232,0.16), transparent 65%);"></div>
+
+          <div class="status-bar text-bone relative z-30">
+            <span>9:41</span>
+            <span class="right">
+              <i class="ph-fill ph-cell-signal-full text-base"></i>
+              <i class="ph-fill ph-wifi-high text-base"></i>
+              <i class="ph-fill ph-battery-full text-base"></i>
+            </span>
+          </div>
+
+          <div class="relative z-30 px-8 pt-20 flex flex-col items-center text-center">
+            <div class="mono-sm text-ice flex items-center gap-2 pulse-ice">
+              <span class="w-1.5 h-1.5 bg-ice rounded-full"></span>
+              <span>SPORTING CLUB BEIRUT · PICKED YOU</span>
+            </div>
+
+            <h2 class="display-56 text-bone mt-7">You're<br/>in.</h2>
+
+            <p class="body-15 text-muted mt-5 max-w-[260px]">Sara, Sporting picked you for Pool Day. Confirm within the next 24 hours to lock your spot.</p>
+
+            <!-- countdown -->
+            <div class="mt-9">
+              <p class="mono-sm text-muted">CONFIRM WITHIN</p>
+              <p class="text-ice mt-3 timer-mono" style="font-family:'Geist Mono';font-weight:500;font-size:54px;letter-spacing:-0.02em;">23:59:42</p>
+            </div>
+
+            <!-- event mini card -->
+            <div class="mt-10 border border-white/10 p-4 flex items-center gap-3 w-full">
+              <img class="w-12 h-14 object-cover editorial-img" src="https://images.unsplash.com/photo-1540541338287-41700207dee6?w=400&q=80&auto=format&fit=crop" alt=""/>
+              <div class="text-left flex-1">
+                <p class="mono-sm text-muted">SUN · 25.05 · 14:00</p>
+                <p class="sub-18 text-bone mt-0.5">Pool Day · Sporting</p>
+              </div>
+              <i class="ph ph-arrow-up-right text-bone"></i>
+            </div>
+          </div>
+
+          <!-- sticky CTA -->
+          <div class="absolute bottom-0 left-0 right-0 px-8 pt-4 pb-8 bg-gradient-to-t from-carbon via-carbon/95 to-transparent">
+            <button class="btn-apply-dark btn-text w-full py-5 pressable">ACCEPT · LOCK SPOT</button>
+            <button class="btn-text w-full py-4 text-muted pressable mt-2" style="font-size:13px;">DECLINE</button>
+          </div>
+
+          <div class="grain"></div>
+        </div>
+      </div>
+      <figcaption class="mono-sm text-muted mt-3">06 · YOU'RE IN</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ====== LIGHT MODE ROW ====== -->
+<div class="w-full bg-bone/95 border-y border-black/5 py-3 mb-16">
+  <div class="px-16 flex items-center justify-between">
+    <p class="row-label text-carbon">Light Mode · Daytime</p>
+    <p class="mono-sm" style="color:#5A5A5A;">393 × 852 / iPhone 15 Pro</p>
+  </div>
+</div>
+
+<section class="px-16 mb-28 overflow-x-auto no-scrollbar" style="background:#0a0a0a;">
+  <div class="flex gap-10 pb-10 pt-10">
+
+    <!-- ============================================== -->
+    <!-- 1. HOME — LIGHT -->
+    <!-- ============================================== -->
+    <figure class="flex flex-col items-center gap-4">
+      <div class="phone phone-light" style="background:#F5F1EA;">
+        <div class="phone-inner" style="background:#F5F1EA;">
+          <div class="dynamic-island"></div>
+
+          <div class="status-bar" style="color:#0A0A0A;">
+            <span>9:41</span>
+            <span class="right">
+              <i class="ph-fill ph-cell-signal-full text-base"></i>
+              <i class="ph-fill ph-wifi-high text-base"></i>
+              <i class="ph-fill ph-battery-full text-base"></i>
+            </span>
+          </div>
+
+          <div class="px-8 pt-2 flex items-center justify-between">
+            <div>
+              <p class="mono-sm" style="color:#5A5A5A;">13:14 · BEIRUT</p>
+              <p class="sub-18 mt-1" style="color:#0A0A0A;">Hello, Sara —</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center pressable" style="border:1px solid rgba(10,10,10,0.15);">
+                <i class="ph text-lg" style="color:#0A0A0A;" class="ph-magnifying-glass"></i>
+                <i class="ph ph-magnifying-glass text-lg" style="color:#0A0A0A;"></i>
+              </div>
+              <div class="w-9 h-9 rounded-full flex items-center justify-center relative pressable" style="border:1px solid rgba(10,10,10,0.15);">
+                <i class="ph ph-bell text-lg" style="color:#0A0A0A;"></i>
+                <span class="absolute top-2 right-2 notif-dot-light"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-8 mt-8">
+            <p class="mono-sm" style="color:var(--ice);">TONIGHT · 02 EVENTS LIVE</p>
+            <h2 class="display-44 mt-3" style="color:#0A0A0A;">Pool Day<br/>at Sporting.</h2>
+            <p class="body-15 mt-3" style="color:#5A5A5A;">Beach club residency — Sunday May 25. The Cohort welcomes a curated 30.</p>
+          </div>
+
+          <div class="px-8 mt-6">
+            <div class="relative overflow-hidden rounded-sm">
+              <img class="w-full h-[260px] object-cover editorial-img-light" src="https://images.unsplash.com/photo-1540541338287-41700207dee6?w=900&q=80&auto=format&fit=crop" alt="" />
+              <div class="absolute inset-0" style="background:linear-gradient(to top, rgba(245,241,234,0.85), transparent 50%);"></div>
+              <div class="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
+                <div>
+                  <p class="mono-sm" style="color:#0A0A0A;">SUN · 25.05 · 14:00</p>
+                  <p class="sub-18 mt-1" style="color:#0A0A0A;">Sporting Club Beirut</p>
+                </div>
+                <div class="text-right">
+                  <p class="mono-sm" style="color:var(--iceDim);">20/137</p>
+                  <p class="mono-sm mt-1" style="color:#5A5A5A;">SPOTS</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-8 mt-6">
+            <div class="hairline-light mb-5"></div>
+            <div class="flex gap-4">
+              <img class="w-16 h-20 object-cover editorial-img-light" src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400&q=80&auto=format&fit=crop" alt="" />
+              <div class="flex-1 min-w-0">
+                <p class="mono-sm" style="color:#5A5A5A;">FRI · 23.05 · 22:00</p>
+                <p class="sub-18 mt-1 truncate" style="color:#0A0A0A;">Rouge Lounge</p>
+                <p class="mono-sm mt-2" style="color:#5A5A5A;">12/58 · MAR MIKHAEL</p>
+              </div>
+              <i class="ph ph-arrow-up-right text-lg mt-1" style="color:#0A0A0A;"></i>
+            </div>
+          </div>
+
+          <div class="absolute bottom-0 left-0 right-0 tab-bar-light pt-6 pb-8 px-8">
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col items-center">
+                <i class="ph-fill ph-house text-xl" style="color:#0A0A0A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#0A0A0A;">HOME</p>
+                <div class="tab-active-dot"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-compass text-xl" style="color:#5A5A5A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#5A5A5A;">EXPLORE</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-calendar-blank text-xl" style="color:#5A5A5A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#5A5A5A;">EVENTS</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-user text-xl" style="color:#5A5A5A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#5A5A5A;">PROFILE</p>
+                <div style="height:8px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="mono-sm text-muted mt-3">01 · HOME</figcaption>
+    </figure>
+
+    <!-- ============================================== -->
+    <!-- 2. EXPLORE — LIGHT -->
+    <!-- ============================================== -->
+    <figure class="flex flex-col items-center gap-4">
+      <div class="phone phone-light" style="background:#F5F1EA;">
+        <div class="phone-inner" style="background:#F5F1EA;">
+          <div class="dynamic-island"></div>
+
+          <div class="status-bar" style="color:#0A0A0A;">
+            <span>9:41</span>
+            <span class="right">
+              <i class="ph-fill ph-cell-signal-full text-base"></i>
+              <i class="ph-fill ph-wifi-high text-base"></i>
+              <i class="ph-fill ph-battery-full text-base"></i>
+            </span>
+          </div>
+
+          <div class="px-8 pt-2">
+            <p class="mono-sm" style="color:#5A5A5A;">012 EVENTS · BEIRUT REGION</p>
+            <h2 class="display-32 mt-2" style="color:#0A0A0A;">Explore.</h2>
+          </div>
+
+          <div class="mt-6 pl-8">
+            <div class="flex gap-2 overflow-hidden">
+              <div class="flex-shrink-0 w-14 h-20 flex flex-col items-center justify-center pressable" style="border:1px solid rgba(10,10,10,0.12);">
+                <p class="mono-sm" style="color:#5A5A5A;">FRI</p>
+                <p class="display-32 mt-1" style="font-size:22px;color:#5A5A5A;">23</p>
+              </div>
+              <div class="flex-shrink-0 w-14 h-20 flex flex-col items-center justify-center pressable" style="border:1px solid rgba(10,10,10,0.12);">
+                <p class="mono-sm" style="color:#5A5A5A;">SAT</p>
+                <p class="display-32 mt-1" style="font-size:22px;color:#5A5A5A;">24</p>
+              </div>
+              <div class="flex-shrink-0 w-14 h-20 flex flex-col items-center justify-center pressable relative" style="background:#0A0A0A;">
+                <p class="mono-sm" style="color:#F5F1EA;">SUN</p>
+                <p class="display-32 mt-1" style="font-size:22px;color:#F5F1EA;">25</p>
+                <div class="absolute -top-1 -right-1 w-2 h-2 bg-ice rounded-full"></div>
+              </div>
+              <div class="flex-shrink-0 w-14 h-20 flex flex-col items-center justify-center pressable" style="border:1px solid rgba(10,10,10,0.12);">
+                <p class="mono-sm" style="color:#5A5A5A;">MON</p>
+                <p class="display-32 mt-1" style="font-size:22px;color:#5A5A5A;">26</p>
+              </div>
+              <div class="flex-shrink-0 w-14 h-20 flex flex-col items-center justify-center pressable" style="border:1px solid rgba(10,10,10,0.12);">
+                <p class="mono-sm" style="color:#5A5A5A;">TUE</p>
+                <p class="display-32 mt-1" style="font-size:22px;color:#5A5A5A;">27</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-8 mt-6 flex items-center gap-2">
+            <div class="tag-light flex items-center gap-2">
+              <i class="ph ph-funnel-simple text-sm" style="color:#5A5A5A;"></i>
+              <p class="mono-sm" style="color:#0A0A0A;">ALL</p>
+            </div>
+            <div class="tag-light"><p class="mono-sm" style="color:#5A5A5A;">BEACH</p></div>
+            <div class="tag-light"><p class="mono-sm" style="color:#5A5A5A;">CLUB</p></div>
+            <div class="tag-light"><p class="mono-sm" style="color:#5A5A5A;">RESTO</p></div>
+          </div>
+
+          <div class="px-8 mt-6 space-y-5">
+
+            <div class="pressable">
+              <div class="relative">
+                <img class="w-full h-44 object-cover editorial-img-light" src="https://images.unsplash.com/photo-1505761671935-60b3a7427bad?w=900&q=80&auto=format&fit=crop" alt=""/>
+                <div class="absolute top-3 left-3 mono-sm px-2 py-1" style="background:rgba(255,255,255,0.85);color:#0A0A0A;backdrop-filter:blur(8px);">14:00</div>
+              </div>
+              <div class="flex items-start justify-between mt-3">
+                <div>
+                  <p class="sub-18" style="color:#0A0A0A;">Pool Day · Sporting</p>
+                  <p class="mono-sm mt-1" style="color:#5A5A5A;">BEACH · RAOUCHE</p>
+                </div>
+                <p class="mono-sm mt-1" style="color:var(--iceDim);">20/137</p>
+              </div>
+            </div>
+
+            <div class="hairline-light"></div>
+
+            <div class="pressable">
+              <div class="relative">
+                <img class="w-full h-44 object-cover editorial-img-light" src="https://images.unsplash.com/photo-1592861956120-e524fc739696?w=900&q=80&auto=format&fit=crop" alt=""/>
+                <div class="absolute top-3 left-3 mono-sm px-2 py-1" style="background:rgba(255,255,255,0.85);color:#0A0A0A;backdrop-filter:blur(8px);">20:30</div>
+              </div>
+              <div class="flex items-start justify-between mt-3">
+                <div>
+                  <p class="sub-18" style="color:#0A0A0A;">Tasting · Em Sherif</p>
+                  <p class="mono-sm mt-1" style="color:#5A5A5A;">RESTO · ACHRAFIEH</p>
+                </div>
+                <p class="mono-sm mt-1" style="color:#5A5A5A;">08/42</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="absolute bottom-0 left-0 right-0 tab-bar-light pt-6 pb-8 px-8">
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-house text-xl" style="color:#5A5A5A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#5A5A5A;">HOME</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center">
+                <i class="ph-fill ph-compass text-xl" style="color:#0A0A0A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#0A0A0A;">EXPLORE</p>
+                <div class="tab-active-dot"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-calendar-blank text-xl" style="color:#5A5A5A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#5A5A5A;">EVENTS</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-user text-xl" style="color:#5A5A5A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#5A5A5A;">PROFILE</p>
+                <div style="height:8px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="mono-sm text-muted mt-3">02 · EXPLORE</figcaption>
+    </figure>
+
+    <!-- ============================================== -->
+    <!-- 3. EVENT DETAIL — LIGHT -->
+    <!-- ============================================== -->
+    <figure class="flex flex-col items-center gap-4">
+      <div class="phone phone-light" style="background:#F5F1EA;">
+        <div class="phone-inner" style="background:#F5F1EA;">
+          <div class="dynamic-island"></div>
+
+          <div class="absolute top-0 left-0 right-0 h-[420px]">
+            <img class="w-full h-full object-cover editorial-img-light" src="https://images.unsplash.com/photo-1505761671935-60b3a7427bad?w=900&q=80&auto=format&fit=crop" alt="" />
+            <div class="absolute inset-0" style="background:linear-gradient(to bottom, rgba(245,241,234,0.3), transparent 30%, #F5F1EA);"></div>
+          </div>
+
+          <div class="status-bar relative z-30" style="color:#0A0A0A;">
+            <span>9:41</span>
+            <span class="right">
+              <i class="ph-fill ph-cell-signal-full text-base"></i>
+              <i class="ph-fill ph-wifi-high text-base"></i>
+              <i class="ph-fill ph-battery-full text-base"></i>
+            </span>
+          </div>
+
+          <div class="px-8 pt-2 flex items-center justify-between relative z-30">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center pressable" style="background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);">
+              <i class="ph ph-arrow-left text-lg" style="color:#0A0A0A;"></i>
+            </div>
+            <div class="w-9 h-9 rounded-full flex items-center justify-center pressable" style="background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);">
+              <i class="ph ph-bookmark-simple text-lg" style="color:#0A0A0A;"></i>
+            </div>
+          </div>
+
+          <div class="px-8 pt-44 relative z-30">
+            <p class="mono-sm" style="color:var(--iceDim);">SUN · 25.05.26 · 14:00 – 20:00</p>
+            <h2 class="display-44 mt-3" style="color:#0A0A0A;">Pool Day<br/>at Sporting.</h2>
+          </div>
+
+          <div class="px-8 mt-6 relative z-30">
+            <div class="flex items-stretch">
+              <div class="flex-1">
+                <p class="mono-sm" style="color:#5A5A5A;">SPOTS</p>
+                <p class="display-32 mt-2" style="color:#0A0A0A;">20<span style="color:#5A5A5A;">/137</span></p>
+              </div>
+              <div class="w-px mx-5" style="background:rgba(10,10,10,0.1);"></div>
+              <div class="flex-1">
+                <p class="mono-sm" style="color:#5A5A5A;">CLOSES</p>
+                <p class="display-32 mt-2 timer-mono" style="font-family:'Geist Mono';font-weight:500;font-size:22px;color:var(--iceDim);">04:12:36</p>
+              </div>
+            </div>
+
+            <div class="hairline-light mt-6"></div>
+
+            <div class="mt-6">
+              <p class="mono-sm mb-3" style="color:#5A5A5A;">YOUR PART</p>
+              <div class="flex items-start gap-3">
+                <i class="ph ph-instagram-logo text-lg mt-0.5" style="color:#0A0A0A;"></i>
+                <p class="body-15" style="color:#0A0A0A;">1 Story · tag <span style="color:var(--iceDim);font-weight:500;">@sportingbeirut</span> · post within event window.</p>
+              </div>
+            </div>
+
+            <div class="hairline-light mt-6"></div>
+
+            <div class="mt-5">
+              <p class="body-15" style="color:#5A5A5A;">Day pass · welcome drink · cabana for the cohort. Dress code: resort.</p>
+            </div>
+          </div>
+
+          <div class="absolute bottom-0 left-0 right-0 px-8 pt-4 pb-8" style="background:linear-gradient(to top, #F5F1EA, #F5F1EA, transparent);">
+            <button class="btn-apply-light btn-text w-full py-5 pressable">APPLY · FREE</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="mono-sm text-muted mt-3">03 · EVENT DETAIL</figcaption>
+    </figure>
+
+    <!-- ============================================== -->
+    <!-- 4. MY EVENTS — LIGHT -->
+    <!-- ============================================== -->
+    <figure class="flex flex-col items-center gap-4">
+      <div class="phone phone-light" style="background:#F5F1EA;">
+        <div class="phone-inner" style="background:#F5F1EA;">
+          <div class="dynamic-island"></div>
+
+          <div class="status-bar" style="color:#0A0A0A;">
+            <span>9:41</span>
+            <span class="right">
+              <i class="ph-fill ph-cell-signal-full text-base"></i>
+              <i class="ph-fill ph-wifi-high text-base"></i>
+              <i class="ph-fill ph-battery-full text-base"></i>
+            </span>
+          </div>
+
+          <div class="px-8 pt-2">
+            <p class="mono-sm" style="color:#5A5A5A;">YOU · 02 PENDING</p>
+            <h2 class="display-32 mt-2" style="color:#0A0A0A;">My Events.</h2>
+          </div>
+
+          <div class="mt-7 px-8">
+            <div class="flex items-end gap-6" style="border-bottom:1px solid rgba(10,10,10,0.1);">
+              <div class="pb-3 relative">
+                <p class="mono-sm" style="color:#0A0A0A;">INVITED</p>
+                <p class="mono-sm absolute -top-2 right-[-12px]" style="font-size:9px;color:var(--iceDim);">2</p>
+                <div class="absolute bottom-[-1px] left-0 right-0 h-px" style="background:var(--ice);"></div>
+              </div>
+              <div class="pb-3 pressable"><p class="mono-sm" style="color:#5A5A5A;">CONFIRMED</p></div>
+              <div class="pb-3 pressable"><p class="mono-sm" style="color:#5A5A5A;">PAST</p></div>
+            </div>
+          </div>
+
+          <div class="px-8 mt-7">
+            <div class="bg-white p-5">
+              <div class="flex items-start gap-4">
+                <img class="w-20 h-24 object-cover editorial-img-light" src="https://images.unsplash.com/photo-1540541338287-41700207dee6?w=400&q=80&auto=format&fit=crop" alt=""/>
+                <div class="flex-1 min-w-0">
+                  <p class="mono-sm" style="color:var(--iceDim);">YOU'RE IN</p>
+                  <p class="sub-18 mt-1" style="color:#0A0A0A;">Pool Day · Sporting</p>
+                  <p class="mono-sm mt-1" style="color:#5A5A5A;">SUN 25.05 · 14:00</p>
+                  <div class="mt-3 flex items-center gap-2">
+                    <i class="ph ph-clock text-sm" style="color:var(--iceDim);"></i>
+                    <p class="mono-sm timer-mono" style="color:var(--iceDim);">23:48:11 LEFT</p>
+                  </div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 mt-4">
+                <button class="btn-text py-3 pressable" style="font-size:13px;border:1px solid rgba(10,10,10,0.15);color:#0A0A0A;">DECLINE</button>
+                <button class="btn-apply-light btn-text py-3 pressable" style="font-size:13px;">CONFIRM</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-8 mt-4">
+            <div class="bg-white p-5">
+              <div class="flex items-start gap-4">
+                <img class="w-20 h-24 object-cover editorial-img-light" src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=80&auto=format&fit=crop" alt=""/>
+                <div class="flex-1 min-w-0">
+                  <p class="mono-sm" style="color:var(--iceDim);">YOU'RE IN</p>
+                  <p class="sub-18 mt-1" style="color:#0A0A0A;">Rouge Lounge</p>
+                  <p class="mono-sm mt-1" style="color:#5A5A5A;">FRI 23.05 · 22:00</p>
+                  <div class="mt-3 flex items-center gap-2">
+                    <i class="ph ph-clock text-sm" style="color:var(--iceDim);"></i>
+                    <p class="mono-sm timer-mono" style="color:var(--iceDim);">07:22:09 LEFT</p>
+                  </div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 mt-4">
+                <button class="btn-text py-3 pressable" style="font-size:13px;border:1px solid rgba(10,10,10,0.15);color:#0A0A0A;">DECLINE</button>
+                <button class="btn-apply-light btn-text py-3 pressable" style="font-size:13px;">CONFIRM</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="absolute bottom-0 left-0 right-0 tab-bar-light pt-6 pb-8 px-8">
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-house text-xl" style="color:#5A5A5A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#5A5A5A;">HOME</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-compass text-xl" style="color:#5A5A5A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#5A5A5A;">EXPLORE</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center">
+                <i class="ph-fill ph-calendar-blank text-xl" style="color:#0A0A0A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#0A0A0A;">EVENTS</p>
+                <div class="tab-active-dot"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-user text-xl" style="color:#5A5A5A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#5A5A5A;">PROFILE</p>
+                <div style="height:8px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="mono-sm text-muted mt-3">04 · MY EVENTS</figcaption>
+    </figure>
+
+    <!-- ============================================== -->
+    <!-- 5. PROFILE — LIGHT -->
+    <!-- ============================================== -->
+    <figure class="flex flex-col items-center gap-4">
+      <div class="phone phone-light" style="background:#F5F1EA;">
+        <div class="phone-inner" style="background:#F5F1EA;">
+          <div class="dynamic-island"></div>
+
+          <div class="status-bar" style="color:#0A0A0A;">
+            <span>9:41</span>
+            <span class="right">
+              <i class="ph-fill ph-cell-signal-full text-base"></i>
+              <i class="ph-fill ph-wifi-high text-base"></i>
+              <i class="ph-fill ph-battery-full text-base"></i>
+            </span>
+          </div>
+
+          <div class="px-8 pt-2 flex items-start justify-between">
+            <div>
+              <p class="mono-sm" style="color:#5A5A5A;">MEMBER · 087</p>
+              <h2 class="display-32 mt-2" style="color:#0A0A0A;">Sara<br/>Capriotti.</h2>
+            </div>
+            <div class="w-9 h-9 rounded-full flex items-center justify-center pressable" style="border:1px solid rgba(10,10,10,0.15);">
+              <i class="ph ph-gear text-lg" style="color:#0A0A0A;"></i>
+            </div>
+          </div>
+
+          <div class="mt-6 px-8">
+            <div class="relative">
+              <img class="w-full h-56 object-cover editorial-img-light" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&q=80&auto=format&fit=crop" alt=""/>
+              <div class="absolute bottom-3 left-3 flex items-center gap-2 px-3 py-1.5" style="background:rgba(255,255,255,0.85);backdrop-filter:blur(8px);">
+                <i class="ph-fill ph-instagram-logo text-sm" style="color:#0A0A0A;"></i>
+                <p class="mono-sm" style="color:#0A0A0A;">@SARACAPS · 28.4K</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-8 mt-6">
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <p class="mono-sm" style="color:#5A5A5A;">EVENTS</p>
+                <p class="display-32 mt-1" style="font-size:22px;color:#0A0A0A;">14</p>
+              </div>
+              <div>
+                <p class="mono-sm" style="color:#5A5A5A;">STORIES</p>
+                <p class="display-32 mt-1" style="font-size:22px;color:#0A0A0A;">22</p>
+              </div>
+              <div>
+                <p class="mono-sm" style="color:#5A5A5A;">SCORE</p>
+                <p class="display-32 mt-1" style="font-size:22px;color:var(--iceDim);">9.4</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-8 mt-6"><div class="hairline-light"></div></div>
+
+          <div class="px-8 mt-6 flex items-center gap-5">
+            <div class="relative w-20 h-20">
+              <div class="donut-light absolute inset-0"></div>
+              <div class="donut-inner-light absolute" style="inset:8px;"></div>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <p class="mono-sm" style="color:#0A0A0A;">64%</p>
+              </div>
+            </div>
+            <div class="flex-1">
+              <p class="mono-sm" style="color:#5A5A5A;">AUDIENCE</p>
+              <p class="sub-18 mt-1" style="color:#0A0A0A;">64F · 36M</p>
+              <p class="mono-sm mt-2" style="color:#5A5A5A;">BEIRUT · DUBAI · PARIS</p>
+            </div>
+          </div>
+
+          <div class="absolute bottom-0 left-0 right-0 tab-bar-light pt-6 pb-8 px-8">
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-house text-xl" style="color:#5A5A5A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#5A5A5A;">HOME</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-compass text-xl" style="color:#5A5A5A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#5A5A5A;">EXPLORE</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center pressable">
+                <i class="ph ph-calendar-blank text-xl" style="color:#5A5A5A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#5A5A5A;">EVENTS</p>
+                <div style="height:8px;"></div>
+              </div>
+              <div class="flex flex-col items-center">
+                <i class="ph-fill ph-user text-xl" style="color:#0A0A0A;"></i>
+                <p class="mono-sm mt-1.5" style="font-size:9px;color:#0A0A0A;">PROFILE</p>
+                <div class="tab-active-dot"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="mono-sm text-muted mt-3">05 · PROFILE</figcaption>
+    </figure>
+
+    <!-- ============================================== -->
+    <!-- 6. NOTIFICATION — LIGHT -->
+    <!-- ============================================== -->
+    <figure class="flex flex-col items-center gap-4">
+      <div class="phone phone-light ice-glow-light" style="background:#F5F1EA;">
+        <div class="phone-inner" style="background:#F5F1EA;">
+          <div class="dynamic-island"></div>
+
+          <div class="absolute inset-0" style="background: radial-gradient(ellipse at 50% 30%, rgba(159,216,232,0.25), transparent 60%);"></div>
+
+          <div class="status-bar relative z-30" style="color:#0A0A0A;">
+            <span>9:41</span>
+            <span class="right">
+              <i class="ph-fill ph-cell-signal-full text-base"></i>
+              <i class="ph-fill ph-wifi-high text-base"></i>
+              <i class="ph-fill ph-battery-full text-base"></i>
+            </span>
+          </div>
+
+          <div class="relative z-30 px-8 pt-20 flex flex-col items-center text-center">
+            <div class="mono-sm flex items-center gap-2 pulse-ice" style="color:var(--iceDim);">
+              <span class="w-1.5 h-1.5 rounded-full" style="background:var(--iceDim);"></span>
+              <span>SPORTING CLUB BEIRUT · PICKED YOU</span>
+            </div>
+
+            <h2 class="display-56 mt-7" style="color:#0A0A0A;">You're<br/>in.</h2>
+
+            <p class="body-15 mt-5 max-w-[260px]" style="color:#5A5A5A;">Sara, Sporting picked you for Pool Day. Confirm within the next 24 hours to lock your spot.</p>
+
+            <div class="mt-9">
+              <p class="mono-sm" style="color:#5A5A5A;">CONFIRM WITHIN</p>
+              <p class="mt-3 timer-mono" style="font-family:'Geist Mono';font-weight:500;font-size:54px;letter-spacing:-0.02em;color:var(--iceDim);">23:59:42</p>
+            </div>
+
+            <div class="mt-10 p-4 flex items-center gap-3 w-full bg-white">
+              <img class="w-12 h-14 object-cover editorial-img-light" src="https://images.unsplash.com/photo-1540541338287-41700207dee6?w=400&q=80&auto=format&fit=crop" alt=""/>
+              <div class="text-left flex-1">
+                <p class="mono-sm" style="color:#5A5A5A;">SUN · 25.05 · 14:00</p>
+                <p class="sub-18 mt-0.5" style="color:#0A0A0A;">Pool Day · Sporting</p>
+              </div>
+              <i class="ph ph-arrow-up-right" style="color:#0A0A0A;"></i>
+            </div>
+          </div>
+
+          <div class="absolute bottom-0 left-0 right-0 px-8 pt-4 pb-8" style="background:linear-gradient(to top, #F5F1EA, rgba(245,241,234,0.95), transparent);">
+            <button class="btn-apply-light btn-text w-full py-5 pressable">ACCEPT · LOCK SPOT</button>
+            <button class="btn-text w-full py-4 pressable mt-2" style="font-size:13px;color:#5A5A5A;">DECLINE</button>
+          </div>
+        </div>
+      </div>
+      <figcaption class="mono-sm text-muted mt-3">06 · YOU'RE IN</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ====== FOOTER ====== -->
+<footer class="px-16 pb-20">
+  <div class="hairline mb-8"></div>
+  <div class="flex items-end justify-between">
+    <div>
+      <p class="row-label text-bone">THE LIST · BEIRUT · 2026</p>
+      <p class="mono-sm text-muted mt-3">Type · Satoshi (300 / 500 / 900) + Geist Mono</p>
+      <p class="mono-sm text-muted mt-1">Accent · #9FD8E8 (Glacier)</p>
+    </div>
+    <p class="mono-sm text-muted">Mockup v1 · for review</p>
+  </div>
+</footer>
+
+</body>
+</html>

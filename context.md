@@ -1,0 +1,132 @@
+# Context
+
+## What we are building
+
+**The List** — an iPhone app where vetted Lebanese models, influencers, and DJs apply to attend time-boxed events at clubs, restaurants, beach clubs, gyms, and lounges in Beirut. Venues post events with limited spots (20-50). Influencers apply. The venue Tinder-swipes through applicants and picks who comes. In exchange for the spot, the influencer posts an Instagram Story tagging the venue.
+
+Two sides of the marketplace:
+
+```
+Influencer side                Venue side
+─────────────                  ──────────
+applies to events    ◄────►    posts events
+gets picked                    swipes applicants
+shows up                       checks them in
+posts Story                    reviews them
+gets reputation score          builds invite list
+```
+
+iPhone-first. SwiftUI app. v1 = Beirut only.
+
+## Why now
+
+- The idea has existed in Dima's WhatsApp database for 3 years.
+- Radwan re-surfaced it 2026-05-19 after Will brought up "let's build an app."
+- The Secret Society (Dubai, 100k+ members, 8 cities) is launching **a new city every 60 days** in 2026. Beirut is plausibly on their roadmap.
+- The Lebanese model database (Dima's 250-300 names) is the cold-start advantage that took TSS's founder 3 unpaid years to build manually.
+- Beirut nightlife peak season starts in **June**. Shipping in 60-90 days lands us in the window.
+
+## Business model
+
+**Brand pays. Influencer free.** Same as TSS, A-List, and Expin. Don't fight the model.
+
+```
+Venue ─ pays $$ ─► The List ─ keeps cut ─► Founders
+  ▲                    │
+  │ Story posted       │ matches & manages comms
+  └──── Influencer ◄───┘
+        (gets free / discounted access)
+```
+
+| Revenue line | v1 | Later |
+| --- | --- | --- |
+| Cut per booking | **20%** of bundle price | revisit at booking #50 |
+| Venue membership | Free (only the cut) | Tiered subscription, year 2 |
+| Influencer fee | None | Premium drops gated to verified-paying tier, year 2 |
+| DJ marketplace | Not in v1 | Phase 2 (Radwan's network) |
+
+## The unfair advantage
+
+| Asset | Provided by |
+| --- | --- |
+| **The 250-300 model database** with WhatsApp + Instagram | Dima, 3 years of relationships |
+| **The trust** to actually get messages opened | Dima Bareface as sender |
+| **The image / front of house** | Radwan, working Lebanese DJ |
+| **The build** | Will |
+
+TSS's founder Romain Fourel spent 3 years doing the WhatsApp version of Dima's job before he wrote any code. We start where he was in year 3.
+
+## The reference
+
+**The Secret Society** (Dubai). See `research/screenshots/` (10 screenshots) and `docs/secret-society-research.md` (full breakdown).
+
+Their structure works. We **copy structure, throw away visual language**.
+
+### What TSS does well (copy)
+- Apply + Swipe model
+- Reputation scores (Punctuality / Presentation / Joviality)
+- No-show tracking with CHECKED IN / CHECKED OUT / NO SHOW status
+- Event-based (not subscription), each event has its own time window
+- One brand can manage many establishments (Brand → Establishments → Events)
+- Concierge layer: TSS handles all pre/post creator comms for the venue
+
+### What TSS does poorly (we exploit)
+- **4-Story rule** clutters Instagram feeds → we do 1 Story + venue tag
+- Generic briefings → ours are sharper, more editorial
+- Hidden pricing for venues → ours self-serve transparent
+- Purple-pink gradients, cheesy visual language → we go editorial dark / bone light
+- English only → we do bilingual (English + Arabizi-friendly)
+
+## Architecture (where things will live)
+
+```
+Today (prototype phase)
+═══════════════════════
+web/gallery.html      → 12 phones in two rows (dark + light), reference design
+web/mockup-v1.html    → original 12-phone version (Carbon Black + Ice Blue + Satoshi)
+web/prototype.html    → SINGLE phone, tap-through navigable (NEXT TO BUILD)
+
+
+Soon (build phase)
+══════════════════
+ios/                  → SwiftUI app
+├── TheList.xcodeproj
+└── Sources/
+    ├── Screens/      → Home, Explore, EventDetail, MyEvents, Profile, Picked
+    ├── Components/
+    ├── Models/
+    └── Services/     → Supabase client
+
+Backend            → Supabase (auth, Postgres, storage, realtime)
+Push               → APNs via Supabase Edge Functions
+Story proof        → manual review v1, auto v2
+Payments           → Whish / OMT / USD cash v1, Stripe later
+```
+
+## The 6 core screens (influencer side)
+
+| # | Screen | Purpose |
+| --- | --- | --- |
+| 01 | Home | Featured events tonight, quick filters, bottom tab bar |
+| 02 | Explore | Full event list, calendar strip, filter by date / type / location |
+| 03 | Event Detail | Photos, time, spots remaining, post requirement, Apply button |
+| 04 | My Events | Invited / Confirmed / Past tabs, Accept/Decline on invites |
+| 05 | Profile | Photo, IG handle, audience donut, history, reputation |
+| 06 | Picked | Full-screen takeover when venue picks you, 24h countdown |
+
+Venue side is a separate dual UX. Out of v1 scope until influencer side ships.
+
+## Voice & brand direction
+
+- **Tone:** Berlin nightlife meets fashion editorial. Closer to Aesop / Bottega / Berghain than Uber Eats.
+- **Not:** purple, pink, gradient-y, cute, dating-app, coupon-app.
+- **Fonts in play:** Satoshi (clean modern grotesque), Geist Mono (timers/numbers). Avoiding Inter + Instrument Serif (too AI-flavored).
+- **Accent:** TBD. Ice blue vs acid lime vs champagne gold currently being tested.
+
+## Open questions still on the table
+
+- Working name — "The List" is the working title. Test with Dima's first 30 contacts before locking.
+- Story verification mechanic — manual? screenshot upload? IG API?
+- Venue exclusivity contracts — 6-month? 12-month? What's enforceable in Lebanon?
+- Operating entity — Lebanese LLC vs offshore (Delaware / Estonia e-Residency)?
+- Whish vs OMT vs USD cash payouts to venues

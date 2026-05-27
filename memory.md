@@ -1,0 +1,92 @@
+# Memory — decisions & current state
+
+Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
+
+---
+
+## Current state (one line)
+
+Repo initialized at `github.com/will-rads/the-list`. Folder structure scaffolded per brochure-routine pattern. Reference design files moved to `web/`. Research files moved to `docs/` and `research/`. Next: build a tap-through single-phone prototype in `web/prototype.html`.
+
+---
+
+## 2026-05-27 — Repo scaffolded
+
+Created the repo at `github.com/will-rads/the-list` (public). Moved all existing assets into:
+- `web/gallery.html` — Claude design version (was `The List.html`)
+- `web/mockup-v1.html` — original carbon black + ice blue + Satoshi
+- `research/screenshots/` — 10 TSS screenshots
+- `research/voice-notes/` — Radwan's WhatsApp voice notes
+- `research/secretsociety.jpeg`, `research/review-full.jpeg`
+- `docs/plan-breakdown.md` — synthesis of Radwan's pitch
+- `docs/secret-society-research.md` — TSS public knowledge brief
+- `docs/transcripts/transcripts.json` + `transcribe.py`
+
+Wrote `README.md`, `AGENTS.md`, `context.md`, `plan.md`, `memory.md` (this file), `errors.md`. Wrote `prompts/claude-starter.md` + `prompts/codex-starter.md`. Wrote `.gitignore` + `.env.example`.
+
+---
+
+## 2026-05-26 — Design v1 image swap
+
+Took the original mockup-v1 (Carbon Black + Ice Blue + Satoshi, picsum random images) and swapped 9 unique placeholder URLs for curated Unsplash venue photos from the Claude design version. Both dark and light rows now use the same curated set. Image set: `pool`, `beachClub`, `cocktail`, `restaurant`, `lounge`, `saraFull` — venue-appropriate, magazine-quality.
+
+---
+
+## 2026-05-26 — Light mode + density on Claude design
+
+Took `The List.html` (the Claude-design version with acid lime + Instrument Serif). Added:
+- Light mode via `html.light` CSS class
+- Theme toggle pill top-right of the page
+- Tab bar gradient flips with theme
+- Killed § 03 "The room reads you back" applicant pile on Event Detail (redundant with "137 applied" in meta rail)
+- Shortened § 01 paragraph
+- Reduced § 02 exchange rules from 3 → 2
+
+Outcome: less crowded, light + dark both viewable.
+
+---
+
+## 2026-05-26 — Two design directions diverged
+
+Two reference HTMLs now exist:
+- **mockup-v1.html** — Will's original brief (Carbon Black, Ice Blue, Satoshi). 12 phones, dark+light side-by-side.
+- **gallery.html** (was The List.html) — Claude design's interpretation (Acid Lime, Instrument Serif italic). 6 phones, single mode (now with light toggle added).
+
+Will prefers mockup-v1's color/font system but liked gallery.html's image selection. Image swap merged the two.
+
+Open: font choice for v1 build. Instrument Serif feels AI-flavored. Options:
+- Drop the serif entirely. Geist + Geist Mono only.
+- Swap to Fraunces (free, more characterful).
+- Paid display face later (Söhne, PP Editorial New, Tobias).
+
+---
+
+## 2026-05-26 — Apply + Swipe model confirmed
+
+After seeing The Secret Society's actual venue-side UI (10 screenshots from Radwan once he got accepted):
+- Influencers don't claim spots FCFS. They **apply**, then venue swipes Tinder-style.
+- Reputation scoring exists: Punctuality / Presentation / Joviality (each ~10).
+- Venue marks each attendee CHECKED IN / CHECKED OUT / NO SHOW.
+- One brand can manage many establishments.
+
+Locked: we copy this structure exactly. Wedge is in visual language + Lebanon-local + the limited-spot drop framing.
+
+---
+
+## 2026-05-19 — Pitch received
+
+Radwan sent 9 WhatsApp voice notes (10:06-13:02 UTC+3) pitching the idea. Transcribed via Gemini 3 Flash, batched in a single multi-clip request for context preservation. Transcripts at `docs/transcripts/transcripts.json` (Arabizi + English).
+
+Founding team: Radwan / Dima / Will. 33.33% × 3. Decisions need all three.
+
+---
+
+## Standing rules (don't break these)
+
+- No purple or pink gradients in any UI. TSS's biggest visual weakness.
+- No Inter font. Anywhere.
+- No Instrument Serif unless explicitly approved (too AI-flavored as of 2026).
+- iPhone-first. No Android in v1. No web app for end users in v1.
+- Brand pays. Influencer free. Don't experiment with this.
+- v1 is Beirut only.
+- Story requirement is **1 Story + tag**, not 4. The 4-Story rule is TSS's biggest weakness.
