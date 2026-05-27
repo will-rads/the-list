@@ -7,8 +7,8 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,500,900&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@500,700,900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@0.453.0/dist/umd/lucide.min.js"></script>
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
@@ -45,12 +45,26 @@
   html, body {
     background: var(--page);
     color: var(--ink);
-    font-family: 'Satoshi', ui-sans-serif, system-ui;
-    font-weight: 300;
+    font-family: 'Host Grotesk', ui-sans-serif, system-ui;
+    font-weight: 400;
     -webkit-font-smoothing: antialiased;
     margin: 0;
   }
-  .font-mono { font-family: 'Geist Mono', ui-monospace, monospace; }
+  /* Satoshi only on big headlines + medium-weight labels that need extra presence.
+     Everything else inherits Host Grotesk. */
+  .font-black,
+  .font-display {
+    font-family: 'Satoshi', ui-sans-serif, system-ui;
+    font-weight: 900;
+    letter-spacing: -0.015em;
+  }
+  /* font-mono was used in JSX for numbers/timers; map it to Host Grotesk
+     with tabular figures so layout stays stable and the third font is gone. */
+  .font-mono {
+    font-family: 'Host Grotesk', ui-sans-serif, system-ui;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
 
   /* hide scrollbars inside phone screens */
   .noscroll::-webkit-scrollbar { display:none; }
@@ -76,7 +90,7 @@
   }
   .island { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:120px; height:34px; background:#000; border-radius:20px; z-index:50; }
 
-  .statusbar { position:absolute; top:0; left:0; right:0; height:54px; padding: 16px 28px 0; display:flex; justify-content:space-between; align-items:flex-start; z-index:40; font-family:'Geist Mono'; font-weight:500; font-size:14px; color: var(--ink); pointer-events:none; }
+  .statusbar { position:absolute; top:0; left:0; right:0; height:54px; padding: 16px 28px 0; display:flex; justify-content:space-between; align-items:flex-start; z-index:40; font-family:'Host Grotesk', sans-serif; font-weight:600; font-variant-numeric: tabular-nums; font-size:14px; color: var(--ink); pointer-events:none; }
   .statusbar svg { width: 16px; height: 11px; }
 
   .tabbar {
@@ -103,7 +117,7 @@
   .hr { height: 1px; background: var(--line); }
   .hr-2 { height: 1px; background: var(--line-2); }
 
-  .stamp { font-family:'Geist Mono'; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-mute); }
+  .stamp { font-family:'Host Grotesk', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-mute); }
   .smallcaps { text-transform: uppercase; letter-spacing: 0.22em; font-size: 10px; font-weight: 500; }
 
   .chip-ice { background: var(--ice); color: var(--ice-ink); }
@@ -140,7 +154,7 @@
     display:flex; align-items:center; gap:8px;
     padding: 8px 14px; border-radius: 999px;
     background: var(--bg-elev); border: 1px solid var(--line-2);
-    color: var(--ink); font-family: 'Geist Mono', monospace;
+    color: var(--ink); font-family: 'Host Grotesk', sans-serif; font-weight: 500;
     font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
     cursor: pointer; transition: all .2s;
   }
@@ -230,7 +244,21 @@ function StatusBar(){
 function HomeIndicator(){
   return (
     <div className="absolute bottom-2 left-0 right-0 flex justify-center z-50 pointer-events-none">
-      <div className="w-32 h-1 rounded-full" style={{background:"rgba(245,241,234,.7)"}}/>
+      <div className="w-32 h-1 rounded-full" style={{background:"var(--ink)", opacity:.7}}/>
+    </div>
+  );
+}
+
+/* ========== PhoneScreen wrapper: status bar + scrolling content + sticky tab bar ========== */
+function PhoneScreen({ children, tab, onTab, fullBleed=false }){
+  return (
+    <div className="absolute inset-0" style={{background:"var(--bg)"}}>
+      <StatusBar/>
+      <div className="absolute inset-0 noscroll overflow-y-auto" style={{paddingBottom: tab ? 88 : 0}}>
+        {children}
+      </div>
+      {tab && <TabBar active={tab} onChange={onTab}/>}
+      <HomeIndicator/>
     </div>
   );
 }
@@ -261,8 +289,7 @@ function ScreenHome({ tab, onTab, onPickEvent }){
   const featured = EVENTS[0];
   const tonight  = [EVENTS[1], EVENTS[4]];
   return (
-    <div className="absolute inset-0 noscroll overflow-y-auto" style={{background:"var(--bg)", paddingBottom:88}}>
-      <StatusBar/>
+    <PhoneScreen tab={tab} onTab={onTab}>
       <div className="px-5 pt-[60px] pb-3 flex items-center justify-between">
         <div>
           <div className="stamp">The List · No. 048</div>
@@ -325,10 +352,8 @@ function ScreenHome({ tab, onTab, onPickEvent }){
         ))}
       </div>
 
-      <div className="h-24"/>
-      <TabBar active={tab} onChange={onTab}/>
-      <HomeIndicator/>
-    </div>
+      <div className="h-8"/>
+    </PhoneScreen>
   );
 }
 
@@ -342,8 +367,7 @@ function ScreenExplore({ tab, onTab, onPickEvent }){
   const list = EVENTS.filter(e => filter==="all" ? true : e.type.toLowerCase()===filter);
 
   return (
-    <div className="absolute inset-0 noscroll overflow-y-auto" style={{background:"var(--bg)", paddingBottom:88}}>
-      <StatusBar/>
+    <PhoneScreen tab={tab} onTab={onTab}>
       <div className="px-5 pt-[60px] pb-3 flex items-end justify-between">
         <div>
           <div className="stamp">Index</div>
@@ -398,10 +422,8 @@ function ScreenExplore({ tab, onTab, onPickEvent }){
         ))}
       </div>
 
-      <div className="h-24"/>
-      <TabBar active={tab} onChange={onTab}/>
-      <HomeIndicator/>
-    </div>
+      <div className="h-8"/>
+    </PhoneScreen>
   );
 }
 
@@ -409,8 +431,9 @@ function ScreenExplore({ tab, onTab, onPickEvent }){
 function ScreenEventDetail({ event, onBack, onApply, applied }){
   const e = event || EVENTS[0];
   return (
-    <div className="absolute inset-0 noscroll overflow-y-auto anim-fade" style={{background:"var(--bg)"}}>
+    <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
       <StatusBar/>
+      <div className="absolute inset-0 noscroll overflow-y-auto" style={{paddingBottom:120}}>
 
       {/* Hero */}
       <div className="relative h-[480px]">
@@ -498,10 +521,11 @@ function ScreenEventDetail({ event, onBack, onApply, applied }){
         ))}
       </div>
 
-      <div className="h-40"/>
+      <div className="h-8"/>
+      </div>
 
-      {/* Sticky Apply CTA */}
-      <div className="absolute left-0 right-0 bottom-0 pt-8 px-5 pb-7" style={{background:"linear-gradient(180deg, transparent 0%, rgba(10,10,10,.92) 40%, var(--bg) 80%)"}}>
+      {/* Sticky Apply CTA — sibling of the scroll container so it stays anchored */}
+      <div className="absolute left-0 right-0 bottom-0 pt-8 px-5 pb-7 z-30" style={{background:"linear-gradient(180deg, transparent 0%, rgba(10,10,10,.92) 40%, var(--bg) 80%)"}}>
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <div className="stamp" style={{color:"var(--ink-mute)"}}>Closes in</div>
@@ -513,6 +537,7 @@ function ScreenEventDetail({ event, onBack, onApply, applied }){
           </button>
         </div>
       </div>
+      <HomeIndicator/>
     </div>
   );
 }
@@ -522,8 +547,7 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent }){
   const [seg, setSeg] = useState(confirmedEvent ? "confirmed" : "invited");
 
   return (
-    <div className="absolute inset-0 noscroll overflow-y-auto" style={{background:"var(--bg)", paddingBottom:88}}>
-      <StatusBar/>
+    <PhoneScreen tab={tab} onTab={onTab}>
       <div className="px-5 pt-[60px] pb-3 flex items-center justify-between">
         <div>
           <div className="stamp">Personal</div>
@@ -620,19 +644,15 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent }){
         </div>
       )}
 
-      <div className="h-24"/>
-      <TabBar active={tab} onChange={onTab}/>
-      <HomeIndicator/>
-    </div>
+      <div className="h-8"/>
+    </PhoneScreen>
   );
 }
 
 /* ========== 05 — PROFILE (gallery-style hero with fade) ========== */
 function ScreenProfile({ tab, onTab }){
   return (
-    <div className="absolute inset-0 noscroll overflow-y-auto" style={{background:"var(--bg)", paddingBottom:88}}>
-      <StatusBar/>
-
+    <PhoneScreen tab={tab} onTab={onTab}>
       {/* Editorial hero — full-bleed photo with gradient fade to bg */}
       <div className="relative h-[460px]">
         <img src={IMG.saraFull} className="absolute inset-0 w-full h-full object-cover" alt=""/>
@@ -732,10 +752,8 @@ function ScreenProfile({ tab, onTab }){
         ))}
       </div>
 
-      <div className="h-24"/>
-      <TabBar active={tab} onChange={onTab}/>
-      <HomeIndicator/>
-    </div>
+      <div className="h-8"/>
+    </PhoneScreen>
   );
 }
 
@@ -743,14 +761,14 @@ function ScreenProfile({ tab, onTab }){
 function ScreenPicked({ event, onConfirm, onLater }){
   const e = event || EVENTS[0];
   return (
-    <div className="absolute inset-0 noscroll overflow-y-auto anim-fade" style={{background:"#0A0A0A", color:"#F5F1EA"}}>
+    <div className="absolute inset-0 anim-fade" style={{background:"#0A0A0A", color:"#F5F1EA"}}>
       <StatusBar/>
 
-      <div className="absolute inset-0 opacity-30">
+      <div className="absolute inset-0 opacity-30 pointer-events-none">
         <img src={e.img} className="absolute inset-0 w-full h-full object-cover" alt="" style={{filter:"blur(40px) brightness(.4)"}}/>
       </div>
 
-      <div className="relative z-10 h-full flex flex-col px-7 pt-[100px] pb-10 anim-up">
+      <div className="absolute inset-0 z-10 flex flex-col px-7 pt-[100px] pb-10 anim-up">
         <div className="stamp" style={{color:"rgba(245,241,234,.7)"}}>The List · invitation</div>
 
         <div className="flex-1 flex flex-col justify-center items-center text-center -mt-6">
