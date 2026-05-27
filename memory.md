@@ -6,13 +6,41 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## Current state (one line)
 
-Repo initialized at `github.com/will-rads/the-list`. Folder structure scaffolded per brochure-routine pattern. Reference design files moved to `web/`. Research files moved to `docs/` and `research/`. Next: build a tap-through single-phone prototype in `web/prototype.html`.
+Prototype live at `the-list-omega.vercel.app`. Tap-through flow works (Home → Detail → Apply → Picked → My List). Two fonts only (Satoshi headers + Host Grotesk body). Scroll fixed — tab bar and Apply CTA stay pinned to the phone edges. Mockup-v1 design language (carbon black + ice blue) is the locked direction.
 
 ---
 
-## 2026-05-27 — Repo scaffolded
+## 2026-05-28 — Font system locked + scroll bug fixed
+
+Body font swapped to **Host Grotesk** (matching the LAU MarketMind webapp at `C:\Users\user\LAU\LAU Applied AI Final Project\webapp-final`). Reasons:
+
+- Geist Mono looked too "techy" and added a third font family
+- Host Grotesk is a friendlier sans, pairs cleanly with Satoshi, used in Will's other production project so brand voice carries across
+
+Headers: **Satoshi** (500 / 700 / 900) — kept.
+Numbers / timers: **Host Grotesk with `tabular-nums`** — no separate mono family.
+
+CSS structure:
+
+- `body` → Host Grotesk 400
+- `.font-black` / `.font-display` → Satoshi 900 letter-spacing -0.015em
+- `.font-mono` aliased to Host Grotesk + tabular-nums (kept as class so JSX still works)
+- `.stamp` → Host Grotesk 500 small-caps
+
+Scroll fix: status bar, tab bar, sticky Apply CTA, and home indicator now sit as **siblings** of the scroll container, not children. Previously they were positioned `absolute bottom-0` inside an `overflow-y-auto` div — which makes them stick to the bottom of the *scrolled content*, not the visible viewport edge. New pattern wraps everything in a `<PhoneScreen>` component.
+
+---
+
+## 2026-05-28 — Live on Vercel
+
+Deployed `web/` directory as the Vercel root. Live URL: `the-list-omega.vercel.app`. Root Directory setting in Vercel had to be edited post-import (wasn't set during the GitHub auto-import flow). `vercel.json` adds `cleanUrls: true` so `/gallery` and `/mockup-v1` resolve without `.html`.
+
+---
+
+## 2026-05-27 — Initial repo scaffold
 
 Created the repo at `github.com/will-rads/the-list` (public). Moved all existing assets into:
+
 - `web/gallery.html` — Claude design version (was `The List.html`)
 - `web/mockup-v1.html` — original carbon black + ice blue + Satoshi
 - `research/screenshots/` — 10 TSS screenshots
@@ -35,6 +63,7 @@ Took the original mockup-v1 (Carbon Black + Ice Blue + Satoshi, picsum random im
 ## 2026-05-26 — Light mode + density on Claude design
 
 Took `The List.html` (the Claude-design version with acid lime + Instrument Serif). Added:
+
 - Light mode via `html.light` CSS class
 - Theme toggle pill top-right of the page
 - Tab bar gradient flips with theme
@@ -49,12 +78,14 @@ Outcome: less crowded, light + dark both viewable.
 ## 2026-05-26 — Two design directions diverged
 
 Two reference HTMLs now exist:
+
 - **mockup-v1.html** — Will's original brief (Carbon Black, Ice Blue, Satoshi). 12 phones, dark+light side-by-side.
 - **gallery.html** (was The List.html) — Claude design's interpretation (Acid Lime, Instrument Serif italic). 6 phones, single mode (now with light toggle added).
 
 Will prefers mockup-v1's color/font system but liked gallery.html's image selection. Image swap merged the two.
 
 Open: font choice for v1 build. Instrument Serif feels AI-flavored. Options:
+
 - Drop the serif entirely. Geist + Geist Mono only.
 - Swap to Fraunces (free, more characterful).
 - Paid display face later (Söhne, PP Editorial New, Tobias).
@@ -64,6 +95,7 @@ Open: font choice for v1 build. Instrument Serif feels AI-flavored. Options:
 ## 2026-05-26 — Apply + Swipe model confirmed
 
 After seeing The Secret Society's actual venue-side UI (10 screenshots from Radwan once he got accepted):
+
 - Influencers don't claim spots FCFS. They **apply**, then venue swipes Tinder-style.
 - Reputation scoring exists: Punctuality / Presentation / Joviality (each ~10).
 - Venue marks each attendee CHECKED IN / CHECKED OUT / NO SHOW.
