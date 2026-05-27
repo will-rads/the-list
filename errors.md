@@ -76,6 +76,20 @@ When the soft pre-launch outreach happens, **Dima sends, not Radwan, not Will**.
 
 ---
 
+## 2026-05-27 — CDN script tags in `web/` lack SRI on purpose
+
+`web/prototype.html`, `web/gallery.html`, and `web/mockup-v1.html` load Tailwind, React, Babel-standalone, and Lucide from public CDNs with **no `integrity="sha384-..."`** attribute. A security plugin flags this on every `Write`. Verdict for v1:
+
+- These files are **prototype-only**. Not shipped to end users. Not the SwiftUI app.
+- When we port to SwiftUI the CDN concern vanishes (no JS).
+- When a marketing site ships, it uses a real bundler (Vite / Next / Tailwind CLI), not CDNs. SRI gets generated automatically.
+
+**Do NOT** copy these CDN script tags into anything that ships to end users. If you find a CDN tag in `ios/`, `marketing/`, or any production deploy folder — that's a bug.
+
+The Icon component uses `ref.current.innerHTML = ""` to clear the slot before `appendChild`. It does **not** inject untrusted HTML; the only inputs are hardcoded icon-name strings. Safe. Same warning will fire again — ignore unless a user-controlled string is being concatenated into innerHTML.
+
+---
+
 ## Standing don'ts
 
 - Don't push to GitHub without confirmation.

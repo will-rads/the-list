@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>The List — Prototype</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,500,900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.453.0/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+
+<style>
+  :root{
+    --bg:        #0A0A0A;
+    --bg-elev:   #141414;
+    --bg-elev2:  #1C1C1C;
+    --ink:       #F5F1EA;
+    --ink-2:     #C5C0B5;
+    --ink-mute:  #8A8A8A;
+    --line:      rgba(245,241,234,0.10);
+    --line-2:    rgba(245,241,234,0.18);
+    --ice:       #9FD8E8;
+    --ice-dim:   #6FB5C9;
+    --ice-ink:   #0A0A0A;
+    --page:      #050505;
+  }
+  html.light{
+    --bg:        #F5F1EA;
+    --bg-elev:   #FFFFFF;
+    --bg-elev2:  #ECE7D9;
+    --ink:       #0A0A0A;
+    --ink-2:     #3A352C;
+    --ink-mute:  #6A6A6A;
+    --line:      rgba(10,10,10,0.10);
+    --line-2:    rgba(10,10,10,0.18);
+    --ice:       #6FB5C9;
+    --ice-ink:   #0A0A0A;
+    --page:      #EFEADD;
+  }
+  html, body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: 'Satoshi', ui-sans-serif, system-ui;
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+  .font-mono { font-family: 'Geist Mono', ui-monospace, monospace; }
+
+  /* hide scrollbars inside phone screens */
+  .noscroll::-webkit-scrollbar { display:none; }
+  .noscroll { scrollbar-width: none; }
+
+  /* iphone bezel */
+  .iphone {
+    width: 393px; height: 852px;
+    border-radius: 54px;
+    padding: 11px;
+    background: linear-gradient(140deg,#2a2722 0%, #0c0a08 45%, #1d1a16 100%);
+    box-shadow:
+      inset 0 0 0 1.5px #3a3631,
+      inset 0 0 0 3px #0a0807,
+      0 60px 80px -40px rgba(0,0,0,.9),
+      0 30px 60px -30px rgba(0,0,0,.6);
+    position: relative;
+  }
+  .iphone-screen {
+    width: 100%; height: 100%; border-radius: 43px;
+    overflow: hidden; position: relative; background: var(--bg);
+    isolation: isolate;
+  }
+  .island { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:120px; height:34px; background:#000; border-radius:20px; z-index:50; }
+
+  .statusbar { position:absolute; top:0; left:0; right:0; height:54px; padding: 16px 28px 0; display:flex; justify-content:space-between; align-items:flex-start; z-index:40; font-family:'Geist Mono'; font-weight:500; font-size:14px; color: var(--ink); pointer-events:none; }
+  .statusbar svg { width: 16px; height: 11px; }
+
+  .tabbar {
+    position:absolute; left:0; right:0; bottom:0; height: 88px;
+    padding: 12px 18px 30px;
+    display:grid; grid-template-columns:repeat(4,1fr); gap: 4px;
+    background: linear-gradient(180deg, transparent 0%, var(--bg) 50%, var(--bg) 100%);
+    backdrop-filter: blur(18px);
+    z-index: 30;
+    border-top: 1px solid var(--line);
+  }
+  .tabbar button {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:5px; color: var(--ink-mute);
+    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 4px 0; border-radius: 14px;
+    transition: color .15s;
+    background: transparent; border: 0; cursor: pointer;
+  }
+  .tabbar button.active { color: var(--ink); }
+  .tabbar button.active .dot { background: var(--ice); }
+  .tabbar .dot { width: 4px; height: 4px; border-radius: 50%; background: transparent; }
+
+  .hr { height: 1px; background: var(--line); }
+  .hr-2 { height: 1px; background: var(--line-2); }
+
+  .stamp { font-family:'Geist Mono'; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-mute); }
+  .smallcaps { text-transform: uppercase; letter-spacing: 0.22em; font-size: 10px; font-weight: 500; }
+
+  .chip-ice { background: var(--ice); color: var(--ice-ink); }
+  .chip-outline { border: 1px solid var(--line-2); color: var(--ink); }
+
+  .press { transition: transform .12s ease, opacity .12s ease, background .2s, border-color .2s; cursor: pointer; }
+  .press:active { transform: scale(.97); opacity: .85; }
+
+  .vt { writing-mode: vertical-rl; transform: rotate(180deg); }
+
+  /* film grain */
+  .grain::after {
+    content:""; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 3px 3px; mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  .page-bg {
+    background:
+      radial-gradient(900px 500px at 10% -10%, rgba(159,216,232,.04), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(159,216,232,.025), transparent 60%),
+      var(--page);
+  }
+  html.light .page-bg {
+    background:
+      radial-gradient(900px 500px at 10% -10%, rgba(111,181,201,.10), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(111,181,201,.05), transparent 60%),
+      var(--page);
+  }
+
+  .theme-toggle {
+    position: fixed; top: 24px; right: 24px; z-index: 100;
+    display:flex; align-items:center; gap:8px;
+    padding: 8px 14px; border-radius: 999px;
+    background: var(--bg-elev); border: 1px solid var(--line-2);
+    color: var(--ink); font-family: 'Geist Mono', monospace;
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    cursor: pointer; transition: all .2s;
+  }
+  .theme-toggle:hover { border-color: var(--ice); color: var(--ice); }
+  .theme-toggle .dot { width:6px; height:6px; border-radius:50%; background: var(--ice); }
+
+  @keyframes pulseIce {
+    0% { box-shadow: 0 0 0 0 rgba(159,216,232,.5); }
+    100% { box-shadow: 0 0 0 28px rgba(159,216,232,0); }
+  }
+  .pulse-ice { animation: pulseIce 1.8s cubic-bezier(.4,.2,.2,1) infinite; }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .anim-up { animation: slideUp .5s cubic-bezier(.2,.7,.2,1); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .anim-fade { animation: fadeIn .35s ease; }
+</style>
+</head>
+<body class="page-bg min-h-screen">
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useRef, useMemo } = React;
+
+/* ========== curated imagery ========== */
+const IMG = {
+  beachClub:  "https://images.unsplash.com/photo-1505761671935-60b3a7427bad?w=900&q=80&auto=format&fit=crop",
+  pool:       "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=900&q=80&auto=format&fit=crop",
+  rooftop:    "https://images.unsplash.com/photo-1551918120-9739cb430c6d?w=900&q=80&auto=format&fit=crop",
+  restaurant: "https://images.unsplash.com/photo-1592861956120-e524fc739696?w=900&q=80&auto=format&fit=crop",
+  club:       "https://images.unsplash.com/photo-1545128485-c400e7702796?w=900&q=80&auto=format&fit=crop",
+  clubRed:    "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900&q=80&auto=format&fit=crop",
+  gym:        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&q=80&auto=format&fit=crop",
+  lounge:     "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=900&q=80&auto=format&fit=crop",
+  cocktail:   "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=900&q=80&auto=format&fit=crop",
+  beirut:     "https://images.unsplash.com/photo-1620553967747-50fdadc4b606?w=1200&q=80&auto=format&fit=crop",
+  saraFull:   "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&q=80&auto=format&fit=crop",
+};
+
+const EVENTS = [
+  { id:"pool",   title:"Pool Day",        venue:"Cyan Beach Club",     area:"Jiyeh",       date:"Sun · 25 May",  time:"14:00",  img:IMG.beachClub,  type:"Beach",      seats:20, applied:137, badge:"Open" },
+  { id:"sound",  title:"Sound Bath",      venue:"Pyrite Mar Mikhael",  area:"Mar Mikhael", date:"Fri · 23 May",  time:"23:00",  img:IMG.club,       type:"Club",       seats:30, applied:212, badge:"24h left" },
+  { id:"tasting",title:"Chef Tasting",    venue:"Em Sherif Café",      area:"Achrafieh",   date:"Sat · 24 May",  time:"20:00",  img:IMG.restaurant, type:"Restaurant", seats:12, applied:88,  badge:"Closing" },
+  { id:"sunset", title:"Rooftop Sundown", venue:"Sporting",            area:"Manara",      date:"Sat · 24 May",  time:"18:30",  img:IMG.pool,       type:"Pool",       seats:25, applied:154, badge:"" },
+  { id:"loungenight", title:"Late Lounge", venue:"Centrale",          area:"Saifi",       date:"Fri · 23 May",  time:"22:00",  img:IMG.lounge,     type:"Lounge",     seats:18, applied:101, badge:"" },
+];
+
+/* ========== Icon helper (lucide) ========== */
+function Icon({ name, size=18, stroke=1.5, className="" }){
+  const ref = useRef(null);
+  useEffect(()=>{
+    if(window.lucide && ref.current){
+      ref.current.innerHTML = "";
+      const i = document.createElement("i");
+      i.setAttribute("data-lucide", name);
+      i.style.width = size+"px"; i.style.height = size+"px";
+      ref.current.appendChild(i);
+      window.lucide.createIcons({ attrs: { "stroke-width": stroke } });
+    }
+  }, [name, size, stroke]);
+  return <span ref={ref} className={"inline-flex "+className} style={{width:size,height:size}}/>;
+}
+
+/* ========== status bar / island / home indicator ========== */
+function StatusBar(){
+  return (
+    <>
+      <div className="island"/>
+      <div className="statusbar">
+        <span>9:41</span>
+        <span className="flex items-center gap-1.5">
+          <span style={{fontSize:11}}>●●●●</span>
+          <span style={{fontSize:11}}>5G</span>
+          <Icon name="battery-full" size={16} stroke={1.5}/>
+        </span>
+      </div>
+    </>
+  );
+}
+function HomeIndicator(){
+  return (
+    <div className="absolute bottom-2 left-0 right-0 flex justify-center z-50 pointer-events-none">
+      <div className="w-32 h-1 rounded-full" style={{background:"rgba(245,241,234,.7)"}}/>
+    </div>
+  );
+}
+
+/* ========== tab bar ========== */
+function TabBar({ active, onChange }){
+  const items = [
+    { id:"home",    label:"Tonight", icon:"sparkle" },
+    { id:"explore", label:"Index",   icon:"compass" },
+    { id:"mylist",  label:"My List", icon:"bookmark" },
+    { id:"profile", label:"Me",      icon:"user"   },
+  ];
+  return (
+    <div className="tabbar">
+      {items.map(it=>(
+        <button key={it.id} onClick={()=>onChange(it.id)} className={"press "+(active===it.id?"active":"")}>
+          <Icon name={it.icon} size={18} stroke={1.4}/>
+          <span>{it.label}</span>
+          <span className="dot"/>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ========== 01 — HOME ========== */
+function ScreenHome({ tab, onTab, onPickEvent }){
+  const featured = EVENTS[0];
+  const tonight  = [EVENTS[1], EVENTS[4]];
+  return (
+    <div className="absolute inset-0 noscroll overflow-y-auto" style={{background:"var(--bg)", paddingBottom:88}}>
+      <StatusBar/>
+      <div className="px-5 pt-[60px] pb-3 flex items-center justify-between">
+        <div>
+          <div className="stamp">The List · No. 048</div>
+          <div className="font-medium text-[14px] mt-1" style={{color:"var(--ink-2)"}}>Saturday · 24.05</div>
+        </div>
+        <button className="press w-10 h-10 rounded-full border flex items-center justify-center" style={{borderColor:"var(--line-2)"}}>
+          <Icon name="search" size={16} stroke={1.4}/>
+        </button>
+      </div>
+
+      <div className="hr-2 mx-5 mb-5"/>
+
+      {/* Featured */}
+      <div className="px-5">
+        <div className="smallcaps mb-3" style={{color:"var(--ink-mute)"}}>Tonight · featured</div>
+        <button className="press w-full text-left rounded-[18px] overflow-hidden relative grain" style={{height:380, background:"var(--bg-elev)"}} onClick={()=>onPickEvent(featured)}>
+          <img src={featured.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+          <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.25) 0%, rgba(10,10,10,0) 35%, rgba(10,10,10,.9) 100%)"}}/>
+          <div className="absolute top-3 left-3 px-2 py-1 rounded-full chip-ice text-[10px] uppercase tracking-[.22em] font-medium">{featured.badge}</div>
+          <div className="absolute bottom-4 left-4 right-4 text-[var(--ink)]" style={{color:"#F5F1EA"}}>
+            <div className="font-black text-[40px] leading-[0.92] tracking-tight">{featured.title}</div>
+            <div className="flex items-center gap-2 mt-3">
+              <span className="text-[12px]">{featured.venue}</span>
+              <span style={{color:"rgba(245,241,234,.5)"}}>·</span>
+              <span className="text-[12px] font-mono">{featured.date}</span>
+            </div>
+            <div className="flex items-center justify-between mt-4">
+              <div>
+                <span className="font-mono text-[18px]" style={{color:"var(--ice)"}}>{featured.seats}</span>
+                <span className="text-[11px] ml-1" style={{color:"rgba(245,241,234,.6)"}}>seats · {featured.applied} applied</span>
+              </div>
+              <div className="px-3 py-1.5 rounded-full chip-ice text-[10px] uppercase tracking-[.22em] font-medium">Tap to view</div>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* Also tonight */}
+      <div className="px-5 pt-7 pb-3 flex items-center gap-3">
+        <span className="stamp">Also tonight</span>
+        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
+        <span className="text-[11px] font-mono" style={{color:"var(--ink-mute)"}}>{tonight.length} rooms open</span>
+      </div>
+      <div className="px-5 space-y-3">
+        {tonight.map(e=>(
+          <button key={e.id} onClick={()=>onPickEvent(e)} className="press w-full flex gap-3 items-center text-left p-3 rounded-[14px]" style={{background:"var(--bg-elev)"}}>
+            <img src={e.img} className="w-16 h-20 rounded-[8px] object-cover" alt=""/>
+            <div className="flex-1 min-w-0">
+              <div className="stamp">{e.type}</div>
+              <div className="font-medium text-[15px] mt-0.5 truncate">{e.title}</div>
+              <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{e.venue} · {e.area}</div>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="font-mono text-[11px]" style={{color:"var(--ice)"}}>{e.seats} seats</span>
+                <span style={{color:"var(--ink-mute)"}}>·</span>
+                <span className="font-mono text-[11px]" style={{color:"var(--ink-mute)"}}>{e.applied} applied</span>
+              </div>
+            </div>
+            <Icon name="arrow-right" size={16} stroke={1.4} className="opacity-50"/>
+          </button>
+        ))}
+      </div>
+
+      <div className="h-24"/>
+      <TabBar active={tab} onChange={onTab}/>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+/* ========== 02 — EXPLORE ========== */
+function ScreenExplore({ tab, onTab, onPickEvent }){
+  const [filter, setFilter] = useState("all");
+  const days = [
+    { d:"23", w:"Fri" }, { d:"24", w:"Sat" }, { d:"25", w:"Sun", active:true }, { d:"26", w:"Mon" }, { d:"27", w:"Tue" }, { d:"28", w:"Wed" }
+  ];
+  const filters = ["all","beach","club","restaurant","lounge"];
+  const list = EVENTS.filter(e => filter==="all" ? true : e.type.toLowerCase()===filter);
+
+  return (
+    <div className="absolute inset-0 noscroll overflow-y-auto" style={{background:"var(--bg)", paddingBottom:88}}>
+      <StatusBar/>
+      <div className="px-5 pt-[60px] pb-3 flex items-end justify-between">
+        <div>
+          <div className="stamp">Index</div>
+          <div className="font-black text-[32px] leading-none mt-1">All open rooms in Beirut.</div>
+        </div>
+      </div>
+
+      <div className="px-5 pt-4 flex gap-2 overflow-x-auto noscroll">
+        {days.map(d=>(
+          <div key={d.d} className={"flex-shrink-0 w-[58px] h-[68px] rounded-[12px] flex flex-col items-center justify-center "+(d.active?"":"border")} style={{background: d.active ? "var(--ice)" : "transparent", borderColor:"var(--line-2)", color: d.active ? "var(--ice-ink)" : "var(--ink)"}}>
+            <div className="font-mono text-[20px] leading-none">{d.d}</div>
+            <div className="text-[9px] uppercase tracking-[.2em] mt-1 opacity-75">{d.w}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="px-5 pt-4 flex gap-2 overflow-x-auto noscroll">
+        {filters.map(f=>(
+          <button key={f} onClick={()=>setFilter(f)} className={"press flex-shrink-0 px-3 h-8 rounded-full text-[11px] uppercase tracking-[.18em] "+(filter===f?"":"chip-outline")} style={filter===f ? {background:"var(--ink)", color:"var(--bg)"} : {}}>
+            {f}
+          </button>
+        ))}
+      </div>
+
+      <div className="px-5 pt-6 pb-3 flex items-center gap-3">
+        <span className="stamp">{list.length} rooms</span>
+        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
+        <span className="stamp">Sorted · closes soonest</span>
+      </div>
+
+      <div className="px-5 space-y-4">
+        {list.map(e=>(
+          <button key={e.id} onClick={()=>onPickEvent(e)} className="press w-full text-left rounded-[16px] overflow-hidden grain relative" style={{height:200, background:"var(--bg-elev)"}}>
+            <img src={e.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+            <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.3) 0%, rgba(10,10,10,0) 35%, rgba(10,10,10,.9) 100%)"}}/>
+            <div className="absolute top-3 left-3 flex gap-1.5">
+              <span className="text-[10px] uppercase tracking-[.2em] px-2 py-1 rounded-full" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(8px)", color:"#F5F1EA"}}>{e.type}</span>
+              {e.badge && <span className="text-[10px] uppercase tracking-[.22em] px-2 py-1 rounded-full chip-ice font-medium">{e.badge}</span>}
+            </div>
+            <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between" style={{color:"#F5F1EA"}}>
+              <div>
+                <div className="font-black text-[24px] leading-none">{e.title}</div>
+                <div className="text-[11px] mt-1 opacity-80">{e.venue} · {e.area}</div>
+              </div>
+              <div className="text-right">
+                <div className="font-mono text-[11px]" style={{color:"var(--ice)"}}>{e.date.split('·')[0].trim()}</div>
+                <div className="font-mono text-[11px] opacity-70">{e.time}</div>
+                <div className="font-mono text-[12px] mt-1"><span style={{color:"var(--ice)"}}>{e.seats}</span><span className="opacity-60"> seats</span></div>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div className="h-24"/>
+      <TabBar active={tab} onChange={onTab}/>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+/* ========== 03 — EVENT DETAIL ========== */
+function ScreenEventDetail({ event, onBack, onApply, applied }){
+  const e = event || EVENTS[0];
+  return (
+    <div className="absolute inset-0 noscroll overflow-y-auto anim-fade" style={{background:"var(--bg)"}}>
+      <StatusBar/>
+
+      {/* Hero */}
+      <div className="relative h-[480px]">
+        <img src={e.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+        <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.45) 0%, rgba(10,10,10,0) 25%, rgba(10,10,10,0) 55%, rgba(10,10,10,.95) 100%)"}}/>
+        <div className="absolute inset-0 grain"/>
+
+        <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
+          <button onClick={onBack} className="press w-10 h-10 rounded-full flex items-center justify-center border" style={{background:"rgba(10,10,10,.45)", backdropFilter:"blur(8px)", borderColor:"rgba(245,241,234,.25)"}}>
+            <Icon name="arrow-left" size={18} stroke={1.4}/>
+          </button>
+          <div className="flex gap-2">
+            <button className="press w-10 h-10 rounded-full flex items-center justify-center border" style={{background:"rgba(10,10,10,.45)", backdropFilter:"blur(8px)", borderColor:"rgba(245,241,234,.25)"}}>
+              <Icon name="bookmark" size={16} stroke={1.4}/>
+            </button>
+            <button className="press w-10 h-10 rounded-full flex items-center justify-center border" style={{background:"rgba(10,10,10,.45)", backdropFilter:"blur(8px)", borderColor:"rgba(245,241,234,.25)"}}>
+              <Icon name="share" size={16} stroke={1.4}/>
+            </button>
+          </div>
+        </div>
+
+        <div className="absolute bottom-0 left-5 right-5 pb-6 z-10" style={{color:"#F5F1EA"}}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] uppercase tracking-[.22em] px-2 py-1 rounded-full chip-ice font-medium">{e.type}</span>
+            <span className="text-[10px] uppercase tracking-[.22em] opacity-70">{e.venue}</span>
+          </div>
+          <div className="font-black text-[52px] leading-[0.92] tracking-tight">{e.title}</div>
+          <div className="text-[12px] mt-3 max-w-[280px] opacity-80">Resident DJ Karim Sahli from 16:00. Mediterranean menu at sunset. Dress: swimwear and an attitude.</div>
+        </div>
+      </div>
+
+      {/* Meta rail */}
+      <div className="px-5 pt-6">
+        <div className="grid grid-cols-3 gap-0" style={{borderTop:"1px solid var(--line-2)", borderBottom:"1px solid var(--line-2)"}}>
+          <div className="py-4 border-r" style={{borderColor:"var(--line)"}}>
+            <div className="stamp">When</div>
+            <div className="font-black text-[22px] leading-none mt-1.5">{e.date.split('·')[0].trim()}</div>
+            <div className="text-[12px]" style={{color:"var(--ink-2)"}}>{e.date.split('·')[1]?.trim()}</div>
+          </div>
+          <div className="py-4 px-3 border-r" style={{borderColor:"var(--line)"}}>
+            <div className="stamp">Doors</div>
+            <div className="font-black text-[22px] leading-none mt-1.5 font-mono">{e.time}</div>
+            <div className="text-[12px]" style={{color:"var(--ink-2)"}}>til 21:00</div>
+          </div>
+          <div className="py-4 pl-3">
+            <div className="stamp">Seats</div>
+            <div className="font-black text-[22px] leading-none mt-1.5 font-mono"><span style={{color:"var(--ice)"}}>{e.seats}</span><span style={{color:"var(--ink-mute)"}}> / {e.seats}</span></div>
+            <div className="text-[12px]" style={{color:"var(--ink-2)"}}>{e.applied} applied</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Location */}
+      <div className="px-5 pt-5">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{border:"1px solid var(--line-2)"}}>
+            <Icon name="map-pin" size={14} stroke={1.5}/>
+          </div>
+          <div className="flex-1">
+            <div className="text-[14px] font-medium">{e.venue}</div>
+            <div className="text-[12px]" style={{color:"var(--ink-mute)"}}>{e.area} · 22 km south of city</div>
+          </div>
+          <button className="press text-[11px] px-3 h-8 rounded-full" style={{border:"1px solid var(--line-2)"}}>Map</button>
+        </div>
+      </div>
+
+      {/* Exchange */}
+      <div className="px-5 pt-7 pb-3 flex items-center gap-3">
+        <span className="stamp">The exchange</span>
+        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
+      </div>
+      <div className="px-5 space-y-4">
+        {[
+          { n:"01", t:"One Story, on the day", s:"Posted between 14:00 — 21:00" },
+          { n:"02", t:"Tag @cyanbeachclub", s:"And the venue handle in caption" },
+        ].map((r,i)=>(
+          <div key={i} className="flex items-center gap-4 py-3" style={{borderBottom:"1px solid var(--line)"}}>
+            <span className="font-mono text-[11px]" style={{color:"var(--ice)"}}>{r.n}</span>
+            <div className="flex-1">
+              <div className="text-[14px]">{r.t}</div>
+              <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{r.s}</div>
+            </div>
+            <Icon name="check" size={14} stroke={1.5} className="opacity-30"/>
+          </div>
+        ))}
+      </div>
+
+      <div className="h-40"/>
+
+      {/* Sticky Apply CTA */}
+      <div className="absolute left-0 right-0 bottom-0 pt-8 px-5 pb-7" style={{background:"linear-gradient(180deg, transparent 0%, rgba(10,10,10,.92) 40%, var(--bg) 80%)"}}>
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <div className="stamp" style={{color:"var(--ink-mute)"}}>Closes in</div>
+            <div className="font-black text-[22px] leading-none mt-0.5 font-mono" style={{color:"var(--ice)"}}>04 : 56 : 12</div>
+          </div>
+          <button onClick={onApply} disabled={applied} className="press flex items-center gap-3 h-[56px] px-6 rounded-full" style={{background: applied? "var(--bg-elev2)" : "var(--ice)", color: applied? "var(--ink)":"var(--ice-ink)"}}>
+            <span className="font-medium text-[15px] uppercase tracking-[.18em]">{applied ? "Applied" : "Apply · free"}</span>
+            <Icon name={applied?"check":"arrow-right"} size={16} stroke={1.6}/>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ========== 04 — MY EVENTS ========== */
+function ScreenMyEvents({ tab, onTab, confirmedEvent }){
+  const [seg, setSeg] = useState(confirmedEvent ? "confirmed" : "invited");
+
+  return (
+    <div className="absolute inset-0 noscroll overflow-y-auto" style={{background:"var(--bg)", paddingBottom:88}}>
+      <StatusBar/>
+      <div className="px-5 pt-[60px] pb-3 flex items-center justify-between">
+        <div>
+          <div className="stamp">Personal</div>
+          <div className="font-black text-[36px] leading-none mt-1">My List</div>
+        </div>
+        <button className="press w-10 h-10 rounded-full border flex items-center justify-center" style={{borderColor:"var(--line-2)"}}>
+          <Icon name="calendar" size={16} stroke={1.4}/>
+        </button>
+      </div>
+
+      <div className="hr-2 mx-5"/>
+
+      <div className="px-5 pt-4 pb-3 grid grid-cols-3 gap-0">
+        {[
+          { id:"invited",   label:"Invited",   count: confirmedEvent ? "00" : "01" },
+          { id:"confirmed", label:"Confirmed", count: confirmedEvent ? "01" : "00" },
+          { id:"past",      label:"Past",      count:"24" },
+        ].map(s=>(
+          <button key={s.id} onClick={()=>setSeg(s.id)} className="press py-3 text-left">
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-black text-[26px]" style={{color: seg===s.id ? "var(--ink)":"var(--ink-mute)"}}>{s.count}</span>
+              {s.id==="invited" && !confirmedEvent && <span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--ice)"}}/>}
+              {s.id==="confirmed" && confirmedEvent && <span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--ice)"}}/>}
+            </div>
+            <div className="text-[11px] mt-0.5 uppercase tracking-[.18em]" style={{color: seg===s.id ? "var(--ink)":"var(--ink-mute)"}}>{s.label}</div>
+            <div className="mt-3 h-[2px] rounded-full" style={{background: seg===s.id ? "var(--ice)" : "transparent"}}/>
+          </button>
+        ))}
+      </div>
+
+      <div className="hr mx-5"/>
+
+      {/* CONFIRMED */}
+      {seg==="confirmed" && confirmedEvent && (
+        <div className="px-5 pt-5 space-y-4 anim-up">
+          <div className="rounded-[18px] overflow-hidden" style={{background:"var(--bg-elev)"}}>
+            <div className="relative h-[160px]">
+              <img src={confirmedEvent.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+              <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,0) 30%, rgba(10,10,10,.95) 100%)"}}/>
+              <div className="absolute top-3 left-3 flex items-center gap-2 px-2.5 py-1 rounded-full chip-ice">
+                <Icon name="check" size={11} stroke={2}/>
+                <span className="text-[10px] uppercase tracking-[.2em] font-medium">Confirmed</span>
+              </div>
+              <div className="absolute bottom-3 left-3 right-3" style={{color:"#F5F1EA"}}>
+                <div className="font-black text-[22px] leading-none">{confirmedEvent.title}</div>
+                <div className="text-[11px] mt-1 opacity-80">{confirmedEvent.venue} · {confirmedEvent.date}</div>
+              </div>
+            </div>
+            <div className="px-4 py-3 flex items-center justify-between">
+              <div>
+                <div className="stamp">Check-in</div>
+                <div className="text-[13px] font-medium mt-0.5">{confirmedEvent.time}</div>
+              </div>
+              <button className="press px-3 h-8 rounded-full text-[11px] uppercase tracking-[.18em]" style={{background:"var(--ink)", color:"var(--bg)"}}>View pass</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* INVITED — empty after accept */}
+      {seg==="invited" && !confirmedEvent && (
+        <div className="px-5 pt-5 space-y-4">
+          <div className="text-[13px]" style={{color:"var(--ink-mute)"}}>No open invites. Keep applying.</div>
+        </div>
+      )}
+
+      {/* INVITED — shows an unrelated pending invite when no confirmed event yet */}
+      {seg==="invited" && confirmedEvent && (
+        <div className="px-5 pt-5 space-y-4">
+          <div className="text-[13px]" style={{color:"var(--ink-mute)"}}>You accepted. Inbox clear.</div>
+        </div>
+      )}
+
+      {/* PAST */}
+      {seg==="past" && (
+        <div className="px-5 pt-5 space-y-3">
+          {[
+            { t:"Late Lounge",    v:"Centrale",  date:"22 Apr", score:"9.2", img:IMG.lounge   },
+            { t:"Chef Tasting",   v:"Em Sherif", date:"15 Apr", score:"8.8", img:IMG.restaurant},
+            { t:"Pool Day vol. II", v:"Cyan",     date:"08 Apr", score:"9.5", img:IMG.beachClub },
+          ].map((e,i)=>(
+            <div key={i} className="flex items-center gap-3 p-3 rounded-[14px]" style={{background:"var(--bg-elev)"}}>
+              <img src={e.img} className="w-14 h-14 rounded-[10px] object-cover" style={{filter:"grayscale(.25)"}} alt=""/>
+              <div className="flex-1">
+                <div className="text-[14px]">{e.t}</div>
+                <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{e.v} · {e.date}</div>
+              </div>
+              <div className="text-right">
+                <div className="font-black text-[18px] font-mono" style={{color:"var(--ice)"}}>{e.score}</div>
+                <div className="stamp">Venue rating</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="h-24"/>
+      <TabBar active={tab} onChange={onTab}/>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+/* ========== 05 — PROFILE (gallery-style hero with fade) ========== */
+function ScreenProfile({ tab, onTab }){
+  return (
+    <div className="absolute inset-0 noscroll overflow-y-auto" style={{background:"var(--bg)", paddingBottom:88}}>
+      <StatusBar/>
+
+      {/* Editorial hero — full-bleed photo with gradient fade to bg */}
+      <div className="relative h-[460px]">
+        <img src={IMG.saraFull} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+        <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.3) 0%, rgba(10,10,10,0) 40%, var(--bg) 100%)"}}/>
+
+        <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(8px)", border:"1px solid rgba(245,241,234,.1)", color:"#F5F1EA"}}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--ice)"}}/>
+            <span className="stamp" style={{color:"#F5F1EA"}}>Verified · Tier 1</span>
+          </div>
+          <button className="press w-9 h-9 rounded-full flex items-center justify-center border" style={{background:"rgba(10,10,10,.45)", backdropFilter:"blur(8px)", borderColor:"rgba(245,241,234,.25)"}}>
+            <Icon name="settings" size={15} stroke={1.4}/>
+          </button>
+        </div>
+
+        <div className="absolute right-3 top-[130px] vt z-10" style={{color:"#F5F1EA"}}>
+          <span className="stamp" style={{color:"rgba(245,241,234,.7)"}}>Beirut · MMXXVI · No. 048</span>
+        </div>
+
+        <div className="absolute bottom-5 left-5 right-5 z-10" style={{color:"#F5F1EA"}}>
+          <div className="smallcaps mb-2" style={{color:"rgba(245,241,234,.7)"}}>Member since '24</div>
+          <div className="font-black text-[48px] leading-[0.9] tracking-tight">Sara<br/>Capriotti.</div>
+          <div className="flex items-center gap-2 mt-3">
+            <Icon name="instagram" size={13} stroke={1.5} className="opacity-70"/>
+            <span className="text-[13px] opacity-80">@capriottisara</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stat strip */}
+      <div className="grid grid-cols-3" style={{borderBottom:"1px solid var(--line-2)"}}>
+        <div className="p-4 border-r" style={{borderColor:"var(--line)"}}>
+          <div className="font-black text-[32px] leading-none font-mono">28<span style={{fontSize:18, color:"var(--ink-mute)"}}>k</span></div>
+          <div className="stamp mt-1">Followers</div>
+        </div>
+        <div className="p-4 border-r" style={{borderColor:"var(--line)"}}>
+          <div className="font-black text-[32px] leading-none font-mono">5.8<span style={{fontSize:18, color:"var(--ink-mute)"}}>%</span></div>
+          <div className="stamp mt-1">Engagement</div>
+        </div>
+        <div className="p-4">
+          <div className="font-black text-[32px] leading-none font-mono" style={{color:"var(--ice)"}}>9.4</div>
+          <div className="stamp mt-1">Reputation</div>
+        </div>
+      </div>
+
+      {/* Audience */}
+      <div className="px-5 pt-6 pb-3 flex items-center gap-3">
+        <span className="stamp">Audience</span>
+        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
+        <span className="text-[11px] font-mono" style={{color:"var(--ink-mute)"}}>Synced 3h ago</span>
+      </div>
+
+      <div className="px-5 space-y-3">
+        <div>
+          <div className="flex justify-between text-[11px]" style={{color:"var(--ink-2)"}}>
+            <span>Female · 62%</span>
+            <span>Male · 38%</span>
+          </div>
+          <div className="mt-1.5 h-[6px] rounded-full overflow-hidden flex" style={{background:"var(--bg-elev2)"}}>
+            <div style={{width:"62%", background:"var(--ice)"}}/>
+            <div style={{width:"38%", background:"var(--ink-mute)"}}/>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          {[
+            { l:"Lebanon",   p:"71%" },
+            { l:"UAE",       p:"14%" },
+            { l:"Saudi",     p:"7%"  },
+            { l:"Other EU",  p:"8%"  },
+          ].map((r,i)=>(
+            <div key={i} className="p-3 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+              <div className="stamp">{r.l}</div>
+              <div className="font-mono text-[18px] mt-1">{r.p}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent */}
+      <div className="px-5 pt-6 pb-3 flex items-center gap-3">
+        <span className="stamp">Recent</span>
+        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
+      </div>
+      <div className="px-5 space-y-3 pb-4">
+        {[
+          { t:"Pool Day vol. II", v:"Cyan",     date:"08 Apr", score:"9.5", img:IMG.beachClub },
+          { t:"Late Lounge",      v:"Centrale", date:"22 Apr", score:"9.2", img:IMG.lounge   },
+        ].map((e,i)=>(
+          <div key={i} className="flex items-center gap-3">
+            <img src={e.img} className="w-12 h-14 rounded-[8px] object-cover" alt=""/>
+            <div className="flex-1">
+              <div className="text-[14px]">{e.t}</div>
+              <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{e.v} · {e.date}</div>
+            </div>
+            <div className="font-mono text-[16px]" style={{color:"var(--ice)"}}>{e.score}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="h-24"/>
+      <TabBar active={tab} onChange={onTab}/>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+/* ========== 06 — PICKED (full-screen takeover) ========== */
+function ScreenPicked({ event, onConfirm, onLater }){
+  const e = event || EVENTS[0];
+  return (
+    <div className="absolute inset-0 noscroll overflow-y-auto anim-fade" style={{background:"#0A0A0A", color:"#F5F1EA"}}>
+      <StatusBar/>
+
+      <div className="absolute inset-0 opacity-30">
+        <img src={e.img} className="absolute inset-0 w-full h-full object-cover" alt="" style={{filter:"blur(40px) brightness(.4)"}}/>
+      </div>
+
+      <div className="relative z-10 h-full flex flex-col px-7 pt-[100px] pb-10 anim-up">
+        <div className="stamp" style={{color:"rgba(245,241,234,.7)"}}>The List · invitation</div>
+
+        <div className="flex-1 flex flex-col justify-center items-center text-center -mt-6">
+          <div className="w-[180px] h-[180px] rounded-full flex items-center justify-center pulse-ice" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+            <div className="font-black text-[48px] leading-none">You're<br/>in.</div>
+          </div>
+          <div className="font-black text-[34px] leading-[0.95] mt-10 tracking-tight">{e.title}</div>
+          <div className="text-[13px] mt-2 opacity-75">{e.venue} · {e.date} · {e.time}</div>
+
+          <div className="mt-8 px-4 py-3 rounded-[12px]" style={{background:"rgba(245,241,234,.08)", border:"1px solid rgba(245,241,234,.15)"}}>
+            <div className="stamp" style={{color:"rgba(245,241,234,.65)"}}>Confirm within</div>
+            <div className="font-black text-[28px] font-mono mt-0.5" style={{color:"var(--ice)"}}>23 : 59 : 47</div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <button onClick={onConfirm} className="press w-full h-[58px] rounded-full font-medium text-[15px] uppercase tracking-[.2em]" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+            Confirm my seat
+          </button>
+          <button onClick={onLater} className="press w-full h-[58px] rounded-full font-medium text-[13px] uppercase tracking-[.2em]" style={{background:"transparent", color:"rgba(245,241,234,.7)", border:"1px solid rgba(245,241,234,.2)"}}>
+            Decline
+          </button>
+        </div>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+/* ========== APP — navigation state ========== */
+function App(){
+  const [screen, setScreen] = useState("home");      // home | explore | detail | mylist | profile | picked
+  const [tab, setTab] = useState("home");
+  const [currentEvent, setCurrentEvent] = useState(null);
+  const [applied, setApplied] = useState(false);
+  const [confirmedEvent, setConfirmedEvent] = useState(null);
+  const [light, setLight] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', light);
+  }, [light]);
+
+  const goTab = (id) => {
+    setTab(id);
+    if (id === "home")    setScreen("home");
+    if (id === "explore") setScreen("explore");
+    if (id === "mylist")  setScreen("mylist");
+    if (id === "profile") setScreen("profile");
+    setApplied(false);
+  };
+
+  const pickEvent = (e) => {
+    setCurrentEvent(e);
+    setApplied(false);
+    setScreen("detail");
+  };
+
+  const onApply = () => {
+    setApplied(true);
+    // Fake the venue's review window
+    setTimeout(() => setScreen("picked"), 900);
+  };
+
+  const onConfirmPick = () => {
+    setConfirmedEvent(currentEvent);
+    setScreen("mylist");
+    setTab("mylist");
+  };
+
+  const onDeclinePick = () => {
+    setScreen("detail");
+  };
+
+  return (
+    <div className="min-h-screen w-full flex flex-col items-center pt-20 pb-24">
+      <button className="theme-toggle" onClick={() => setLight(l => !l)}>
+        <span className="dot"></span>
+        {light ? 'Light' : 'Dark'} · switch
+      </button>
+
+      <div className="mb-8 text-center">
+        <div className="stamp" style={{color:"var(--ink-mute)"}}>The List · Influencer side · Prototype v0.1</div>
+        <div className="font-black text-[28px] leading-none mt-2">Tap through Sara's flow.</div>
+        <div className="text-[12px] mt-2" style={{color:"var(--ink-mute)"}}>Tap an event → Apply → wait for the venue to pick you.</div>
+      </div>
+
+      <div className="iphone">
+        <div className="iphone-screen">
+          {screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent}/>}
+          {screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent}/>}
+          {screen === "detail"  && <ScreenEventDetail event={currentEvent} applied={applied} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply}/>}
+          {screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} confirmedEvent={confirmedEvent}/>}
+          {screen === "profile" && <ScreenProfile tab={tab} onTab={goTab}/>}
+          {screen === "picked"  && <ScreenPicked event={currentEvent} onConfirm={onConfirmPick} onLater={onDeclinePick}/>}
+        </div>
+      </div>
+
+      <div className="mt-8 text-center max-w-[420px]">
+        <div className="stamp mb-2" style={{color:"var(--ink-mute)"}}>How to use</div>
+        <div className="text-[12px]" style={{color:"var(--ink-2)"}}>
+          Tap any event card on Home or Index. Hit Apply. A 1-second fake delay simulates the venue reviewing. The "You're in" notification slides up. Confirm → lands you in My List under Confirmed. Tap any tab to jump around.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
