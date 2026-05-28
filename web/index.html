@@ -198,6 +198,35 @@
       animation-delay: calc(var(--i, 0) * 60ms);
     }
   }
+
+  /* Picked screen — ring scale-in + content stagger */
+  @keyframes ringPop {
+    0%   { transform: scale(.3); opacity: 0; }
+    60%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes pickedFadeUp {
+    from { transform: translateY(14px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .ring-pop { animation: ringPop .8s cubic-bezier(.2,.7,.2,1) backwards; }
+  .picked-stagger { animation: pickedFadeUp .55s ease-out backwards; }
+
+  /* Filter sheet — backdrop dim + sheet slide up */
+  @keyframes sheetIn {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  @keyframes dimIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .sheet-backdrop { animation: dimIn .25s ease; }
+  .sheet { animation: sheetIn .35s cubic-bezier(.2,.7,.2,1); }
+
+  /* Submit spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin .9s linear infinite; }
 </style>
 </head>
 <body class="page-bg min-h-screen">
@@ -376,14 +405,93 @@ function ScreenHome({ tab, onTab, onPickEvent }){
   );
 }
 
+/* ========== Filter sheet (Explore overlay) ========== */
+function FilterSheet({ open, onClose, advFilters, setAdvFilters }){
+  if(!open) return null;
+  const verticals = ["Beach","Club","Restaurant","Lounge","Gym","Rooftop"];
+  const distances = ["< 5 km","5 – 15 km","15 – 30 km","Beirut + Mount"];
+  const timings = ["Tonight","This week","Anytime"];
+
+  const toggleVert = (v) => setAdvFilters({
+    ...advFilters,
+    verticals: advFilters.verticals.includes(v)
+      ? advFilters.verticals.filter(x=>x!==v)
+      : [...advFilters.verticals, v]
+  });
+
+  return (
+    <>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(4px)"}}/>
+      <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
+        <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
+
+        <div className="flex items-center justify-between mb-5">
+          <div className="font-black text-[22px] leading-none">Refine the index.</div>
+          <button onClick={onClose} className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+            <Icon name="x" size={14} stroke={1.5}/>
+          </button>
+        </div>
+
+        <div className="stamp mb-2">Vertical</div>
+        <div className="flex flex-wrap gap-1.5 mb-5">
+          {verticals.map(v=>{
+            const on = advFilters.verticals.includes(v);
+            return (
+              <button key={v} onClick={()=>toggleVert(v)} className="press px-3 h-8 rounded-full text-[12px]" style={on ? {background:"var(--ink)", color:"var(--bg)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+                {v}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="stamp mb-2">Distance</div>
+        <div className="flex flex-wrap gap-1.5 mb-5">
+          {distances.map(d=>{
+            const on = advFilters.distance === d;
+            return (
+              <button key={d} onClick={()=>setAdvFilters({...advFilters, distance: on ? null : d})} className="press px-3 h-8 rounded-full text-[12px]" style={on ? {background:"var(--ice)", color:"var(--ice-ink)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+                {d}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="stamp mb-2">When</div>
+        <div className="flex gap-1.5 mb-6">
+          {timings.map(t=>{
+            const on = advFilters.timing === t;
+            return (
+              <button key={t} onClick={()=>setAdvFilters({...advFilters, timing: t})} className={"press flex-1 h-10 rounded-[12px] text-[12px] uppercase tracking-[.16em]"} style={on ? {background:"var(--ink)", color:"var(--bg)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+                {t}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-2">
+          <button onClick={()=>setAdvFilters({ verticals:[], distance:null, timing:"Tonight" })} className="press flex-1 h-12 rounded-full text-[12px] uppercase tracking-[.18em]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+            Reset
+          </button>
+          <button onClick={onClose} className="press flex-[2] h-12 rounded-full text-[13px] uppercase tracking-[.18em] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+            Show rooms
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 /* ========== 02 — EXPLORE ========== */
 function ScreenExplore({ tab, onTab, onPickEvent }){
   const [filter, setFilter] = useState("all");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [advFilters, setAdvFilters] = useState({ verticals:[], distance:null, timing:"Tonight" });
   const days = [
     { d:"23", w:"Fri" }, { d:"24", w:"Sat" }, { d:"25", w:"Sun", active:true }, { d:"26", w:"Mon" }, { d:"27", w:"Tue" }, { d:"28", w:"Wed" }
   ];
   const filters = ["all","beach","club","restaurant","lounge"];
   const list = EVENTS.filter(e => filter==="all" ? true : e.type.toLowerCase()===filter);
+  const activeAdvCount = advFilters.verticals.length + (advFilters.distance ? 1 : 0) + (advFilters.timing !== "Tonight" ? 1 : 0);
 
   return (
     <PhoneScreen tab={tab} onTab={onTab}>
@@ -392,7 +500,13 @@ function ScreenExplore({ tab, onTab, onPickEvent }){
           <div className="stamp">Index</div>
           <div className="font-black font-display-l text-[32px] leading-none mt-1">All open rooms in Beirut.</div>
         </div>
+        <button onClick={()=>setSheetOpen(true)} className="press flex items-center gap-1.5 px-3 h-9 rounded-full" style={{border:"1px solid var(--line-2)"}}>
+          <Icon name="sliders-horizontal" size={13} stroke={1.5}/>
+          <span className="text-[11px] uppercase tracking-[.18em]">Filters</span>
+          {activeAdvCount > 0 && <span className="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-mono" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>{activeAdvCount}</span>}
+        </button>
       </div>
+      <FilterSheet open={sheetOpen} onClose={()=>setSheetOpen(false)} advFilters={advFilters} setAdvFilters={setAdvFilters}/>
 
       <div className="px-5 pt-4 flex gap-2 overflow-x-auto noscroll">
         {days.map(d=>(
@@ -447,7 +561,7 @@ function ScreenExplore({ tab, onTab, onPickEvent }){
 }
 
 /* ========== 03 — EVENT DETAIL ========== */
-function ScreenEventDetail({ event, onBack, onApply, applied }){
+function ScreenEventDetail({ event, onBack, onApply, applyState }){
   const e = event || EVENTS[0];
   return (
     <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
@@ -550,9 +664,19 @@ function ScreenEventDetail({ event, onBack, onApply, applied }){
             <div className="stamp" style={{color:"var(--ink-mute)"}}>Closes in</div>
             <div className="font-black text-[22px] leading-none mt-0.5 font-mono" style={{color:"var(--ice)"}}>04 : 56 : 12</div>
           </div>
-          <button onClick={onApply} disabled={applied} className="press flex items-center gap-3 h-[56px] px-6 rounded-full" style={{background: applied? "var(--bg-elev2)" : "var(--ice)", color: applied? "var(--ink)":"var(--ice-ink)"}}>
-            <span className="font-medium text-[15px] uppercase tracking-[.18em]">{applied ? "Applied" : "Apply · free"}</span>
-            <Icon name={applied?"check":"arrow-right"} size={16} stroke={1.6}/>
+          <button onClick={onApply} disabled={applyState !== 'idle'} className="press flex items-center gap-3 h-[56px] px-6 rounded-full" style={{background: applyState === 'idle' ? "var(--ice)" : "var(--bg-elev2)", color: applyState === 'idle' ? "var(--ice-ink)" : "var(--ink)", minWidth: 168, justifyContent:'center'}}>
+            {applyState === 'idle' && (<>
+              <span className="font-medium text-[15px] uppercase tracking-[.18em]">Apply · Free</span>
+              <Icon name="arrow-right" size={16} stroke={1.6}/>
+            </>)}
+            {applyState === 'submitting' && (<>
+              <span className="font-medium text-[15px] uppercase tracking-[.18em]">Reviewing</span>
+              <span className="spin inline-block w-4 h-4 rounded-full" style={{border:"2px solid currentColor", borderTopColor:"transparent"}}/>
+            </>)}
+            {applyState === 'submitted' && (<>
+              <span className="font-medium text-[15px] uppercase tracking-[.18em]">Submitted</span>
+              <Icon name="check" size={16} stroke={1.8}/>
+            </>)}
           </button>
         </div>
       </div>
@@ -787,23 +911,23 @@ function ScreenPicked({ event, onConfirm, onLater }){
         <img src={e.img} className="absolute inset-0 w-full h-full object-cover" alt="" style={{filter:"blur(40px) brightness(.4)"}}/>
       </div>
 
-      <div className="absolute inset-0 z-10 flex flex-col px-7 pt-[100px] pb-10 anim-up">
-        <div className="stamp" style={{color:"rgba(245,241,234,.7)"}}>The List · invitation</div>
+      <div className="absolute inset-0 z-10 flex flex-col px-7 pt-[100px] pb-10">
+        <div className="stamp picked-stagger" style={{color:"rgba(245,241,234,.7)", animationDelay:"0ms"}}>The List · invitation</div>
 
         <div className="flex-1 flex flex-col justify-center items-center text-center -mt-6">
-          <div className="w-[180px] h-[180px] rounded-full flex items-center justify-center pulse-ice" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+          <div className="w-[180px] h-[180px] rounded-full flex items-center justify-center pulse-ice ring-pop" style={{background:"var(--ice)", color:"var(--ice-ink)", animationDelay:"120ms"}}>
             <div className="font-black text-[48px] leading-none">You're<br/>in.</div>
           </div>
-          <div className="font-black font-display-l text-[34px] leading-[0.95] mt-10 tracking-tight">{e.title}</div>
-          <div className="text-[13px] mt-2 opacity-75">{e.venue} · {e.date} · {e.time}</div>
+          <div className="font-black font-display-l text-[34px] leading-[0.95] mt-10 tracking-tight picked-stagger" style={{animationDelay:"680ms"}}>{e.title}</div>
+          <div className="text-[13px] mt-2 opacity-75 picked-stagger" style={{animationDelay:"820ms"}}>{e.venue} · {e.date} · {e.time}</div>
 
-          <div className="mt-8 px-4 py-3 rounded-[12px]" style={{background:"rgba(245,241,234,.08)", border:"1px solid rgba(245,241,234,.15)"}}>
+          <div className="mt-8 px-4 py-3 rounded-[12px] picked-stagger" style={{background:"rgba(245,241,234,.08)", border:"1px solid rgba(245,241,234,.15)", animationDelay:"960ms"}}>
             <div className="stamp" style={{color:"rgba(245,241,234,.65)"}}>Confirm within</div>
             <div className="font-black text-[28px] font-mono mt-0.5" style={{color:"var(--ice)"}}>23 : 59 : 47</div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 picked-stagger" style={{animationDelay:"1120ms"}}>
           <button onClick={onConfirm} className="press w-full h-[58px] rounded-full font-medium text-[15px] uppercase tracking-[.2em]" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
             Confirm my seat
           </button>
@@ -817,12 +941,95 @@ function ScreenPicked({ event, onConfirm, onLater }){
   );
 }
 
+/* ========== 00 — ONBOARDING ========== */
+function ScreenOnboard({ step, setStep, onComplete }){
+  const [phone, setPhone] = useState("");
+  const [handle, setHandle] = useState("");
+  const canSubmit = phone.length >= 6 && handle.length >= 2;
+
+  const submit = () => {
+    setStep('reviewing');
+    setTimeout(() => setStep('tier-reveal'), 2800);
+  };
+
+  if (step === 'phone') return (
+    <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
+      <StatusBar/>
+      <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
+        <div className="stamp">The List · No. 048</div>
+        <div className="font-black font-display-l text-[44px] leading-[.95] tracking-tight mt-3">Apply for<br/>access.</div>
+        <div className="text-[13px] mt-3 max-w-[280px]" style={{color:"var(--ink-2)"}}>By invitation only. We review every profile manually. Approval typically takes 24 hours.</div>
+
+        <div className="mt-10 space-y-5">
+          <div>
+            <div className="stamp mb-2">Phone</div>
+            <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+961 71 000 000" className="w-full h-12 px-3 rounded-[12px] text-[15px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+          </div>
+          <div>
+            <div className="stamp mb-2">Instagram handle</div>
+            <div className="flex h-12 rounded-[12px] overflow-hidden" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)"}}>
+              <div className="px-3 flex items-center text-[15px]" style={{color:"var(--ink-mute)"}}>@</div>
+              <input value={handle} onChange={e=>setHandle(e.target.value)} placeholder="capriottisara" className="flex-1 bg-transparent text-[15px] pr-3 focus:outline-none" style={{color:"var(--ink)"}}/>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1"/>
+
+        <button onClick={submit} disabled={!canSubmit} className="press w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em]" style={{background: canSubmit ? "var(--ice)" : "var(--bg-elev2)", color: canSubmit ? "var(--ice-ink)" : "var(--ink-mute)"}}>
+          Apply for access
+        </button>
+        <div className="text-center text-[11px] mt-3" style={{color:"var(--ink-mute)"}}>No password. We verify through your Instagram.</div>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+
+  if (step === 'reviewing') return (
+    <div className="absolute inset-0 anim-fade" style={{background:"#0A0A0A", color:"#F5F1EA"}}>
+      <StatusBar/>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-7">
+        <div className="w-[160px] h-[160px] rounded-full border-2 flex items-center justify-center" style={{borderColor:"rgba(245,241,234,.2)"}}>
+          <div className="w-[120px] h-[120px] rounded-full border-2 spin" style={{borderColor:"rgba(245,241,234,.3)", borderTopColor:"#F5F1EA"}}/>
+        </div>
+        <div className="font-black font-display-l text-[28px] mt-10 tracking-tight">Reviewing<br/>your profile.</div>
+        <div className="text-[13px] mt-3 opacity-70 max-w-[260px]">@{handle || "your-handle"} is being checked. Most decisions land within 24 hours.</div>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+
+  // tier-reveal
+  return (
+    <div className="absolute inset-0 anim-fade" style={{background:"#0A0A0A", color:"#F5F1EA"}}>
+      <StatusBar/>
+      <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
+        <div className="stamp picked-stagger" style={{color:"rgba(245,241,234,.7)", animationDelay:"0ms"}}>The List · invitation</div>
+
+        <div className="flex-1 flex flex-col justify-center items-center text-center">
+          <div className="ring-pop w-[180px] h-[180px] rounded-full flex items-center justify-center pulse-ice" style={{background:"var(--ice)", color:"var(--ice-ink)", animationDelay:"120ms"}}>
+            <div className="font-black text-[36px] leading-none">Tier<br/>One.</div>
+          </div>
+          <div className="font-black font-display-l text-[34px] leading-[.95] mt-10 tracking-tight picked-stagger" style={{animationDelay:"680ms"}}>You're<br/>on the list.</div>
+          <div className="text-[13px] mt-3 opacity-80 max-w-[280px] picked-stagger" style={{animationDelay:"820ms"}}>Your audience fits the rooms. Tier reviews happen quarterly.</div>
+        </div>
+
+        <button onClick={onComplete} className="press w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em] picked-stagger" style={{background:"var(--ice)", color:"var(--ice-ink)", animationDelay:"1100ms"}}>
+          Enter The List
+        </button>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
 /* ========== APP — navigation state ========== */
 function App(){
-  const [screen, setScreen] = useState("home");      // home | explore | detail | mylist | profile | picked
+  const [onboardStep, setOnboardStep] = useState("phone"); // phone | reviewing | tier-reveal | done
+  const [screen, setScreen] = useState("home");           // home | explore | detail | mylist | profile | picked
   const [tab, setTab] = useState("home");
   const [currentEvent, setCurrentEvent] = useState(null);
-  const [applied, setApplied] = useState(false);
+  const [applyState, setApplyState] = useState("idle");   // idle | submitting | submitted
   const [confirmedEvent, setConfirmedEvent] = useState(null);
   const [light, setLight] = useState(false);
 
@@ -836,19 +1043,19 @@ function App(){
     if (id === "explore") setScreen("explore");
     if (id === "mylist")  setScreen("mylist");
     if (id === "profile") setScreen("profile");
-    setApplied(false);
+    setApplyState("idle");
   };
 
   const pickEvent = (e) => {
     setCurrentEvent(e);
-    setApplied(false);
+    setApplyState("idle");
     setScreen("detail");
   };
 
   const onApply = () => {
-    setApplied(true);
-    // Fake the venue's review window
-    setTimeout(() => setScreen("picked"), 900);
+    setApplyState("submitting");
+    setTimeout(() => setApplyState("submitted"), 1400);
+    setTimeout(() => setScreen("picked"), 2200);
   };
 
   const onConfirmPick = () => {
@@ -861,34 +1068,45 @@ function App(){
     setScreen("detail");
   };
 
+  const skipOnboarding = () => setOnboardStep("done");
+  const onboardActive = onboardStep !== "done";
+
   return (
     <div className="min-h-screen w-full flex flex-col items-center pt-20 pb-24">
       <button className="theme-toggle" onClick={() => setLight(l => !l)}>
         <span className="dot"></span>
         {light ? 'Light' : 'Dark'} · switch
       </button>
+      {onboardActive && (
+        <button className="theme-toggle" style={{right:140}} onClick={skipOnboarding}>
+          Skip onboarding
+        </button>
+      )}
 
       <div className="mb-8 text-center">
-        <div className="stamp" style={{color:"var(--ink-mute)"}}>The List · Influencer side · Prototype v0.1</div>
+        <div className="stamp" style={{color:"var(--ink-mute)"}}>The List · Influencer side · Prototype v0.2</div>
         <div className="font-black text-[28px] leading-none mt-2">Tap through Sara's flow.</div>
-        <div className="text-[12px] mt-2" style={{color:"var(--ink-mute)"}}>Tap an event → Apply → wait for the venue to pick you.</div>
+        <div className="text-[12px] mt-2" style={{color:"var(--ink-mute)"}}>{onboardActive ? "Onboarding first. Fill the form to be reviewed." : "Tap an event → Apply → wait for the venue to pick you."}</div>
       </div>
 
       <div className="iphone">
         <div className="iphone-screen">
-          {screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent}/>}
-          {screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent}/>}
-          {screen === "detail"  && <ScreenEventDetail event={currentEvent} applied={applied} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply}/>}
-          {screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} confirmedEvent={confirmedEvent}/>}
-          {screen === "profile" && <ScreenProfile tab={tab} onTab={goTab}/>}
-          {screen === "picked"  && <ScreenPicked event={currentEvent} onConfirm={onConfirmPick} onLater={onDeclinePick}/>}
+          {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={skipOnboarding}/>}
+          {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent}/>}
+          {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent}/>}
+          {!onboardActive && screen === "detail"  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply}/>}
+          {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} confirmedEvent={confirmedEvent}/>}
+          {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab}/>}
+          {!onboardActive && screen === "picked"  && <ScreenPicked event={currentEvent} onConfirm={onConfirmPick} onLater={onDeclinePick}/>}
         </div>
       </div>
 
       <div className="mt-8 text-center max-w-[420px]">
         <div className="stamp mb-2" style={{color:"var(--ink-mute)"}}>How to use</div>
         <div className="text-[12px]" style={{color:"var(--ink-2)"}}>
-          Tap any event card on Home or Index. Hit Apply. A 1-second fake delay simulates the venue reviewing. The "You're in" notification slides up. Confirm → lands you in My List under Confirmed. Tap any tab to jump around.
+          {onboardActive
+            ? "Type anything in the two fields, hit Apply for access. Watch the review animation. Tap Enter The List on the tier reveal."
+            : "Tap any event card, hit Apply. The button shows a loading state, then “You're in” slides up with the tier ring. Confirm → lands in My List. Hit the Filters pill on Index for the bottom sheet."}
         </div>
       </div>
     </div>
