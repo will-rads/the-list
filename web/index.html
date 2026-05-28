@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>The List — Prototype</title>
+<title>The List - Prototype</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,6 +57,11 @@
     font-family: 'Satoshi', ui-sans-serif, system-ui;
     font-weight: 900;
     letter-spacing: -0.015em;
+  }
+  .font-display-l {
+    font-family: 'Satoshi', ui-sans-serif, system-ui;
+    font-weight: 900;
+    letter-spacing: -0.025em;
   }
   /* font-mono was used in JSX for numbers/timers; map it to Satoshi 900
      with tabular figures so digits feel thick and modern, and the third
@@ -180,6 +185,19 @@
     to   { opacity: 1; }
   }
   .anim-fade { animation: fadeIn .35s ease; }
+
+  /* Stagger entrance for list children. Each child sets style={{"--i": index}}. */
+  .stagger > * { opacity: 1; }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes staggerUp {
+      from { transform: translateY(12px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    .stagger > * {
+      animation: staggerUp .45s ease-out both;
+      animation-delay: calc(var(--i, 0) * 60ms);
+    }
+  }
 </style>
 </head>
 <body class="page-bg min-h-screen">
@@ -254,7 +272,7 @@ function HomeIndicator(){
 /* ========== PhoneScreen wrapper: status bar + scrolling content + sticky tab bar ========== */
 function PhoneScreen({ children, tab, onTab, fullBleed=false }){
   return (
-    <div className="absolute inset-0" style={{background:"var(--bg)"}}>
+    <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
       <StatusBar/>
       <div className="absolute inset-0 noscroll overflow-y-auto" style={{paddingBottom: tab ? 88 : 0}}>
         {children}
@@ -306,13 +324,12 @@ function ScreenHome({ tab, onTab, onPickEvent }){
 
       {/* Featured */}
       <div className="px-5">
-        <div className="smallcaps mb-3" style={{color:"var(--ink-mute)"}}>Tonight · featured</div>
         <button className="press w-full text-left rounded-[18px] overflow-hidden relative grain" style={{height:380, background:"var(--bg-elev)"}} onClick={()=>onPickEvent(featured)}>
           <img src={featured.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
           <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.25) 0%, rgba(10,10,10,0) 35%, rgba(10,10,10,.9) 100%)"}}/>
           <div className="absolute top-3 left-3 px-2 py-1 rounded-full chip-ice text-[10px] uppercase tracking-[.22em] font-medium">{featured.badge}</div>
           <div className="absolute bottom-4 left-4 right-4 text-[var(--ink)]" style={{color:"#F5F1EA"}}>
-            <div className="font-black text-[40px] leading-[0.92] tracking-tight">{featured.title}</div>
+            <div className="font-black font-display-l text-[40px] leading-[0.92] tracking-tight">{featured.title}</div>
             <div className="flex items-center gap-2 mt-3">
               <span className="text-[12px]">{featured.venue}</span>
               <span style={{color:"rgba(245,241,234,.5)"}}>·</span>
@@ -335,10 +352,10 @@ function ScreenHome({ tab, onTab, onPickEvent }){
         <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
         <span className="text-[11px] font-mono" style={{color:"var(--ink-mute)"}}>{tonight.length} rooms open</span>
       </div>
-      <div className="px-5 space-y-3">
-        {tonight.map(e=>(
-          <button key={e.id} onClick={()=>onPickEvent(e)} className="press w-full flex gap-3 items-center text-left p-3 rounded-[14px]" style={{background:"var(--bg-elev)"}}>
-            <img src={e.img} className="w-16 h-20 rounded-[8px] object-cover" alt=""/>
+      <div className="px-5 space-y-3 stagger">
+        {tonight.map((e,i)=>(
+          <button key={e.id} onClick={()=>onPickEvent(e)} style={{background:"var(--bg-elev)","--i":i}} className="press w-full flex gap-3 items-center text-left p-3 rounded-[14px]">
+            <img src={e.img} className="w-16 h-20 rounded-[10px] object-cover" alt=""/>
             <div className="flex-1 min-w-0">
               <div className="stamp">{e.type}</div>
               <div className="font-medium text-[15px] mt-0.5 truncate">{e.title}</div>
@@ -373,7 +390,7 @@ function ScreenExplore({ tab, onTab, onPickEvent }){
       <div className="px-5 pt-[60px] pb-3 flex items-end justify-between">
         <div>
           <div className="stamp">Index</div>
-          <div className="font-black text-[32px] leading-none mt-1">All open rooms in Beirut.</div>
+          <div className="font-black font-display-l text-[32px] leading-none mt-1">All open rooms in Beirut.</div>
         </div>
       </div>
 
@@ -400,9 +417,9 @@ function ScreenExplore({ tab, onTab, onPickEvent }){
         <span className="stamp">Sorted · closes soonest</span>
       </div>
 
-      <div className="px-5 space-y-4">
-        {list.map(e=>(
-          <button key={e.id} onClick={()=>onPickEvent(e)} className="press w-full text-left rounded-[16px] overflow-hidden grain relative" style={{height:200, background:"var(--bg-elev)"}}>
+      <div className="px-5 space-y-4 stagger">
+        {list.map((e,i)=>(
+          <button key={e.id} onClick={()=>onPickEvent(e)} className="press w-full text-left rounded-[18px] overflow-hidden grain relative" style={{height:200, background:"var(--bg-elev)","--i":i}}>
             <img src={e.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
             <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.3) 0%, rgba(10,10,10,0) 35%, rgba(10,10,10,.9) 100%)"}}/>
             <div className="absolute top-3 left-3 flex gap-1.5">
@@ -462,7 +479,7 @@ function ScreenEventDetail({ event, onBack, onApply, applied }){
             <span className="text-[10px] uppercase tracking-[.22em] px-2 py-1 rounded-full chip-ice font-medium">{e.type}</span>
             <span className="text-[10px] uppercase tracking-[.22em] opacity-70">{e.venue}</span>
           </div>
-          <div className="font-black text-[52px] leading-[0.92] tracking-tight">{e.title}</div>
+          <div className="font-black font-display-l text-[52px] leading-[0.92] tracking-tight">{e.title}</div>
           <div className="text-[12px] mt-3 max-w-[280px] opacity-80">Resident DJ Karim Sahli from 16:00. Mediterranean menu at sunset. Dress: swimwear and an attitude.</div>
         </div>
       </div>
@@ -509,7 +526,7 @@ function ScreenEventDetail({ event, onBack, onApply, applied }){
       </div>
       <div className="px-5 space-y-4">
         {[
-          { n:"01", t:"One Story, on the day", s:"Posted between 14:00 — 21:00" },
+          { n:"01", t:"One Story, on the day", s:"Posted between 14:00 - 21:00" },
           { n:"02", t:"Tag @cyanbeachclub", s:"And the venue handle in caption" },
         ].map((r,i)=>(
           <div key={i} className="flex items-center gap-4 py-3" style={{borderBottom:"1px solid var(--line)"}}>
@@ -553,7 +570,7 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent }){
       <div className="px-5 pt-[60px] pb-3 flex items-center justify-between">
         <div>
           <div className="stamp">Personal</div>
-          <div className="font-black text-[36px] leading-none mt-1">My List</div>
+          <div className="font-black font-display-l text-[36px] leading-none mt-1">My List</div>
         </div>
         <button className="press w-10 h-10 rounded-full border flex items-center justify-center" style={{borderColor:"var(--line-2)"}}>
           <Icon name="calendar" size={16} stroke={1.4}/>
@@ -625,13 +642,13 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent }){
 
       {/* PAST */}
       {seg==="past" && (
-        <div className="px-5 pt-5 space-y-3">
+        <div className="px-5 pt-5 space-y-3 stagger">
           {[
             { t:"Late Lounge",    v:"Centrale",  date:"22 Apr", score:"9.2", img:IMG.lounge   },
             { t:"Chef Tasting",   v:"Em Sherif", date:"15 Apr", score:"8.8", img:IMG.restaurant},
             { t:"Pool Day vol. II", v:"Cyan",     date:"08 Apr", score:"9.5", img:IMG.beachClub },
           ].map((e,i)=>(
-            <div key={i} className="flex items-center gap-3 p-3 rounded-[14px]" style={{background:"var(--bg-elev)"}}>
+            <div key={i} className="flex items-center gap-3 p-3 rounded-[14px]" style={{background:"var(--bg-elev)","--i":i}}>
               <img src={e.img} className="w-14 h-14 rounded-[10px] object-cover" style={{filter:"grayscale(.25)"}} alt=""/>
               <div className="flex-1">
                 <div className="text-[14px]">{e.t}</div>
@@ -676,7 +693,7 @@ function ScreenProfile({ tab, onTab }){
 
         <div className="absolute bottom-5 left-5 right-5 z-10" style={{color:"#F5F1EA"}}>
           <div className="smallcaps mb-2" style={{color:"rgba(245,241,234,.7)"}}>Member since '24</div>
-          <div className="font-black text-[48px] leading-[0.9] tracking-tight">Sara<br/>Capriotti.</div>
+          <div className="font-black font-display-l text-[48px] leading-[0.9] tracking-tight">Sara<br/>Capriotti.</div>
           <div className="flex items-center gap-2 mt-3">
             <Icon name="instagram" size={13} stroke={1.5} className="opacity-70"/>
             <span className="text-[13px] opacity-80">@capriottisara</span>
@@ -744,7 +761,7 @@ function ScreenProfile({ tab, onTab }){
           { t:"Late Lounge",      v:"Centrale", date:"22 Apr", score:"9.2", img:IMG.lounge   },
         ].map((e,i)=>(
           <div key={i} className="flex items-center gap-3">
-            <img src={e.img} className="w-12 h-14 rounded-[8px] object-cover" alt=""/>
+            <img src={e.img} className="w-12 h-14 rounded-[10px] object-cover" alt=""/>
             <div className="flex-1">
               <div className="text-[14px]">{e.t}</div>
               <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{e.v} · {e.date}</div>
@@ -777,7 +794,7 @@ function ScreenPicked({ event, onConfirm, onLater }){
           <div className="w-[180px] h-[180px] rounded-full flex items-center justify-center pulse-ice" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
             <div className="font-black text-[48px] leading-none">You're<br/>in.</div>
           </div>
-          <div className="font-black text-[34px] leading-[0.95] mt-10 tracking-tight">{e.title}</div>
+          <div className="font-black font-display-l text-[34px] leading-[0.95] mt-10 tracking-tight">{e.title}</div>
           <div className="text-[13px] mt-2 opacity-75">{e.venue} · {e.date} · {e.time}</div>
 
           <div className="mt-8 px-4 py-3 rounded-[12px]" style={{background:"rgba(245,241,234,.08)", border:"1px solid rgba(245,241,234,.15)"}}>
