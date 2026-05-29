@@ -4,7 +4,7 @@
 
 **Phase: prototype lockdown.** Visual design and flow are 80% locked in HTML. Next: build a single-phone navigable prototype, then port to SwiftUI.
 
-```
+```text
 [done]      Voice notes transcribed + plan synthesized
 [done]      The Secret Society researched (origin, scale, weaknesses)
 [done]      6 reference screens designed in HTML (dark + light)
@@ -37,15 +37,15 @@ Lock the v1 spec. See `context.md` in this folder for the table of defaults.
 | Bundle structure | 3 templates + custom override | All 3 |
 | Spot mechanic | Apply + venue swipes (limited spots) | Confirmed |
 | Story requirement | 1 Story + tag | Radwan |
-| Vetting | **Phyllo Identity API auto-fetch on submit** → 3 founders eyeball borderline cases | Dima + Will |
-| Creator data provider | **Phyllo** (Identity API for v1, Connect SDK for verified upgrade later) | Will |
+| Vetting | **Auto-fetch creator data on submit** (provider TBD) → 3 founders eyeball borderline cases | Dima + Will |
+| Creator data provider | TBD — candidates: Phyllo, Modash, Ensembledata. Pick after trialing. | Will |
 | Equity | 33/33/33, 24-month vest | Will |
 | Name | "The List" → test with 30 | All 3 |
 | Operating entity | TBD (offshore likely) | Will |
 
 ### Phase 2 — Two parallel tracks (weeks 2-6)
 
-```
+```text
 Track A — Build (Will)                Track B — Sell (Radwan + Dima)
 ──────────────────────                ─────────────────────────────
 prototype.html                        target list: 5-10 anchor venues
@@ -63,6 +63,7 @@ The two tracks **must run in parallel.** You can't fix a product without users o
 ### Phase 3 — Manual dress rehearsal (weeks 5-7)
 
 Run 20-30 real bookings **before the app is in App Store**.
+
 - Dima WhatsApps the drop.
 - Google Form claim.
 - Notion as venue dashboard.
@@ -82,7 +83,7 @@ Rule: **every flow we build into the app should be a flow we've already done 5 t
 
 ### Phase 5 — 90-day decision
 
-```
+```text
 > 50 paying drops, > 70% venue repeat   →  Real business. Raise or expand to Tripoli / Jounieh.
 20-50 drops, mixed repeat               →  Grind. Automate broken flows.
 < 20 drops                              →  The model or the economy is wrong. Revisit.

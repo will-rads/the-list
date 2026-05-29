@@ -250,17 +250,18 @@ const IMG = {
   saraFull:   "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&q=80&auto=format&fit=crop",
 };
 
-/* ========== Phyllo Identity API — mock response shape ==========
-   Production: backend calls https://api.phyllo.com/v1/connect/identity
-   with the user's handle. Returns shape below. We mock client-side for
-   the prototype; structure mirrors real response so swap is one fetch().
-================================================================== */
-function mockPhylloFetch(handle){
-  // Simulate a 2.4s network call to Phyllo Identity API
+/* ========== Creator data — mock response shape ==========
+   Provider TBD (candidates: Phyllo, Modash, Ensembledata). Whichever we
+   pick, the backend will normalize to the response shape below so the
+   client never has to care. Mocked here so the UX is real even before
+   the backend exists.
+========================================================== */
+function mockCreatorDataFetch(handle){
+  // Simulate a 2.4s network call to the creator data provider
   return new Promise(resolve => {
     setTimeout(() => {
       const h = (handle || "capriottisara").replace(/^@/, "").toLowerCase();
-      // In production this would be: GET /v1/identity/lookup?handle={h}
+      // Real version: POST /api/creator-data { handle } → backend hits provider
       resolve({
         handle: h,
         platform: "instagram",
@@ -1029,9 +1030,10 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
 
   const submit = async () => {
     setStep('reviewing');
-    // Real prod: POST /api/onboard → backend calls Phyllo Identity API
-    // For prototype we mock the response client-side with the real shape.
-    const profile = await mockPhylloFetch(handle);
+    // Real prod: POST /api/onboard → backend hits whichever creator-data
+    // provider we settle on. Prototype mocks client-side using the agreed
+    // normalized shape so the provider can swap later without UI changes.
+    const profile = await mockCreatorDataFetch(handle);
     onProfileFetched(profile);
     setStep('tier-reveal');
   };

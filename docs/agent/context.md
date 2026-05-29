@@ -6,7 +6,7 @@
 
 Two sides of the marketplace:
 
-```
+```text
 Influencer side                Venue side
 ─────────────                  ──────────
 applies to events    ◄────►    posts events
@@ -30,7 +30,7 @@ iPhone-first. SwiftUI app. v1 = Beirut only.
 
 **Brand pays. Influencer free.** Same as TSS, A-List, and Expin. Don't fight the model.
 
-```
+```text
 Venue ─ pays $$ ─► The List ─ keeps cut ─► Founders
   ▲                    │
   │ Story posted       │ matches & manages comms
@@ -63,6 +63,7 @@ TSS's founder Romain Fourel spent 3 years doing the WhatsApp version of Dima's j
 Their structure works. We **copy structure, throw away visual language**.
 
 ### What TSS does well (copy)
+
 - Apply + Swipe model
 - Reputation scores (Punctuality / Presentation / Joviality)
 - No-show tracking with CHECKED IN / CHECKED OUT / NO SHOW status
@@ -71,6 +72,7 @@ Their structure works. We **copy structure, throw away visual language**.
 - Concierge layer: TSS handles all pre/post creator comms for the venue
 
 ### What TSS does poorly (we exploit)
+
 - **4-Story rule** clutters Instagram feeds → we do 1 Story + venue tag
 - Generic briefings → ours are sharper, more editorial
 - Hidden pricing for venues → ours self-serve transparent
@@ -79,7 +81,7 @@ Their structure works. We **copy structure, throw away visual language**.
 
 ## Architecture (where things will live)
 
-```
+```text
 Today (prototype phase)
 ═══════════════════════
 web/gallery.html      → 12 phones in two rows (dark + light), reference design
@@ -98,22 +100,24 @@ ios/                  → SwiftUI app
     └── Services/     → Supabase client
 
 Backend            → Supabase (auth, Postgres, storage, realtime)
-Creator data       → Phyllo Identity API (handle → audience demo, no OAuth needed)
-                     → Phyllo Connect SDK for "Verify with Instagram" upgrade
+Creator data       → 3rd-party provider (TBD: Phyllo / Modash / Ensembledata)
+                     wrapped behind our own normalized API
+                     → OAuth "Verify with Instagram" path for verified tier
 Push               → APNs via Supabase Edge Functions
 Story proof        → manual review v1, auto v2
 Payments           → Whish / OMT / USD cash v1, Stripe later
 ```
 
-### Onboarding data flow (locked 2026-05-30)
+### Onboarding data flow (UX locked, vendor not yet)
 
-```
+```text
 User taps "Apply for access"
    ↓
 Phone + IG handle submitted to our backend
    ↓
-Supabase Edge fn: POST https://api.phyllo.com/v1/identity/lookup
-   { handle, platform: "instagram" }
+Supabase Edge fn: POST /api/creator-data { handle }
+   - Backend hits whichever provider we choose
+   - Normalizes the response to our shape
    ↓ ~2s
 Returns: followers_count, engagement_rate, audience (gender_split,
 country_split, age_split), quality_score, profile_picture_url,
@@ -124,13 +128,13 @@ Profile screen renders with this data
    ↓
 [Optional] User taps "Verify with Instagram"
    ↓
-Phyllo Connect SDK opens → user OAuths their IG via Phyllo
+Provider's Connect/OAuth flow → user authorizes IG access
    ↓
 Webhook updates row: data_status: "verified", numbers may shift slightly
 Badge flips to "Verified · Tier 1"
 ```
 
-No manual review in the happy path. Founders only touch borderline / suspicious accounts.
+No manual review in the happy path. Founders only touch borderline / suspicious accounts. **Vendor is swappable** because all providers feed the same normalized response shape — the client (SwiftUI / web) never sees vendor specifics.
 
 ## The 6 core screens (influencer side)
 

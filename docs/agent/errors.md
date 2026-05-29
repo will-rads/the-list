@@ -13,15 +13,16 @@ Tempting shortcut: hit `instagram.com/<handle>` and parse follower count from pu
 - Apple pulls the app from the App Store when Meta flags it
 - IP gets blacklisted within hours of any volume
 
-**The only safe routes for IG data:**
+**The only safe routes for IG data — pick one licensed provider:**
 
-| Route | When |
-| --- | --- |
-| **Phyllo Identity API** | v1 — handle lookup, returns estimated demographics, no user OAuth needed. Phyllo handles the legal layer. |
-| **Phyllo Connect SDK** (Instagram Graph API under the hood) | v2 — for verified-tier users only |
-| Modash / HypeAuditor / similar | Backup if Phyllo doesn't work out |
+| Route | What it gives | Provider candidates (not yet locked) |
+| --- | --- | --- |
+| **Handle lookup APIs** | Followers, estimated demographics, engagement. No user OAuth needed. | Phyllo Identity, Modash, Ensembledata, HypeAuditor |
+| **OAuth Connect SDKs** | Real Meta numbers + story-posting verification. User has to authorize. | Phyllo Connect, official IG Graph API directly |
 
 If a new agent suggests "let me just curl instagram.com to grab the audience info" — stop them. It's the same trap as scraping LinkedIn, only worse because Meta is more aggressive.
+
+Provider decision is **deliberately deferred** until we trial 1-2 of them. Until then, prototype uses a `mockCreatorDataFetch()` that returns the agreed normalized shape (see `web/index.html`). The backend will wrap whichever vendor we pick behind that same shape so the client never has to care.
 
 ---
 
@@ -29,11 +30,12 @@ If a new agent suggests "let me just curl instagram.com to grab the audience inf
 
 After `winget install --id GitHub.cli --scope user`, the binary lands at:
 
-```
+```text
 C:\Users\user\AppData\Local\Microsoft\WinGet\Packages\GitHub.cli_Microsoft.Winget.Source_8wekyb3d8bbwe\bin\gh.exe
 ```
 
 Current shell doesn't see it (PATH not refreshed). Either:
+
 - Restart shell so `gh` resolves, OR
 - Call the full path explicitly: `& '<full path>\gh.exe' <command>`
 
@@ -42,6 +44,7 @@ Current shell doesn't see it (PATH not refreshed). Either:
 ## 2026-05-27 — Claude Code preview tool screenshot times out on big pages
 
 `mcp__Claude_Preview__preview_screenshot` times out (30s) when the page is ≥ 2700px wide or ≥ 2700px tall, even when all images have loaded. Workarounds:
+
 - Resize viewport down to ~1500×1000 first
 - Take multiple screenshots scrolling the page in chunks
 - Page must be < ~1500px effective render size for reliable screenshots

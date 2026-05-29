@@ -6,42 +6,37 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## Current state (one line)
 
-Prototype live at `the-list-omega.vercel.app`. Onboarding now mocks the real Phyllo Identity API response shape. Profile screen reads dynamically from that response. Tap-through flow works (Home → Detail → Apply → Picked → My List).
+Prototype live at `the-list-omega.vercel.app`. Onboarding now mocks a vendor-agnostic creator-data API response shape. Profile screen reads dynamically from that response. Tap-through flow works (Home → Detail → Apply → Picked → My List).
 
 ---
 
-## 2026-05-30 — Phyllo locked as creator-data provider
+## 2026-05-30 — Creator-data UX wired, provider deliberately not locked
 
-Decision: use **Phyllo** for IG audience data. Two modes from the same vendor:
+Decision: **the prototype now shows the real UX** (type handle → 2-second fetch → profile auto-populates with followers, engagement, audience split), **but we do NOT lock the vendor yet.**
 
-| Mode | Used for | UX |
+Provider candidates, ranked by current lean:
+
+| Candidate | Why it's interesting | Why we haven't picked |
 | --- | --- | --- |
-| **Phyllo Identity API** | v1 onboarding | User types handle → backend calls Identity → 28k followers + estimated 62% F / 38% M / country split returned in ~2s. No user OAuth. |
-| **Phyllo Connect SDK** | Tier-upgrade later | User taps "Verify with Instagram" → Phyllo handles IG Graph API OAuth → estimated data replaced with real Meta numbers. Profile badge flips from "Self-reported" to "Verified". |
+| **Phyllo** | Two modes from one vendor (Identity API + Connect SDK for OAuth). Cheap at beta volume. Drop-in OAuth means we don't have to do Meta App Review ourselves. | Haven't trialed it. Pricing assumptions unverified. |
+| **Modash** | Largest indexed creator DB (~250M). Fast to integrate. | Flat $99/mo even at 30 users — expensive in beta. |
+| **Ensembledata** | Cheapest per-lookup ($0.01–0.05). Lightweight data. | Less rich than the others. Real-time only, no historical. |
+| **HypeAuditor** | Strong fake-follower detection — useful for vetting. | Heavy pricing ($399/mo+). Overkill until volume justifies. |
 
-Rejected alternatives:
+Rejected outright:
 
-- **Direct IG scraping**: violates IG ToS, Meta DMCAs apps, App Store pulls. Hard no.
-- **Modash**: $99/mo flat — more expensive than Phyllo at our beta volume (~30-300 users). Phyllo's per-lookup model wins until ~3k active.
-- **Manual review by Dima**: rejected. User wants production-ready, zero manual.
-
-Pricing reality:
-
-| Stage | Users | Phyllo monthly |
-| --- | --- | --- |
-| Demo / pre-launch | 30 testers | $0 (free tier) |
-| Beta with Dima's list | 300 | ~$15-30 |
-| Public launch | 3,000 active | ~$150-300 |
+- **Direct IG scraping** — violates IG ToS, Meta DMCAs apps, App Store pulls. Hard no.
+- **Manual review by Dima** — rejected by user. Want production-ready, zero manual in the happy path.
 
 Prototype changes shipped:
 
-- New `mockPhylloFetch(handle)` function returns Phyllo-shaped response after 2.4s simulated network call. Drop-in replaceable with real `fetch()` once backend Edge function exists.
-- `ScreenProfile` now reads from `profile` prop instead of hardcoded values. Falls back to Sara seed if no profile (handles Skip-onboarding demo path).
+- New `mockCreatorDataFetch(handle)` function returns the normalized response shape after a 2.4s simulated network call. Drop-in replaceable with a real `fetch()` once backend exists.
+- `ScreenProfile` reads from `profile` prop instead of hardcoded values. Falls back to Sara seed if no profile (handles Skip-onboarding demo path).
 - "Verify with Instagram" upgrade strip shown on Profile when `data_status === "estimated"`. Disappears when verified.
 - Profile badge shows "Self-reported · Tier 1" until OAuth, then "Verified · Tier 1".
-- `.env.example` gains `PHYLLO_CLIENT_ID`, `PHYLLO_CLIENT_SECRET`, `PHYLLO_ENV`.
+- `.env.example` uses generic `CREATOR_DATA_PROVIDER` + `CREATOR_DATA_API_KEY` first. Vendor-specific keys (Phyllo, Modash, Ensembledata) live in a commented block below — uncomment whichever we pick.
 
-Backend integration still to build (Supabase Edge function calling Phyllo) — not in prototype scope.
+Backend integration still to build — out of prototype scope. The client doesn't know which vendor backs the data, so swapping is one Edge-function change.
 
 ---
 
