@@ -6,7 +6,55 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## Current state (one line)
 
-Prototype live at `the-list-omega.vercel.app`. Tap-through flow works (Home → Detail → Apply → Picked → My List). Two fonts only (Satoshi headers + Host Grotesk body). Scroll fixed — tab bar and Apply CTA stay pinned to the phone edges. Mockup-v1 design language (carbon black + ice blue) is the locked direction.
+Prototype live at `the-list-omega.vercel.app`. Onboarding now mocks the real Phyllo Identity API response shape. Profile screen reads dynamically from that response. Tap-through flow works (Home → Detail → Apply → Picked → My List).
+
+---
+
+## 2026-05-30 — Phyllo locked as creator-data provider
+
+Decision: use **Phyllo** for IG audience data. Two modes from the same vendor:
+
+| Mode | Used for | UX |
+| --- | --- | --- |
+| **Phyllo Identity API** | v1 onboarding | User types handle → backend calls Identity → 28k followers + estimated 62% F / 38% M / country split returned in ~2s. No user OAuth. |
+| **Phyllo Connect SDK** | Tier-upgrade later | User taps "Verify with Instagram" → Phyllo handles IG Graph API OAuth → estimated data replaced with real Meta numbers. Profile badge flips from "Self-reported" to "Verified". |
+
+Rejected alternatives:
+
+- **Direct IG scraping**: violates IG ToS, Meta DMCAs apps, App Store pulls. Hard no.
+- **Modash**: $99/mo flat — more expensive than Phyllo at our beta volume (~30-300 users). Phyllo's per-lookup model wins until ~3k active.
+- **Manual review by Dima**: rejected. User wants production-ready, zero manual.
+
+Pricing reality:
+
+| Stage | Users | Phyllo monthly |
+| --- | --- | --- |
+| Demo / pre-launch | 30 testers | $0 (free tier) |
+| Beta with Dima's list | 300 | ~$15-30 |
+| Public launch | 3,000 active | ~$150-300 |
+
+Prototype changes shipped:
+
+- New `mockPhylloFetch(handle)` function returns Phyllo-shaped response after 2.4s simulated network call. Drop-in replaceable with real `fetch()` once backend Edge function exists.
+- `ScreenProfile` now reads from `profile` prop instead of hardcoded values. Falls back to Sara seed if no profile (handles Skip-onboarding demo path).
+- "Verify with Instagram" upgrade strip shown on Profile when `data_status === "estimated"`. Disappears when verified.
+- Profile badge shows "Self-reported · Tier 1" until OAuth, then "Verified · Tier 1".
+- `.env.example` gains `PHYLLO_CLIENT_ID`, `PHYLLO_CLIENT_SECRET`, `PHYLLO_ENV`.
+
+Backend integration still to build (Supabase Edge function calling Phyllo) — not in prototype scope.
+
+---
+
+## 2026-05-30 — Agent docs moved out of root
+
+Moved project working docs from root into `docs/agent/`:
+
+- `context.md`
+- `plan.md`
+- `memory.md`
+- `errors.md`
+
+Root stays reserved for `README.md` and `AGENTS.md`, which are the files humans and agent tooling should find first. Updated README, AGENTS, Claude starter, and Codex starter prompts to point to the new paths.
 
 ---
 

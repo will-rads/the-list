@@ -29,7 +29,7 @@
 
 ### Phase 1 — Founder meeting decisions
 
-Lock the v1 spec. See `context.md` for the table of defaults.
+Lock the v1 spec. See `context.md` in this folder for the table of defaults.
 
 | Decision | Default | Who owns |
 | --- | --- | --- |
@@ -37,7 +37,8 @@ Lock the v1 spec. See `context.md` for the table of defaults.
 | Bundle structure | 3 templates + custom override | All 3 |
 | Spot mechanic | Apply + venue swipes (limited spots) | Confirmed |
 | Story requirement | 1 Story + tag | Radwan |
-| Vetting | Manual by 3 founders, first 200 | Dima |
+| Vetting | **Phyllo Identity API auto-fetch on submit** → 3 founders eyeball borderline cases | Dima + Will |
+| Creator data provider | **Phyllo** (Identity API for v1, Connect SDK for verified upgrade later) | Will |
 | Equity | 33/33/33, 24-month vest | Will |
 | Name | "The List" → test with 30 | All 3 |
 | Operating entity | TBD (offshore likely) | Will |
@@ -49,10 +50,10 @@ Track A — Build (Will)                Track B — Sell (Radwan + Dima)
 ──────────────────────                ─────────────────────────────
 prototype.html                        target list: 5-10 anchor venues
 SwiftUI scaffold                      Kee Beirut + 2 clubs
-Onboarding + IG verify                2-3 restaurants
-Browse drops                          1-2 beach clubs
-Apply flow                            1 wellness anchor
-Notification                          pitch deck (5 slides)
+Phyllo Identity wired                 2-3 restaurants
+Phyllo Connect for verify             1-2 beach clubs
+Browse drops + Apply                  1 wellness anchor
+Notifications via APNs                pitch deck (5 slides)
 Manual venue side via Notion          6-12mo soft exclusivity
                                       0% fee for first 90 days
 ```

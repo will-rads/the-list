@@ -4,6 +4,27 @@ Things that have already gone wrong, or known traps. New entries on top, dated `
 
 ---
 
+## 2026-05-30 — Never scrape Instagram directly
+
+Tempting shortcut: hit `instagram.com/<handle>` and parse follower count from public HTML, or query an unofficial scraper API. **Do not do this.**
+
+- Violates Instagram Terms of Service
+- Meta sends DMCA takedowns + can sue
+- Apple pulls the app from the App Store when Meta flags it
+- IP gets blacklisted within hours of any volume
+
+**The only safe routes for IG data:**
+
+| Route | When |
+| --- | --- |
+| **Phyllo Identity API** | v1 — handle lookup, returns estimated demographics, no user OAuth needed. Phyllo handles the legal layer. |
+| **Phyllo Connect SDK** (Instagram Graph API under the hood) | v2 — for verified-tier users only |
+| Modash / HypeAuditor / similar | Backup if Phyllo doesn't work out |
+
+If a new agent suggests "let me just curl instagram.com to grab the audience info" — stop them. It's the same trap as scraping LinkedIn, only worse because Meta is more aggressive.
+
+---
+
 ## 2026-05-27 — `gh` CLI not in default PATH after winget user-scope install
 
 After `winget install --id GitHub.cli --scope user`, the binary lands at:

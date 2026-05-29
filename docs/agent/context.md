@@ -98,10 +98,39 @@ ios/                  → SwiftUI app
     └── Services/     → Supabase client
 
 Backend            → Supabase (auth, Postgres, storage, realtime)
+Creator data       → Phyllo Identity API (handle → audience demo, no OAuth needed)
+                     → Phyllo Connect SDK for "Verify with Instagram" upgrade
 Push               → APNs via Supabase Edge Functions
 Story proof        → manual review v1, auto v2
 Payments           → Whish / OMT / USD cash v1, Stripe later
 ```
+
+### Onboarding data flow (locked 2026-05-30)
+
+```
+User taps "Apply for access"
+   ↓
+Phone + IG handle submitted to our backend
+   ↓
+Supabase Edge fn: POST https://api.phyllo.com/v1/identity/lookup
+   { handle, platform: "instagram" }
+   ↓ ~2s
+Returns: followers_count, engagement_rate, audience (gender_split,
+country_split, age_split), quality_score, profile_picture_url,
+tier_suggestion, data_status: "estimated"
+   ↓
+Profile screen renders with this data
+"Self-reported · Tier 1" badge until OAuth
+   ↓
+[Optional] User taps "Verify with Instagram"
+   ↓
+Phyllo Connect SDK opens → user OAuths their IG via Phyllo
+   ↓
+Webhook updates row: data_status: "verified", numbers may shift slightly
+Badge flips to "Verified · Tier 1"
+```
+
+No manual review in the happy path. Founders only touch borderline / suspicious accounts.
 
 ## The 6 core screens (influencer side)
 
@@ -126,7 +155,7 @@ Venue side is a separate dual UX. Out of v1 scope until influencer side ships.
 ## Open questions still on the table
 
 - Working name — "The List" is the working title. Test with Dima's first 30 contacts before locking.
-- Story verification mechanic — manual? screenshot upload? IG API?
+- Story verification mechanic — manual screenshot upload v1; Phyllo Connect's media-history API v2 once we have enough verified users to compare against.
 - Venue exclusivity contracts — 6-month? 12-month? What's enforceable in Lebanon?
 - Operating entity — Lebanese LLC vs offshore (Delaware / Estonia e-Residency)?
 - Whish vs OMT vs USD cash payouts to venues

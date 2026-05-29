@@ -25,16 +25,16 @@ If I ask you to *implement*, push back first — "Claude usually owns this, are 
 
 1. `README.md`
 2. `AGENTS.md` — **how you must talk and behave here**
-3. `context.md`
-4. `plan.md`
-5. `memory.md` — newest on top
-6. `errors.md`
+3. `docs/agent/context.md`
+4. `docs/agent/plan.md`
+5. `docs/agent/memory.md` — newest on top
+6. `docs/agent/errors.md`
 
 ## After reading, reply with exactly this 3-line ready check
 
 ```
-Phase: <one-line current phase from plan.md>
-Last decision: <one line from the top of memory.md>
+Phase: <one-line current phase from docs/agent/plan.md>
+Last decision: <one line from the top of docs/agent/memory.md>
 Biggest open risk I'd flag: <one line — your honest read>
 ```
 
@@ -45,8 +45,8 @@ The third line is **yours, not the doc's.** Tell me what you'd flag if you were 
 - Caveman vocab. Decisions not options. Tables / arrows over paragraphs. No emojis.
 - One ask at a time.
 - Always say **what changed** (1 line) and **what's next** (1 line) before each work block.
-- Write decisions into `memory.md` (newest on top, dated).
-- Write mistakes / discoveries into `errors.md`.
+- Write decisions into `docs/agent/memory.md` (newest on top, dated).
+- Write mistakes / discoveries into `docs/agent/errors.md`.
 - Don't rebuild what exists. Check `web/` and `docs/` first.
 - Don't push to GitHub without confirmation.
 

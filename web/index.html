@@ -250,6 +250,47 @@ const IMG = {
   saraFull:   "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&q=80&auto=format&fit=crop",
 };
 
+/* ========== Phyllo Identity API — mock response shape ==========
+   Production: backend calls https://api.phyllo.com/v1/connect/identity
+   with the user's handle. Returns shape below. We mock client-side for
+   the prototype; structure mirrors real response so swap is one fetch().
+================================================================== */
+function mockPhylloFetch(handle){
+  // Simulate a 2.4s network call to Phyllo Identity API
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const h = (handle || "capriottisara").replace(/^@/, "").toLowerCase();
+      // In production this would be: GET /v1/identity/lookup?handle={h}
+      resolve({
+        handle: h,
+        platform: "instagram",
+        data_status: "estimated",        // becomes "verified" after Connect SDK OAuth
+        full_name: "Sara Capriotti",
+        profile_picture_url: IMG.saraFull,
+        bio: "Beirut · model · creator",
+        account_type: "creator",          // personal | creator | business
+        followers_count: 28400,
+        following_count: 712,
+        media_count: 184,
+        engagement_rate: 0.058,            // 5.8%
+        quality_score: 0.91,               // Phyllo's fake-follower check (0-1)
+        audience: {
+          gender_split: { female: 0.62, male: 0.38 },
+          age_split: { "13-17": 0.04, "18-24": 0.41, "25-34": 0.38, "35-44": 0.13, "45+": 0.04 },
+          country_split: [
+            { code: "LB", label: "Lebanon",  pct: 0.71 },
+            { code: "AE", label: "UAE",      pct: 0.14 },
+            { code: "SA", label: "Saudi",    pct: 0.07 },
+            { code: "EU", label: "Other EU", pct: 0.08 },
+          ],
+        },
+        tier_suggestion: 1,                // 1 = Tier 1, etc.
+        fetched_at: new Date().toISOString(),
+      });
+    }, 2400);
+  });
+}
+
 const EVENTS = [
   { id:"pool",   title:"Pool Day",        venue:"Cyan Beach Club",     area:"Jiyeh",       date:"Sun · 25 May",  time:"14:00",  img:IMG.beachClub,  type:"Beach",      seats:20, applied:137, badge:"Open" },
   { id:"sound",  title:"Sound Bath",      venue:"Pyrite Mar Mikhael",  area:"Mar Mikhael", date:"Fri · 23 May",  time:"23:00",  img:IMG.club,       type:"Club",       seats:30, applied:212, badge:"24h left" },
@@ -793,18 +834,48 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent }){
 }
 
 /* ========== 05 — PROFILE (gallery-style hero with fade) ========== */
-function ScreenProfile({ tab, onTab }){
+function ScreenProfile({ tab, onTab, profile }){
+  // Profile is the Phyllo Identity API response (or null if user skipped onboarding)
+  // When null we fall back to a Sara Capriotti seed so the demo always shows something.
+  const p = profile || {
+    full_name: "Sara Capriotti",
+    handle: "capriottisara",
+    profile_picture_url: IMG.saraFull,
+    followers_count: 28400,
+    engagement_rate: 0.058,
+    data_status: "estimated",
+    audience: {
+      gender_split: { female: 0.62, male: 0.38 },
+      country_split: [
+        { label: "Lebanon",  pct: 0.71 },
+        { label: "UAE",      pct: 0.14 },
+        { label: "Saudi",    pct: 0.07 },
+        { label: "Other EU", pct: 0.08 },
+      ],
+    },
+  };
+  const verified = p.data_status === "verified";
+  const followersK = p.followers_count >= 1000
+    ? (p.followers_count / 1000).toFixed(p.followers_count >= 10000 ? 0 : 1)
+    : p.followers_count;
+  const followersUnit = p.followers_count >= 1000 ? "k" : "";
+  const engagementPct = (p.engagement_rate * 100).toFixed(1);
+  const female = Math.round(p.audience.gender_split.female * 100);
+  const male = Math.round(p.audience.gender_split.male * 100);
+  const firstName = p.full_name.split(" ")[0];
+  const lastName = p.full_name.split(" ").slice(1).join(" ");
+
   return (
     <PhoneScreen tab={tab} onTab={onTab}>
       {/* Editorial hero — full-bleed photo with gradient fade to bg */}
       <div className="relative h-[460px]">
-        <img src={IMG.saraFull} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+        <img src={p.profile_picture_url || IMG.saraFull} className="absolute inset-0 w-full h-full object-cover" alt=""/>
         <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.3) 0%, rgba(10,10,10,0) 40%, var(--bg) 100%)"}}/>
 
         <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-full" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(8px)", border:"1px solid rgba(245,241,234,.1)", color:"#F5F1EA"}}>
             <span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--ice)"}}/>
-            <span className="stamp" style={{color:"#F5F1EA"}}>Verified · Tier 1</span>
+            <span className="stamp" style={{color:"#F5F1EA"}}>{verified ? "Verified" : "Self-reported"} · Tier 1</span>
           </div>
           <button className="press w-9 h-9 rounded-full flex items-center justify-center border" style={{background:"rgba(10,10,10,.45)", backdropFilter:"blur(8px)", borderColor:"rgba(245,241,234,.25)"}}>
             <Icon name="settings" size={15} stroke={1.4}/>
@@ -817,10 +888,10 @@ function ScreenProfile({ tab, onTab }){
 
         <div className="absolute bottom-5 left-5 right-5 z-10" style={{color:"#F5F1EA"}}>
           <div className="smallcaps mb-2" style={{color:"rgba(245,241,234,.7)"}}>Member since '24</div>
-          <div className="font-black font-display-l text-[48px] leading-[0.9] tracking-tight">Sara<br/>Capriotti.</div>
+          <div className="font-black font-display-l text-[48px] leading-[0.9] tracking-tight">{firstName}{lastName ? <><br/>{lastName}.</> : "."}</div>
           <div className="flex items-center gap-2 mt-3">
             <Icon name="instagram" size={13} stroke={1.5} className="opacity-70"/>
-            <span className="text-[13px] opacity-80">@capriottisara</span>
+            <span className="text-[13px] opacity-80">@{p.handle}</span>
           </div>
         </div>
       </div>
@@ -828,11 +899,11 @@ function ScreenProfile({ tab, onTab }){
       {/* Stat strip */}
       <div className="grid grid-cols-3" style={{borderBottom:"1px solid var(--line-2)"}}>
         <div className="p-4 border-r" style={{borderColor:"var(--line)"}}>
-          <div className="font-black text-[32px] leading-none font-mono">28<span style={{fontSize:18, color:"var(--ink-mute)"}}>k</span></div>
+          <div className="font-black text-[32px] leading-none font-mono">{followersK}<span style={{fontSize:18, color:"var(--ink-mute)"}}>{followersUnit}</span></div>
           <div className="stamp mt-1">Followers</div>
         </div>
         <div className="p-4 border-r" style={{borderColor:"var(--line)"}}>
-          <div className="font-black text-[32px] leading-none font-mono">5.8<span style={{fontSize:18, color:"var(--ink-mute)"}}>%</span></div>
+          <div className="font-black text-[32px] leading-none font-mono">{engagementPct}<span style={{fontSize:18, color:"var(--ink-mute)"}}>%</span></div>
           <div className="stamp mt-1">Engagement</div>
         </div>
         <div className="p-4">
@@ -841,34 +912,43 @@ function ScreenProfile({ tab, onTab }){
         </div>
       </div>
 
+      {/* Verify-with-Instagram upgrade strip (only if data is still estimated) */}
+      {!verified && (
+        <div className="mx-5 mt-4 px-3 py-2.5 rounded-[12px] flex items-center gap-3" style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
+          <Icon name="instagram" size={16} stroke={1.5} className="opacity-70"/>
+          <div className="flex-1">
+            <div className="text-[12px] font-medium">Verify with Instagram</div>
+            <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Numbers below are estimated. Connect for real data + tier upgrade.</div>
+          </div>
+          <button className="press px-3 h-7 rounded-full text-[10px] uppercase tracking-[.18em] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+            Connect
+          </button>
+        </div>
+      )}
+
       {/* Audience */}
       <div className="px-5 pt-6 pb-3 flex items-center gap-3">
         <span className="stamp">Audience</span>
         <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
-        <span className="text-[11px] font-mono" style={{color:"var(--ink-mute)"}}>Synced 3h ago</span>
+        <span className="text-[11px] font-mono" style={{color:"var(--ink-mute)"}}>{verified ? "Live" : "Estimated"}</span>
       </div>
 
       <div className="px-5 space-y-3">
         <div>
           <div className="flex justify-between text-[11px]" style={{color:"var(--ink-2)"}}>
-            <span>Female · 62%</span>
-            <span>Male · 38%</span>
+            <span>Female · {female}%</span>
+            <span>Male · {male}%</span>
           </div>
           <div className="mt-1.5 h-[6px] rounded-full overflow-hidden flex" style={{background:"var(--bg-elev2)"}}>
-            <div style={{width:"62%", background:"var(--ice)"}}/>
-            <div style={{width:"38%", background:"var(--ink-mute)"}}/>
+            <div style={{width:female+"%", background:"var(--ice)"}}/>
+            <div style={{width:male+"%", background:"var(--ink-mute)"}}/>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 mt-4">
-          {[
-            { l:"Lebanon",   p:"71%" },
-            { l:"UAE",       p:"14%" },
-            { l:"Saudi",     p:"7%"  },
-            { l:"Other EU",  p:"8%"  },
-          ].map((r,i)=>(
+          {p.audience.country_split.map((r,i)=>(
             <div key={i} className="p-3 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
-              <div className="stamp">{r.l}</div>
-              <div className="font-mono text-[18px] mt-1">{r.p}</div>
+              <div className="stamp">{r.label}</div>
+              <div className="font-mono text-[18px] mt-1">{Math.round(r.pct * 100)}%</div>
             </div>
           ))}
         </div>
@@ -942,14 +1022,18 @@ function ScreenPicked({ event, onConfirm, onLater }){
 }
 
 /* ========== 00 — ONBOARDING ========== */
-function ScreenOnboard({ step, setStep, onComplete }){
+function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
   const [phone, setPhone] = useState("");
   const [handle, setHandle] = useState("");
   const canSubmit = phone.length >= 6 && handle.length >= 2;
 
-  const submit = () => {
+  const submit = async () => {
     setStep('reviewing');
-    setTimeout(() => setStep('tier-reveal'), 2800);
+    // Real prod: POST /api/onboard → backend calls Phyllo Identity API
+    // For prototype we mock the response client-side with the real shape.
+    const profile = await mockPhylloFetch(handle);
+    onProfileFetched(profile);
+    setStep('tier-reveal');
   };
 
   if (step === 'phone') return (
@@ -992,8 +1076,8 @@ function ScreenOnboard({ step, setStep, onComplete }){
         <div className="w-[160px] h-[160px] rounded-full border-2 flex items-center justify-center" style={{borderColor:"rgba(245,241,234,.2)"}}>
           <div className="w-[120px] h-[120px] rounded-full border-2 spin" style={{borderColor:"rgba(245,241,234,.3)", borderTopColor:"#F5F1EA"}}/>
         </div>
-        <div className="font-black font-display-l text-[28px] mt-10 tracking-tight">Reviewing<br/>your profile.</div>
-        <div className="text-[13px] mt-3 opacity-70 max-w-[260px]">@{handle || "your-handle"} is being checked. Most decisions land within 24 hours.</div>
+        <div className="font-black font-display-l text-[28px] mt-10 tracking-tight">Reading<br/>your audience.</div>
+        <div className="text-[13px] mt-3 opacity-70 max-w-[260px]">Pulling @{handle || "your-handle"}'s reach, demographics, and engagement.</div>
       </div>
       <HomeIndicator/>
     </div>
@@ -1032,6 +1116,7 @@ function App(){
   const [applyState, setApplyState] = useState("idle");   // idle | submitting | submitted
   const [confirmedEvent, setConfirmedEvent] = useState(null);
   const [light, setLight] = useState(false);
+  const [profile, setProfile] = useState(null);  // Phyllo Identity API response
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', light);
@@ -1091,12 +1176,12 @@ function App(){
 
       <div className="iphone">
         <div className="iphone-screen">
-          {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={skipOnboarding}/>}
+          {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={skipOnboarding} onProfileFetched={setProfile}/>}
           {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent}/>}
           {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent}/>}
           {!onboardActive && screen === "detail"  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply}/>}
           {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} confirmedEvent={confirmedEvent}/>}
-          {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab}/>}
+          {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab} profile={profile}/>}
           {!onboardActive && screen === "picked"  && <ScreenPicked event={currentEvent} onConfirm={onConfirmPick} onLater={onDeclinePick}/>}
         </div>
       </div>

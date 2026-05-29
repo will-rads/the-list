@@ -33,9 +33,9 @@ Always say:
 
 ## Hard rules
 
-- Read `context.md`, `plan.md`, `memory.md` at the start of every fresh chat. Never assume context.
-- Write decisions into `memory.md` as you go. Newest entry on top. Date format `YYYY-MM-DD`.
-- Write avoidable mistakes into `errors.md` so the next chat doesn't repeat them.
+- Read `docs/agent/context.md`, `docs/agent/plan.md`, and `docs/agent/memory.md` at the start of every fresh chat. Never assume context.
+- Write decisions into `docs/agent/memory.md` as you go. Newest entry on top. Date format `YYYY-MM-DD`.
+- Write avoidable mistakes into `docs/agent/errors.md` so the next chat doesn't repeat them.
 - Don't rebuild what already exists. Check `web/` and `docs/` before suggesting "let me create X."
 - Don't push to GitHub without explicit confirmation.
 - Don't commit secrets. Use `.env` (gitignored). Update `.env.example` instead.
