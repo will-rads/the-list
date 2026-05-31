@@ -6,7 +6,13 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## Current state (one line)
 
-Prototype `web/index.html` complete + all 10 UI audit items done. **Type/color system overhauled (Will's call): single font Plus Jakarta Sans, headers bolder, zero grey text, ice accent kept.** Tailwind `.font-mono` override fixed; Pool Day image optimized to `./assets/pool-day.jpg` (committed `f2610a6`, local only). Locked docs (`DESIGN.md`/`PRODUCT.md`/`AGENTS.md`) synced to the new system. `web/index.html` uncommitted, not pushed. **Phase: user/founder review of the prototype, before push/deploy.** Next: review → push + deploy (Vercel) **only on Will's explicit OK, branch first** → SwiftUI planning.
+Prototype `web/index.html` complete, all 10 UI audit items done, **type/color system overhauled** (single font Plus Jakarta Sans, headers bolder, zero grey text, ice accent kept; Tailwind `.font-mono` override fixed; Pool Day image → `./assets/pool-day.jpg`, 159 KB). **Reviewed → merged to `main` (`f45acf7`) → pushed → deployed to Vercel** (`the-list-omega.vercel.app`); branch `design/type-color-overhaul` deleted. All locked docs synced. **Phase: prototype shipped + live. Next: SwiftUI planning / port.**
+
+---
+
+## 2026-05-31 — Merged to `main` + deployed to Vercel
+
+Committed the full type/color overhaul + fixes on branch `design/type-color-overhaul` (`f45acf7`, 11 files, +318/−150), merged fast-forward into `main`, pushed (`52221e4..f45acf7`), then deleted the branch (local + remote). The earlier Pool Day image commit `f2610a6` rode along in the same history. `main` → Vercel auto-deploy (`the-list-omega.vercel.app`). **First push since the overhaul** — the prototype is now live, not just local. Standing rule reminder still holds for future work: don't push without Will's explicit OK; branch first.
 
 ---
 

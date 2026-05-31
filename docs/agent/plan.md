@@ -2,7 +2,7 @@
 
 ## Where we are right now
 
-**Phase: prototype complete — in user/founder review before push/deploy.** The single-phone tap-through prototype (`web/index.html`) is built and **all 10 UI audit items are done**. Design direction locked in `PRODUCT.md` + `DESIGN.md`. Next: review → possible visual tweaks → push + deploy (only on Will's explicit OK, branch first) → SwiftUI planning.
+**Phase: prototype shipped — reviewed, merged to `main`, deployed to Vercel** (`the-list-omega.vercel.app`). The single-phone tap-through prototype (`web/index.html`) is built, all 10 UI audit items done, and the type/color overhaul (single-font Plus Jakarta Sans, no grey text) is live. Design direction locked in `PRODUCT.md` + `DESIGN.md`. Next: SwiftUI planning / port → lock working name (test with Dima's top 30) → venue anchor contracts → Supabase scaffold.
 
 ```text
 [done]      Voice notes transcribed + plan synthesized
@@ -10,14 +10,13 @@
 [done]      6 reference screens designed in HTML (dark + light)
 [done]      Image set curated (Unsplash, venue-appropriate)
 [done]      Single-phone tap-through prototype (onboarding → home → detail → apply → picked → my list)
-[done]      Fonts + accent locked (Satoshi + Host Grotesk, ice blue)
+[done]      Fonts + accent locked (Plus Jakarta Sans — one family, ice blue)
 [done]      Design system documented (PRODUCT.md, DESIGN.md, .impeccable/design.json)
 [done]      UI quality passes: a11y/contrast, icons, flat cards, editorial polish
 [done]      All 10 UI audit items (Explore rhythm, unified glass, Home masthead, light-theme, spacing, numerics)
-[doing]     User/founder review of the prototype — before push/deploy  ◄── HERE
-[next]      Possible visual tweaks from review
-[next]      Push to GitHub + deploy (Vercel) — only on Will's explicit OK, branch first
-[next]      SwiftUI planning / port
+[done]      Type/color overhaul: single-font Plus Jakarta Sans + no grey text
+[done]      Reviewed → merged to main → deployed to Vercel (the-list-omega.vercel.app)
+[doing]     SwiftUI planning / port  ◄── HERE
 [next]      Lock working name (test with Dima's top 30)
 [next]      Venue anchor contracts (5-10 Beirut venues)
 [next]      Supabase backend scaffold

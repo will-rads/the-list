@@ -34,7 +34,7 @@ ios/
     │   └── PushService.swift
     └── Resources/
         ├── Assets.xcassets
-        ├── Fonts/                    Satoshi.ttf, GeistMono.ttf
+        ├── Fonts/                    PlusJakartaSans.ttf
         └── Info.plist
 ```
 
