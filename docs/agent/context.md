@@ -150,10 +150,11 @@ Everything on the Profile screen is **mocked** in the prototype via `mockCreator
 
 The client never sees vendor specifics, so swapping providers is one backend Edge-function change. Badge reads "Self-reported · Tier 1" until OAuth, then "Verified · Tier 1".
 
-## The 6 core screens (influencer side)
+## The core screens (influencer side)
 
 | # | Screen | Purpose |
 | --- | --- | --- |
+| 00 | Entry / Intro | TSS-style splash: full-bleed grainy Beirut nightlife video montage (3 × 5s crossfading clips, looping), centered THE LIST wordmark + "By invitation only", Apply for access (solid ice) + I have an invite (ghost). First onboarding step → phone. |
 | 01 | Home | Featured events tonight, quick filters, bottom tab bar |
 | 02 | Explore | Full event list, calendar strip, filter by date / type / location |
 | 03 | Event Detail | Photos, time, spots remaining, post requirement, Apply button |

@@ -413,6 +413,18 @@ const SEED_PROFILE = {
   },
 };
 
+/* ========== Intro clips — grainy Beirut nightlife montage ==========
+   3 Veo 3.1 clips (5s each), animated from Nano Banana Pro stills:
+   Raouche dusk / Batroun coast / Beirut rooftop night. Grainy retro grade
+   baked into the stills + reinforced in animation. TSS-style entry montage.
+   Posters are the first frame, shown before the video paints.
+==================================================================== */
+const INTRO_CLIPS = [
+  { src:"./assets/intro-1.mp4", poster:"./assets/intro-1.jpg" },
+  { src:"./assets/intro-2.mp4", poster:"./assets/intro-2.jpg" },
+  { src:"./assets/intro-3.mp4", poster:"./assets/intro-3.jpg" },
+];
+
 /* ========== Icon helper (Heroicons, inline) ==========
    Heroicons outline, inlined as SVG so there's no icon CDN dependency at all.
    Closest free stand-in for SF Symbols, which the SwiftUI build will use.
@@ -1431,6 +1443,47 @@ function ScreenPicked({ event, onConfirm, onLater }){
   );
 }
 
+/* ========== Intro video background — crossfading 5s clips ==========
+   TSS-style: full-bleed grainy montage that cross-dissolves between clips,
+   each held ~5s, looping. Muted + autoplay + playsInline so it runs as a
+   silent hero background. Grain/vignette/scrims layered on top for legibility.
+==================================================================== */
+function IntroVideoBG(){
+  const [active, setActive] = useState(0);
+  const vids = useRef([]);
+  const reduce = typeof window !== "undefined" && window.matchMedia
+    && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  useEffect(() => {
+    if (reduce) return;                       // hold first frame if reduced-motion
+    const id = setInterval(() => setActive(a => (a + 1) % INTRO_CLIPS.length), 5000);
+    return () => clearInterval(id);
+  }, [reduce]);
+
+  useEffect(() => {
+    const v = vids.current[active];
+    if (v) { try { v.currentTime = 0; const p = v.play(); if (p && p.catch) p.catch(()=>{}); } catch(e){} }
+  }, [active]);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden" style={{background:"#050505"}}>
+      {INTRO_CLIPS.map((c,i)=>(
+        <video key={i} ref={el => vids.current[i] = el}
+          src={c.src} poster={c.poster}
+          muted loop playsInline autoPlay preload="auto"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{opacity: i===active ? 1 : 0, transition:"opacity 1.1s ease", filter:"contrast(1.08) saturate(.82)"}}/>
+      ))}
+      {/* baked grain reinforced */}
+      <div className="absolute inset-0 grain" style={{opacity:.55}}/>
+      {/* vignette */}
+      <div className="absolute inset-0 pointer-events-none" style={{boxShadow:"inset 0 0 170px 46px rgba(0,0,0,.82)"}}/>
+      {/* top + bottom scrims for status bar / lockup / buttons */}
+      <div className="absolute inset-0 pointer-events-none" style={{background:"linear-gradient(180deg, rgba(5,5,5,.72) 0%, rgba(5,5,5,0) 24%, rgba(5,5,5,0) 46%, rgba(5,5,5,.92) 100%)"}}/>
+    </div>
+  );
+}
+
 /* ========== 00 — ONBOARDING ========== */
 function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
   const [phone, setPhone] = useState("");
@@ -1451,6 +1504,32 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
       setStep('error');
     }
   };
+
+  if (step === 'intro') return (
+    <div className="absolute inset-0 anim-fade" style={{background:"#050505", color:"#F5F1EA"}}>
+      <IntroVideoBG/>
+      <StatusBar/>
+      <div className="absolute inset-0 z-10 flex flex-col px-7 pt-[120px] pb-10">
+        {/* Centered wordmark lockup */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center -mt-6">
+          <div className="anim-fade" style={{fontSize:10, fontWeight:500, letterSpacing:".42em", textTransform:"uppercase", color:"rgba(245,241,234,.78)"}}>Est. MMXXVI · Beirut</div>
+          <div className="font-black font-display-l anim-up" style={{fontSize:66, lineHeight:.88, letterSpacing:".04em", marginTop:14, textShadow:"0 2px 40px rgba(0,0,0,.6)"}}>THE<br/>LIST</div>
+          <div className="anim-up" style={{marginTop:18, fontSize:12, letterSpacing:".26em", textTransform:"uppercase", color:"rgba(245,241,234,.82)"}}>By invitation only</div>
+        </div>
+
+        {/* Bottom actions — solid Apply (ice) + ghost invite, TSS pattern */}
+        <div className="flex flex-col gap-3 anim-up">
+          <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em]" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+            Apply for access
+          </button>
+          <button onClick={()=>setStep('phone')} className="press w-full h-[58px] rounded-full font-medium text-[13px] uppercase tracking-[.2em]" style={{background:"transparent", color:"#F5F1EA", border:"1px solid rgba(245,241,234,.32)"}}>
+            I have an invite
+          </button>
+        </div>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
 
   if (step === 'phone') return (
     <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
@@ -1545,7 +1624,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
 
 /* ========== APP — navigation state ========== */
 function App(){
-  const [onboardStep, setOnboardStep] = useState("phone"); // phone | reviewing | tier-reveal | error | done
+  const [onboardStep, setOnboardStep] = useState("intro"); // intro | phone | reviewing | tier-reveal | error | done
   const [screen, setScreen] = useState("home");           // home | explore | detail | mylist | profile | picked
   const [tab, setTab] = useState("home");
   const [currentEvent, setCurrentEvent] = useState(null);
@@ -1633,7 +1712,7 @@ function App(){
       <div className="mb-8 text-center">
         <div className="stamp" style={{color:"var(--ink-mute)"}}>The List · Influencer side · Prototype v0.3</div>
         <div className="font-black text-[28px] leading-none mt-2">Tap through Sara's flow</div>
-        <div className="text-[12px] mt-2" style={{color:"var(--ink-mute)"}}>{onboardActive ? "Onboarding first. Fill the form to be reviewed." : "Tap an event → Apply → wait for the venue to pick you."}</div>
+        <div className="text-[12px] mt-2" style={{color:"var(--ink-mute)"}}>{onboardActive ? "Grainy entry splash → apply → review → tier reveal." : "Tap an event → Apply → wait for the venue to pick you."}</div>
       </div>
 
       <div className="iphone">
@@ -1657,7 +1736,7 @@ function App(){
         <div className="stamp mb-2" style={{color:"var(--ink-mute)"}}>How to use</div>
         <div className="text-[12px]" style={{color:"var(--ink-2)"}}>
           {onboardActive
-            ? "Type anything in the two fields, hit Apply for access. Watch the review animation. Tap Enter The List on the tier reveal."
+            ? "Entry splash plays the grainy Beirut montage — tap Apply for access. Type anything in the two fields, watch the review animation, tap Enter The List on the tier reveal."
             : "Tap any event card, hit Apply → “You're in” slides up → Confirm lands in Invites. Bookmark a card to fill the Saved tab. Profile → gear opens Settings; Connect verifies. Share opens from the event header. Filters pill on Index opens the sheet."}
         </div>
       </div>

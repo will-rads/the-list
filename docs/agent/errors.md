@@ -4,6 +4,28 @@ Things that have already gone wrong, or known traps. New entries on top, dated `
 
 ---
 
+## 2026-05-31 — Gemini media model IDs + SDK/TLS (image & video generation)
+
+Model IDs on Will's `GEMINI_API_KEY` (verified via the models list endpoint), for future AI-asset work:
+
+| Want | Model ID | SDK call |
+| --- | --- | --- |
+| **Nano Banana Pro** (image gen+edit) | `gemini-3-pro-image-preview` (alias `nano-banana-pro-preview`) | `client.models.generate_content(..., config=GenerateContentConfig(response_modalities=["IMAGE"], image_config=ImageConfig(aspect_ratio="9:16")))` |
+| Nano Banana (cheaper) | `gemini-2.5-flash-image` / `gemini-3.1-flash-image` | same `generate_content` |
+| **Veo 3.1** (video, incl. image-to-video) | `veo-3.1-generate-preview` / `veo-3.1-fast-generate-preview` | `client.models.generate_videos(...)` → poll `client.operations.get(op)` → `client.files.download(file=gv.video)` |
+| Imagen 4 | `imagen-4.0-generate-001` | `predict` |
+
+Gotchas burned on (2026-05-31, the entry-screen build):
+- The repo's `gemini_analyze.py` helper is **analysis-only** (raw REST). Generation needs the **`google-genai` SDK** (`pip install google-genai`).
+- **TLS:** the SDK (httpx/certifi) fails `CERTIFICATE_VERIFY_FAILED` behind the machine's intercepting CA. Fix: `pip install truststore` then `import truststore; truststore.inject_into_ssl()` at the top of the script (uses the Windows cert store). The urllib analyzer wasn't affected; the SDK is. `npx esbuild` hits the same wall — run node with `NODE_OPTIONS=--use-system-ca`.
+- Veo `generate_videos` is **long-running** — submit, poll `operations.get` every ~15s (2–5 min on fast). Run as a background task.
+- Veo duration isn't a free param — generate at default, then **ffmpeg `-t 5`** to trim to exactly 5.000s. Web-encode `-c:v libx264 -pix_fmt yuv420p -movflags +faststart -an`. ffmpeg lives at `C:\Users\user\Tools\ffmpeg\...\bin`.
+- **Safety filter:** people + swimwear ("bikini") can return `generated_videos=None` with **no error object**. Soften wording ("elegant summer beachwear / sheer kaftan") — and even then it may refuse; always guard for a None clip and keep a fallback (we used a text-to-video clip).
+- **`web/assets/*.mp4` is caught by the `*.mp4` line in `.gitignore`** — negate with `!web/assets/*.mp4` or app video silently never commits/deploys.
+- Windows `%TEMP%` can be evicted mid-session — don't park multi-step generator scripts there; prefer the Edit tool for repo files and keep scripts under the repo or rewrite them when needed.
+
+---
+
 ## 2026-05-31 — Tailwind CDN utilities silently override our custom `.font-*` classes
 
 `web/index.html` loads `cdn.tailwindcss.com`, which generates its own utilities including **`.font-mono`** (a system monospace stack) and **`.font-black`** (weight 900). Our `<style>` block defines custom `.font-mono` (our number font) and `.font-black` (display) with the **same specificity** (single class = 0,1,0). When specificity ties, **source order wins, and Tailwind's injected stylesheet often lands after ours** — so Tailwind wins and our font is silently dropped.

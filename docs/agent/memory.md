@@ -6,7 +6,25 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## Current state (one line)
 
+Prototype `web/index.html` at **v0.4 — TSS-style grainy entry screen added** (committed to branch `design/user-side-interactions`). New `onboardStep:"intro"` first step: 3 AI-generated grainy Beirut nightlife clips (5s each, crossfading + looping) behind a centered THE LIST wordmark + "By invitation only" + Apply for access (ice) / I have an invite (ghost). Pipeline: gemini-analyser on `research/screen-rec-1.mp4` → Nano Banana Pro stills (Raouché / Batroun / rooftop, edgy Beirut, grain baked in) → Veo 3.1 image-to-video → ffmpeg to 5s/720×1280/muted → `web/assets/intro-{1,2,3}.{mp4,jpg}` (intro-2 used a text-to-video fallback — the beachwear still tripped Veo's safety filter). Core flow unchanged. The v0.3 work below still holds.
+
 Prototype `web/index.html` at **v0.3 — user-side interaction-complete, ready for review** (local only, **not committed / not pushed**). On top of the shipped type/color system: every visible control now has a behavior (save/bookmark, Share sheet, Settings sheet, verify→verified flip, plus toasts for search/map/calendar/view-pass); new **Saved** tab in Invites via a pill-`Segmented` (Applied / Confirmed / Saved / Past); thin section half-hairlines replaced by `SectionHead` (ice tick + label) with `StatusPill` / `DateChip` (TSS UX patterns in our skin); decorative punctuation stripped from display text. Docs reconciled: **Two-Family → One-Family Rule** everywhere; vendor-neutral profile-data sourcing documented. Pool Day asset unchanged: `web/assets/pool-day.jpg` (159 KB), referenced `./assets/pool-day.jpg` via `IMG.beachClub`. **Phase: prototype user-side complete (review pending). Next: Will eyeballs → commit → SwiftUI planning / port.**
+
+---
+
+## 2026-05-31 — TSS-style grainy entry/intro screen (v0.4) — full AI media pipeline
+
+Recreated The Secret Society's intro screen for The List, end to end. Core flow untouched; the entry screen is a new first onboarding step, not a flow change. iOS untouched, dark primary, Carbon + Ice.
+
+**Pipeline (via `GEMINI_API_KEY`, `google-genai` SDK + `truststore` for the machine's intercepting-CA TLS):**
+1. **Analyze** — `/gemini-analyser` (`gemini-2.5-flash`) on `research/screen-rec-1.mp4` → `research/screen-rec-1.analysis.txt`. TSS intro = full-bleed 9:16 grainy nightlife montage, ~1s hard cuts (we use 3×5s crossfades per Will), warm/crushed film grade, dark top+bottom scrims, wordmark + buttons.
+2. **Stills** — **Nano Banana Pro** = `gemini-3-pro-image-preview`, `generate_content` with `image_config.aspect_ratio="9:16"`, `response_modalities=["IMAGE"]`. 3 stills → `research/gen/still-{1,2,3}-*.png`: Raouché Pigeon Rocks dusk (slip dress + leather jacket), Batroun Phoenician sea wall (beachwear, beach-club crowd), Beirut rooftop night (sequin dress, dancing crowd, skyline). Edgy Beirut model aesthetic; **grain/retro grade baked into the prompt** so animation keeps the look.
+3. **Animate** — **Veo 3.1 fast** = `veo-3.1-fast-generate-preview`, `generate_videos` image-to-video, polled long-running op. intro-1 + intro-3 are true i2v of the stills. intro-2 (beachwear) returned `generated_videos=None` (people+swimwear safety filter) even after softening wording, so it falls back to a text-to-video grainy-Beirut clip; its poster is still the approved still. ffmpeg trim to exactly 5.000s, 720×1280, `-an`, H.264 yuv420p, `+faststart` → `web/assets/intro-{1,2,3}.mp4` + `.jpg` posters.
+4. **Implement** — `web/index.html`: `INTRO_CLIPS`; `IntroVideoBG` (3 stacked `<video>` muted/autoPlay/playsInline, crossfade every 5s, reduced-motion holds frame, grain+vignette+scrims); new `ScreenOnboard` `step==='intro'` (initial `onboardStep`) with stacked THE / LIST wordmark, eyebrow, tagline, Apply (ice) + Invite (ghost) → both go to `phone`.
+
+**Verified:** ffprobe each clip = 5.000s / h264 / 720×1280 / yuv420p / no audio; mid-frames eyeballed on-brand; index.html brackets balanced (curly/paren/sq delta 0), 1751 lines, `INTRO_CLIPS`/`IntroVideoBG`/intro step all present, `useState("intro")` initial. Not browser-rendered (Playwright MCP not available in env; esbuild check blocked by the same corporate CA).
+
+**Provenance + git:** stills, raw clips, t2v backup, and the analysis kept under `research/gen/` + `research/`. `.gitignore` `*.mp4` negated for `web/assets/*.mp4` so the clips ship. Model IDs + SDK/TLS/ffmpeg/safety-filter gotchas logged in `errors.md`.
 
 ---
 

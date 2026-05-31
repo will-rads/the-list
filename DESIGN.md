@@ -224,6 +224,12 @@ Both are bottom sheets sharing the Filter-sheet chrome (drag handle, `sheetIn` s
 - **Share sheet**: shows *what* is being shared (an event preview card) and a 4-up action grid (Copy link, To Story, Message, More); each action fires a toast and closes.
 - **Settings sheet**: editable Display name / Instagram handle (with `@` prefix and a Verified pill once connected) / Phone; a Notifications group (two `Toggle`s); an Appearance `Toggle` (light theme); a vendor-neutral privacy note; and Save / Log out / Delete account (the last two are prototype placeholders that toast).
 
+### Entry / Intro screen (added 2026-05-31)
+The first thing a new user sees — a TSS-style cinematic splash, restyled to Carbon + Ice. Structure copied from The Secret Society's intro (full-bleed grainy montage, centered wordmark + tagline, ghost + solid buttons, top/bottom scrims); the look is ours.
+- **Background (`IntroVideoBG`)**: 3 grainy Beirut nightlife clips (5s each) that **cross-dissolve** (1.1s) and loop — Raouché dusk, Batroun coast, Beirut rooftop night. Muted + `autoPlay` + `playsInline` so it runs as a silent hero. `prefers-reduced-motion` holds the first clip (no auto-advance). Over the video: reinforced film **grain**, a heavy **vignette**, and a top+bottom **scrim** so the status bar, wordmark, and buttons stay legible. Clips are AI-generated (Nano Banana Pro stills → Veo 3.1 image-to-video), grainy/retro grade baked into the still prompt so the motion keeps the look; `.mp4` + first-frame `.jpg` poster live in `web/assets/intro-{1,2,3}.{mp4,jpg}`.
+- **Lockup**: tracked eyebrow ("Est. MMXXVI · Beirut"), stacked **THE / LIST** wordmark (Plus Jakarta Sans 800, ~66px, wide tracking — a logotype, the one place all-caps display is allowed), tagline "By invitation only". Bone text, soft shadow, gentle fade/slide-in.
+- **Actions**: primary **Apply for access** (ice fill) + ghost **I have an invite**; both enter the phone step. This is `onboardStep: "intro"`, the new first step, so the core flow is unchanged (intro → phone → reviewing → tier-reveal → home).
+
 ### Signature: The Reveal Ring
 The "You're in" / "Tier One" moment renders a 180px ice-filled circle with Ice Ink display type, a `ringPop` scale-in, and a slow `pulseIce` ring animation. This is the system's one permitted piece of theatre. It appears only at genuine peaks (getting picked, getting listed) and nowhere else.
 

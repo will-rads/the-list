@@ -89,3 +89,6 @@ venv/
 *.mp4
 research/voice-notes/*.ogg
 research/voice-notes/*.opus
+
+# Entry-screen video assets are required app media — override *.mp4 above so they ship
+!web/assets/*.mp4
