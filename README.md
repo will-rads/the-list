@@ -23,7 +23,7 @@ iPhone-first. SwiftUI eventually. Static HTML prototype now.
 - [`docs/`](docs/) — research and source material (TSS research, transcripts of Radwan's voice notes, plan-breakdown).
 - [`research/`](research/) — raw inputs (TSS app screenshots, voice notes, reference images).
 - [`prompts/`](prompts/) — starter prompts to paste into a fresh Claude or Codex chat.
-- [`.claude/`](.claude/) — local Claude Code config (preview server, settings).
+- [`.agent/`](.agent/) — shared agent config, launch settings, worktrees, and project skills.
 
 ## Founders
 

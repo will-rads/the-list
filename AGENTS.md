@@ -53,12 +53,22 @@ Always say:
 
 ## Skills available
 
+- Shared project skills live in `.agent/skills/<skill-name>/SKILL.md`.
+- When Will asks to use one, read that skill file first, then follow its references as needed.
 - `frontend-design` — distinctive HTML/Tailwind prototypes
 - `gpt-taste` — opinionated motion-rich landing pages
 - `ui-ux-pro-max` — mobile + web component patterns
 - `superpowers:brainstorming` — before any creative build
 - `superpowers:writing-plans` — before any multi-step task
 - `superpowers:test-driven-development` — when SwiftUI work begins
+- `swiftui-ui-patterns` — build native SwiftUI screens and components
+- `swiftui-view-refactor` — split and clean SwiftUI view files
+- `swift-concurrency-expert` — async/await, actors, Sendable, MainActor
+- `ios-debugger-agent` — simulator build/run/debug workflow
+- `swiftui-performance-audit` — janky lists, image loading, invalidation, layout cost
+- `swiftui-liquid-glass` — iOS 26+ Liquid Glass UI polish
+- `swift-architecture-skill` — choose architecture boundaries and playbooks
+- `swift-testing-expert` — Swift Testing, XCTest migration, flaky async tests
 
 ## Who does what in the founding team
 

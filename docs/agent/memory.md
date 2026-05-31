@@ -6,7 +6,104 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## Current state (one line)
 
-Prototype live at `the-list-omega.vercel.app`. Onboarding now mocks a vendor-agnostic creator-data API response shape. Profile screen reads dynamically from that response. Tap-through flow works (Home → Detail → Apply → Picked → My List).
+Prototype polished: Phosphor thin icons, frosted glass + restrained ice glow, one-word headers. Flow/data untouched. Awaiting Will's local review before deploy. Live (pre-polish) still at `the-list-omega.vercel.app`.
+
+---
+
+## 2026-05-31 — shared iOS agent skills installed
+
+Installed 8 repo-local iOS skills under `.agent/skills/` so Claude Code, Codex, or any other agent can use the same project skill library:
+
+- `swiftui-ui-patterns`
+- `swiftui-view-refactor`
+- `swift-concurrency-expert`
+- `ios-debugger-agent`
+- `swiftui-performance-audit`
+- `swiftui-liquid-glass`
+- `swift-architecture-skill`
+- `swift-testing-expert`
+
+`AGENTS.md` now tells agents to read `.agent/skills/<skill-name>/SKILL.md` when Will invokes a skill. `.agent/skills/README.md` documents sources, use cases, recommended order, and the third-party-skill safety note.
+
+---
+
+## 2026-05-30 — colorize + truth-telling states + reveal split + dates + error path
+
+Worked the audit backlog + the "what would you improve" list. All in `web/index.html`. Light theme kept (Will's call).
+
+- **colorize (light-theme contrast, verified AA via node WCAG calc):** light `--ice` `#4FA8C5` → **`#26768F`** (white-on-ice + ice-as-text both 5.16:1), light `--ink-mute` `#7A7A7A` → **`#696969`** (5.04:1 on cards), added light `--ice-dim`. Dark theme untouched (already passed). DESIGN.md token + prose updated.
+- **#2 truth-telling (apply ≠ in):** My Events first segment renamed **Invited → Applied**; added an "Under review · applied 2h ago" pending card (with "Not every application is picked" note) and a muted/grayscale **"Not selected"** row in Past (no score, "venue picked others"). Design call: rejection stays a quiet status, not a full-screen takeover — keeps Picked as the one peak.
+- **#3 reveal hierarchy:** onboarding "Tier One" ring is now a quiet **outlined credential** (no pulsing halo); the Picked "You're in" ring keeps the filled + pulse celebration. Getting picked > initial acceptance.
+- **#5 dates:** canonical "today" = Sunday 25 May (matches Explore active day + featured). Home header `Saturday · 24.05` → `Sunday · 25.05`; Sound Bath + Late Lounge `Fri · 23` → `Sun · 25`.
+- **#4 onboarding error/retry:** `mockCreatorDataFetch` now rejects for handles `fail`/`notfound`/`error` (deterministic demo trigger); `submit()` try/catch → new `error` step ("Couldn't read that." + "Try another handle" → back to phone). **List skeletons deliberately deferred** — the lists are synchronous seed data; faking loading would be theater and flash on every nav. The only real async (creator-data fetch) already has its "Reading" loading screen. Skeletons land with the Supabase fetch.
+
+Static-checked (balanced brackets, all onboarding states present). Not visually verified — Playwright MCP never connected, npm/curl SSL-blocked; opened in Will's browser. Demo tip: type handle `notfound` to see the error path.
+
+---
+
+## 2026-05-30 — impeccable audit + icon swap (Phosphor → Heroicons)
+
+**Audit of `web/index.html`: 13/20 (Acceptable).** Damage concentrated in a11y + the light theme. Verified contrast numbers (node WCAG calc), which corrected an earlier wrong assumption:
+
+- **Dark theme passes** — bone 17.6:1, bone-2 10.9:1, bone-mute 5.73:1, ice 12.7:1. (My earlier "bone-mute ~4.0:1" note was wrong; fixed in DESIGN.md.)
+- **Light theme is the real debt (P1):** white text on `--ice` `#4FA8C5` = **2.71:1** (primary buttons + accent numbers fail); `--ink-mute` `#7A7A7A` = 3.9-4.3:1 (fails small-text AA).
+- Other P1: icon-only buttons have no `aria-label`; no `:focus-visible` ring.
+- P2: reduced-motion only guards `.stagger` (ringPop/pulseIce/spin/anim-fade/slideUp/sheetIn unguarded — corrects a DESIGN.md overclaim); inputs not label-associated; `.card` puts backdrop-blur on every card (violates our own Glass-Is-For-Floating rule); images not lazy-loaded.
+- Recommended fixes: `/impeccable colorize` (light palette), `/impeccable harden` (a11y), `/impeccable polish` (card-blur, lazy-load, eyebrow density). NOT yet applied — audit only documents.
+
+**Icon family swapped Phosphor → Heroicons (outline).** Will rejected Lucide then Phosphor; Heroicons chosen as the closest free stand-in for SF Symbols (the SwiftUI target). Now **inlined as SVG** (zero icon CDN dependency — removed the Phosphor `<script>`). Path data pulled from `unpkg heroicons@2.1.5/24/outline` via `node --use-system-ca` (curl/npm were SSL-cert-blocked in this sandbox). `Icon` rewritten to a `HICONS` name-map; call sites unchanged. compass→map, search→magnifying-glass, settings→cog-6-tooth, sliders→adjustments-horizontal; **instagram is a custom inline mark** (Heroicons has no brand glyphs). Added `aria-hidden` on icons (folds in an audit P3). Not visually verified from agent env — opened in Will's browser.
+
+---
+
+## 2026-05-30 — impeccable document: DESIGN.md + sidecar written
+
+Ran `/impeccable document` (scan mode, tokens extracted from `web/index.html`). Created `the-list/DESIGN.md` (Stitch 6-section format + YAML token frontmatter) and `the-list/.impeccable/design.json` (sidecar: tonal ramps, shadow/motion tokens, 8 live-renderable component snippets, narrative).
+
+Two creative calls locked with Will:
+
+- **Creative North Star: "The Midnight Editorial"** (fashion magazine printed for the dark).
+- **Depth = restrained accent** (glass on floating controls only, ice glow on active/pressed only, flat at rest). Drives the Elevation doctrine.
+
+Captured tokens (canonical = the prototype's hex vars): carbon black `#0A0A0A` / bone `#F5F1EA` / ice `#9FD8E8`; Satoshi 900 display+numeric, Host Grotesk body. Named rules: One Cold Voice (ice <=10%), Warm-White (no pure white text), Two-Family, One-Word Header, Flat-At-Rest, Glass-Is-For-Floating. All PRODUCT.md anti-refs carried into Don'ts verbatim.
+
+Contrast debt re-flagged in DESIGN.md: Bone Mute `#8A8A8A` on carbon ~4.0:1 (below 4.5 for small body). `/impeccable audit web/index.html` is the next obvious pass.
+
+---
+
+## 2026-05-30 — impeccable init: PRODUCT.md written
+
+Ran `/impeccable init`. Created `the-list/PRODUCT.md` (strategic design context for the impeccable skill).
+
+- **Register locked: `product`** (app UI — design serves the app; the editorial flavor doesn't make it a brand/marketing surface).
+- Users / purpose / brand personality / anti-references pulled straight from existing `docs/agent/context.md` + `errors.md` (no new decisions there).
+- **Accessibility default set: WCAG AA + `prefers-reduced-motion`** + ice-blue never the sole state signal. Will was unsure, so this is the working default — not founder-ratified. Revisit at SwiftUI build.
+- Flagged contrast debt (muted grey + white-on-image) as the first `/impeccable audit` target.
+
+Note: impeccable scripts live at the `Me` level; PRODUCT.md lives at the product root (`the-list/`). Future `/impeccable` commands should run with `the-list` as the working dir or the context script won't find it. DESIGN.md not yet generated.
+
+---
+
+## 2026-05-30 — Polish pass on `web/index.html` (no flow change)
+
+Visual-only pass. Flow, copy (beyond headers), and creator-data/provider logic untouched.
+
+1. **One-word headers** (sentence → word):
+   - Explore "All open rooms in Beirut." → **Index** (dropped the duplicate small "Index" eyebrow)
+   - My Events "My List" → **Invites**; Filter sheet "Refine the index." → **Filters**
+   - Onboarding 3 states: "Apply for access." → **Apply**, "Reading your audience." → **Reading**, "You're on the list." → **Listed**
+   - **Tab bar also aligned** (decision, flagged for Will): "My List" → Invites, "Me" → Profile. Tonight/Index already matched. Revert if only in-screen headers were wanted.
+
+2. **Depth (TSS-style, no purple/pink):**
+   - `.glass` frosted controls (Home search, Explore Filters pill, My Events calendar)
+   - Tab bar now translucent + `blur(22px)` + subtle ice top-glow; active tab icon glows ice
+   - `.card` = translucent black + 1px glass border + softer shadow; applied to list/featured/past/confirmed/verify/country-tile cards
+   - `.glow-ice` on active pills/days/chips; `.glow-primary` on ice CTAs — **active + pressed only**, not resting
+   - Ornamental ice dot-grid via `body::before`, radial-masked so it only shows outside the (opaque) phone
+   - `.press` hover micro-interaction added
+
+3. **Icons: Lucide → Phosphor** (web-font CDN `@phosphor-icons/web@2.1.1`). Rewrote `Icon` to emit `ph-thin/ph-light/ph` classes (weight from old `stroke` prop — thin default, no fills). `PH_NAMES` map keeps every call site's old lucide name working (search→magnifying-glass, settings→gear-six, share→share-network, calendar→calendar-blank, instagram→instagram-logo). Removed the innerHTML/`createIcons` pattern.
+
+**Not visually verified from agent env** — Playwright MCP didn't connect, npm cert-blocked (no esbuild/headless). Static-checked all edited classNames + confirmed no Lucide remnants. Opened in Will's browser for eyeball. Not pushed.
 
 ---
 

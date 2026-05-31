@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-31T00:00:00Z",
+  "title": "Design System: The List",
+  "extensions": {
+    "colorMeta": {
+      "ice": {
+        "role": "primary",
+        "displayName": "Ice Blue",
+        "canonical": "#9FD8E8",
+        "tonalRamp": ["#10262E", "#1B4351", "#2A6477", "#3E8AA2", "#6FB5C9", "#9FD8E8", "#C2E7F1", "#E2F4F9"]
+      },
+      "carbon-black": {
+        "role": "neutral",
+        "displayName": "Carbon Black",
+        "canonical": "#0A0A0A",
+        "tonalRamp": ["#0A0A0A", "#141414", "#1C1C1C", "#2A2A2A", "#3D3D3D", "#5C5C5C", "#8A8A8A", "#BFBFBF"]
+      },
+      "bone": {
+        "role": "neutral",
+        "displayName": "Bone",
+        "canonical": "#F5F1EA",
+        "tonalRamp": ["#2B2A26", "#46443E", "#646057", "#8A8579", "#ABA597", "#C5C0B5", "#E2DFD6", "#F5F1EA"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero event titles, one-word onboarding headers, profile name. Satoshi 900." },
+      "headline": { "displayName": "Headline", "purpose": "Screen titles (Index, Invites) and featured card titles." },
+      "title": { "displayName": "Title", "purpose": "Meta-rail numbers, in-card titles, section headers." },
+      "body": { "displayName": "Body", "purpose": "Descriptions and list rows. Host Grotesk 400, cap prose 65-75ch." },
+      "label": { "displayName": "Label", "purpose": "Uppercase tracked .stamp eyebrows, tab labels, badges." },
+      "numeric": { "displayName": "Numeric", "purpose": "Seats, timers, stats. Satoshi 900 tabular-nums, no separate mono." }
+    },
+    "shadows": [
+      { "name": "card-lift", "value": "0 16px 36px -24px rgba(0,0,0,0.9)", "purpose": "Soft low shadow under cards, paired with a 1px glass hairline + translucent fill." },
+      { "name": "frosted-glass", "value": "backdrop-filter: blur(16px) saturate(1.3)", "purpose": "Floating top controls; tab bar uses blur(22px). Means 'floating over content', never decoration." },
+      { "name": "ice-glow-active", "value": "0 0 0 1px rgba(159,216,232,0.4), 0 0 20px -4px rgba(159,216,232,0.5)", "purpose": "Interaction signal: active pills, selected day, active chips, primary-button hover/press only." }
+    ],
+    "motion": [
+      { "name": "press", "value": "transform 0.12s ease, opacity 0.12s ease", "purpose": "Tap feedback: scale(0.97) + slight opacity drop on :active." },
+      { "name": "ease-reveal", "value": "cubic-bezier(0.2, 0.7, 0.2, 1)", "purpose": "Ease-out for slide-up, sheet, and stagger entrances (150-450ms)." },
+      { "name": "ring-pop", "value": "0.8s cubic-bezier(0.2,0.7,0.2,1)", "purpose": "Scale-in for the signature reveal ring." },
+      { "name": "pulse-ice", "value": "1.8s cubic-bezier(0.4,0.2,0.2,1) infinite", "purpose": "Slow expanding ice halo behind the reveal ring." }
+    ],
+    "breakpoints": [
+      { "name": "device", "value": "393px", "purpose": "iPhone screen width; the design target. Layout is single-column app, not responsive web." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one action that matters per screen (Apply, Confirm, Enter). Ice fill, ice glow on hover/press.",
+      "html": "<button class=\"ds-btn-primary\">Apply &middot; Free</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:12px; height:58px; padding:0 24px; border:none; border-radius:999px; background:#9FD8E8; color:#0A0A0A; font-family:'Host Grotesk',ui-sans-serif,system-ui; font-weight:500; font-size:14px; text-transform:uppercase; letter-spacing:0.18em; cursor:pointer; transition:transform .12s ease, opacity .12s ease, box-shadow .2s; } .ds-btn-primary:hover { box-shadow:0 0 24px -4px rgba(159,216,232,.55); } .ds-btn-primary:active { transform:scale(.97); opacity:.9; box-shadow:0 0 26px -2px rgba(159,216,232,.65); } .ds-btn-primary:focus-visible { outline:2px solid #9FD8E8; outline-offset:3px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary action (Decline, Reset). Hairline border, bone text, transparent fill.",
+      "html": "<button class=\"ds-btn-ghost\">Decline</button>",
+      "css": ".ds-btn-ghost { display:inline-flex; align-items:center; justify-content:center; height:58px; padding:0 24px; border:1px solid rgba(245,241,234,.18); border-radius:999px; background:transparent; color:#F5F1EA; font-family:'Host Grotesk',ui-sans-serif,system-ui; font-weight:500; font-size:13px; text-transform:uppercase; letter-spacing:0.2em; cursor:pointer; transition:transform .12s ease, border-color .2s; } .ds-btn-ghost:hover { border-color:rgba(245,241,234,.35); } .ds-btn-ghost:active { transform:scale(.97); } .ds-btn-ghost:focus-visible { outline:2px solid #9FD8E8; outline-offset:3px; }"
+    },
+    {
+      "name": "Filter Pill",
+      "kind": "chip",
+      "refersTo": "chip-outline",
+      "description": "Filter chip at rest (outline) and selected (ice glow ring). Toggle the ds-on class.",
+      "html": "<div style=\"display:flex;gap:8px\"><button class=\"ds-chip\">Beach</button><button class=\"ds-chip ds-on\">Club</button></div>",
+      "css": ".ds-chip { height:32px; padding:0 12px; border:1px solid rgba(245,241,234,.18); border-radius:999px; background:transparent; color:#F5F1EA; font-family:'Host Grotesk',ui-sans-serif,system-ui; font-size:11px; text-transform:uppercase; letter-spacing:0.18em; cursor:pointer; transition:transform .12s ease, box-shadow .2s, background .2s; } .ds-chip:active { transform:scale(.97); } .ds-chip.ds-on { background:#F5F1EA; color:#0A0A0A; border-color:transparent; box-shadow:0 0 0 1px rgba(159,216,232,.4), 0 0 20px -4px rgba(159,216,232,.5); } .ds-chip:focus-visible { outline:2px solid #9FD8E8; outline-offset:2px; }"
+    },
+    {
+      "name": "Event Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "List/feature event card: image with bottom-up scrim, ice badge, bone title. Card lift shadow + glass hairline.",
+      "html": "<button class=\"ds-card\"><div class=\"ds-card-img\"></div><div class=\"ds-card-scrim\"></div><span class=\"ds-card-badge\">24h left</span><div class=\"ds-card-meta\"><div class=\"ds-card-title\">Pool Day</div><div class=\"ds-card-sub\">Cyan Beach Club &middot; Jiyeh</div></div></button>",
+      "css": ".ds-card { position:relative; display:block; width:280px; height:200px; padding:0; border:1px solid rgba(245,241,234,.08); border-radius:18px; overflow:hidden; background:rgba(22,22,22,.5); box-shadow:0 16px 36px -24px rgba(0,0,0,.9); cursor:pointer; transition:transform .12s ease, border-color .2s; } .ds-card:hover { border-color:rgba(159,216,232,.35); } .ds-card:active { transform:scale(.97); } .ds-card-img { position:absolute; inset:0; background:linear-gradient(135deg,#2a6477,#10262e); } .ds-card-scrim { position:absolute; inset:0; background:linear-gradient(180deg, rgba(10,10,10,.3) 0%, rgba(10,10,10,0) 35%, rgba(10,10,10,.9) 100%); } .ds-card-badge { position:absolute; top:12px; left:12px; padding:5px 10px; border-radius:999px; background:#9FD8E8; color:#0A0A0A; font-family:'Host Grotesk',ui-sans-serif,system-ui; font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:0.22em; } .ds-card-meta { position:absolute; left:12px; right:12px; bottom:12px; text-align:left; color:#F5F1EA; } .ds-card-title { font-family:'Satoshi',ui-sans-serif,system-ui; font-weight:900; font-size:24px; line-height:1; letter-spacing:-0.015em; } .ds-card-sub { font-family:'Host Grotesk',ui-sans-serif,system-ui; font-size:11px; opacity:.8; margin-top:4px; }"
+    },
+    {
+      "name": "Handle Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Onboarding Instagram-handle field: surface fill, hairline border, muted @ prefix, ice focus border.",
+      "html": "<div class=\"ds-input\"><span class=\"ds-input-prefix\">@</span><input class=\"ds-input-field\" placeholder=\"capriottisara\" /></div>",
+      "css": ".ds-input { display:flex; align-items:center; height:48px; border:1px solid rgba(245,241,234,.18); border-radius:12px; background:#141414; overflow:hidden; transition:border-color .2s; } .ds-input:focus-within { border-color:#9FD8E8; } .ds-input-prefix { padding:0 12px; color:#8A8A8A; font-family:'Host Grotesk',ui-sans-serif,system-ui; font-size:15px; } .ds-input-field { flex:1; height:100%; border:none; background:transparent; color:#F5F1EA; font-family:'Host Grotesk',ui-sans-serif,system-ui; font-size:15px; padding-right:12px; } .ds-input-field::placeholder { color:#8A8A8A; } .ds-input-field:focus { outline:none; }"
+    },
+    {
+      "name": "Glass Control",
+      "kind": "custom",
+      "refersTo": "glass-control",
+      "description": "Floating round frosted icon button (search, calendar, settings) that sits over scrolling content.",
+      "html": "<button class=\"ds-glass\" aria-label=\"Search\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 256 256\" fill=\"none\" stroke=\"#F5F1EA\" stroke-width=\"12\"><circle cx=\"112\" cy=\"112\" r=\"80\"/><line x1=\"168\" y1=\"168\" x2=\"224\" y2=\"224\" stroke-linecap=\"round\"/></svg></button>",
+      "css": ".ds-glass { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border:1px solid rgba(245,241,234,.12); border-radius:999px; background:rgba(20,20,20,.5); backdrop-filter:blur(16px) saturate(1.3); -webkit-backdrop-filter:blur(16px) saturate(1.3); cursor:pointer; transition:transform .12s ease, opacity .12s ease; } .ds-glass:hover { opacity:.96; } .ds-glass:active { transform:scale(.97); } .ds-glass:focus-visible { outline:2px solid #9FD8E8; outline-offset:3px; }"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "tabbar",
+      "description": "Bottom navigation, frosted glass, active item = ice icon with glow + ice dot. Heroicons outline (SF Symbols at the SwiftUI port).",
+      "html": "<nav class=\"ds-tabbar\"><button class=\"ds-tab ds-on\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M208 144a79.9 79.9 0 0 1-96 78.4V216a8 8 0 0 0-16 0v6.4A80 80 0 1 1 208 144Z\" opacity=\".15\"/><circle cx=\"128\" cy=\"128\" r=\"40\"/></svg><span>Tonight</span><span class=\"ds-dot\"></span></button><button class=\"ds-tab\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 256 256\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"10\"><circle cx=\"128\" cy=\"128\" r=\"96\"/><polygon points=\"164,92 116,116 92,164 140,140\"/></svg><span>Index</span><span class=\"ds-dot\"></span></button></nav>",
+      "css": ".ds-tabbar { display:flex; gap:4px; padding:12px 18px; background:rgba(10,10,10,.85); backdrop-filter:blur(22px) saturate(1.3); -webkit-backdrop-filter:blur(22px) saturate(1.3); border-top:1px solid rgba(245,241,234,.1); box-shadow:0 -12px 34px -22px rgba(159,216,232,.35); } .ds-tab { display:flex; flex-direction:column; align-items:center; gap:5px; flex:1; padding:4px 0; border:none; background:transparent; color:#8A8A8A; font-family:'Host Grotesk',ui-sans-serif,system-ui; font-size:9px; letter-spacing:0.18em; text-transform:uppercase; cursor:pointer; transition:color .15s; } .ds-tab .ds-dot { width:4px; height:4px; border-radius:50%; background:transparent; } .ds-tab.ds-on { color:#F5F1EA; } .ds-tab.ds-on svg { color:#9FD8E8; filter:drop-shadow(0 0 8px rgba(159,216,232,.7)); } .ds-tab.ds-on .ds-dot { background:#9FD8E8; box-shadow:0 0 8px rgba(159,216,232,.85); }"
+    },
+    {
+      "name": "Reveal Ring",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Signature moment: the 'You're in' / 'Tier One' ice ring with scale-in and pulsing halo. Used only at genuine peaks.",
+      "html": "<div class=\"ds-ring\">You're<br/>in.</div>",
+      "css": ".ds-ring { display:flex; align-items:center; justify-content:center; width:180px; height:180px; border-radius:50%; background:#9FD8E8; color:#0A0A0A; font-family:'Satoshi',ui-sans-serif,system-ui; font-weight:900; font-size:48px; line-height:1; text-align:center; animation:dsRingPop .8s cubic-bezier(.2,.7,.2,1) backwards, dsPulse 1.8s cubic-bezier(.4,.2,.2,1) infinite; } @keyframes dsRingPop { 0%{transform:scale(.3);opacity:0} 60%{transform:scale(1.08);opacity:1} 100%{transform:scale(1);opacity:1} } @keyframes dsPulse { 0%{box-shadow:0 0 0 0 rgba(159,216,232,.5)} 100%{box-shadow:0 0 0 28px rgba(159,216,232,0)} } @media (prefers-reduced-motion: reduce) { .ds-ring { animation:none; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Midnight Editorial",
+    "overview": "The List is a fashion magazine printed for the dark. The page is carbon black, the type is bone-white and set with editorial confidence, and a single cold accent (ice blue) does all the pointing. It is a consumer nightlife app, so a handful of screens are emotional peaks that earn real choreography, while the browsing surfaces stay calm, fast, and dense. The feeling to chase is quiet status. Everything is built on standard iOS affordances so the app is instantly legible; the distinctiveness lives in the typeface pairing, the carbon-and-bone palette, the rationing of ice blue, and the copy, never in reinvented controls. Depth is handled with restraint: flat at rest, glass only on floating controls, glow only on interaction.",
+    "keyCharacteristics": [
+      "Carbon black surfaces, bone-white text, one cold accent",
+      "Editorial display type (Satoshi 900) against a quiet humanist body (Host Grotesk)",
+      "Ice blue rationed to actions, current selection, and state, never decoration",
+      "Flat at rest; glass and glow only as a response to floating-ness or interaction",
+      "A few choreographed moments; the rest is calm tooling"
+    ],
+    "rules": [
+      { "name": "The One Cold Voice Rule", "body": "Ice blue is the only chroma in the system and appears on roughly 10% or less of any screen. Its rarity is the entire point.", "section": "colors" },
+      { "name": "The Warm-White Rule", "body": "Text is Bone (#F5F1EA), never pure white. Pure #FFFFFF only appears as the app surface in the light theme.", "section": "colors" },
+      { "name": "The Two-Family Rule", "body": "Satoshi and Host Grotesk only. A third typeface or true mono is forbidden; numeric needs are met by Satoshi 900 tabular figures. Inter and Instrument Serif are banned.", "section": "typography" },
+      { "name": "The One-Word Header Rule", "body": "Screen headers are a single editorial word (Tonight, Index, Invites, Apply, Reading, Listed, Filters), not a sentence.", "section": "typography" },
+      { "name": "The Flat-At-Rest Rule", "body": "Surfaces are flat until something is true about them. A glow on a resting, unselected element is always a bug.", "section": "elevation" },
+      { "name": "The Glass-Is-For-Floating Rule", "body": "Frosted glass is reserved for elements that genuinely float over scrolling content. Glassmorphism-as-default is prohibited.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep ice blue (#9FD8E8) to roughly 10% of any screen: actions, current selection, and state only.",
+      "Do set text in Bone (#F5F1EA), never pure white, on dark surfaces.",
+      "Do keep surfaces flat at rest; add glass only to floating controls and the tab bar, and ice glow only to active/pressed states.",
+      "Do use single editorial words for screen headers; push sentences into body copy.",
+      "Do hold the type system to Satoshi (display + numbers) and Host Grotesk (body) only.",
+      "Do honor prefers-reduced-motion with a crossfade/instant fallback for stagger, ring-pop, and reveal.",
+      "Do pair ice with a text or icon cue for state, never color alone."
+    ],
+    "donts": [
+      "Don't use purple or pink gradients anywhere (The Secret Society's biggest visual weakness).",
+      "Don't let the app read as a dating app or a coupon/discount app. No '% off', no urgency-coupon energy.",
+      "Don't reach for generic SaaS gradient heroes or glowing startup clichés.",
+      "Don't use Inter anywhere, or Instrument Serif (an AI-design tell as of 2026).",
+      "Don't put emoji in the UI.",
+      "Don't apply ice glow to resting elements or use frosted glass as a decorative card treatment.",
+      "Don't nest cards, add a colored side-stripe border, or set body copy in ALL CAPS."
+    ]
+  }
+}
