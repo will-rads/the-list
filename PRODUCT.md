@@ -28,7 +28,7 @@ Berlin nightlife meets fashion editorial. Closer to Aesop / Bottega / Berghain t
 - **Dating apps.** We borrow the swipe mechanic but must never read as Tinder/Bumble.
 - **Coupon / discount apps.** This is access and status, not a deal. No "% off," no urgency-coupon energy.
 - **Generic SaaS / startup gradients.** No glowing gradient hero clichés.
-- **Fonts**: no Inter anywhere; no Instrument Serif (an AI-design tell as of 2026).
+- **Fonts**: one family only — Plus Jakarta Sans across the whole app (the **One-Family Rule**: hierarchy comes from weight and size, never a second family). No Inter anywhere; no Instrument Serif (an AI-design tell as of 2026).
 - No emojis in the UI. No "Great question!" filler in product copy.
 
 ## Design Principles

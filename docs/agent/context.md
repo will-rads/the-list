@@ -136,6 +136,20 @@ Badge flips to "Verified · Tier 1"
 
 No manual review in the happy path. Founders only touch borderline / suspicious accounts. **Vendor is swappable** because all providers feed the same normalized response shape — the client (SwiftUI / web) never sees vendor specifics.
 
+### Profile data sourcing (vendor-neutral — provider still open)
+
+Everything on the Profile screen is **mocked** in the prototype via `mockCreatorDataFetch()` and the shared `SEED_PROFILE`, shaped exactly like the normalized response a provider will return. Nothing is scraped from Instagram (see `errors.md`). The provider is **deliberately not locked** — candidates Phyllo / Modash / Ensembledata, chosen after a trial.
+
+| Profile field | Mocked now (prototype) | Provider supplies (production) |
+| --- | --- | --- |
+| Profile photo | `SEED_PROFILE.profile_picture_url` (Unsplash stand-in) | `profile_picture_url` from the handle lookup |
+| Followers | Hardcoded 28.4k | `followers_count` |
+| Engagement | Hardcoded 5.8% | `engagement_rate` |
+| Audience split | Hardcoded gender + country | `audience.gender_split` / `audience.country_split` |
+| Verification badge | `data_status` flips `estimated → verified` on the in-app Connect tap (local state only) | `data_status` flips via the OAuth / Connect SDK webhook |
+
+The client never sees vendor specifics, so swapping providers is one backend Edge-function change. Badge reads "Self-reported · Tier 1" until OAuth, then "Verified · Tier 1".
+
 ## The 6 core screens (influencer side)
 
 | # | Screen | Purpose |
@@ -153,7 +167,7 @@ Venue side is a separate dual UX. Out of v1 scope until influencer side ships.
 
 - **Tone:** Berlin nightlife meets fashion editorial. Closer to Aesop / Bottega / Berghain than Uber Eats.
 - **Not:** purple, pink, gradient-y, cute, dating-app, coupon-app.
-- **Fonts (locked):** Plus Jakarta Sans — one family across the app, headers bolder, numbers inherit. Avoiding Inter + Instrument Serif (too AI-flavored).
+- **Fonts (locked):** Plus Jakarta Sans — one family across the app (the One-Family Rule), headers bolder, numbers inherit. Avoiding Inter + Instrument Serif (too AI-flavored).
 - **Accent (locked):** Ice blue `#9FD8E8` (light `#26768F`) on Carbon Black `#0A0A0A`, Bone `#F5F1EA` text. No grey text — text is full-contrast ink (Bone `#F5F1EA` on dark / Black `#0A0A0A` on light). Restrained to ≤10% (actions / selection / state). Acid lime and champagne gold rejected. Dark mode is primary. Full visual system in `DESIGN.md`.
 
 ## Open questions still on the table

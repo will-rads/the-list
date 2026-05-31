@@ -125,7 +125,7 @@
     "rules": [
       { "name": "The One Cold Voice Rule", "body": "Ice blue is the only chroma in the system and appears on roughly 10% or less of any screen. Its rarity is the entire point.", "section": "colors" },
       { "name": "The Warm-White Rule", "body": "Text is Bone (#F5F1EA), never pure white. Pure #FFFFFF only appears as the app surface in the light theme.", "section": "colors" },
-      { "name": "The Single-Family Rule", "body": "One typeface app-wide: Plus Jakarta Sans. A second family — including a serif or true mono — is forbidden; headers differ from body by weight (800 vs 400), not by family, and numeric needs are met by the same family's proportional figures. Inter and Instrument Serif are banned.", "section": "typography" },
+      { "name": "The One-Family Rule", "body": "One typeface app-wide: Plus Jakarta Sans (retires the former Satoshi + Host Grotesk Two-Family rule). A second family — including a serif or true mono — is forbidden; headers differ from body by weight (800 vs 400), not by family, and numeric needs are met by the same family's proportional figures. Inter and Instrument Serif are banned.", "section": "typography" },
       { "name": "The One-Word Header Rule", "body": "Screen headers are a single editorial word (Tonight, Index, Invites, Apply, Reading, Listed, Filters), not a sentence.", "section": "typography" },
       { "name": "The Flat-At-Rest Rule", "body": "Surfaces are flat until something is true about them. A glow on a resting, unselected element is always a bug.", "section": "elevation" },
       { "name": "The Glass-Is-For-Floating Rule", "body": "Frosted glass is reserved for elements that genuinely float over scrolling content. Glassmorphism-as-default is prohibited.", "section": "elevation" }

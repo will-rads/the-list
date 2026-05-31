@@ -6,7 +6,44 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## Current state (one line)
 
-Prototype `web/index.html` complete, all 10 UI audit items done, **type/color system overhauled** (single font Plus Jakarta Sans, headers bolder, zero grey text, ice accent kept; Tailwind `.font-mono` override fixed; Pool Day image → `./assets/pool-day.jpg`, 159 KB). **Reviewed → merged to `main` (`f45acf7`) → pushed → deployed to Vercel** (`the-list-omega.vercel.app`); branch `design/type-color-overhaul` deleted. All locked docs synced. **Phase: prototype shipped + live. Next: SwiftUI planning / port.**
+Prototype `web/index.html` at **v0.3 — user-side interaction-complete, ready for review** (local only, **not committed / not pushed**). On top of the shipped type/color system: every visible control now has a behavior (save/bookmark, Share sheet, Settings sheet, verify→verified flip, plus toasts for search/map/calendar/view-pass); new **Saved** tab in Invites via a pill-`Segmented` (Applied / Confirmed / Saved / Past); thin section half-hairlines replaced by `SectionHead` (ice tick + label) with `StatusPill` / `DateChip` (TSS UX patterns in our skin); decorative punctuation stripped from display text. Docs reconciled: **Two-Family → One-Family Rule** everywhere; vendor-neutral profile-data sourcing documented. Pool Day asset unchanged: `web/assets/pool-day.jpg` (159 KB), referenced `./assets/pool-day.jpg` via `IMG.beachClub`. **Phase: prototype user-side complete (review pending). Next: Will eyeballs → commit → SwiftUI planning / port.**
+
+---
+
+## 2026-05-31 — User-side interaction-completeness pass (v0.3) + TSS pattern map + One-Family rename
+
+Big pass on `web/index.html` to make the influencer side review-ready. Visual/interaction/doc only — **core flow untouched** (onboarding → home → detail → apply → picked → invites/profile), iOS untouched, provider code still mocked + vendor-neutral, dark primary, Carbon + Ice. **Local only, not committed.**
+
+**New shared components** (one `App`-level source of truth for `saved`, `shareEvent`, `settingsOpen`, `toast`): `SaveButton`, `Toggle`, `StatusPill`, `DateChip`, `parseDate`, `SectionHead`, `Segmented`, `Toast`, `ShareSheet`, `SettingsSheet`, plus a module-scope `SEED_PROFILE` (extracted from the old inline Profile fallback so verify + Profile share one seed). Added Heroicon glyphs: `bookmark-fill`, `link`, `paper-plane`, `bell`.
+
+**Interactions wired (no more dead taps):**
+- **Save/bookmark** — `saved` id array in `App`; toggle from Event Detail header + featured/lead image cards; ice-filled bookmark when saved; toast on change.
+- **Saved experience** — new **Saved** segment in Invites (cleanest home for it; the Invites tab icon is already a bookmark). Invites tabs now a pill `Segmented`: Applied / Confirmed / Saved / Past, with counts. Saved rows open detail; an inline `SaveButton` unsaves. Empty state included.
+- **Share** — `ShareSheet` bottom sheet: event preview + 4-up actions (Copy link / To Story / Message / More), each toasts + closes.
+- **Settings** — `SettingsSheet` from the Profile gear: display name / IG handle / phone inputs, two notification `Toggle`s, a light-theme `Toggle`, vendor-neutral privacy note, Save + Log out + Delete (placeholders toast). Delete stays neutral ink (no second colour — One Cold Voice).
+- **Verification** — Profile "Connect" → `onVerify` flips `data_status` to `verified` (badge → "Verified · Tier 1", audience → "Live", strip disappears), works on both the seeded and onboarded profile.
+- **Minor controls** — Home search → jumps to Index; Map / Calendar / View pass → `Toast`.
+
+**Finished-edge / divider rework (retires thin half-hairlines):** every "label + `flex-1 h-px`" section break → `SectionHead` (3×15px ice tick + label + optional outline meta pill). `StatusPill` (ice/neutral/outline) is now the one status vocabulary (Open, 24h left, Confirmed+dot, Under review, Not selected). `DateChip` (ice on the confirmed check-in block). Full-width masthead rules kept on purpose.
+
+**Punctuation cleanup (display text only):** dropped decorative periods — Profile name (`Capriotti.`→`Capriotti`), `You're in.`→`You're in`, `Tier One.`→`Tier One`, `Couldn't read that.`→`Couldn't read that`, intro `Tap through Sara's flow.`→ no period. Kept punctuation in sentences, helper copy, handles, dates/times, ratios, and `·` data separators.
+
+**TSS screenshot → our app map** (structure borrowed, look thrown away — see `research/screenshots/`):
+
+| TSS pattern (screenshot) | Mapped to |
+| --- | --- |
+| Date-block chip on cards / featured banner | `DateChip` (ice on confirmed) |
+| Status pills (OPEN FOR SWIPE green, UNDER REVIEW red) | `StatusPill` — ice/neutral/outline, second hue dropped |
+| Segmented toggles (ENGAGEMENT/HEALTH, CHECKED IN/OUT/NO SHOW) | `Segmented` for Invites tabs |
+| Save-heart circle on card image | `SaveButton` (our bookmark + ice) |
+| Count badge on title (To Review 24, 45 Events) | counts in `Segmented` + Filters pill |
+| Pending/Interest toggle switch | `Toggle` in Settings |
+| Reputation triad (Punctuality/Presentation/Joviality) | noted for the venue side; not in v1 user UI |
+| Glass featured banner (date + title + time + arrow) | informs the featured/section finish |
+
+**Docs reconciled:** `DESIGN.md` (One-Family Rule rename + retires Two-Family; new §5 component entries for SectionHead/StatusPill/DateChip/Segmented/SaveButton/Toggle/Toast + Share/Settings sheets; Finished-Edge Rule in Do's; new Don'ts for half-hairlines, second status colour, decorative punctuation; hairline + section-label prose updated). `.impeccable/design.json` rule renamed. `AGENTS.md` font row cleaned (dropped Satoshi/Host Grotesk clause). `PRODUCT.md` + `context.md` font lines name the One-Family Rule. `context.md` gained the vendor-neutral "Profile data sourcing" table. `gallery.html` / `mockup-v1.html` left as-is (archived alternate directions — acid-lime/Satoshi/Instrument-Serif — not the live app; errors.md says keep them as references).
+
+**Verified:** Node static check — file 1672 lines, brackets balanced (curly/paren/square delta 0), single `App`/`#root`/`createRoot`, all screen-render props + overlay mounts present, all 16 new component defs present, no leftover `flex-1 h-px` section dividers. Babel/visual render: see verification note below / next entry. (The Read tool was glitching with repeated-line artifacts on this big file — verified via Node instead.)
 
 ---
 

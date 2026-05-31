@@ -391,6 +391,28 @@ const EVENTS = [
   { id:"loungenight", title:"Late Lounge", venue:"Centrale",          area:"Saifi",       date:"Sun · 25 May",  time:"22:00",  img:IMG.lounge,     type:"Lounge",     seats:18, applied:101, badge:"" },
 ];
 
+/* Seed profile = the normalized creator-data shape (estimated, pre-verify).
+   Used as the Profile fallback when onboarding is skipped, and as the base the
+   Verify-with-Instagram flow flips to data_status:"verified". Provider that
+   supplies this in production is deliberately not locked (see context.md). */
+const SEED_PROFILE = {
+  full_name: "Sara Capriotti",
+  handle: "capriottisara",
+  profile_picture_url: IMG.saraFull,
+  followers_count: 28400,
+  engagement_rate: 0.058,
+  data_status: "estimated",
+  audience: {
+    gender_split: { female: 0.62, male: 0.38 },
+    country_split: [
+      { label: "Lebanon",  pct: 0.71 },
+      { label: "UAE",      pct: 0.14 },
+      { label: "Saudi",    pct: 0.07 },
+      { label: "Other EU", pct: 0.08 },
+    ],
+  },
+};
+
 /* ========== Icon helper (Heroicons, inline) ==========
    Heroicons outline, inlined as SVG so there's no icon CDN dependency at all.
    Closest free stand-in for SF Symbols, which the SwiftUI build will use.
@@ -403,6 +425,10 @@ const HICONS = {
   "sparkle": '<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/>',
   "compass": '<path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/>',
   "bookmark": '<path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/>',
+  "bookmark-fill": '<path fill="currentColor" stroke="none" d="M6.32 2.577a49.255 49.255 0 0 1 11.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 0 1-1.085.67L12 18.089l-7.165 3.583A.75.75 0 0 1 3.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93Z"/>',
+  "link": '<path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/>',
+  "paper-plane": '<path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/>',
+  "bell": '<path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/>',
   "user": '<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>',
   "search": '<path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>',
   "arrow-right": '<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>',
@@ -445,6 +471,232 @@ function Countdown({ value, className="", style={} }){
         </React.Fragment>
       ))}
     </span>
+  );
+}
+
+/* ========== Small UI atoms — TSS UX patterns in our skin ==========
+   Date-block chips, status pills, a pill-track segmented control, an iOS
+   toggle, a save control, a finished section header, and a transient toast.
+   Structure borrowed from The Secret Society's app; colour/voice stays
+   Carbon + Ice. These replace the thin "label + floating hairline" dividers
+   and give every minor control a visible response.
+==================================================================== */
+
+// Save / bookmark control. Ice-filled when saved, glass when not.
+function SaveButton({ saved, onClick, size=36 }){
+  return (
+    <button
+      onClick={(e)=>{ e.stopPropagation(); onClick(); }}
+      aria-label={saved ? "Saved — tap to remove" : "Save event"}
+      aria-pressed={saved}
+      className={"press rounded-full flex items-center justify-center "+(saved ? "" : "glass-over-image")}
+      style={{ width:size, height:size, ...(saved ? {background:"var(--ice)", color:"var(--ice-ink)"} : {}) }}>
+      <Icon name={saved ? "bookmark-fill" : "bookmark"} size={Math.round(size*0.42)} stroke={1.6}/>
+    </button>
+  );
+}
+
+// iOS-style switch. Ice when on.
+function Toggle({ on, onChange }){
+  return (
+    <button onClick={()=>onChange(!on)} role="switch" aria-checked={on} className="press shrink-0"
+      style={{ width:46, height:28, borderRadius:999, position:"relative",
+        background: on ? "var(--ice)" : "var(--bg-elev2)", border:"1px solid var(--line-2)", transition:"background .2s" }}>
+      <span style={{ position:"absolute", top:2, left: on ? 20 : 2, width:22, height:22, borderRadius:"50%",
+        background: on ? "var(--ice-ink)" : "var(--ink)", transition:"left .2s" }}/>
+    </button>
+  );
+}
+
+// Rounded status badge. tone: ice (affirmative/open) | neutral (muted) | outline.
+function StatusPill({ label, tone="neutral", dot=false }){
+  const style = tone==="ice" ? {background:"var(--ice)", color:"var(--ice-ink)"}
+    : tone==="outline" ? {border:"1px solid var(--line-2)", color:"var(--ink)"}
+    : {background:"var(--bg-elev2)", color:"var(--ink)"};
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium" style={style}>
+      {dot && <span className="w-1.5 h-1.5 rounded-full" style={{background: tone==="ice" ? "var(--ice-ink)" : "var(--ice)"}}/>}
+      {label}
+    </span>
+  );
+}
+
+// "Sun · 25 May" -> { weekday:"Sun", day:"25", month:"May" }
+function parseDate(str){
+  const [wd, rest] = String(str).split("·").map(s=>s.trim());
+  const m = (rest||"").split(" ");
+  return { weekday: wd||"", day: m[0]||"", month: m.slice(1).join(" ")||"" };
+}
+// TSS-style rounded date block. tone: ice | neutral.
+function DateChip({ day, sub, tone="neutral" }){
+  const style = tone==="ice" ? {background:"var(--ice)", color:"var(--ice-ink)"} : {background:"var(--bg-elev2)", color:"var(--ink)"};
+  return (
+    <div className="rounded-[12px] flex flex-col items-center justify-center shrink-0" style={{ width:48, height:54, ...style }}>
+      <div className="font-black font-mono text-[20px] leading-none">{day}</div>
+      <div className="text-[9px] uppercase tracking-[.18em] mt-0.5" style={{opacity:.8}}>{sub}</div>
+    </div>
+  );
+}
+
+// Finished section header — short ice tick + label, optional right meta pill.
+// Replaces the old "label + thin trailing hairline" treatment everywhere.
+function SectionHead({ label, right, className="" }){
+  return (
+    <div className={"px-5 flex items-center justify-between "+className}>
+      <div className="flex items-center gap-2.5">
+        <span className="rounded-full" style={{ width:3, height:15, background:"var(--ice)" }}/>
+        <span className="section-label">{label}</span>
+      </div>
+      {right != null && (
+        <span className="text-[10px] uppercase tracking-[.2em] px-2.5 py-1 rounded-full" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>{right}</span>
+      )}
+    </div>
+  );
+}
+
+// Pill-track segmented control (TSS toggle pattern). items: [{id,label,count}].
+function Segmented({ items, value, onChange }){
+  return (
+    <div className="flex gap-1 p-1 rounded-full" style={{ background:"var(--bg-elev)", border:"1px solid var(--line)" }}>
+      {items.map(it=>{
+        const on = it.id===value;
+        return (
+          <button key={it.id} onClick={()=>onChange(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[10px] uppercase tracking-[.06em] font-medium"
+            style={on ? {background:"var(--ink)", color:"var(--bg)"} : {color:"var(--ink-mute)"}}>
+            <span>{it.label}</span>
+            {it.count != null && <span style={{opacity:.65}}>{it.count}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// Transient toast inside the phone frame — gives minor controls a visible reply.
+function Toast({ msg }){
+  if(!msg) return null;
+  return (
+    <div className="absolute left-0 right-0 flex justify-center z-[60] pointer-events-none" style={{bottom:104}}>
+      <div key={msg} className="anim-up px-4 py-2.5 rounded-full glass-over-image text-[12px] flex items-center gap-2" style={{maxWidth:"82%"}}>
+        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:"var(--ice)"}}/>
+        <span className="truncate">{msg}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ========== Share sheet — what's shared + the actions ========== */
+function ShareSheet({ event, onClose, onToast }){
+  if(!event) return null;
+  const actions = [
+    { id:"copy",  label:"Copy link",       icon:"link",        toast:"Link copied" },
+    { id:"story", label:"To Story",        icon:"instagram",   toast:"Opening Instagram" },
+    { id:"dm",    label:"Message",         icon:"paper-plane", toast:"Opening Messages" },
+    { id:"more",  label:"More",            icon:"share",       toast:"More share options" },
+  ];
+  return (
+    <>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(4px)"}}/>
+      <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
+        <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
+        <div className="flex items-center justify-between mb-5">
+          <div className="font-black text-[22px] leading-none">Share</div>
+          <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+            <Icon name="x" size={14} stroke={1.5}/>
+          </button>
+        </div>
+
+        {/* Preview of what is being shared */}
+        <div className="card flex items-center gap-3 p-3 rounded-[14px] mb-5">
+          <img src={event.img} className="w-14 h-16 rounded-[10px] object-cover" alt=""/>
+          <div className="flex-1 min-w-0">
+            <div className="stamp">{event.type}</div>
+            <div className="font-medium text-[15px] mt-0.5 truncate">{event.title}</div>
+            <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{event.venue} · {event.date}</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-2">
+          {actions.map(a=>(
+            <button key={a.id} onClick={()=>{ onToast(a.toast); onClose(); }} className="press flex flex-col items-center gap-2 py-3 rounded-[14px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
+              <Icon name={a.icon} size={20} stroke={1.5}/>
+              <span className="text-[10px]" style={{color:"var(--ink)"}}>{a.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ========== Settings sheet — profile fields + notifications + account ========== */
+function SettingsSheet({ profile, light, setLight, onClose, onToast }){
+  const seed = profile || SEED_PROFILE;
+  const [name, setName] = useState(seed.full_name);
+  const [handle, setHandle] = useState(seed.handle);
+  const [phone, setPhone] = useState("+961 71 000 000");
+  const [notifPicks, setNotifPicks] = useState(true);
+  const [notifDrops, setNotifDrops] = useState(true);
+  const verified = seed.data_status === "verified";
+
+  return (
+    <>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(4px)"}}/>
+      <div className="absolute left-0 right-0 bottom-0 z-50 sheet noscroll overflow-y-auto rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)", maxHeight:"88%"}}>
+        <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
+        <div className="flex items-center justify-between mb-5">
+          <div className="font-black text-[22px] leading-none">Settings</div>
+          <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+            <Icon name="x" size={14} stroke={1.5}/>
+          </button>
+        </div>
+
+        <div className="stamp mb-2">Display name</div>
+        <input value={name} onChange={e=>setName(e.target.value)} aria-label="Display name" className="w-full h-12 px-3 rounded-[12px] text-[15px] mb-4" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+
+        <div className="stamp mb-2">Instagram handle</div>
+        <div className="flex h-12 rounded-[12px] overflow-hidden mb-4 items-center" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)"}}>
+          <div className="px-3 flex items-center text-[15px]" style={{color:"var(--ink-mute)"}}>@</div>
+          <input value={handle} onChange={e=>setHandle(e.target.value)} aria-label="Instagram handle" className="flex-1 bg-transparent text-[15px] focus:outline-none" style={{color:"var(--ink)"}}/>
+          {verified && <span className="pr-2"><StatusPill label="Verified" tone="ice"/></span>}
+        </div>
+
+        <div className="stamp mb-2">Phone</div>
+        <input value={phone} onChange={e=>setPhone(e.target.value)} aria-label="Phone" className="w-full h-12 px-3 rounded-[12px] text-[15px] mb-5" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+
+        <div className="stamp mb-2">Notifications</div>
+        <div className="card rounded-[14px] px-4 mb-5">
+          <div className="flex items-center justify-between py-3.5">
+            <div className="pr-3"><div className="text-[14px]">When a venue picks you</div><div className="text-[11px]" style={{color:"var(--ink-mute)"}}>The moment that matters</div></div>
+            <Toggle on={notifPicks} onChange={setNotifPicks}/>
+          </div>
+          <div className="flex items-center justify-between py-3.5" style={{borderTop:"1px solid var(--line)"}}>
+            <div className="pr-3"><div className="text-[14px]">New drops in Beirut</div><div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Tonight's rooms as they open</div></div>
+            <Toggle on={notifDrops} onChange={setNotifDrops}/>
+          </div>
+        </div>
+
+        <div className="stamp mb-2">Appearance</div>
+        <div className="card rounded-[14px] px-4 mb-5">
+          <div className="flex items-center justify-between py-3.5">
+            <div className="text-[14px]">Light theme</div>
+            <Toggle on={light} onChange={setLight}/>
+          </div>
+        </div>
+
+        <div className="rounded-[12px] px-3 py-3 mb-5 text-[11px]" style={{background:"var(--bg-elev)", color:"var(--ink-mute)", border:"1px solid var(--line)"}}>
+          Your reach and audience data are read from Instagram through a licensed provider. The List never sees your password and never posts on your behalf.
+        </div>
+
+        <button onClick={()=>{ onToast("Settings saved"); onClose(); }} className="press glow-primary w-full h-12 rounded-full text-[13px] uppercase tracking-[.18em] font-medium mb-3" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+          Save changes
+        </button>
+        <div className="flex gap-2">
+          <button onClick={()=>onToast("Logged out (prototype)")} className="press flex-1 h-11 rounded-full text-[12px] uppercase tracking-[.16em]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Log out</button>
+          <button onClick={()=>onToast("Account deletion requested (prototype)")} className="press flex-1 h-11 rounded-full text-[12px] uppercase tracking-[.16em]" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>Delete account</button>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -507,7 +759,7 @@ function TabBar({ active, onChange }){
 }
 
 /* ========== 01 — HOME ========== */
-function ScreenHome({ tab, onTab, onPickEvent }){
+function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave }){
   const featured = EVENTS[0];
   const tonight  = [EVENTS[1], EVENTS[4]];
   return (
@@ -517,7 +769,7 @@ function ScreenHome({ tab, onTab, onPickEvent }){
       <div className="px-5 pt-[60px] pb-3">
         <div className="flex items-center justify-between">
           <div className="stamp">The List · No. 048</div>
-          <button className="press glass w-10 h-10 rounded-full flex items-center justify-center">
+          <button onClick={()=>onTab("explore")} aria-label="Search the index" className="press glass w-10 h-10 rounded-full flex items-center justify-center">
             <Icon name="search" size={16} stroke={1.4}/>
           </button>
         </div>
@@ -534,7 +786,8 @@ function ScreenHome({ tab, onTab, onPickEvent }){
         <button className="press card w-full text-left rounded-[18px] overflow-hidden relative grain" style={{height:380}} onClick={()=>onPickEvent(featured)}>
           <img src={featured.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
           <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.25) 0%, rgba(10,10,10,0) 35%, rgba(10,10,10,.9) 100%)"}}/>
-          <div className="absolute top-3 left-3 px-2 py-1 rounded-full chip-ice text-[10px] uppercase tracking-[.22em] font-medium">{featured.badge}</div>
+          <div className="absolute top-3 left-3"><StatusPill label={featured.badge} tone="ice"/></div>
+          <div className="absolute top-3 right-3"><SaveButton saved={saved.includes(featured.id)} onClick={()=>onToggleSave(featured.id)}/></div>
           <div className="absolute bottom-4 left-4 right-4 text-[var(--ink)]" style={{color:"#F5F1EA"}}>
             <div className="font-black font-display-l text-[40px] leading-[0.92] tracking-tight">{featured.title}</div>
             <div className="flex items-center gap-2 mt-3">
@@ -554,11 +807,7 @@ function ScreenHome({ tab, onTab, onPickEvent }){
       </div>
 
       {/* Also tonight */}
-      <div className="px-5 pt-7 pb-3 flex items-center gap-3">
-        <span className="section-label">Also tonight</span>
-        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
-        <span className="text-[11px] font-mono" style={{color:"var(--ink-mute)"}}>{tonight.length} rooms open</span>
-      </div>
+      <SectionHead label="Also tonight" right={tonight.length + " open"} className="pt-7 pb-3"/>
       <div className="px-5 space-y-3 stagger">
         {tonight.map((e,i)=>(
           <button key={e.id} onClick={()=>onPickEvent(e)} style={{"--i":i}} className="press card w-full flex gap-3 items-center text-left p-3 rounded-[14px]">
@@ -660,7 +909,7 @@ function FilterSheet({ open, onClose, advFilters, setAdvFilters }){
 }
 
 /* ========== 02 — EXPLORE ========== */
-function ScreenExplore({ tab, onTab, onPickEvent }){
+function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave }){
   const [filter, setFilter] = useState("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [advFilters, setAdvFilters] = useState({ verticals:[], distance:null, timing:"Tonight" });
@@ -700,11 +949,7 @@ function ScreenExplore({ tab, onTab, onPickEvent }){
         ))}
       </div>
 
-      <div className="px-5 pt-6 pb-3 flex items-center gap-3">
-        <span className="stamp">{list.length} rooms</span>
-        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
-        <span className="stamp">Sorted · closes soonest</span>
-      </div>
+      <SectionHead label={list.length + " rooms"} right="Closes soonest" className="pt-6 pb-3"/>
 
       {list.length === 0 ? (
         <div className="px-5 py-20 text-center">
@@ -721,9 +966,10 @@ function ScreenExplore({ tab, onTab, onPickEvent }){
                 <img src={lead.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
                 <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.3) 0%, rgba(10,10,10,0) 38%, rgba(10,10,10,.92) 100%)"}}/>
                 <div className="absolute top-3 left-3 flex gap-1.5">
-                  <span className="text-[10px] uppercase tracking-[.2em] px-2 py-1 rounded-full" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(8px)", color:"#F5F1EA"}}>{lead.type}</span>
-                  {lead.badge && <span className="text-[10px] uppercase tracking-[.22em] px-2 py-1 rounded-full chip-ice font-medium">{lead.badge}</span>}
+                  <span className="text-[10px] uppercase tracking-[.2em] px-2 py-1 rounded-full glass-over-image" style={{color:"#F5F1EA"}}>{lead.type}</span>
+                  {lead.badge && <StatusPill label={lead.badge} tone="ice"/>}
                 </div>
+                <div className="absolute top-3 right-3"><SaveButton saved={saved.includes(lead.id)} onClick={()=>onToggleSave(lead.id)}/></div>
                 <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between" style={{color:"#F5F1EA"}}>
                   <div className="min-w-0">
                     <div className="font-black font-display-l text-[34px] leading-[0.95] tracking-tight">{lead.title}</div>
@@ -767,7 +1013,7 @@ function ScreenExplore({ tab, onTab, onPickEvent }){
 }
 
 /* ========== 03 — EVENT DETAIL ========== */
-function ScreenEventDetail({ event, onBack, onApply, applyState }){
+function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved, onToggleSave, onToast }){
   const e = event || EVENTS[0];
   return (
     <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
@@ -785,10 +1031,8 @@ function ScreenEventDetail({ event, onBack, onApply, applyState }){
             <Icon name="arrow-left" size={18} stroke={1.4}/>
           </button>
           <div className="flex gap-2">
-            <button className="press glass-over-image w-10 h-10 rounded-full flex items-center justify-center">
-              <Icon name="bookmark" size={16} stroke={1.4}/>
-            </button>
-            <button className="press glass-over-image w-10 h-10 rounded-full flex items-center justify-center">
+            <SaveButton size={40} saved={saved.includes(e.id)} onClick={()=>onToggleSave(e.id)}/>
+            <button onClick={onShare} aria-label="Share" className="press glass-over-image w-10 h-10 rounded-full flex items-center justify-center">
               <Icon name="share" size={16} stroke={1.4}/>
             </button>
           </div>
@@ -835,15 +1079,12 @@ function ScreenEventDetail({ event, onBack, onApply, applyState }){
             <div className="text-[14px] font-medium">{e.venue}</div>
             <div className="text-[12px]" style={{color:"var(--ink-mute)"}}>{e.area} · 22 km south of city</div>
           </div>
-          <button className="press text-[11px] px-3 h-8 rounded-full" style={{border:"1px solid var(--line-2)"}}>Map</button>
+          <button onClick={()=>onToast("Opening in Maps")} className="press text-[11px] px-3 h-8 rounded-full" style={{border:"1px solid var(--line-2)"}}>Map</button>
         </div>
       </div>
 
       {/* Exchange */}
-      <div className="px-5 pt-8 pb-3 flex items-center gap-3">
-        <span className="section-label">The exchange</span>
-        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
-      </div>
+      <SectionHead label="The exchange" className="pt-8 pb-3"/>
       <div className="px-5 space-y-4">
         {[
           { n:"01", t:"One Story, on the day", s:"Posted between 14:00 - 21:00" },
@@ -892,97 +1133,106 @@ function ScreenEventDetail({ event, onBack, onApply, applyState }){
 }
 
 /* ========== 04 — MY EVENTS ========== */
-function ScreenMyEvents({ tab, onTab, confirmedEvent }){
-  const [seg, setSeg] = useState(confirmedEvent ? "confirmed" : "invited");
+function ScreenMyEvents({ tab, onTab, confirmedEvent, savedEvents, onToggleSave, onPickEvent, onToast }){
+  const [seg, setSeg] = useState(confirmedEvent ? "confirmed" : "applied");
+  const conf = confirmedEvent ? parseDate(confirmedEvent.date) : null;
+
+  const segs = [
+    { id:"applied",   label:"Applied",   count: confirmedEvent ? 0 : 1 },
+    { id:"confirmed", label:"Confirmed", count: confirmedEvent ? 1 : 0 },
+    { id:"saved",     label:"Saved",     count: savedEvents.length },
+    { id:"past",      label:"Past",      count: 24 },
+  ];
 
   return (
     <PhoneScreen tab={tab} onTab={onTab}>
-      <div className="px-5 pt-[60px] pb-3 flex items-center justify-between">
-        <div>
-          <div className="font-black font-display-l text-[36px] leading-none">Invites</div>
-        </div>
-        <button className="press glass w-10 h-10 rounded-full flex items-center justify-center">
+      <div className="px-5 pt-[60px] pb-4 flex items-center justify-between">
+        <div className="font-black font-display-l text-[36px] leading-none">Invites</div>
+        <button onClick={()=>onToast("Calendar sync coming in the build")} aria-label="Calendar" className="press glass w-10 h-10 rounded-full flex items-center justify-center">
           <Icon name="calendar" size={16} stroke={1.4}/>
         </button>
       </div>
 
-      <div className="hr-2 mx-5"/>
-
-      <div className="px-5 pt-4 pb-3 grid grid-cols-3 gap-0">
-        {[
-          { id:"invited",   label:"Applied",   count: confirmedEvent ? "00" : "01" },
-          { id:"confirmed", label:"Confirmed", count: confirmedEvent ? "01" : "00" },
-          { id:"past",      label:"Past",      count:"24" },
-        ].map(s=>(
-          <button key={s.id} onClick={()=>setSeg(s.id)} className="press py-3 text-left">
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-black text-[26px]" style={{color: seg===s.id ? "var(--ink)":"var(--ink-mute)"}}>{s.count}</span>
-              {s.id==="invited" && !confirmedEvent && <span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--ice)"}}/>}
-              {s.id==="confirmed" && confirmedEvent && <span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--ice)"}}/>}
-            </div>
-            <div className="text-[11px] mt-0.5 uppercase tracking-[.18em]" style={{color: seg===s.id ? "var(--ink)":"var(--ink-mute)"}}>{s.label}</div>
-            <div className="mt-3 h-[2px] rounded-full" style={{background: seg===s.id ? "var(--ice)" : "transparent"}}/>
-          </button>
-        ))}
+      <div className="px-5 pb-4">
+        <Segmented items={segs} value={seg} onChange={setSeg}/>
       </div>
 
-      <div className="hr mx-5"/>
-
       {/* CONFIRMED */}
-      {seg==="confirmed" && confirmedEvent && (
-        <div className="px-5 pt-5 space-y-4 anim-up">
+      {seg==="confirmed" && (confirmedEvent ? (
+        <div className="px-5 pt-1 space-y-4 anim-up">
           <div className="card rounded-[18px] overflow-hidden">
             <div className="relative h-[160px]">
               <img src={confirmedEvent.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
               <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,0) 30%, rgba(10,10,10,.95) 100%)"}}/>
-              <div className="absolute top-3 left-3 flex items-center gap-2 px-2.5 py-1 rounded-full chip-ice">
-                <Icon name="check" size={11} stroke={2}/>
-                <span className="text-[10px] uppercase tracking-[.2em] font-medium">Confirmed</span>
-              </div>
+              <div className="absolute top-3 left-3"><StatusPill label="Confirmed" tone="ice" dot/></div>
               <div className="absolute bottom-3 left-3 right-3" style={{color:"#F5F1EA"}}>
                 <div className="font-black text-[22px] leading-none">{confirmedEvent.title}</div>
                 <div className="text-[11px] mt-1 opacity-80">{confirmedEvent.venue} · {confirmedEvent.date}</div>
               </div>
             </div>
-            <div className="px-4 py-3 flex items-center justify-between">
-              <div>
+            <div className="px-4 py-3 flex items-center gap-3">
+              <DateChip day={conf.day} sub={conf.month} tone="ice"/>
+              <div className="flex-1">
                 <div className="stamp">Check-in</div>
-                <div className="text-[13px] font-medium mt-0.5">{confirmedEvent.time}</div>
+                <div className="text-[13px] font-medium mt-0.5 font-mono">{confirmedEvent.time}</div>
               </div>
-              <button className="press px-3 h-8 rounded-full text-[11px] uppercase tracking-[.18em]" style={{background:"var(--ink)", color:"var(--bg)"}}>View pass</button>
+              <button onClick={()=>onToast("Pass — show the QR at the door")} className="press px-3 h-9 rounded-full text-[11px] uppercase tracking-[.18em]" style={{background:"var(--ink)", color:"var(--bg)"}}>View pass</button>
             </div>
           </div>
         </div>
-      )}
+      ) : (
+        <div className="px-5 pt-6 text-[13px]" style={{color:"var(--ink-mute)"}}>No confirmed seats yet. Apply to a room, then watch for the pick.</div>
+      ))}
 
       {/* APPLIED — an application still under review (you applied; the venue hasn't picked yet) */}
-      {seg==="invited" && !confirmedEvent && (
-        <div className="px-5 pt-5 space-y-4 anim-up">
-          <div className="card flex items-center gap-3 p-3 rounded-[14px]">
+      {seg==="applied" && (!confirmedEvent ? (
+        <div className="px-5 pt-1 space-y-4 anim-up">
+          <button onClick={()=>onPickEvent(EVENTS[1])} className="press card w-full text-left flex items-center gap-3 p-3 rounded-[14px]">
             <img src={IMG.club} className="w-14 h-14 rounded-[10px] object-cover" alt=""/>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="text-[14px]">Sound Bath</div>
               <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Pyrite Mar Mikhael · Sun 25 May</div>
+              <div className="mt-1.5"><StatusPill label="Under review" tone="outline" dot/></div>
             </div>
-            <div className="text-right">
-              <div className="stamp" style={{color:"var(--ice)"}}>Under review</div>
-              <div className="text-[10px] mt-1" style={{color:"var(--ink-mute)"}}>applied 2h ago</div>
-            </div>
-          </div>
+            <div className="text-[10px] shrink-0" style={{color:"var(--ink-mute)"}}>applied 2h ago</div>
+          </button>
           <div className="text-[12px]" style={{color:"var(--ink-mute)"}}>Venues pick applicants up to doors. We notify you if you're in. Not every application is picked.</div>
         </div>
-      )}
+      ) : (
+        <div className="px-5 pt-6 text-[13px]" style={{color:"var(--ink-mute)"}}>Nothing under review.</div>
+      ))}
 
-      {/* APPLIED — cleared once you've confirmed your seat */}
-      {seg==="invited" && confirmedEvent && (
-        <div className="px-5 pt-5 space-y-4">
-          <div className="text-[13px]" style={{color:"var(--ink-mute)"}}>Nothing under review.</div>
+      {/* SAVED — events you bookmarked. Save/unsave from any card lands here. */}
+      {seg==="saved" && (savedEvents.length > 0 ? (
+        <div className="px-5 pt-1 space-y-3 stagger">
+          {savedEvents.map((e,i)=>(
+            <div key={e.id} style={{"--i":i}} className="card flex items-center gap-3 p-3 rounded-[14px]">
+              <button onClick={()=>onPickEvent(e)} className="press flex items-center gap-3 flex-1 min-w-0 text-left">
+                <img src={e.img} className="w-14 h-16 rounded-[10px] object-cover shrink-0" alt=""/>
+                <div className="flex-1 min-w-0">
+                  <div className="stamp">{e.type}</div>
+                  <div className="font-medium text-[15px] mt-0.5 truncate">{e.title}</div>
+                  <div className="text-[11px] truncate" style={{color:"var(--ink-mute)"}}>{e.venue} · {e.area}</div>
+                  <div className="mt-1.5"><span className="font-mono text-[11px]" style={{color:"var(--ice)"}}>{e.seats} seats</span><span className="font-mono text-[11px]" style={{color:"var(--ink-mute)"}}> · {e.date}</span></div>
+                </div>
+              </button>
+              <SaveButton saved={true} onClick={()=>onToggleSave(e.id)}/>
+            </div>
+          ))}
         </div>
-      )}
+      ) : (
+        <div className="px-5 py-16 text-center">
+          <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center" style={{border:"1px solid var(--line-2)"}}>
+            <Icon name="bookmark" size={18} stroke={1.4}/>
+          </div>
+          <div className="section-label mt-4">Nothing saved yet</div>
+          <div className="text-[13px] mt-2" style={{color:"var(--ink-mute)"}}>Tap the bookmark on any room to keep it here.</div>
+        </div>
+      ))}
 
       {/* PAST */}
       {seg==="past" && (
-        <div className="px-5 pt-5 space-y-3 stagger">
+        <div className="px-5 pt-1 space-y-3 stagger">
           {[
             { t:"Late Lounge",    v:"Centrale",  date:"22 Apr", score:"9.2", img:IMG.lounge   },
             { t:"Chef Tasting",   v:"Em Sherif", date:"15 Apr", score:"8.8", img:IMG.restaurant},
@@ -997,7 +1247,7 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent }){
               </div>
               <div className="text-right">
                 {e.notSelected
-                  ? <div className="stamp">Not selected</div>
+                  ? <StatusPill label="Not selected" tone="outline"/>
                   : <>
                       <div className="font-black text-[18px] font-mono" style={{color:"var(--ice)"}}>{e.score}</div>
                       <div className="stamp">Venue rating</div>
@@ -1014,26 +1264,11 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent }){
 }
 
 /* ========== 05 — PROFILE (gallery-style hero with fade) ========== */
-function ScreenProfile({ tab, onTab, profile }){
-  // Profile is the Phyllo Identity API response (or null if user skipped onboarding)
-  // When null we fall back to a Sara Capriotti seed so the demo always shows something.
-  const p = profile || {
-    full_name: "Sara Capriotti",
-    handle: "capriottisara",
-    profile_picture_url: IMG.saraFull,
-    followers_count: 28400,
-    engagement_rate: 0.058,
-    data_status: "estimated",
-    audience: {
-      gender_split: { female: 0.62, male: 0.38 },
-      country_split: [
-        { label: "Lebanon",  pct: 0.71 },
-        { label: "UAE",      pct: 0.14 },
-        { label: "Saudi",    pct: 0.07 },
-        { label: "Other EU", pct: 0.08 },
-      ],
-    },
-  };
+function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
+  // `profile` is the creator-data provider's normalized response (vendor-neutral;
+  // provider not yet locked). Null when onboarding was skipped → fall back to the
+  // shared SEED_PROFILE so the demo always renders.
+  const p = profile || SEED_PROFILE;
   const verified = p.data_status === "verified";
   const followersK = p.followers_count >= 1000
     ? (p.followers_count / 1000).toFixed(p.followers_count >= 10000 ? 0 : 1)
@@ -1057,7 +1292,7 @@ function ScreenProfile({ tab, onTab, profile }){
             <span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--ice)"}}/>
             <span className="stamp" style={{color:"inherit"}}>{verified ? "Verified" : "Self-reported"} · Tier 1</span>
           </div>
-          <button className="profile-glass press w-9 h-9 rounded-full flex items-center justify-center">
+          <button onClick={onSettings} aria-label="Settings" className="profile-glass press w-9 h-9 rounded-full flex items-center justify-center">
             <Icon name="settings" size={15} stroke={1.4}/>
           </button>
         </div>
@@ -1068,7 +1303,7 @@ function ScreenProfile({ tab, onTab, profile }){
 
         <div className="profile-hero-text absolute bottom-5 left-5 right-5 z-10">
           <div className="smallcaps mb-2" style={{color:"rgba(245,241,234,.7)"}}>Member since '24</div>
-          <div className="font-black font-display-l text-[48px] leading-[0.9] tracking-tight">{firstName}{lastName ? <><br/>{lastName}.</> : "."}</div>
+          <div className="font-black font-display-l text-[48px] leading-[0.9] tracking-tight">{firstName}{lastName ? <><br/>{lastName}</> : ""}</div>
           <div className="flex items-center gap-2 mt-3">
             <Icon name="instagram" size={13} stroke={1.5} className="opacity-70"/>
             <span className="text-[13px] opacity-80">@{p.handle}</span>
@@ -1102,18 +1337,14 @@ function ScreenProfile({ tab, onTab, profile }){
             <div className="text-[12px] font-medium">Verify with Instagram</div>
             <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Numbers below are estimated. Connect for real data + tier upgrade.</div>
           </div>
-          <button className="press px-3 h-7 rounded-full text-[10px] uppercase tracking-[.18em] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+          <button onClick={onVerify} className="press px-3 h-7 rounded-full text-[10px] uppercase tracking-[.18em] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
             Connect
           </button>
         </div>
       )}
 
       {/* Audience */}
-      <div className="px-5 pt-7 pb-3 flex items-center gap-3">
-        <span className="section-label">Audience</span>
-        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
-        <span className="text-[11px] font-mono" style={{color:"var(--ink-mute)"}}>{verified ? "Live" : "Estimated"}</span>
-      </div>
+      <SectionHead label="Audience" right={verified ? "Live" : "Estimated"} className="pt-7 pb-3"/>
 
       <div className="px-5 space-y-3">
         <div>
@@ -1137,10 +1368,7 @@ function ScreenProfile({ tab, onTab, profile }){
       </div>
 
       {/* Recent */}
-      <div className="px-5 pt-9 pb-3 flex items-center gap-3">
-        <span className="section-label">Recent</span>
-        <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
-      </div>
+      <SectionHead label="Recent" className="pt-9 pb-3"/>
       <div className="px-5 space-y-3 pb-4">
         {[
           { t:"Pool Day vol. II", v:"Cyan",     date:"08 Apr", score:"9.5", img:IMG.beachClub },
@@ -1178,7 +1406,7 @@ function ScreenPicked({ event, onConfirm, onLater }){
 
         <div className="flex-1 flex flex-col justify-center items-center text-center -mt-6">
           <div className="w-[180px] h-[180px] rounded-full flex items-center justify-center pulse-ice ring-pop" style={{background:"var(--ice)", color:"var(--ice-ink)", animationDelay:"120ms"}}>
-            <div className="font-black text-[48px] leading-none">You're<br/>in.</div>
+            <div className="font-black text-[48px] leading-none">You're<br/>in</div>
           </div>
           <div className="font-black font-display-l text-[34px] leading-[0.95] mt-10 tracking-tight picked-stagger" style={{animationDelay:"680ms"}}>{e.title}</div>
           <div className="text-[13px] mt-2 opacity-75 picked-stagger" style={{animationDelay:"820ms"}}>{e.venue} · {e.date} · {e.time}</div>
@@ -1280,7 +1508,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
           <div className="w-[120px] h-[120px] rounded-full flex items-center justify-center" style={{border:"2px solid rgba(245,241,234,.25)", color:"rgba(245,241,234,.85)"}}>
             <Icon name="x" size={40} stroke={1.4}/>
           </div>
-          <div className="font-black font-display-l text-[30px] leading-[.95] mt-10 tracking-tight">Couldn't<br/>read that.</div>
+          <div className="font-black font-display-l text-[30px] leading-[.95] mt-10 tracking-tight">Couldn't<br/>read that</div>
           <div className="text-[13px] mt-3 opacity-75 max-w-[280px]">We couldn't pull @{handle || "your-handle"} from Instagram. Check the spelling, or try another handle.</div>
         </div>
         <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em]" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
@@ -1300,7 +1528,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
 
         <div className="flex-1 flex flex-col justify-center items-center text-center">
           <div className="ring-pop w-[180px] h-[180px] rounded-full flex items-center justify-center" style={{border:"2px solid var(--ice)", color:"var(--ice)", animationDelay:"120ms", boxShadow:"inset 0 0 0 7px rgba(159,216,232,.12)"}}>
-            <div className="font-black text-[36px] leading-none">Tier<br/>One.</div>
+            <div className="font-black text-[36px] leading-none">Tier<br/>One</div>
           </div>
           <div className="font-black font-display-l text-[34px] leading-[.95] mt-10 tracking-tight picked-stagger" style={{animationDelay:"680ms"}}>Listed</div>
           <div className="text-[13px] mt-3 opacity-80 max-w-[280px] picked-stagger" style={{animationDelay:"820ms"}}>Your audience fits the rooms. Tier reviews happen quarterly.</div>
@@ -1324,7 +1552,12 @@ function App(){
   const [applyState, setApplyState] = useState("idle");   // idle | submitting | submitted
   const [confirmedEvent, setConfirmedEvent] = useState(null);
   const [light, setLight] = useState(false);
-  const [profile, setProfile] = useState(null);  // Phyllo Identity API response
+  const [profile, setProfile] = useState(null);       // creator-data provider response (vendor-neutral)
+  const [saved, setSaved] = useState([]);             // saved / bookmarked event ids
+  const [shareEvent, setShareEvent] = useState(null); // event being shared (null = sheet closed)
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', light);
@@ -1361,6 +1594,27 @@ function App(){
     setScreen("detail");
   };
 
+  const showToast = (msg) => {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 2200);
+  };
+
+  const toggleSave = (id) => {
+    const wasSaved = saved.includes(id);
+    setSaved(s => wasSaved ? s.filter(x => x !== id) : [...s, id]);
+    showToast(wasSaved ? "Removed from saved" : "Saved to your list");
+  };
+
+  // Verify-with-Instagram: flips the (vendor-neutral) creator data to verified.
+  const onVerify = () => {
+    setProfile(p => ({ ...(p || SEED_PROFILE), data_status: "verified" }));
+    setSettingsOpen(false);
+    showToast("Instagram connected — verified");
+  };
+
+  const savedEvents = useMemo(() => EVENTS.filter(e => saved.includes(e.id)), [saved]);
+
   const skipOnboarding = () => setOnboardStep("done");
   const onboardActive = onboardStep !== "done";
 
@@ -1377,20 +1631,25 @@ function App(){
       )}
 
       <div className="mb-8 text-center">
-        <div className="stamp" style={{color:"var(--ink-mute)"}}>The List · Influencer side · Prototype v0.2</div>
-        <div className="font-black text-[28px] leading-none mt-2">Tap through Sara's flow.</div>
+        <div className="stamp" style={{color:"var(--ink-mute)"}}>The List · Influencer side · Prototype v0.3</div>
+        <div className="font-black text-[28px] leading-none mt-2">Tap through Sara's flow</div>
         <div className="text-[12px] mt-2" style={{color:"var(--ink-mute)"}}>{onboardActive ? "Onboarding first. Fill the form to be reviewed." : "Tap an event → Apply → wait for the venue to pick you."}</div>
       </div>
 
       <div className="iphone">
         <div className="iphone-screen">
           {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={skipOnboarding} onProfileFetched={setProfile}/>}
-          {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent}/>}
-          {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent}/>}
-          {!onboardActive && screen === "detail"  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply}/>}
-          {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} confirmedEvent={confirmedEvent}/>}
-          {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab} profile={profile}/>}
+          {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave}/>}
+          {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave}/>}
+          {!onboardActive && screen === "detail"  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply} onShare={()=>setShareEvent(currentEvent)} saved={saved} onToggleSave={toggleSave} onToast={showToast}/>}
+          {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} confirmedEvent={confirmedEvent} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast}/>}
+          {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab} profile={profile} onSettings={()=>setSettingsOpen(true)} onVerify={onVerify}/>}
           {!onboardActive && screen === "picked"  && <ScreenPicked event={currentEvent} onConfirm={onConfirmPick} onLater={onDeclinePick}/>}
+
+          {/* Overlays — scoped to the phone frame */}
+          {!onboardActive && <ShareSheet event={shareEvent} onClose={()=>setShareEvent(null)} onToast={showToast}/>}
+          {!onboardActive && settingsOpen && <SettingsSheet profile={profile} light={light} setLight={setLight} onClose={()=>setSettingsOpen(false)} onToast={showToast}/>}
+          <Toast msg={toast}/>
         </div>
       </div>
 
@@ -1399,7 +1658,7 @@ function App(){
         <div className="text-[12px]" style={{color:"var(--ink-2)"}}>
           {onboardActive
             ? "Type anything in the two fields, hit Apply for access. Watch the review animation. Tap Enter The List on the tier reveal."
-            : "Tap any event card, hit Apply. The button shows a loading state, then “You're in” slides up with the tier ring. Confirm → lands in My List. Hit the Filters pill on Index for the bottom sheet."}
+            : "Tap any event card, hit Apply → “You're in” slides up → Confirm lands in Invites. Bookmark a card to fill the Saved tab. Profile → gear opens Settings; Connect verifies. Share opens from the event header. Filters pill on Index opens the sheet."}
         </div>
       </div>
     </div>

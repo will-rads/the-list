@@ -135,7 +135,7 @@ A nocturnal monochrome (carbon to bone) with exactly one chromatic voice: ice bl
 - **Surface** (`#141414`) and **Surface 2** (`#1C1C1C`): Tonal layering for cards, inputs, sheets, and chips. In practice cards render these as a translucent black over carbon (see Elevation).
 - **Bone** (`#F5F1EA`): All text. A warm off-white, never pure `#FFFFFF`, which is what gives the screen its editorial paper feeling. Every piece of text on dark is this one full-contrast ink — there is no grey text in the system.
 - **No grey text.** The former tonal text greys `--ink-2` (`#C5C0B5` dark / `#3A3A3A` light) and `--ink-mute` (`#8A8A8A` dark / `#696969` light) are collapsed into `--ink` (Bone `#F5F1EA` on dark, Black `#0A0A0A` on light). Text hierarchy comes from size and weight only, never from a drop in contrast. Captions, metadata, and inactive tab labels are full-contrast ink set smaller or lighter in weight, not grey.
-- **Hairline** (`#F5F1EA1A`, 10%) and **Hairline 2** (`#F5F1EA2E`, 18%): Dividers and 1px borders. The system separates with light hairlines, not boxes.
+- **Hairline** (`#F5F1EA1A`, 10%) and **Hairline 2** (`#F5F1EA2E`, 18%): 1px borders and the deliberate full-width masthead rule under a screen title. The system separates with light hairlines, not boxes. **Section breaks are the exception** — they use the `SectionHead` treatment (ice tick + label + optional outline meta pill), not a thin trailing half-hairline beside the label (see §5 and the Finished-Edge Rule).
 
 ### Named Rules
 **The One Cold Voice Rule.** Ice blue is the only chroma in the system and appears on roughly 10% or less of any screen. Its rarity is the entire point: when something is ice, it is either the one action that matters or the one number worth reading. The moment a second accent hue appears, the system is broken.
@@ -159,11 +159,11 @@ A nocturnal monochrome (carbon to bone) with exactly one chromatic voice: ice bl
 - **Title** (Plus Jakarta Sans 800, ~1.375rem / 22px, line-height 1): Meta-rail numbers, section headers, in-card titles.
 - **Body** (Plus Jakarta Sans 400, ~0.875rem / 14px, line-height 1.45): Descriptions, list rows, helper copy. Cap prose at 65-75ch.
 - **Label** (Plus Jakarta Sans 500, ~0.625rem / 10px, letter-spacing 0.22em, UPPERCASE): The `.stamp` — reserved for **true value labels** (When, Doors, Seats, Followers, Reputation, statuses, form-field labels) and badges. Reserve uppercase for these short labels only.
-- **Section label** (`.section-label`, Plus Jakarta Sans 700, ~0.875rem / 14px, sentence case, normal tracking): the calmer marker for **section dividers** (Also tonight, The exchange, Audience, Recent). Added 2026-05-31 to break the uniform uppercase-tracked-eyebrow cadence. Do not use a `.stamp` eyebrow above every section.
+- **Section label** (`.section-label`, Plus Jakarta Sans 700, ~0.875rem / 14px, sentence case, normal tracking): the calmer marker for **section headers** (Also tonight, The exchange, Audience, Recent). It rides inside the `SectionHead` treatment (a short ice tick precedes it; an optional outline meta pill sits at the right). It replaced the uniform uppercase-tracked eyebrow on 2026-05-31, and the thin trailing half-hairline beside it was retired on 2026-05-31. Do not use a `.stamp` eyebrow above every section.
 - **Numeric** (Plus Jakarta Sans, proportional figures, weight to match its place in the hierarchy): Seats, timers, follower counts, reputation scores, dates.
 
 ### Named Rules
-**The Single-Family Rule.** One typeface app-wide: Plus Jakarta Sans, and nothing else. A second family — including a serif or a true mono — is forbidden; numeric needs are met by the same family's proportional figures, not a tabular or mono font. Headers differ from body by weight (800 vs 400), never by family. Inter is banned outright; Instrument Serif is banned outright.
+**The One-Family Rule.** One typeface app-wide: Plus Jakarta Sans, and nothing else. This retires the former **Two-Family Rule** (Satoshi display + Host Grotesk body), removed 2026-05-31. A second family — including a serif or a true mono — is forbidden; numeric needs are met by the same family's proportional figures, not a tabular or mono font. Headers differ from body by weight (800 vs 400), never by family. Inter is banned outright; Instrument Serif is banned outright.
 
 **The One-Word Header Rule.** Screen headers are a single editorial word (Tonight, Index, Invites, Profile, Apply, Reading, Listed, Filters), not a sentence. The supporting sentence, if any, lives in body copy below.
 
@@ -209,6 +209,21 @@ The system is flat at rest and conveys depth through three deliberate materials,
 - **Style:** Bottom tab bar, 4 items, frosted glass (`blur(22px)`) with a subtle ice top-glow line. Labels are uppercase 9px tracked.
 - **States:** Inactive = Bone icon + label at reduced opacity. Active = full-contrast Bone label + **ice icon with a drop-shadow glow** — one signal, no dot (the redundant ice dot was removed in the 2026-05-31 pass; "status without shouting"). The icon set is Heroicons (outline), inlined as SVG at 1.5 stroke (no filled or chunky icons); the SwiftUI build will move to SF Symbols.
 
+### Section header, status, dates, segmented (added 2026-05-31)
+Structure borrowed from The Secret Society's app, redrawn in Carbon + Ice. These give the browsing surfaces a finished edge and replace ad-hoc treatments.
+- **Section header (`SectionHead`)**: a short ice tick (3×15px) + the section label, with an optional right-aligned **outline meta pill** (count or state, e.g. "3 open", "Closes soonest", "Live / Estimated"). This is the one section-break treatment. It replaced the "label + thin trailing hairline" pattern, which read unfinished. Full-width hairline rules survive only as the deliberate masthead rule under a screen title.
+- **Status pill (`StatusPill`)**: one rounded uppercase badge vocabulary in three tones — **ice** (open / affirmative: Open, 24h left, Confirmed — Confirmed adds an ice-ink dot), **neutral** (muted fill), **outline** (Under review, Not selected). Replaces the earlier mix of bespoke ice chips and bare `.stamp` status text. TSS uses coloured status pills (OPEN FOR SWIPE / UNDER REVIEW); we keep the shape, drop the second hue.
+- **Date chip (`DateChip`)**: a rounded day-block (big day number + month), **ice** on confirmed peaks (the check-in block), **neutral** elsewhere. From TSS's date blocks on cards and the featured banner.
+- **Segmented control (`Segmented`)**: a pill-track with a single Bone-filled active segment and an inline count, used for the Invites tabs (Applied / Confirmed / Saved / Past). Replaces the old underline-tab row. Mirrors TSS's segmented toggles (CHECKED IN / OUT / NO SHOW), in our palette.
+- **Save control (`SaveButton`)**: a round bookmark toggle — `glass-over-image` at rest, **ice-filled with a filled bookmark glyph when saved**. Lives on image cards (featured, Explore lead) and the Event Detail header; saving fills the Saved tab. TSS's save-heart, restyled to our bookmark and ice.
+- **Toggle (`Toggle`)**: iOS switch, ice when on. Used in Settings (notifications, light theme).
+- **Toast (`Toast`)**: a transient `glass-over-image` pill above the tab bar, ≤2.2s, with an ice dot. Gives minor controls (Map, Calendar, View pass, Log out) a visible reply instead of a dead tap.
+
+### Sheets: Share & Settings (added 2026-05-31)
+Both are bottom sheets sharing the Filter-sheet chrome (drag handle, `sheetIn` slide, dimmed `blur(4px)` backdrop, rounded-top 24px), scoped to the phone frame.
+- **Share sheet**: shows *what* is being shared (an event preview card) and a 4-up action grid (Copy link, To Story, Message, More); each action fires a toast and closes.
+- **Settings sheet**: editable Display name / Instagram handle (with `@` prefix and a Verified pill once connected) / Phone; a Notifications group (two `Toggle`s); an Appearance `Toggle` (light theme); a vendor-neutral privacy note; and Save / Log out / Delete account (the last two are prototype placeholders that toast).
+
 ### Signature: The Reveal Ring
 The "You're in" / "Tier One" moment renders a 180px ice-filled circle with Ice Ink display type, a `ringPop` scale-in, and a slow `pulseIce` ring animation. This is the system's one permitted piece of theatre. It appears only at genuine peaks (getting picked, getting listed) and nowhere else.
 
@@ -223,6 +238,8 @@ The "You're in" / "Tier One" moment renders a 180px ice-filled circle with Ice I
 - **Do** honor `prefers-reduced-motion`: the stagger, ring-pop, and reveal animations all need a crossfade/instant fallback (the prototype already guards these).
 - **Do** pair ice with a text or icon cue for state, never color alone, so it survives color-blindness and the light/dark switch.
 - **Do** lead the Profile with one hero metric (Reputation, 64px ice) and let Followers + Engagement support it asymmetrically. The old equal 3-column metric grid was removed 2026-05-31.
+- **Do** mark sections with the `SectionHead` tick-and-label (plus an optional outline meta pill); reserve full-width hairlines for the masthead rule under a screen title. **(The Finished-Edge Rule.)**
+- **Do** give every visible control a response — a sheet, a state change, or at least a `Toast`. A tap that does nothing reads as broken in a prototype.
 
 ### Don't:
 - **Don't** use purple or pink gradients anywhere. This is The Secret Society's single biggest visual weakness and the thing we are defined against.
@@ -232,4 +249,7 @@ The "You're in" / "Tier One" moment renders a 180px ice-filled circle with Ice I
 - **Don't** put emoji in the UI.
 - **Don't** apply ice glow to resting, unselected elements, or use frosted glass as a decorative card treatment (glassmorphism-as-default is prohibited).
 - **Don't** nest cards, add a colored side-stripe border, or set body copy in ALL CAPS.
+- **Don't** reintroduce the thin trailing half-hairline beside a section label — use the `SectionHead` treatment. (Full-width masthead rules are fine.)
+- **Don't** add a second status colour. `StatusPill` tones are ice / neutral / outline only; danger states (e.g. Delete account) stay neutral ink, never red.
+- **Don't** put decorative punctuation on display text — names, screen headers, event titles, status labels, tab labels, short UI titles. Keep it in real sentences, helper copy, handles, dates, times, ratios, and data.
 - **Don't** add a second typeface or a separate mono family; Plus Jakarta Sans covers everything, numbers included, with proportional figures.
