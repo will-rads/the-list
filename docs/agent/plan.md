@@ -2,7 +2,7 @@
 
 ## Where we are right now
 
-**Phase: prototype shipped — reviewed, merged to `main`, deployed to Vercel** (`the-list-omega.vercel.app`). The single-phone tap-through prototype (`web/index.html`) is built, all 10 UI audit items done, and the type/color overhaul (single-font Plus Jakarta Sans, no grey text) is live. Design direction locked in `PRODUCT.md` + `DESIGN.md`. Next: SwiftUI planning / port → lock working name (test with Dima's top 30) → venue anchor contracts → Supabase scaffold.
+**Phase: prototype user-side complete — merged to `main`, deployed to Vercel** (`the-list-omega.vercel.app`). The single-phone tap-through prototype (`web/index.html`) now has a TSS-style grainy **entry/intro screen** (3 AI-generated Beirut nightlife clips, 5s each, crossfading), the full **user-side interaction pass** (save/bookmark + Saved tab, Share sheet, Settings sheet, verify→verified flip, finished `SectionHead`/`StatusPill`/`DateChip`/`Segmented` treatments, decorative punctuation stripped), and the locked single-font Plus Jakarta Sans + ice/carbon system. Design direction locked in `PRODUCT.md` + `DESIGN.md`. Next: SwiftUI planning / port → lock working name (test with Dima's top 30) → venue anchor contracts → Supabase scaffold.
 
 ```text
 [done]      Voice notes transcribed + plan synthesized
@@ -13,8 +13,9 @@
 [done]      Fonts + accent locked (Plus Jakarta Sans — one family, ice blue)
 [done]      Design system documented (PRODUCT.md, DESIGN.md, .impeccable/design.json)
 [done]      UI quality passes: a11y/contrast, icons, flat cards, editorial polish
-[done]      All 10 UI audit items (Explore rhythm, unified glass, Home masthead, light-theme, spacing, numerics)
 [done]      Type/color overhaul: single-font Plus Jakarta Sans + no grey text
+[done]      User-side interaction pass (v0.3): Saved tab, Share + Settings sheets, verify flip, finished dividers
+[done]      TSS-style grainy entry screen (v0.4): 3 Veo clips from Nano Banana stills, crossfading montage
 [done]      Reviewed → merged to main → deployed to Vercel (the-list-omega.vercel.app)
 [doing]     SwiftUI planning / port  ◄── HERE
 [next]      Lock working name (test with Dima's top 30)
