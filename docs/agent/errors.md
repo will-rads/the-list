@@ -4,6 +4,20 @@ Things that have already gone wrong, or known traps. New entries on top, dated `
 
 ---
 
+## 2026-05-31 — Tailwind CDN utilities silently override our custom `.font-*` classes
+
+`web/index.html` loads `cdn.tailwindcss.com`, which generates its own utilities including **`.font-mono`** (a system monospace stack) and **`.font-black`** (weight 900). Our `<style>` block defines custom `.font-mono` (our number font) and `.font-black` (display) with the **same specificity** (single class = 0,1,0). When specificity ties, **source order wins, and Tailwind's injected stylesheet often lands after ours** — so Tailwind wins and our font is silently dropped.
+
+Symptom: every number tagged `.font-mono` rendered in **system monospace** instead of the app font, even though our `.font-mono` rule looked correct. Easy to misdiagnose (I first blamed `tabular-nums`).
+
+Fixes that work:
+- **Higher specificity:** double the class — `.font-mono.font-mono { … }` (0,2,0) beats Tailwind's 0,1,0 regardless of source order. (What we did.)
+- Or set `tailwind.config = { theme: { fontFamily: { sans:[…], mono:[…] } } }` in a script after the CDN so Tailwind's own utilities use our family.
+
+Note: testing with a freshly-injected `document.createElement('span')` gave a **false pass** (it resolved to our font) while the real rendered elements were monospace — verify on actual DOM nodes after reload, not synthetic ones. Also: when the SwiftUI/production build drops the Tailwind CDN, this collision disappears.
+
+---
+
 ## 2026-05-30 — Never scrape Instagram directly
 
 Tempting shortcut: hit `instagram.com/<handle>` and parse follower count from public HTML, or query an unofficial scraper API. **Do not do this.**

@@ -7,8 +7,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://api.fontshare.com/v2/css?f[]=satoshi@500,700,900&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
@@ -19,8 +18,8 @@
     --bg-elev:   #141414;
     --bg-elev2:  #1C1C1C;
     --ink:       #F5F1EA;
-    --ink-2:     #C5C0B5;
-    --ink-mute:  #8A8A8A;
+    --ink-2:     #F5F1EA;
+    --ink-mute:  #F5F1EA;
     --line:      rgba(245,241,234,0.10);
     --line-2:    rgba(245,241,234,0.18);
     --ice:       #9FD8E8;
@@ -33,8 +32,8 @@
     --bg-elev:   #F5F5F5;
     --bg-elev2:  #EAEAEA;
     --ink:       #0A0A0A;
-    --ink-2:     #3A3A3A;
-    --ink-mute:  #696969;
+    --ink-2:     #0A0A0A;
+    --ink-mute:  #0A0A0A;
     --line:      rgba(10,10,10,0.08);
     --line-2:    rgba(10,10,10,0.14);
     --ice:       #26768F;
@@ -45,32 +44,31 @@
   html, body {
     background: var(--page);
     color: var(--ink);
-    font-family: 'Host Grotesk', ui-sans-serif, system-ui;
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
     margin: 0;
   }
-  /* Satoshi only on big headlines + medium-weight labels that need extra presence.
-     Everything else inherits Host Grotesk. */
+  /* One family across the app: Plus Jakarta Sans. Headers just go bolder (800);
+     everything else inherits the body weight. No second family. */
   .font-black,
   .font-display {
-    font-family: 'Satoshi', ui-sans-serif, system-ui;
-    font-weight: 900;
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 800;
     letter-spacing: -0.015em;
   }
   .font-display-l {
-    font-family: 'Satoshi', ui-sans-serif, system-ui;
-    font-weight: 900;
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 800;
     letter-spacing: -0.025em;
   }
-  /* font-mono was used in JSX for numbers/timers; map it to Satoshi 900
-     with tabular figures so digits feel thick and modern, and the third
-     font is gone. */
-  .font-mono {
-    font-family: 'Satoshi', ui-sans-serif, system-ui;
-    font-weight: 900;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
+  /* font-mono = legacy class for numbers/timers. One family across the app, so
+     numbers read exactly like the body text — no monospace, no tabular fixed-width.
+     Doubled selector (.font-mono.font-mono) so it beats Tailwind CDN's own .font-mono
+     utility, which otherwise forces a system monospace stack. Weight inherits
+     (bold only where .font-black / .font-display is also applied). */
+  .font-mono.font-mono {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
   }
 
   /* hide scrollbars inside phone screens */
@@ -97,7 +95,7 @@
   }
   .island { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:120px; height:34px; background:#000; border-radius:20px; z-index:50; }
 
-  .statusbar { position:absolute; top:0; left:0; right:0; height:54px; padding: 16px 28px 0; display:flex; justify-content:space-between; align-items:flex-start; z-index:40; font-family:'Host Grotesk', sans-serif; font-weight:600; font-variant-numeric: tabular-nums; font-size:14px; color: var(--ink); pointer-events:none; }
+  .statusbar { position:absolute; top:0; left:0; right:0; height:54px; padding: 16px 28px 0; display:flex; justify-content:space-between; align-items:flex-start; z-index:40; font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-variant-numeric: tabular-nums; font-size:14px; color: var(--ink); pointer-events:none; }
   .statusbar svg { width: 16px; height: 16px; }
 
   .tabbar {
@@ -124,14 +122,15 @@
   }
   .tabbar button.active { color: var(--ink); }
   .tabbar button.active svg { color: var(--ice); filter: drop-shadow(0 0 8px rgba(159,216,232,.7)); }
-  .tabbar button.active .dot { background: var(--ice); box-shadow: 0 0 8px rgba(159,216,232,.85); }
-  .tabbar .dot { width: 4px; height: 4px; border-radius: 50%; background: transparent; }
 
   .hr { height: 1px; background: var(--line); }
   .hr-2 { height: 1px; background: var(--line-2); }
 
-  .stamp { font-family:'Host Grotesk', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-mute); }
+  .stamp { font-family:'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-mute); }
   .smallcaps { text-transform: uppercase; letter-spacing: 0.22em; font-size: 10px; font-weight: 500; }
+  /* Calmer section marker — breaks the uniform uppercase-tracked-eyebrow cadence.
+     Used for section dividers; .stamp stays for true value labels (When/Doors/Seats). */
+  .section-label { font-family:'Plus Jakarta Sans', ui-sans-serif, system-ui; font-weight: 700; font-size: 14px; letter-spacing: normal; color: var(--ink-2); }
 
   .chip-ice { background: var(--ice); color: var(--ice-ink); }
   .chip-outline { border: 1px solid var(--line-2); color: var(--ink); }
@@ -168,7 +167,7 @@
     display:flex; align-items:center; gap:8px;
     padding: 8px 14px; border-radius: 999px;
     background: var(--bg-elev); border: 1px solid var(--line-2);
-    color: var(--ink); font-family: 'Host Grotesk', sans-serif; font-weight: 500;
+    color: var(--ink); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500;
     font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
     cursor: pointer; transition: all .2s;
   }
@@ -249,22 +248,30 @@
   }
   /* translucent black cards: 1px glass border + softer shadow */
   .card {
-    background: rgba(22,22,22,.5);
+    /* Flat-At-Rest: resting cards are NOT glass. Translucent fill + hairline +
+       soft shadow only. Blur is reserved for genuinely-floating surfaces. */
+    background: rgba(26,26,26,.66);
     border: 1px solid rgba(245,241,234,.08);
     box-shadow: 0 16px 36px -24px rgba(0,0,0,.9);
-    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
     transition: border-color .2s, box-shadow .2s, transform .12s;
   }
   html.light .card {
-    background: rgba(255,255,255,.62);
-    border-color: rgba(10,10,10,.06);
-    box-shadow: 0 16px 36px -26px rgba(0,0,0,.28);
+    /* #7 — firmer edge so cards read as objects on white, not flat panels. */
+    background: rgba(255,255,255,.78);
+    border-color: rgba(10,10,10,.12);
+    box-shadow: 0 12px 30px -22px rgba(10,10,10,.30);
   }
   @media (hover:hover){ button.card:hover, .card.press:hover { border-color: rgba(159,216,232,.35); } }
+  @media (hover:hover){ html.light button.card:hover, html.light .card.press:hover { border-color: rgba(38,118,143,.40); } }
   /* ice glow — active + pressed states only */
   .glow-ice { box-shadow: 0 0 0 1px rgba(159,216,232,.4), 0 0 20px -4px rgba(159,216,232,.5); }
   .press.glow-primary:active { box-shadow: 0 0 26px -2px rgba(159,216,232,.65); }
   @media (hover:hover){ .glow-primary:hover { box-shadow: 0 0 24px -4px rgba(159,216,232,.55); } }
+  /* #7 — in light theme, active/press states key off the deep ice (#26768F):
+     a tighter ring, not the bright dark-theme halo that looks alien on white. */
+  html.light .glow-ice { box-shadow: 0 0 0 1px rgba(38,118,143,.55), 0 3px 12px -5px rgba(38,118,143,.40); }
+  html.light .press.glow-primary:active { box-shadow: 0 0 16px -4px rgba(38,118,143,.50); }
+  @media (hover:hover){ html.light .glow-primary:hover { box-shadow: 0 5px 16px -6px rgba(38,118,143,.40); } }
   /* ornamental texture — only paints outside the (opaque) phone */
   body::before {
     content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
@@ -283,19 +290,23 @@
       linear-gradient(180deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,0) 36%, rgba(255,255,255,.98) 100%),
       linear-gradient(180deg, rgba(10,10,10,.08) 0%, rgba(10,10,10,0) 28%);
   }
-  .profile-glass {
-    background: rgba(10,10,10,.48);
-    color: #F5F1EA;
-    border: 1px solid rgba(245,241,234,.16);
-    backdrop-filter: blur(10px) saturate(1.25);
-    -webkit-backdrop-filter: blur(10px) saturate(1.25);
+  /* #5 — one canonical "floating control over a photo" recipe. Event Detail
+     header buttons and the Profile hero controls share it, so there is a single
+     over-image glass, distinct from .glass (which floats over the app bg). */
+  .glass-over-image, .profile-glass {
+    background: rgba(10,10,10,.46);
+    border: 1px solid rgba(245,241,234,.18);
+    backdrop-filter: blur(12px) saturate(1.25);
+    -webkit-backdrop-filter: blur(12px) saturate(1.25);
   }
-  html.light .profile-glass {
-    background: rgba(255,255,255,.74);
-    color: #0A0A0A;
+  html.light .glass-over-image, html.light .profile-glass {
+    background: rgba(255,255,255,.72);
     border-color: rgba(10,10,10,.12);
     box-shadow: 0 12px 28px -22px rgba(10,10,10,.45);
   }
+  /* Profile keeps its own text-color contract on top of the shared glass. */
+  .profile-glass { color: #F5F1EA; }
+  html.light .profile-glass { color: #0A0A0A; }
   .profile-hero-text { color: #F5F1EA; }
   .profile-hero-muted { color: rgba(245,241,234,.72); }
   html.light .profile-hero-text { color: #0A0A0A; }
@@ -312,7 +323,7 @@ const { useState, useEffect, useRef, useMemo } = React;
 
 /* ========== curated imagery ========== */
 const IMG = {
-  beachClub:  "./assets/pool-day.png",
+  beachClub:  "./assets/pool-day.jpg",
   pool:       "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=900&q=80&auto=format&fit=crop",
   rooftop:    "https://images.unsplash.com/photo-1551918120-9739cb430c6d?w=900&q=80&auto=format&fit=crop",
   restaurant: "https://images.unsplash.com/photo-1592861956120-e524fc739696?w=900&q=80&auto=format&fit=crop",
@@ -415,6 +426,28 @@ function Icon({ name, size=18, stroke=1.5, className="" }){
   );
 }
 
+/* ========== Countdown — one rule for timers ==========
+   #10 — ICE-AS-TEXT vs ICE-AS-FILL:
+   • Ice FILL = the one action / affirmative state (primary buttons, chip-ice,
+     selected day + filter, the "You're in" ring).
+   • Ice TEXT = the one *value* number worth reading (seats left, reputation,
+     venue score, this countdown). Ordinals and plain labels are never ice.
+   Colons render tighter + dimmed so the tabular digits carry the weight.
+====================================================== */
+function Countdown({ value, className="", style={} }){
+  const parts = String(value).split(":");
+  return (
+    <span className={"font-mono "+className} style={style}>
+      {parts.map((p,i)=>(
+        <React.Fragment key={i}>
+          {i>0 && <span style={{opacity:.4, margin:"0 .06em"}}>:</span>}
+          {p}
+        </React.Fragment>
+      ))}
+    </span>
+  );
+}
+
 /* ========== status bar / island / home indicator ========== */
 function StatusBar(){
   return (
@@ -467,7 +500,6 @@ function TabBar({ active, onChange }){
         <button key={it.id} onClick={()=>onChange(it.id)} className={"press "+(active===it.id?"active":"")}>
           <Icon name={it.icon} size={18} stroke={1.4}/>
           <span>{it.label}</span>
-          <span className="dot"/>
         </button>
       ))}
     </div>
@@ -480,14 +512,19 @@ function ScreenHome({ tab, onTab, onPickEvent }){
   const tonight  = [EVENTS[1], EVENTS[4]];
   return (
     <PhoneScreen tab={tab} onTab={onTab}>
-      <div className="px-5 pt-[60px] pb-3 flex items-center justify-between">
-        <div>
+      {/* #6 — editorial masthead: issue eyebrow + the one-word header (Tonight),
+          matching the display headers on Index / Invites / Profile. */}
+      <div className="px-5 pt-[60px] pb-3">
+        <div className="flex items-center justify-between">
           <div className="stamp">The List · No. 048</div>
-          <div className="font-medium text-[14px] mt-1" style={{color:"var(--ink-2)"}}>Sunday · 25.05</div>
+          <button className="press glass w-10 h-10 rounded-full flex items-center justify-center">
+            <Icon name="search" size={16} stroke={1.4}/>
+          </button>
         </div>
-        <button className="press glass w-10 h-10 rounded-full flex items-center justify-center">
-          <Icon name="search" size={16} stroke={1.4}/>
-        </button>
+        <div className="flex items-end justify-between mt-3">
+          <div className="font-black font-display-l text-[40px] leading-none">Tonight</div>
+          <div className="font-medium text-[14px] pb-1" style={{color:"var(--ink-2)"}}>Sunday · 25.05</div>
+        </div>
       </div>
 
       <div className="hr-2 mx-5 mb-5"/>
@@ -502,13 +539,13 @@ function ScreenHome({ tab, onTab, onPickEvent }){
             <div className="font-black font-display-l text-[40px] leading-[0.92] tracking-tight">{featured.title}</div>
             <div className="flex items-center gap-2 mt-3">
               <span className="text-[12px]">{featured.venue}</span>
-              <span style={{color:"rgba(245,241,234,.5)"}}>·</span>
+              <span style={{color:"var(--ink)"}}>·</span>
               <span className="text-[12px] font-mono">{featured.date}</span>
             </div>
             <div className="flex items-center justify-between mt-4">
               <div>
                 <span className="font-mono text-[18px]" style={{color:"var(--ice)"}}>{featured.seats}</span>
-                <span className="text-[11px] ml-1" style={{color:"rgba(245,241,234,.6)"}}>seats · {featured.applied} applied</span>
+                <span className="text-[11px] ml-1" style={{color:"var(--ink)"}}>seats · {featured.applied} applied</span>
               </div>
               <div className="px-3 py-1.5 rounded-full chip-ice text-[10px] uppercase tracking-[.22em] font-medium">Tap to view</div>
             </div>
@@ -518,7 +555,7 @@ function ScreenHome({ tab, onTab, onPickEvent }){
 
       {/* Also tonight */}
       <div className="px-5 pt-7 pb-3 flex items-center gap-3">
-        <span className="stamp">Also tonight</span>
+        <span className="section-label">Also tonight</span>
         <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
         <span className="text-[11px] font-mono" style={{color:"var(--ink-mute)"}}>{tonight.length} rooms open</span>
       </div>
@@ -669,29 +706,60 @@ function ScreenExplore({ tab, onTab, onPickEvent }){
         <span className="stamp">Sorted · closes soonest</span>
       </div>
 
-      <div className="px-5 space-y-4 stagger">
-        {list.map((e,i)=>(
-          <button key={e.id} onClick={()=>onPickEvent(e)} className="press card w-full text-left rounded-[18px] overflow-hidden grain relative" style={{height:200,"--i":i}}>
-            <img src={e.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
-            <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.3) 0%, rgba(10,10,10,0) 35%, rgba(10,10,10,.9) 100%)"}}/>
-            <div className="absolute top-3 left-3 flex gap-1.5">
-              <span className="text-[10px] uppercase tracking-[.2em] px-2 py-1 rounded-full" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(8px)", color:"#F5F1EA"}}>{e.type}</span>
-              {e.badge && <span className="text-[10px] uppercase tracking-[.22em] px-2 py-1 rounded-full chip-ice font-medium">{e.badge}</span>}
+      {list.length === 0 ? (
+        <div className="px-5 py-20 text-center">
+          <div className="section-label" style={{color:"var(--ink-mute)"}}>No rooms match</div>
+          <div className="text-[13px] mt-2" style={{color:"var(--ink-mute)"}}>Loosen a filter or widen the date.</div>
+        </div>
+      ) : (() => {
+        const [lead, ...rest] = list;
+        return (
+          <>
+            {/* Lead — first room gets full editorial weight */}
+            <div className="px-5">
+              <button onClick={()=>onPickEvent(lead)} className="press card w-full text-left rounded-[18px] overflow-hidden grain relative" style={{height:300}}>
+                <img src={lead.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+                <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.3) 0%, rgba(10,10,10,0) 38%, rgba(10,10,10,.92) 100%)"}}/>
+                <div className="absolute top-3 left-3 flex gap-1.5">
+                  <span className="text-[10px] uppercase tracking-[.2em] px-2 py-1 rounded-full" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(8px)", color:"#F5F1EA"}}>{lead.type}</span>
+                  {lead.badge && <span className="text-[10px] uppercase tracking-[.22em] px-2 py-1 rounded-full chip-ice font-medium">{lead.badge}</span>}
+                </div>
+                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between" style={{color:"#F5F1EA"}}>
+                  <div className="min-w-0">
+                    <div className="font-black font-display-l text-[34px] leading-[0.95] tracking-tight">{lead.title}</div>
+                    <div className="text-[12px] mt-1.5 opacity-80 truncate">{lead.venue} · {lead.area}</div>
+                  </div>
+                  <div className="text-right shrink-0 ml-3">
+                    <div className="font-mono text-[11px]" style={{color:"var(--ice)"}}>{lead.date.split('·')[0].trim()}</div>
+                    <div className="font-mono text-[11px]">{lead.time}</div>
+                    <div className="font-mono text-[12px] mt-1"><span style={{color:"var(--ice)"}}>{lead.seats}</span><span> seats</span></div>
+                  </div>
+                </div>
+              </button>
             </div>
-            <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between" style={{color:"#F5F1EA"}}>
-              <div>
-                <div className="font-black text-[24px] leading-none">{e.title}</div>
-                <div className="text-[11px] mt-1 opacity-80">{e.venue} · {e.area}</div>
+
+            {/* Index — the rest, denser rows */}
+            {rest.length > 0 && (
+              <div className="px-5 pt-6 space-y-2 stagger">
+                {rest.map((e,i)=>(
+                  <button key={e.id} onClick={()=>onPickEvent(e)} style={{"--i":i}} className="press card w-full flex gap-3 items-center text-left p-2.5 rounded-[14px]">
+                    <img src={e.img} className="w-14 h-16 rounded-[10px] object-cover shrink-0" alt=""/>
+                    <div className="flex-1 min-w-0">
+                      <div className="stamp">{e.type}</div>
+                      <div className="font-medium text-[15px] mt-0.5 truncate">{e.title}</div>
+                      <div className="text-[11px] truncate" style={{color:"var(--ink-mute)"}}>{e.venue} · {e.area}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-mono text-[12px]"><span style={{color:"var(--ice)"}}>{e.seats}</span><span style={{color:"var(--ink-mute)"}}> seats</span></div>
+                      <div className="font-mono text-[11px] mt-0.5" style={{color:"var(--ink-mute)"}}>{e.time}</div>
+                    </div>
+                  </button>
+                ))}
               </div>
-              <div className="text-right">
-                <div className="font-mono text-[11px]" style={{color:"var(--ice)"}}>{e.date.split('·')[0].trim()}</div>
-                <div className="font-mono text-[11px] opacity-70">{e.time}</div>
-                <div className="font-mono text-[12px] mt-1"><span style={{color:"var(--ice)"}}>{e.seats}</span><span className="opacity-60"> seats</span></div>
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
+            )}
+          </>
+        );
+      })()}
 
       <div className="h-8"/>
     </PhoneScreen>
@@ -713,14 +781,14 @@ function ScreenEventDetail({ event, onBack, onApply, applyState }){
         <div className="absolute inset-0 grain"/>
 
         <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
-          <button onClick={onBack} className="press w-10 h-10 rounded-full flex items-center justify-center border" style={{background:"rgba(10,10,10,.45)", backdropFilter:"blur(8px)", borderColor:"rgba(245,241,234,.25)"}}>
+          <button onClick={onBack} className="press glass-over-image w-10 h-10 rounded-full flex items-center justify-center">
             <Icon name="arrow-left" size={18} stroke={1.4}/>
           </button>
           <div className="flex gap-2">
-            <button className="press w-10 h-10 rounded-full flex items-center justify-center border" style={{background:"rgba(10,10,10,.45)", backdropFilter:"blur(8px)", borderColor:"rgba(245,241,234,.25)"}}>
+            <button className="press glass-over-image w-10 h-10 rounded-full flex items-center justify-center">
               <Icon name="bookmark" size={16} stroke={1.4}/>
             </button>
-            <button className="press w-10 h-10 rounded-full flex items-center justify-center border" style={{background:"rgba(10,10,10,.45)", backdropFilter:"blur(8px)", borderColor:"rgba(245,241,234,.25)"}}>
+            <button className="press glass-over-image w-10 h-10 rounded-full flex items-center justify-center">
               <Icon name="share" size={16} stroke={1.4}/>
             </button>
           </div>
@@ -729,7 +797,7 @@ function ScreenEventDetail({ event, onBack, onApply, applyState }){
         <div className="absolute bottom-0 left-5 right-5 pb-6 z-10" style={{color:"#F5F1EA"}}>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[10px] uppercase tracking-[.22em] px-2 py-1 rounded-full chip-ice font-medium">{e.type}</span>
-            <span className="text-[10px] uppercase tracking-[.22em] opacity-70">{e.venue}</span>
+            <span className="text-[10px] uppercase tracking-[.22em]">{e.venue}</span>
           </div>
           <div className="font-black font-display-l text-[52px] leading-[0.92] tracking-tight">{e.title}</div>
           <div className="text-[12px] mt-3 max-w-[280px] opacity-80">Resident DJ Karim Sahli from 16:00. Mediterranean menu at sunset. Dress: swimwear and an attitude.</div>
@@ -772,8 +840,8 @@ function ScreenEventDetail({ event, onBack, onApply, applyState }){
       </div>
 
       {/* Exchange */}
-      <div className="px-5 pt-7 pb-3 flex items-center gap-3">
-        <span className="stamp">The exchange</span>
+      <div className="px-5 pt-8 pb-3 flex items-center gap-3">
+        <span className="section-label">The exchange</span>
         <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
       </div>
       <div className="px-5 space-y-4">
@@ -782,7 +850,7 @@ function ScreenEventDetail({ event, onBack, onApply, applyState }){
           { n:"02", t:"Tag @cyanbeachclub", s:"And the venue handle in caption" },
         ].map((r,i)=>(
           <div key={i} className="flex items-center gap-4 py-3" style={{borderBottom:"1px solid var(--line)"}}>
-            <span className="font-mono text-[11px]" style={{color:"var(--ice)"}}>{r.n}</span>
+            <span className="font-mono text-[11px]" style={{color:"var(--ink-mute)"}}>{r.n}</span>
             <div className="flex-1">
               <div className="text-[14px]">{r.t}</div>
               <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{r.s}</div>
@@ -800,7 +868,7 @@ function ScreenEventDetail({ event, onBack, onApply, applyState }){
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <div className="stamp" style={{color:"var(--ink-mute)"}}>Closes in</div>
-            <div className="font-black text-[22px] leading-none mt-0.5 font-mono" style={{color:"var(--ice)"}}>04 : 56 : 12</div>
+            <div className="font-black text-[22px] leading-none mt-0.5" style={{color:"var(--ice)"}}><Countdown value="04:56:12"/></div>
           </div>
           <button onClick={onApply} disabled={applyState !== 'idle'} className={"press flex items-center gap-3 h-[56px] px-6 rounded-full "+(applyState==='idle'?"glow-primary":"")} style={{background: applyState === 'idle' ? "var(--ice)" : "var(--bg-elev2)", color: applyState === 'idle' ? "var(--ice-ink)" : "var(--ink)", minWidth: 168, justifyContent:'center'}}>
             {applyState === 'idle' && (<>
@@ -831,8 +899,7 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent }){
     <PhoneScreen tab={tab} onTab={onTab}>
       <div className="px-5 pt-[60px] pb-3 flex items-center justify-between">
         <div>
-          <div className="stamp">Personal</div>
-          <div className="font-black font-display-l text-[36px] leading-none mt-1">Invites</div>
+          <div className="font-black font-display-l text-[36px] leading-none">Invites</div>
         </div>
         <button className="press glass w-10 h-10 rounded-full flex items-center justify-center">
           <Icon name="calendar" size={16} stroke={1.4}/>
@@ -1009,19 +1076,21 @@ function ScreenProfile({ tab, onTab, profile }){
         </div>
       </div>
 
-      {/* Stat strip */}
-      <div className="grid grid-cols-3" style={{borderBottom:"1px solid var(--line-2)"}}>
-        <div className="p-4 border-r" style={{borderColor:"var(--line)"}}>
-          <div className="font-black text-[32px] leading-none font-mono">{followersK}<span style={{fontSize:18, color:"var(--ink-mute)"}}>{followersUnit}</span></div>
-          <div className="stamp mt-1">Followers</div>
+      {/* Stat strip — editorial asymmetric: reputation leads, followers + engagement support */}
+      <div className="px-5 py-6 flex items-end justify-between" style={{borderBottom:"1px solid var(--line-2)"}}>
+        <div>
+          <div className="font-mono leading-[0.82]" style={{fontSize:64, color:"var(--ice)"}}>9.4</div>
+          <div className="stamp mt-2">Reputation</div>
         </div>
-        <div className="p-4 border-r" style={{borderColor:"var(--line)"}}>
-          <div className="font-black text-[32px] leading-none font-mono">{engagementPct}<span style={{fontSize:18, color:"var(--ink-mute)"}}>%</span></div>
-          <div className="stamp mt-1">Engagement</div>
-        </div>
-        <div className="p-4">
-          <div className="font-black text-[32px] leading-none font-mono" style={{color:"var(--ice)"}}>9.4</div>
-          <div className="stamp mt-1">Reputation</div>
+        <div className="flex flex-col items-end gap-3 pb-1">
+          <div className="text-right">
+            <div className="font-mono text-[22px] leading-none">{followersK}<span style={{fontSize:13, color:"var(--ink-mute)"}}>{followersUnit}</span></div>
+            <div className="stamp mt-1" style={{color:"var(--ink-mute)"}}>Followers</div>
+          </div>
+          <div className="text-right">
+            <div className="font-mono text-[22px] leading-none">{engagementPct}<span style={{fontSize:13, color:"var(--ink-mute)"}}>%</span></div>
+            <div className="stamp mt-1" style={{color:"var(--ink-mute)"}}>Engagement</div>
+          </div>
         </div>
       </div>
 
@@ -1040,8 +1109,8 @@ function ScreenProfile({ tab, onTab, profile }){
       )}
 
       {/* Audience */}
-      <div className="px-5 pt-6 pb-3 flex items-center gap-3">
-        <span className="stamp">Audience</span>
+      <div className="px-5 pt-7 pb-3 flex items-center gap-3">
+        <span className="section-label">Audience</span>
         <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
         <span className="text-[11px] font-mono" style={{color:"var(--ink-mute)"}}>{verified ? "Live" : "Estimated"}</span>
       </div>
@@ -1068,8 +1137,8 @@ function ScreenProfile({ tab, onTab, profile }){
       </div>
 
       {/* Recent */}
-      <div className="px-5 pt-6 pb-3 flex items-center gap-3">
-        <span className="stamp">Recent</span>
+      <div className="px-5 pt-9 pb-3 flex items-center gap-3">
+        <span className="section-label">Recent</span>
         <div className="flex-1 h-px" style={{background:"var(--line-2)"}}/>
       </div>
       <div className="px-5 space-y-3 pb-4">
@@ -1116,7 +1185,7 @@ function ScreenPicked({ event, onConfirm, onLater }){
 
           <div className="mt-8 px-4 py-3 rounded-[12px] picked-stagger" style={{background:"rgba(245,241,234,.08)", border:"1px solid rgba(245,241,234,.15)", animationDelay:"960ms"}}>
             <div className="stamp" style={{color:"rgba(245,241,234,.65)"}}>Confirm within</div>
-            <div className="font-black text-[28px] font-mono mt-0.5" style={{color:"var(--ice)"}}>23 : 59 : 47</div>
+            <div className="font-black text-[28px] mt-0.5" style={{color:"var(--ice)"}}><Countdown value="23:59:47"/></div>
           </div>
         </div>
 
@@ -1196,7 +1265,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
           <div className="w-[120px] h-[120px] rounded-full border-2 spin" style={{borderColor:"rgba(245,241,234,.3)", borderTopColor:"#F5F1EA"}}/>
         </div>
         <div className="font-black font-display-l text-[28px] mt-10 tracking-tight">Reading</div>
-        <div className="text-[13px] mt-3 opacity-70 max-w-[260px]">Pulling @{handle || "your-handle"}'s reach, demographics, and engagement.</div>
+        <div className="text-[13px] mt-3 max-w-[260px]">Pulling @{handle || "your-handle"}'s reach, demographics, and engagement.</div>
       </div>
       <HomeIndicator/>
     </div>

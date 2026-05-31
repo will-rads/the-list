@@ -48,8 +48,9 @@ Always say:
 | Mobile app | SwiftUI (iOS-first, no Android v1) |
 | Backend (planned) | Supabase (auth + Postgres + storage + realtime) |
 | Voice / transcription | Gemini 3 Flash |
-| Design fonts | TBD (NOT Inter, NOT Instrument Serif — too AI-flavored) |
-| Design accent | TBD (was acid lime, currently exploring ice blue) |
+| Design fonts | **Plus Jakarta Sans** — single family, app-wide. Headers bolder (800), body 400, numbers inherit (no monospace). No second family. Supersedes the old Satoshi + Host Grotesk two-family rule (Will's call 2026-05-31). NOT Inter, NOT Instrument Serif. |
+| Design accent | **Ice blue** `#9FD8E8` (light theme `#26768F`), restrained ≤10%. Carbon black `#0A0A0A` ground, Bone `#F5F1EA` text. |
+| Design source of truth | `DESIGN.md` (visual system + named rules) and `PRODUCT.md` (register, brand, principles). Read both before any UI work. |
 
 ## Skills available
 

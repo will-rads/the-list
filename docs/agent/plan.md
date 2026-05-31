@@ -2,19 +2,25 @@
 
 ## Where we are right now
 
-**Phase: prototype lockdown.** Visual design and flow are 80% locked in HTML. Next: build a single-phone navigable prototype, then port to SwiftUI.
+**Phase: prototype complete — in user/founder review before push/deploy.** The single-phone tap-through prototype (`web/index.html`) is built and **all 10 UI audit items are done**. Design direction locked in `PRODUCT.md` + `DESIGN.md`. Next: review → possible visual tweaks → push + deploy (only on Will's explicit OK, branch first) → SwiftUI planning.
 
 ```text
 [done]      Voice notes transcribed + plan synthesized
 [done]      The Secret Society researched (origin, scale, weaknesses)
 [done]      6 reference screens designed in HTML (dark + light)
 [done]      Image set curated (Unsplash, venue-appropriate)
-[doing]     Single-phone tap-through prototype  ◄── HERE
-[next]      Founder review with Radwan + Dima
-[next]      Lock fonts + accent + name
+[done]      Single-phone tap-through prototype (onboarding → home → detail → apply → picked → my list)
+[done]      Fonts + accent locked (Satoshi + Host Grotesk, ice blue)
+[done]      Design system documented (PRODUCT.md, DESIGN.md, .impeccable/design.json)
+[done]      UI quality passes: a11y/contrast, icons, flat cards, editorial polish
+[done]      All 10 UI audit items (Explore rhythm, unified glass, Home masthead, light-theme, spacing, numerics)
+[doing]     User/founder review of the prototype — before push/deploy  ◄── HERE
+[next]      Possible visual tweaks from review
+[next]      Push to GitHub + deploy (Vercel) — only on Will's explicit OK, branch first
+[next]      SwiftUI planning / port
+[next]      Lock working name (test with Dima's top 30)
 [next]      Venue anchor contracts (5-10 Beirut venues)
 [next]      Supabase backend scaffold
-[next]      SwiftUI build
 [next]      TestFlight with Dima's top 30 contacts
 [next]      Public launch — Radwan DJ set at anchor venue, top 50 invited
 ```

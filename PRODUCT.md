@@ -43,4 +43,4 @@ Berlin nightlife meets fashion editorial. Closer to Aesop / Bottega / Berghain t
 
 Working target: **WCAG AA** (body text >=4.5:1, large text >=3:1, visible focus states, labeled controls) plus honoring `prefers-reduced-motion` (the prototype already guards its stagger/reveal animations). The ice-blue accent must never be the sole signal of state; always pair it with text or an icon so it survives color-blindness and the dark/light theme switch.
 
-Not yet formally ratified by the founders; treat as the design default and revisit when the SwiftUI build begins. Known debt to check: muted-grey body text and white-on-image overlays on the prototype need a contrast pass (good first `/impeccable audit` target).
+Not yet formally ratified by the founders; treat as the design default and revisit when the SwiftUI build begins. Body text is now full-contrast ink (Bone on dark / Black on light) — no muted-grey body text anywhere. Known debt to check: white-on-image overlays on the prototype still need a contrast pass (good first `/impeccable audit` target). The ice-blue accent still must never be the sole signal of state.

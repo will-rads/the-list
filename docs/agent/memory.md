@@ -6,7 +6,77 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## Current state (one line)
 
-Prototype polished: Phosphor thin icons, frosted glass + restrained ice glow, one-word headers. Flow/data untouched. Awaiting Will's local review before deploy. Live (pre-polish) still at `the-list-omega.vercel.app`.
+Prototype `web/index.html` complete + all 10 UI audit items done. **Type/color system overhauled (Will's call): single font Plus Jakarta Sans, headers bolder, zero grey text, ice accent kept.** Tailwind `.font-mono` override fixed; Pool Day image optimized to `./assets/pool-day.jpg` (committed `f2610a6`, local only). Locked docs (`DESIGN.md`/`PRODUCT.md`/`AGENTS.md`) synced to the new system. `web/index.html` uncommitted, not pushed. **Phase: user/founder review of the prototype, before push/deploy.** Next: review → push + deploy (Vercel) **only on Will's explicit OK, branch first** → SwiftUI planning.
+
+---
+
+## 2026-05-31 — Follow-up fixes: Tailwind `.font-mono` override, grey round-2, Pool Day image
+
+Iterated on the same-day font change below. Final state of `web/index.html`:
+
+- **Tailwind `.font-mono` collision fixed.** cdn.tailwindcss.com ships its own `.font-mono` utility (system monospace stack) that overrode our custom `.font-mono` at equal specificity (0,1,0, Tailwind wins on source order) → numbers were literally rendering in **system monospace**. Fixed with a doubled selector **`.font-mono.font-mono`** (0,2,0). Also dropped `tabular-nums` + forced weight so numbers read like body. Logged in `errors.md`.
+- **No-grey cleanup, round 2.** The earlier token swap missed hardcoded `rgba(245,241,234,.5/.6)` text greys on the Home featured card (the `·` separator + "seats · applied") — flattened to `var(--ink)`. Remaining alpha-greys on Profile "member since" + the Picked reveal screen left intentionally (pending Will's call — they may be intended peak-moment hierarchy).
+- **Pool Day image.** `./assets/pool-day.png` was a 2.6 MB file that painted black/slow and caused screenshot timeouts. Re-encoded with Pillow → **`./assets/pool-day.jpg`** (800×1000, 159 KB), repointed `IMG.beachClub`. Staged + committed (`f2610a6` on `main`, local only, not pushed). Original png still tracked.
+
+Verified in preview :5555: body + display + numbers all resolve to Plus Jakarta Sans (`document.fonts` loaded), numbers no longer monospace, jpg loads complete. Screenshot still times out (page width, not the image) — verified via computed styles.
+
+---
+
+## 2026-05-31 — Font system replaced + greys killed (Will's call, overrides locked DESIGN.md)
+
+Will overruled the locked two-family system and the grey hierarchy. `web/index.html` only — visual/CSS, not pushed. (Also reverted an undocumented Inter typography test a prior session had left in the working copy, before applying this.)
+
+- **One font: Plus Jakarta Sans** across the whole app — body, labels, numbers/timers (`.font-mono` keeps `tabular-nums`), tabs, status bar, section labels, theme toggle. Dropped Satoshi + Host Grotesk and both font links; loaded Jakarta 400–800. Headers go bolder (display 800, `.font-mono` 700, body 400). Jakarta tops out at 800, so the Tailwind `font-black` utility's 900 clamps to the 800 face — harmless, looks identical.
+- **No grey text.** `--ink-2` and `--ink-mute` both repointed to `--ink` (bone `#F5F1EA` in dark / black `#0A0A0A` in light) in both themes — kills every token grey in one move, 50 call sites untouched. Removed 4 opacity-dimmed text spots (lead time, "seats" unit, venue label, onboarding helper) that still read grey. Hierarchy now carried by size + weight only.
+- **Ice kept** (`#9FD8E8` dark / `#26768F` light) on key numbers + primary buttons. Will confirmed "only black and white" meant text, not the accent.
+- Non-text greys now inherit ink (fine): bottom-sheet drag-handle (ink@.4), audience male-split bar (now bone vs ice female), disabled-CTA label.
+
+Verified in browser (preview :5555): `document.fonts` = loaded, check 400/800 true, body+display+stamp resolve to Plus Jakarta Sans, no leftover Satoshi/Host links, `--ink-2`/`--ink-mute` = bone. Screenshot tool timed out (known big-page issue) — verified via computed styles instead.
+
+**Open for Will:** (1) dark-mode "white" kept as warm bone `#F5F1EA`, not pure `#FFFFFF` (the old Warm-White rule) — say if you want pure white. (2) `DESIGN.md` / `PRODUCT.md` / `AGENTS.md` still document the two-family + grey system and now contradict the prototype — update them on your OK.
+
+---
+
+## 2026-05-31 — UI audit fixes #5/#6/#7/#9/#10 (remaining items, Will's call to do all)
+
+Closed out the last 5 audit items in `web/index.html`. Visual/CSS/markup only — no flow/data/provider/onboarding/routing/iOS change. Dark primary. Not pushed. Will audits next, then asks to push.
+
+- **#5 Unify floating-control glass:** the Event Detail header buttons (back/bookmark/share) had a one-off inline glass (`rgba(10,10,10,.45)`/`blur(8px)`/border .25) different from everything else. Added a canonical **`.glass-over-image`** class (dark + light) — the single recipe for a control floating over a *photo*, distinct from `.glass` (floats over the app bg). Routed all three buttons through it; `.profile-glass` now shares the same base (keeps its own text-color contract). One over-image glass, not three.
+- **#6 Home masthead:** Home had no display header while Index/Invites/Profile do. Gave it the one-word header **"Tonight"** (`font-display-l` 40px, matches Index) under the `The List · No. 048` eyebrow, with the date baseline-aligned right and search kept. Matches the One-Word Header rule (which already names "Tonight" for Home) and the Home tab label.
+- **#7 Light-theme refinement:** light `.card` edge firmed (border `.06 → .12`, fill `.62 → .78`, tighter shadow) so cards read as objects on white, not flat panels. Active/press glows in light now key off the deep ice **`#26768F`** (`rgba(38,118,143,…)`) as a tight ring, not the bright dark-theme halo (`.glow-ice`, `.glow-primary`, card-hover border). Dark theme untouched.
+- **#9 Editorial spacing rhythm:** broke the near-uniform section cadence on the most-stacked screens — Event Detail "The exchange" `pt-7 → pt-8`; Profile "Audience" `pt-6 → pt-7` and "Recent" `pt-6 → pt-9` (ascending air toward the final block). Generous between sections, tight within; 20px gutter (`px-5`) untouched.
+- **#10 Numeric/timer polish:** new **`Countdown`** component renders timers with tighter, dimmed colons (opacity .4) so the tabular digits carry the weight — wired into Event Detail "Closes in" and Picked "Confirm within" (was `04 : 56 : 12` spaced). Encoded the **ice text-vs-fill rule** in a comment + demoted the Exchange ordinals `01/02` from ice to ink-mute (ordinals/labels are never ice; ice = the one *value* number). Net: less ice, tighter to the ≤10% budget.
+
+Static-checked: all edited regions re-read + balanced, `Countdown`/`.glass-over-image` resolve, grep confirms no leftover spaced timers or bespoke button glass. **Not visually verified from agent env** (no browser render). Served at `http://127.0.0.1:5555/` for Will to eyeball. DESIGN.md updated with `.glass-over-image` + the ice text/fill rule.
+
+---
+
+## 2026-05-31 — UI audit fix #3 (Explore rhythm)
+
+Killed the "identical card grid" tell on Explore (`ScreenExplore`). No flow/data/sort/provider/routing/iOS change — visual restructure only, reusing existing card vocabularies. Dark primary. Not pushed.
+
+- **Before:** 5 identical 200px full-bleed image cards in `space-y-4` → reads as a template grid.
+- **After:** `[lead, ...rest] = list`. **Lead** = first room as one tall 300px full-bleed editorial card (34px `font-display-l` title, badge + type chips, ice date/seats rail). **Index** = the rest as denser horizontal rows (reuses the Home "Also tonight" row: 14×16 thumb + type stamp + title + venue·area, right rail = ice seats + time).
+- **Rhythm:** generous `pt-6` gap after the lead, tight `space-y-2` between rows (tight-within / generous-between, per the layout ref). Lead appears instantly; rows keep the `stagger`.
+- **Ice rationed:** rows show ice on seats only (the scarcity number), date/time stay muted — keeps ice ≤10% and "one number worth reading."
+- Added a quiet empty state (`list.length === 0`) for future filters; current chips all match ≥1 so it won't fire in demo.
+
+Meta rail above ("{n} rooms · Sorted · closes soonest") unchanged — now reads as the index masthead over the lead. List order untouched (lead = `list[0]`, same first item as before), so no sort-logic change.
+
+Static-checked: JSX balanced, `lead`/`rest`/`e.*` all resolve, all classes (`card`/`grain`/`font-display-l`/`stamp`/`font-mono`/`press`) pre-exist — no new CSS. **Not visually verified from agent env** (no browser render). Served at `http://127.0.0.1:5555/` for Will to eyeball.
+
+---
+
+## 2026-05-31 — UI audit fixes 1/4/2/8 (premium-editorial pass)
+
+Executed 4 of the 10 ranked audit fixes in `web/index.html`. No flow/data/provider/onboarding/routing/iOS changes. Dark stays primary. Not pushed.
+
+- **#1 Flat-At-Rest:** removed `backdrop-filter: blur(6px)` from resting `.card` (was glassmorphism-on-everything, violating our own Glass-Is-For-Floating rule). Bumped fill to `rgba(26,26,26,.66)` so cards still read elevated without blur. Floating glass (top controls, tab bar) keeps its blur.
+- **#4 Eyebrow reduction:** added a calmer `.section-label` style (Satoshi 700, 14px, sentence-case) and converted the 4 recurring section dividers (Also tonight, The exchange, Audience, Recent) from tracked-uppercase `.stamp`. Removed the redundant "Personal" eyebrow above the Invites header. `.stamp` kept for true value labels (When/Doors/Seats, form labels, statuses).
+- **#2 Profile stat strip:** replaced the 3 equal metric columns (hero-metric SaaS cliché) with an asymmetric editorial block — Reputation `9.4` as a 64px ice hero, Followers + Engagement as a smaller muted right-aligned pair. Same data + verified/estimated logic untouched.
+- **#8 Tab bar:** removed the active ice dot + its CSS; active state now ice icon + glow + bone label only (one signal, "status without shouting"). Theme-toggle dot (separate) untouched.
+
+Verified: script brackets balanced, all states present. Preview served at `http://127.0.0.1:5555/` (python, web/). Fixes 3,5,6,7,9,10 from the audit still open.
 
 ---
 

@@ -85,7 +85,7 @@ Their structure works. We **copy structure, throw away visual language**.
 Today (prototype phase)
 ═══════════════════════
 web/gallery.html      → 12 phones in two rows (dark + light), reference design
-web/mockup-v1.html    → original 12-phone version (Carbon Black + Ice Blue + Satoshi)
+web/mockup-v1.html    → original 12-phone version (Carbon Black + Ice Blue + Plus Jakarta Sans)
 web/prototype.html    → SINGLE phone, tap-through navigable (NEXT TO BUILD)
 
 
@@ -153,8 +153,8 @@ Venue side is a separate dual UX. Out of v1 scope until influencer side ships.
 
 - **Tone:** Berlin nightlife meets fashion editorial. Closer to Aesop / Bottega / Berghain than Uber Eats.
 - **Not:** purple, pink, gradient-y, cute, dating-app, coupon-app.
-- **Fonts in play:** Satoshi (clean modern grotesque), Geist Mono (timers/numbers). Avoiding Inter + Instrument Serif (too AI-flavored).
-- **Accent:** TBD. Ice blue vs acid lime vs champagne gold currently being tested.
+- **Fonts (locked):** Plus Jakarta Sans — one family across the app, headers bolder, numbers inherit. Avoiding Inter + Instrument Serif (too AI-flavored).
+- **Accent (locked):** Ice blue `#9FD8E8` (light `#26768F`) on Carbon Black `#0A0A0A`, Bone `#F5F1EA` text. No grey text — text is full-contrast ink (Bone `#F5F1EA` on dark / Black `#0A0A0A` on light). Restrained to ≤10% (actions / selection / state). Acid lime and champagne gold rejected. Dark mode is primary. Full visual system in `DESIGN.md`.
 
 ## Open questions still on the table
 

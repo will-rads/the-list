@@ -9,6 +9,8 @@ iPhone-first. SwiftUI eventually. Static HTML prototype now.
 | If you want to… | Read |
 | --- | --- |
 | understand the product + business + history | [`docs/agent/context.md`](docs/agent/context.md) |
+| know the design register, brand, principles | [`PRODUCT.md`](PRODUCT.md) |
+| know the visual system (colors, type, components, rules) | [`DESIGN.md`](DESIGN.md) |
 | see the roadmap + current phase | [`docs/agent/plan.md`](docs/agent/plan.md) |
 | catch up on what was decided when | [`docs/agent/memory.md`](docs/agent/memory.md) |
 | avoid known pitfalls | [`docs/agent/errors.md`](docs/agent/errors.md) |

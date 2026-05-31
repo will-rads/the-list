@@ -16,6 +16,8 @@ Repo is local at `C:\Users\user\Documents\Me\the-list\` and remote at `https://g
 4. `docs/agent/plan.md` — current phase + roadmap
 5. `docs/agent/memory.md` — running decision log, newest on top
 6. `docs/agent/errors.md` — known pitfalls (don't repeat them)
+7. `PRODUCT.md` — design register, brand personality, principles (read before any UI work)
+8. `DESIGN.md` — locked visual system: carbon black + ice blue, Plus Jakarta Sans (one family across the app), named rules (Flat-At-Rest, Glass-Is-For-Floating, One Cold Voice). The source of truth for the look.
 
 ## After reading, reply with exactly this 3-line ready check
 
