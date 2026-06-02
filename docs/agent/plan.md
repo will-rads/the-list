@@ -17,6 +17,7 @@
 [done]      User-side interaction pass (v0.3): Saved tab, Share + Settings sheets, verify flip, finished dividers
 [done]      TSS-style grainy entry screen (v0.4): 3 Veo clips from Nano Banana stills, crossfading montage
 [done]      Reviewed → merged to main → deployed to Vercel (the-list-omega.vercel.app)
+[review]    Texture-pass variant (web/index-textured.html, branch design/texture-pass) — Will picks: shipped vs textured look
 [doing]     SwiftUI planning / port  ◄── HERE
 [next]      Lock working name (test with Dima's top 30)
 [next]      Venue anchor contracts (5-10 Beirut venues)

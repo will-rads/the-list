@@ -6,9 +6,32 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## Current state (one line)
 
+**Two prototype variants now exist, both for review.** (A) `web/index.html` = **v0.4**, the shipped/live build on `main` (`f0156a3`) → Vercel `the-list-omega.vercel.app`. (B) `web/index-textured.html` = **texture-pass build**, a side-by-side copy on branch `design/texture-pass` (`f3fbfb5`, pushed to origin, **NOT merged**) that adds a retro/analog texture layer (app-wide grain + CRT scanlines, chromatic aberration, screen-glow + VHS frame on media, halation on ice CTAs/reveal ring, chunkier pills, heavier THE/LIST wordmark) — carbon-black + ice + single Plus Jakarta Sans all preserved, no palette/personality change. Will is choosing between the two looks; "texture only" direction confirmed (not the warm cream/olive/lilac pivot from `research/inspo-1.jpg`). Neither variant browser-rendered yet — open both locally to compare. To review: serve `web/` and open `/index.html` vs `/index-textured.html`. **Phase: prototype shipped + live; texture variant awaiting Will's pick. Next: pick the look → (if textured wins, promote it to index.html + merge) → SwiftUI planning / port.**
+
+---
+
 Prototype `web/index.html` at **v0.4 — merged to `main` (`9c4a041`) + pushed + auto-deployed to Vercel** (`the-list-omega.vercel.app`). v0.4 = TSS-style grainy **entry/intro screen**: new `onboardStep:"intro"` first step plays 3 AI-generated grainy Beirut nightlife clips (5s each, crossfading + looping) behind a centered THE LIST wordmark + "By invitation only" + Apply for access (ice) / I have an invite (ghost). Pipeline: gemini-analyser on `research/screen-rec-1.mp4` → Nano Banana Pro stills (Raouché / Batroun / rooftop) → Veo 3.1 image-to-video → ffmpeg to 5s/720×1280/muted → `web/assets/intro-{1,2,3}.{mp4,jpg}` (intro-2 uses a text-to-video fallback — the beachwear still tripped Veo's safety filter).
 
 v0.4 sits on top of **v0.3 — user-side interaction pass** (also merged): every visible control has a behavior (save/bookmark + new **Saved** tab via pill-`Segmented`, Share sheet, Settings sheet, verify→verified flip, toasts); thin section half-hairlines replaced by `SectionHead` + `StatusPill` / `DateChip` / `Toggle`; decorative punctuation stripped; **Two-Family → One-Family Rule** reconciled across all docs; vendor-neutral profile-data sourcing table in `context.md`. Pool Day asset unchanged: `web/assets/pool-day.jpg` (159 KB) via `IMG.beachClub`. Core flow unchanged throughout (intro → home → detail → apply → picked → invites/profile). **Phase: prototype shipped + live. Next: SwiftUI planning / port → lock working name (Dima top 30) → venue anchors → Supabase.** Not yet visually browser-verified — open `web/index.html` to watch the intro montage; intro-2 is a t2v clip, not an animation of its still.
+
+---
+
+## 2026-06-02 — Texture-pass variant (`web/index-textured.html`) on branch `design/texture-pass`
+
+Will is exploring a retro/analog look inspired by `research/inspo-1.jpg` (a cream/olive/lilac grungy-zine UI). Decision locked: **texture only** — keep The List's cold, exclusive identity (carbon black + ice blue + single Plus Jakarta Sans, "One Cold Voice"); do NOT take inspo-1's warm palette, second accent, or condensed display font. To compare looks without risk, made a **side-by-side copy**, not an in-place edit:
+
+- **`web/index.html`** — untouched, the live v0.4 build (still the source of truth on `main`).
+- **`web/index-textured.html`** — the copy, with all texture moves applied in one pass.
+
+Texture moves applied to the copy (all CSS/markup, no flow/data/palette change):
+1. **App-wide grain + scanline veil** — `.iphone-screen::after` lays a faint CRT scanline + noise overlay over the whole phone (z-45, below status bar, non-blocking).
+2. **CRT treatment on media** — intro clips, Event Detail hero, Profile hero, Home featured + Explore lead cards get `.tex-scan` (scanlines), `.tex-screen` (glow vignette); intro clips also get `.tex-aberr` (RGB chromatic-aberration fringe).
+3. **VHS inset frame** — `.tex-vhs` thin retro border motif on hero media + feature cards.
+4. **Halation/bloom** — `.tex-halation` neon-on-film glow on ice CTAs (Apply, Confirm, Enter, onboarding) + the reveal ring.
+5. **Chunkier pills** — CTAs 58→62px, `.tex-pill-xl` (heavier weight + tracking), `.tex-seg` taller Segmented.
+6. **Poster wordmark** — entry THE/LIST heavier + tighter + slight vertical scale via `.tex-wordmark` (still Plus Jakarta Sans — no new font).
+
+New CSS lives in one labeled block ("TEXTURE BUILD"). Committed `f3fbfb5` on `design/texture-pass`, pushed to origin. **Recovery note:** the branch ref was briefly lost after a checkout last session (the commit survived as dangling); recovered via `git branch design/texture-pass f3fbfb5` from reflog, then pushed so it persists. Verified: 1819 lines, brackets balanced, single createRoot, all texture classes wired. **Not browser-rendered** (no Playwright in env). If Will picks textured: copy index-textured.html → index.html, commit, merge to main; else delete the branch.
 
 ---
 
