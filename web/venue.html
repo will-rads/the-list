@@ -985,8 +985,101 @@
     );
   }
 
-  /* ========== ScreenEvents — stub replaced in Task 9 ========== */
-  function ScreenEvents(props){ return <ScreenStub title="Events"/>; }
+  /* ========== ScreenEvents — Events dashboard (Task 9) ========== */
+  function ScreenEvents({ events, venue, onPost, onOpenEvent }){
+    const [seg, setSeg] = useState("live");
+
+    const counts = {
+      live:  events.filter(e => e.status === "live").length,
+      draft: events.filter(e => e.status === "draft").length,
+      past:  events.filter(e => e.status === "past").length,
+    };
+
+    const segments = [
+      { id:"live",  label:"Live",  count: counts.live  },
+      { id:"draft", label:"Draft", count: counts.draft },
+      { id:"past",  label:"Past",  count: counts.past  },
+    ];
+
+    const visible = events.filter(e => e.status === seg);
+
+    function EventStatusPill({ status }){
+      if(status === "live")  return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Live</span>;
+      if(status === "draft") return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Draft</span>;
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium" style={{background:"var(--bg-elev2)", color:"var(--ink-mute)"}}>Past</span>;
+    }
+
+    return (
+      <div className="absolute inset-0 flex flex-col" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+
+        {/* Header */}
+        <div className="shrink-0 px-5 pt-[60px] pb-3">
+          <div className="font-black font-display-l text-[40px] leading-none">Events</div>
+        </div>
+        <div className="hr-2 mx-5 mb-4 shrink-0"/>
+
+        {/* Segmented control */}
+        <div className="shrink-0 px-5 mb-4">
+          <div className="flex gap-1 p-1 rounded-full" style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
+            {segments.map(it => {
+              const on = it.id === seg;
+              return (
+                <button key={it.id} onClick={() => setSeg(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[10px] uppercase tracking-[.06em] font-medium"
+                  style={on ? {background:"var(--ink)", color:"var(--bg)"} : {color:"var(--ink-mute)"}}>
+                  <span>{it.label}</span>
+                  <span style={{opacity:.65}}>{it.count}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Scrollable event list */}
+        <div className="flex-1 overflow-y-auto noscroll px-5 pb-2">
+          {visible.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <span className="stamp" style={{color:"var(--ink-mute)"}}>
+                {seg === "live" ? "No live events" : seg === "draft" ? "No drafts" : "No past events"}
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {visible.map(event => (
+                <button key={event.id} onClick={() => onOpenEvent(event)}
+                  className="press w-full text-left flex items-center gap-3 p-3 rounded-[14px]"
+                  style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
+                  <FramedImage value={event.heroImage} ratio="4/5" className="w-14 shrink-0"/>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-black text-[16px] leading-tight truncate">{event.title || "Untitled"}</div>
+                    <div className="text-[11px] mt-0.5 truncate" style={{color:"var(--ink-mute)"}}>
+                      {event.type}{event.date ? " · " + event.date : ""}{event.time ? " · " + event.time : ""}
+                    </div>
+                  </div>
+                  <div className="shrink-0 flex flex-col items-end gap-1.5">
+                    <EventStatusPill status={event.status}/>
+                    <span className="stamp text-[10px]" style={{color:"var(--ink-mute)"}}>
+                      {event.mix
+                        ? "Girls " + event.mix.girls + " · Guys " + event.mix.guys
+                        : event.seats + " seats"}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Pinned Post CTA */}
+        <div className="shrink-0 px-5 pb-24 pt-3">
+          <button onClick={onPost} className="press glow-primary w-full h-[52px] rounded-full font-medium text-[14px] uppercase tracking-[.2em]"
+            style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+            Post an event
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   /* ========== ScreenApplicants — stub ========== */
   function ScreenApplicants({ events, onReview }){ return <ScreenStub title="Applicants"/>; }
