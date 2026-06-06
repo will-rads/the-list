@@ -368,6 +368,8 @@
     "instagram": '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/>',
     "plus": '<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>',
     "magnifying-glass": '<path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>',
+    "users": '<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/>',
+    "building-storefront": '<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349M3.75 21V9.349m0 0a3.001 3.001 0 0 0 3.75-.615A2.993 2.993 0 0 0 9.75 9.75c.896 0 1.7-.393 2.25-1.016a2.999 2.999 0 0 0 4.5 0A3.001 3.001 0 0 0 20.25 9c.896 0 1.7-.393 2.25-1.015m-18 0A2.993 2.993 0 0 1 3.75 6.75v-.265M21.75 9c.343-.36.59-.808.71-1.299a3 3 0 0 0-.21-2.183l-1.135-2.27A1.5 1.5 0 0 0 19.5 2.25h-15a1.5 1.5 0 0 0-1.382.918L1.04 5.55a3 3 0 0 0-.17 2.133c.124.49.37.937.71 1.298"/>',
   };
   function Icon({ name, size=18, stroke=1.5, className="" }){
     const inner = HICONS[name] || HICONS["sparkle"];
@@ -948,6 +950,50 @@
     );
   }
 
+  /* ========== VenueTabBar — 3-tab frosted bar for the venue shell ========== */
+  function VenueTabBar({ tab, onTab }){
+    const items = [
+      { id:"events",     icon:"calendar",            label:"Events" },
+      { id:"applicants", icon:"users",               label:"Applicants" },
+      { id:"venue",      icon:"building-storefront", label:"Venue" },
+    ];
+    return (
+      <div className="tabbar" style={{gridTemplateColumns:"repeat(3,1fr)"}}>
+        {items.map(it => {
+          const active = tab === it.id;
+          return (
+            <button key={it.id} onClick={() => onTab(it.id)} className={"press " + (active ? "active" : "")}>
+              <Icon name={it.icon} size={18} stroke={1.4}/>
+              <span>{it.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  /* ========== ScreenStub — placeholder for unbuilt tabs ========== */
+  function ScreenStub({ title }){
+    return (
+      <>
+        <StatusBar/>
+        <div className="absolute inset-0 flex items-center justify-center" style={{background:"var(--bg)"}}>
+          <div className="font-black font-display-l text-[40px]" style={{color:"var(--ink-mute)"}}>{title}</div>
+        </div>
+        <HomeIndicator/>
+      </>
+    );
+  }
+
+  /* ========== ScreenEvents — stub replaced in Task 9 ========== */
+  function ScreenEvents(props){ return <ScreenStub title="Events"/>; }
+
+  /* ========== ScreenApplicants — stub ========== */
+  function ScreenApplicants({ events, onReview }){ return <ScreenStub title="Applicants"/>; }
+
+  /* ========== ScreenVenueProfile — stub ========== */
+  function ScreenVenueProfile({ venue, group }){ return <ScreenStub title="Venue"/>; }
+
   /* ========== APP — onboarding state machine ========== */
   function App(){
     const [step, setStep] = useState("intro");
@@ -983,7 +1029,17 @@
     if (step === "onboard-group") return wrap(<ScreenOnboardGroup group={group} setGroup={setGroup} onNext={()=>setStep("onboard-venue")}/>);
     if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} setVenue={setVenue} group={group} onDone={()=>{ setStep("done"); setTab("events"); }}/>);
 
-    // Fallback for steps not yet built (done) — placeholder so nothing crashes.
+    const openEvent = (e) => { showToast("Open from the Applicants tab to review"); }; // rewired in Task 15
+    if (step === "done") return wrap(
+      <>
+        {tab === "events"     && <ScreenEvents events={events} venue={venue} onPost={()=>setStep("post")} onOpenEvent={openEvent}/>}
+        {tab === "applicants" && <ScreenApplicants events={events} onReview={openEvent}/>}
+        {tab === "venue"      && <ScreenVenueProfile venue={venue} group={group}/>}
+        <VenueTabBar tab={tab} onTab={setTab}/>
+      </>
+    );
+
+    // Generic fallback for steps not yet built (post, review-deck).
     return wrap(
       <>
         <StatusBar/>
