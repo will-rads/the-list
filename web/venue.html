@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>The List · Venue</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+
+<style>
+  :root{
+    --bg:        #0A0A0A;
+    --bg-elev:   #141414;
+    --bg-elev2:  #1C1C1C;
+    --ink:       #F5F1EA;
+    --ink-2:     #F5F1EA;
+    --ink-mute:  #F5F1EA;
+    --line:      rgba(245,241,234,0.10);
+    --line-2:    rgba(245,241,234,0.18);
+    --ice:       #9FD8E8;
+    --ice-dim:   #6FB5C9;
+    --ice-ink:   #0A0A0A;
+    --page:      #050505;
+  }
+  html.light{
+    --bg:        #FFFFFF;
+    --bg-elev:   #F5F5F5;
+    --bg-elev2:  #EAEAEA;
+    --ink:       #0A0A0A;
+    --ink-2:     #0A0A0A;
+    --ink-mute:  #0A0A0A;
+    --line:      rgba(10,10,10,0.08);
+    --line-2:    rgba(10,10,10,0.14);
+    --ice:       #26768F;
+    --ice-dim:   #2C7A92;
+    --ice-ink:   #FFFFFF;
+    --page:      #FAFAFA;
+  }
+  html, body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+  /* One family across the app: Plus Jakarta Sans. Headers just go bolder (800);
+     everything else inherits the body weight. No second family. */
+  .font-black,
+  .font-display {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+  .font-display-l {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+  }
+  /* font-mono = legacy class for numbers/timers. One family across the app, so
+     numbers read exactly like the body text — no monospace, no tabular fixed-width.
+     Doubled selector (.font-mono.font-mono) so it beats Tailwind CDN's own .font-mono
+     utility, which otherwise forces a system monospace stack. Weight inherits
+     (bold only where .font-black / .font-display is also applied). */
+  .font-mono.font-mono {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+  }
+
+  /* hide scrollbars inside phone screens */
+  .noscroll::-webkit-scrollbar { display:none; }
+  .noscroll { scrollbar-width: none; }
+
+  /* iphone bezel */
+  .iphone {
+    width: 393px; height: 852px;
+    border-radius: 54px;
+    padding: 11px;
+    background: linear-gradient(140deg,#2a2722 0%, #0c0a08 45%, #1d1a16 100%);
+    box-shadow:
+      inset 0 0 0 1.5px #3a3631,
+      inset 0 0 0 3px #0a0807,
+      0 60px 80px -40px rgba(0,0,0,.9),
+      0 30px 60px -30px rgba(0,0,0,.6);
+    position: relative;
+  }
+  .iphone-screen {
+    width: 100%; height: 100%; border-radius: 43px;
+    overflow: hidden; position: relative; background: var(--bg);
+    isolation: isolate;
+  }
+  .island { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:120px; height:34px; background:#000; border-radius:20px; z-index:50; }
+
+  .statusbar { position:absolute; top:0; left:0; right:0; height:54px; padding: 16px 28px 0; display:flex; justify-content:space-between; align-items:flex-start; z-index:40; font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-variant-numeric: tabular-nums; font-size:14px; color: var(--ink); pointer-events:none; }
+  .statusbar svg { width: 16px; height: 16px; }
+
+  .tabbar {
+    position:absolute; left:0; right:0; bottom:0; height: 88px;
+    padding: 12px 18px 30px;
+    display:grid; grid-template-columns:repeat(4,1fr); gap: 4px;
+    background: linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,.72) 45%, rgba(10,10,10,.92) 100%);
+    backdrop-filter: blur(22px) saturate(1.3);
+    -webkit-backdrop-filter: blur(22px) saturate(1.3);
+    z-index: 30;
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -12px 34px -22px rgba(159,216,232,.35);
+  }
+  html.light .tabbar {
+    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.72) 45%, rgba(255,255,255,.92) 100%);
+  }
+  .tabbar button {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:5px; color: var(--ink-mute);
+    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 4px 0; border-radius: 14px;
+    transition: color .15s;
+    background: transparent; border: 0; cursor: pointer;
+  }
+  .tabbar button.active { color: var(--ink); }
+  .tabbar button.active svg { color: var(--ice); filter: drop-shadow(0 0 8px rgba(159,216,232,.7)); }
+
+  .hr { height: 1px; background: var(--line); }
+  .hr-2 { height: 1px; background: var(--line-2); }
+
+  .stamp { font-family:'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-mute); }
+  .smallcaps { text-transform: uppercase; letter-spacing: 0.22em; font-size: 10px; font-weight: 500; }
+  /* Calmer section marker — breaks the uniform uppercase-tracked-eyebrow cadence.
+     Used for section dividers; .stamp stays for true value labels (When/Doors/Seats). */
+  .section-label { font-family:'Plus Jakarta Sans', ui-sans-serif, system-ui; font-weight: 700; font-size: 14px; letter-spacing: normal; color: var(--ink-2); }
+
+  .chip-ice { background: var(--ice); color: var(--ice-ink); }
+  .chip-outline { border: 1px solid var(--line-2); color: var(--ink); }
+
+  .press { transition: transform .12s ease, opacity .12s ease, background .2s, border-color .2s, box-shadow .2s; cursor: pointer; }
+  @media (hover:hover){ .press:hover { opacity: .96; } }
+  .press:active { transform: scale(.97); opacity: .85; }
+
+  .vt { writing-mode: vertical-rl; transform: rotate(180deg); }
+
+  /* film grain */
+  .grain::after {
+    content:""; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 3px 3px; mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  .page-bg {
+    background:
+      radial-gradient(900px 500px at 10% -10%, rgba(159,216,232,.04), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(159,216,232,.025), transparent 60%),
+      var(--page);
+  }
+  html.light .page-bg {
+    background:
+      radial-gradient(900px 500px at 10% -10%, rgba(111,181,201,.10), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(111,181,201,.05), transparent 60%),
+      var(--page);
+  }
+
+  .theme-toggle {
+    position: fixed; top: 24px; right: 24px; z-index: 100;
+    display:flex; align-items:center; gap:8px;
+    padding: 8px 14px; border-radius: 999px;
+    background: var(--bg-elev); border: 1px solid var(--line-2);
+    color: var(--ink); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500;
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    cursor: pointer; transition: all .2s;
+  }
+  .theme-toggle:hover { border-color: var(--ice); color: var(--ice); }
+  .theme-toggle .dot { width:6px; height:6px; border-radius:50%; background: var(--ice); }
+
+  @keyframes pulseIce {
+    0% { box-shadow: 0 0 0 0 rgba(159,216,232,.5); }
+    100% { box-shadow: 0 0 0 28px rgba(159,216,232,0); }
+  }
+  .pulse-ice { animation: pulseIce 1.8s cubic-bezier(.4,.2,.2,1) infinite; }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .anim-up { animation: slideUp .5s cubic-bezier(.2,.7,.2,1); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .anim-fade { animation: fadeIn .35s ease; }
+
+  /* Stagger entrance for list children. Each child sets style={{"--i": index}}. */
+  .stagger > * { opacity: 1; }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes staggerUp {
+      from { transform: translateY(12px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    .stagger > * {
+      animation: staggerUp .45s ease-out both;
+      animation-delay: calc(var(--i, 0) * 60ms);
+    }
+  }
+
+  /* Picked screen — ring scale-in + content stagger */
+  @keyframes ringPop {
+    0%   { transform: scale(.3); opacity: 0; }
+    60%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes pickedFadeUp {
+    from { transform: translateY(14px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .ring-pop { animation: ringPop .8s cubic-bezier(.2,.7,.2,1) backwards; }
+  .picked-stagger { animation: pickedFadeUp .55s ease-out backwards; }
+
+  /* Filter sheet — backdrop dim + sheet slide up */
+  @keyframes sheetIn {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  @keyframes dimIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .sheet-backdrop { animation: dimIn .25s ease; }
+  .sheet { animation: sheetIn .35s cubic-bezier(.2,.7,.2,1); }
+
+  /* Submit spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin .9s linear infinite; }
+
+  /* ===== polish pass: glass depth + restrained ice glow ===== */
+  /* frosted glass for top controls */
+  .glass {
+    background: rgba(20,20,20,.5) !important;
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    border: 1px solid rgba(245,241,234,.12) !important;
+  }
+  html.light .glass {
+    background: rgba(255,255,255,.55) !important;
+    border-color: rgba(10,10,10,.1) !important;
+  }
+  /* translucent black cards: 1px glass border + softer shadow */
+  .card {
+    /* Flat-At-Rest: resting cards are NOT glass. Translucent fill + hairline +
+       soft shadow only. Blur is reserved for genuinely-floating surfaces. */
+    background: rgba(26,26,26,.66);
+    border: 1px solid rgba(245,241,234,.08);
+    box-shadow: 0 16px 36px -24px rgba(0,0,0,.9);
+    transition: border-color .2s, box-shadow .2s, transform .12s;
+  }
+  html.light .card {
+    /* #7 — firmer edge so cards read as objects on white, not flat panels. */
+    background: rgba(255,255,255,.78);
+    border-color: rgba(10,10,10,.12);
+    box-shadow: 0 12px 30px -22px rgba(10,10,10,.30);
+  }
+  @media (hover:hover){ button.card:hover, .card.press:hover { border-color: rgba(159,216,232,.35); } }
+  @media (hover:hover){ html.light button.card:hover, html.light .card.press:hover { border-color: rgba(38,118,143,.40); } }
+  /* ice glow — active + pressed states only */
+  .glow-ice { box-shadow: 0 0 0 1px rgba(159,216,232,.4), 0 0 20px -4px rgba(159,216,232,.5); }
+  .press.glow-primary:active { box-shadow: 0 0 26px -2px rgba(159,216,232,.65); }
+  @media (hover:hover){ .glow-primary:hover { box-shadow: 0 0 24px -4px rgba(159,216,232,.55); } }
+  /* #7 — in light theme, active/press states key off the deep ice (#26768F):
+     a tighter ring, not the bright dark-theme halo that looks alien on white. */
+  html.light .glow-ice { box-shadow: 0 0 0 1px rgba(38,118,143,.55), 0 3px 12px -5px rgba(38,118,143,.40); }
+  html.light .press.glow-primary:active { box-shadow: 0 0 16px -4px rgba(38,118,143,.50); }
+  @media (hover:hover){ html.light .glow-primary:hover { box-shadow: 0 5px 16px -6px rgba(38,118,143,.40); } }
+  /* ornamental texture — only paints outside the (opaque) phone */
+  body::before {
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background-image: radial-gradient(rgba(159,216,232,.06) 1px, transparent 1px);
+    background-size: 26px 26px;
+    -webkit-mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
+    mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
+  }
+  html.light body::before { background-image: radial-gradient(rgba(79,168,197,.10) 1px, transparent 1px); }
+
+  .profile-hero-overlay {
+    background: linear-gradient(180deg, rgba(10,10,10,.3) 0%, rgba(10,10,10,0) 40%, var(--bg) 100%);
+  }
+  html.light .profile-hero-overlay {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,0) 36%, rgba(255,255,255,.98) 100%),
+      linear-gradient(180deg, rgba(10,10,10,.08) 0%, rgba(10,10,10,0) 28%);
+  }
+  /* #5 — one canonical "floating control over a photo" recipe. Event Detail
+     header buttons and the Profile hero controls share it, so there is a single
+     over-image glass, distinct from .glass (which floats over the app bg). */
+  .glass-over-image, .profile-glass {
+    background: rgba(10,10,10,.46);
+    border: 1px solid rgba(245,241,234,.18);
+    backdrop-filter: blur(12px) saturate(1.25);
+    -webkit-backdrop-filter: blur(12px) saturate(1.25);
+  }
+  html.light .glass-over-image, html.light .profile-glass {
+    background: rgba(255,255,255,.72);
+    border-color: rgba(10,10,10,.12);
+    box-shadow: 0 12px 28px -22px rgba(10,10,10,.45);
+  }
+  /* Profile keeps its own text-color contract on top of the shared glass. */
+  .profile-glass { color: #F5F1EA; }
+  html.light .profile-glass { color: #0A0A0A; }
+  .profile-hero-text { color: #F5F1EA; }
+  .profile-hero-muted { color: rgba(245,241,234,.72); }
+  html.light .profile-hero-text { color: #0A0A0A; }
+  html.light .profile-hero-muted { color: rgba(10,10,10,.58); }
+  html.light .profile-hero-text .stamp,
+  html.light .profile-hero-text .smallcaps { color: rgba(10,10,10,.58) !important; }
+</style>
+</head>
+<body class="page-bg min-h-screen">
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script type="text/babel" data-presets="react">
+  const { useState, useRef, useEffect, useMemo } = React;
+
+  // === COPIED VERBATIM from index.html: IMG, Icon + HICONS, StatusBar, HomeIndicator ===
+
+  /* ========== curated imagery ========== */
+  const IMG = {
+    beachClub:  "./assets/pool-day.jpg",
+    pool:       "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=900&q=80&auto=format&fit=crop",
+    rooftop:    "https://images.unsplash.com/photo-1551918120-9739cb430c6d?w=900&q=80&auto=format&fit=crop",
+    restaurant: "https://images.unsplash.com/photo-1592861956120-e524fc739696?w=900&q=80&auto=format&fit=crop",
+    club:       "https://images.unsplash.com/photo-1545128485-c400e7702796?w=900&q=80&auto=format&fit=crop",
+    clubRed:    "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900&q=80&auto=format&fit=crop",
+    gym:        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&q=80&auto=format&fit=crop",
+    lounge:     "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=900&q=80&auto=format&fit=crop",
+    cocktail:   "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=900&q=80&auto=format&fit=crop",
+    beirut:     "https://images.unsplash.com/photo-1620553967747-50fdadc4b606?w=1200&q=80&auto=format&fit=crop",
+    saraFull:   "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&q=80&auto=format&fit=crop",
+  };
+
+  /* ========== Icon helper (Heroicons, inline) ==========
+     Heroicons outline, inlined as SVG so there's no icon CDN dependency at all.
+     Closest free stand-in for SF Symbols, which the SwiftUI build will use.
+     Call sites keep their lucide-style names; we map to Heroicon glyphs here.
+     `stroke` drives stroke-width (Heroicons outline is 1.5 by default).
+     instagram has no Heroicon (no brand glyphs) so it's a small custom mark.
+  ====================================================== */
+  const HICONS = {
+    "battery-full": '<path stroke-linecap="round" stroke-linejoin="round" d="M21 10.5h.375c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125H21M4.5 10.5H18V15H4.5v-4.5ZM3.75 18h15A2.25 2.25 0 0 0 21 15.75v-6a2.25 2.25 0 0 0-2.25-2.25h-15A2.25 2.25 0 0 0 1.5 9.75v6A2.25 2.25 0 0 0 3.75 18Z"/>',
+    "sparkle": '<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/>',
+    "compass": '<path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/>',
+    "bookmark": '<path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/>',
+    "bookmark-fill": '<path fill="currentColor" stroke="none" d="M6.32 2.577a49.255 49.255 0 0 1 11.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 0 1-1.085.67L12 18.089l-7.165 3.583A.75.75 0 0 1 3.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93Z"/>',
+    "link": '<path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/>',
+    "paper-plane": '<path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/>',
+    "bell": '<path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/>',
+    "user": '<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>',
+    "search": '<path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>',
+    "arrow-right": '<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>',
+    "arrow-left": '<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/>',
+    "sliders-horizontal": '<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"/>',
+    "x": '<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>',
+    "share": '<path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"/>',
+    "map-pin": '<path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>',
+    "check": '<path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>',
+    "calendar": '<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/>',
+    "settings": '<path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>',
+    "instagram": '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/>',
+  };
+  function Icon({ name, size=18, stroke=1.5, className="" }){
+    const inner = HICONS[name] || HICONS["sparkle"];
+    return (
+      <svg className={"inline-block "+className} width={size} height={size}
+           viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke}
+           aria-hidden="true" style={{flexShrink:0}}
+           dangerouslySetInnerHTML={{__html: inner}}/>
+    );
+  }
+
+  /* ========== status bar / island / home indicator ========== */
+  function StatusBar(){
+    return (
+      <>
+        <div className="island"/>
+        <div className="statusbar">
+          <span>9:41</span>
+          <span className="flex items-center gap-1.5">
+            <span style={{fontSize:11}}>●●●●</span>
+            <span style={{fontSize:11}}>5G</span>
+            <Icon name="battery-full" size={16} stroke={1.5}/>
+          </span>
+        </div>
+      </>
+    );
+  }
+  function HomeIndicator(){
+    return (
+      <div className="absolute bottom-2 left-0 right-0 flex justify-center z-50 pointer-events-none">
+        <div className="w-32 h-1 rounded-full" style={{background:"var(--ink)", opacity:.7}}/>
+      </div>
+    );
+  }
+
+  function App(){
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center pt-20 pb-24">
+        <div className="mb-8 text-center">
+          <div className="stamp" style={{color:"var(--ink-mute)"}}>The List · Venue side · Prototype v0.1</div>
+          <div className="font-black text-[28px] leading-none mt-2">Venue flow</div>
+        </div>
+        <div className="iphone"><div className="iphone-screen">
+          <StatusBar/>
+          <div className="absolute inset-0 flex items-center justify-center" style={{background:"var(--bg)"}}>
+            <div className="font-black font-display-l text-[40px]">Venue</div>
+          </div>
+          <HomeIndicator/>
+        </div></div>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
