@@ -415,6 +415,24 @@
     );
   }
 
+  // Renders an image cropped to a fixed aspect frame using a stored transform.
+  // value: { src, scale, x, y } | null. ratio: e.g. "4/5". Empty state when null.
+  function FramedImage({ value, ratio="4/5", className="", empty="No image" }){
+    return (
+      <div className={"relative overflow-hidden rounded-[14px] "+className}
+           style={{aspectRatio:ratio, background:"var(--bg-elev)"}}>
+        {value && value.src ? (
+          <img src={value.src} alt="" draggable={false}
+            style={{position:"absolute", left:"50%", top:"50%",
+                    transform:`translate(-50%,-50%) translate(${value.x||0}px,${value.y||0}px) scale(${value.scale||1})`,
+                    maxWidth:"none", minWidth:"100%", minHeight:"100%", userSelect:"none"}}/>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center stamp" style={{color:"var(--ink-mute)"}}>{empty}</div>
+        )}
+      </div>
+    );
+  }
+
   // TODO replace in Task 5
   function makeVenue(){ return {}; }
   // TODO replace in Task 5
