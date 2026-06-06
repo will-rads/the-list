@@ -1234,8 +1234,100 @@
     );
   }
 
-  /* ========== ScreenVenueProfile — stub ========== */
-  function ScreenVenueProfile({ venue, group }){ return <ScreenStub title="Venue"/>; }
+  /* ========== ScreenVenueProfile — venue tab ========== */
+  function ScreenVenueProfile({ venue, group, onEdit, onLogout, onToast }){
+    const name = venue.name && venue.name.length > 0 ? venue.name : null;
+    const hasDesc = venue.description && venue.description.length > 0;
+
+    const SettingsRow = ({ label, onTap, muted }) => (
+      <button
+        onClick={onTap}
+        className="press w-full flex items-center justify-between py-4 text-left"
+        style={{ background: "transparent", border: "none" }}
+      >
+        <span className="text-[15px]" style={{ color: muted ? "var(--ink-mute)" : "var(--ink)" }}>{label}</span>
+        <Icon name="arrow-right" size={15} stroke={1.5} style={{ color: "var(--ink-mute)", flexShrink: 0 }}/>
+      </button>
+    );
+
+    return (
+      <div className="absolute inset-0 flex flex-col" style={{ background: "var(--bg)" }}>
+        <StatusBar/>
+
+        {/* Header */}
+        <div className="shrink-0 px-5 pt-[60px] pb-3">
+          <div className="font-black font-display-l text-[40px] leading-none">Venue</div>
+        </div>
+        <div className="hr-2 mx-5 mb-0 shrink-0"/>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto noscroll pb-24">
+
+          {/* Hero image */}
+          <div className="px-5 pt-5">
+            <FramedImage value={venue.heroImage} ratio="4/5" className="w-full"/>
+          </div>
+
+          {/* Name + type/area + description */}
+          <div className="px-5 pt-4">
+            {name ? (
+              <div className="font-black text-[22px] leading-tight">{name}</div>
+            ) : (
+              <div className="font-black text-[22px] leading-tight" style={{ color: "var(--ink-mute)" }}>Unnamed venue</div>
+            )}
+            <div className="text-[13px] mt-1" style={{ color: "var(--ink-mute)" }}>
+              {venue.type} · {venue.area}
+            </div>
+            {hasDesc && (
+              <div className="text-[14px] mt-3 leading-relaxed" style={{ color: "var(--ink-2)" }}>
+                {venue.description}
+              </div>
+            )}
+          </div>
+
+          {/* Gallery */}
+          <div className="px-5 pt-6">
+            <div className="stamp mb-3">Photos</div>
+            <div className="grid grid-cols-4 gap-2">
+              {venue.images.map((im, i) => (
+                <FramedImage key={i} value={im} ratio="4/5" className="w-full" empty="—"/>
+              ))}
+            </div>
+          </div>
+
+          {/* Group / Independent */}
+          <div className="px-5 pt-6">
+            {group ? (
+              <div className="flex flex-col gap-3">
+                <span className="stamp px-3 py-1.5 rounded-full self-start" style={{ border: "1px solid var(--line-2)", color: "var(--ink-mute)" }}>
+                  Group · {group.name}
+                </span>
+                <div className="flex items-center justify-between py-3">
+                  <span className="text-[15px]" style={{ color: "var(--ink-mute)", opacity: 0.5 }}>Switch venue</span>
+                  <span className="stamp px-2.5 py-1 rounded-full" style={{ border: "1px solid var(--line)", color: "var(--ink-mute)", opacity: 0.5 }}>Soon</span>
+                </div>
+              </div>
+            ) : (
+              <span className="stamp" style={{ color: "var(--ink-mute)" }}>Independent venue</span>
+            )}
+          </div>
+
+          {/* Settings list */}
+          <div className="px-5 pt-5">
+            <div className="stamp mb-1">Settings</div>
+            <div style={{ borderTop: "1px solid var(--line)" }}>
+              <SettingsRow label="Edit venue" onTap={onEdit}/>
+              <div style={{ height: 1, background: "var(--line)" }}/>
+              <SettingsRow label="Switch to member" onTap={() => { window.location.href = "./index.html"; }}/>
+              <div style={{ height: 1, background: "var(--line)" }}/>
+              <SettingsRow label="Log out" onTap={onLogout}/>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
 
   /* ========== ScreenPostEvent — 4-step post wizard ========== */
   function ScreenPostEvent({ venue, onPublish, onCancel }){
@@ -1455,7 +1547,7 @@
       <>
         {tab === "events"     && <ScreenEvents events={events} venue={venue} onPost={()=>setStep("post")} onOpenEvent={openEvent}/>}
         {tab === "applicants" && <ScreenApplicants events={events} onReview={openReview}/>}
-        {tab === "venue"      && <ScreenVenueProfile venue={venue} group={group}/>}
+        {tab === "venue"      && <ScreenVenueProfile venue={venue} group={group} onEdit={()=>setStep("onboard-venue")} onLogout={()=>setStep("intro")} onToast={showToast}/>}
         <VenueTabBar tab={tab} onTab={setTab}/>
       </>
     );
