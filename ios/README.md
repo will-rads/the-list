@@ -1,6 +1,6 @@
 # iOS — SwiftUI app (placeholder)
 
-Empty for now. We scaffold the Xcode project once `web/prototype.html` is approved by Radwan + Dima.
+Empty for now. We scaffold the Xcode project from the approved live prototype: `web/index.html` v0.4.
 
 ## Planned structure
 
@@ -50,4 +50,4 @@ ios/
 1. Open Xcode → New Project → SwiftUI app
 2. Bundle ID: `com.thelist.app`
 3. Wire Supabase Swift SDK
-4. Port `prototype.html` screen by screen
+4. Port `web/index.html` screen by screen

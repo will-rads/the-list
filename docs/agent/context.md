@@ -84,12 +84,12 @@ Their structure works. We **copy structure, throw away visual language**.
 ```text
 Today (prototype phase)
 ═══════════════════════
-web/gallery.html      → 12 phones in two rows (dark + light), reference design
-web/mockup-v1.html    → original 12-phone version (Carbon Black + Ice Blue + Plus Jakarta Sans)
-web/prototype.html    → SINGLE phone, tap-through navigable (NEXT TO BUILD)
+web/index.html        → v0.4 live single-phone tap-through prototype, shipped on Vercel
+web/gallery.html      → archived alternate/reference design
+web/mockup-v1.html    → archived original carbon black + ice blue reference
 
 
-Soon (build phase)
+Now (build phase)
 ══════════════════
 ios/                  → SwiftUI app
 ├── TheList.xcodeproj

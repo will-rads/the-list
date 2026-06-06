@@ -2,7 +2,7 @@
 
 ## Where we are right now
 
-**Phase: prototype user-side complete — merged to `main`, deployed to Vercel** (`the-list-omega.vercel.app`). The single-phone tap-through prototype (`web/index.html`) now has a TSS-style grainy **entry/intro screen** (3 AI-generated Beirut nightlife clips, 5s each, crossfading), the full **user-side interaction pass** (save/bookmark + Saved tab, Share sheet, Settings sheet, verify→verified flip, finished `SectionHead`/`StatusPill`/`DateChip`/`Segmented` treatments, decorative punctuation stripped), and the locked single-font Plus Jakarta Sans + ice/carbon system. Design direction locked in `PRODUCT.md` + `DESIGN.md`. Next: SwiftUI planning / port → lock working name (test with Dima's top 30) → venue anchor contracts → Supabase scaffold.
+**Phase: both marketplace sides prototyped.** User side (`web/index.html`) is v0.4, merged to `main`, deployed to Vercel (`the-list-omega.vercel.app`) — TSS-style grainy entry, full interaction pass, and now a 4-image swipeable event gallery + TikTok on the profile. **Venue side (`web/venue.html`) is now built** on branch `venue-side` (mocked, not merged/pushed): role-split entry, group-optional onboarding, image crop-to-frame, Events dashboard, post-event with seats + soft gender mix, Tinder applicant swipe (quality 0–10 + IG/TikTok + links) with a soft gender counter + Picked, Venue tab. Built brainstorm → spec → plan → subagent-driven from `docs/superpowers/`. Same locked carbon+ice+Plus Jakarta Sans system. Next: Will's browser walkthrough → merge decision → SwiftUI port (both sides).
 
 ```text
 [done]      Voice notes transcribed + plan synthesized
@@ -17,8 +17,8 @@
 [done]      User-side interaction pass (v0.3): Saved tab, Share + Settings sheets, verify flip, finished dividers
 [done]      TSS-style grainy entry screen (v0.4): 3 Veo clips from Nano Banana stills, crossfading montage
 [done]      Reviewed → merged to main → deployed to Vercel (the-list-omega.vercel.app)
-[review]    Texture-pass variant (web/index-textured.html, branch design/texture-pass) — Will picks: shipped vs textured look
-[doing]     SwiftUI planning / port  ◄── HERE
+[done]      Venue side prototype (web/venue.html, branch venue-side): role split, onboarding, post-event + gender mix, applicant swipe + counter, member-side gallery + TikTok
+[doing]     Venue-side walkthrough + merge decision → then SwiftUI port (both sides)  ◄── HERE
 [next]      Lock working name (test with Dima's top 30)
 [next]      Venue anchor contracts (5-10 Beirut venues)
 [next]      Supabase backend scaffold
@@ -55,7 +55,7 @@ Lock the v1 spec. See `context.md` in this folder for the table of defaults.
 ```text
 Track A — Build (Will)                Track B — Sell (Radwan + Dima)
 ──────────────────────                ─────────────────────────────
-prototype.html                        target list: 5-10 anchor venues
+web/index.html reference               target list: 5-10 anchor venues
 SwiftUI scaffold                      Kee Beirut + 2 clubs
 Phyllo Identity wired                 2-3 restaurants
 Phyllo Connect for verify             1-2 beach clubs

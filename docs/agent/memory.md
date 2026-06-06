@@ -6,13 +6,48 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## Current state (one line)
 
-**Two prototype variants now exist, both for review.** (A) `web/index.html` = **v0.4**, the shipped/live build on `main` (`f0156a3`) → Vercel `the-list-omega.vercel.app`. (B) `web/index-textured.html` = **texture-pass build**, a side-by-side copy on branch `design/texture-pass` (`f3fbfb5`, pushed to origin, **NOT merged**) that adds a retro/analog texture layer (app-wide grain + CRT scanlines, chromatic aberration, screen-glow + VHS frame on media, halation on ice CTAs/reveal ring, chunkier pills, heavier THE/LIST wordmark) — carbon-black + ice + single Plus Jakarta Sans all preserved, no palette/personality change. Will is choosing between the two looks; "texture only" direction confirmed (not the warm cream/olive/lilac pivot from `research/inspo-1.jpg`). Neither variant browser-rendered yet — open both locally to compare. To review: serve `web/` and open `/index.html` vs `/index-textured.html`. **Phase: prototype shipped + live; texture variant awaiting Will's pick. Next: pick the look → (if textured wins, promote it to index.html + merge) → SwiftUI planning / port.**
+**Venue side built — `web/venue.html` prototype done on branch `venue-side` (not merged, not pushed).** The marketplace now has both sides. Member side `web/index.html` = v0.4 (live on `main` → Vercel), now with a 4-image swipeable event gallery + TikTok on the profile. New venue side `web/venue.html` (mocked, same carbon+ice+Plus Jakarta Sans system): role-split entry (Member/Business door on the member intro), group-optional onboarding, image crop-to-frame, Events dashboard, post-event with seats + soft gender mix, Tinder applicant swipe (quality 0–10 + IG/TikTok + social links) with a soft gender counter + Picked list, Venue tab. Built subagent-driven from `docs/superpowers/plans/2026-06-06-venue-side.md`. **Not browser-verified yet — Will's walkthrough pending. Next: walkthrough → merge decision → SwiftUI port (both sides).**
+
+---
+
+## 2026-06-06 — Venue side prototype built (`web/venue.html`, branch `venue-side`)
+
+Built the whole second side of the marketplace as a new mocked prototype, end to end, via the brainstorm → spec → plan → subagent-driven-execution pipeline. Spec: `docs/superpowers/specs/2026-06-06-venue-side-design.md`. Plan: `docs/superpowers/plans/2026-06-06-venue-side.md` (20 tasks). All on branch `venue-side` — **not merged to `main`, not pushed**.
+
+**Decisions locked in brainstorm:** HTML prototype first (match member side, SwiftUI later); new file `web/venue.html` (keep the live member build stable) with a shared role-select; gender mix = **soft target + live counter** (fills, never blocks); images = **real local file pick + crop-to-frame** (FileReader + CSS transform, no upload/server); quality rating = **single 0–10** on the swipe card; auth = **mocked role login** (real auth is the Supabase phase); nav = **3-tab bottom bar** (Events / Applicants / Venue), consistent with the member side.
+
+**What shipped in `web/venue.html`** (self-contained, reuses the member design system verbatim — carbon `#0A0A0A` + ice `#9FD8E8` + one-family Plus Jakarta Sans, flat-at-rest, glass only on the tab bar):
+- **Entry role split** — the member intro (`web/index.html`) gained a "List your venue · Business" door → `venue.html`. Venue splash (static grainy, no video assets) → mocked login (any input enters).
+- **Onboarding** — optional Group step (skippable: "I'm independent") → Venue assets (name / type / area / description + hero crop + 4 gallery photos). Group → Venue → Event hierarchy.
+- **Reusable image pipeline** — `ImageCropper` (local file → drag/zoom in a fixed 4:5 frame → `{src,scale,x,y}`) + `FramedImage` (renders that transform anywhere). No upload, no canvas.
+- **Events dashboard** — Live / Draft / Past segmented + Post CTA. **Post-event flow** (4 steps): basics → seats + **soft gender mix** (Girls/Guys steppers or "no preference" total) → hero crop → review → publish (prepends a Live event).
+- **Applicant swipe** — `ScreenReview`: a `SwipeCard` deck (photo, name, **quality 0–10**, **IG + TikTok** followers, tappable Instagram/TikTok/other links), ✗/✓ buttons, a **soft live counter** (`Girls x/15 · Guys y/5`, fills but never blocks a swipe past target), ending on a **Picked** list.
+- **Venue tab** — hero + assets + 4 gallery thumbs, group chip, calm settings (Edit venue / Switch to member / Log out — neutral ink, no red).
+- **Data model** — vendor-neutral mocks (`makeVenue`/`makeEvent`/`SEED_EVENTS`/`APPLICANTS` with `gender`, `tiktok_followers`, `socials`), mirroring a normalized provider response so it stays swappable (same posture as the member side's `mockCreatorDataFetch`).
+
+**Member side (`web/index.html`) additions:** event detail hero is now a **4-image swipeable gallery** (scroll-snap + ice dot indicators); Profile shows **TikTok followers** beside IG (small, muted, not a third hero — Reputation still leads).
+
+**Verification:** no test framework (per the prototype's standing model); each task verified by a node static checker (`web/check-venue.mjs`: bracket balance + single `createRoot` + required-token presence) and two-stage subagent review (spec compliance, then code quality). Two real bugs the static check could NOT catch were caught by review and fixed: (1) duplicated React/ReactDOM/Babel CDN tags in the venue scaffold (head + body) → would break rendering; (2) a `useState` placed **after** App's conditional early returns → Rules-of-Hooks crash on reaching the `done` step. **Not browser-rendered/eyeballed yet** (no Playwright in env) — Will's walkthrough is the next gate. Serve `web/` and open `/venue.html` (and re-check `/index.html` for the gallery + TikTok).
+
+**New helper committed:** `web/check-venue.mjs` (static checker; reusable for future venue.html edits).
 
 ---
 
 Prototype `web/index.html` at **v0.4 — merged to `main` (`9c4a041`) + pushed + auto-deployed to Vercel** (`the-list-omega.vercel.app`). v0.4 = TSS-style grainy **entry/intro screen**: new `onboardStep:"intro"` first step plays 3 AI-generated grainy Beirut nightlife clips (5s each, crossfading + looping) behind a centered THE LIST wordmark + "By invitation only" + Apply for access (ice) / I have an invite (ghost). Pipeline: gemini-analyser on `research/screen-rec-1.mp4` → Nano Banana Pro stills (Raouché / Batroun / rooftop) → Veo 3.1 image-to-video → ffmpeg to 5s/720×1280/muted → `web/assets/intro-{1,2,3}.{mp4,jpg}` (intro-2 uses a text-to-video fallback — the beachwear still tripped Veo's safety filter).
 
 v0.4 sits on top of **v0.3 — user-side interaction pass** (also merged): every visible control has a behavior (save/bookmark + new **Saved** tab via pill-`Segmented`, Share sheet, Settings sheet, verify→verified flip, toasts); thin section half-hairlines replaced by `SectionHead` + `StatusPill` / `DateChip` / `Toggle`; decorative punctuation stripped; **Two-Family → One-Family Rule** reconciled across all docs; vendor-neutral profile-data sourcing table in `context.md`. Pool Day asset unchanged: `web/assets/pool-day.jpg` (159 KB) via `IMG.beachClub`. Core flow unchanged throughout (intro → home → detail → apply → picked → invites/profile). **Phase: prototype shipped + live. Next: SwiftUI planning / port → lock working name (Dima top 30) → venue anchors → Supabase.** Not yet visually browser-verified — open `web/index.html` to watch the intro montage; intro-2 is a t2v clip, not an animation of its still.
+
+---
+
+## 2026-06-02 — Texture variant killed, regular look chosen
+
+Will picked the **regular look**. The texture-pass exploration is dead. Removed everywhere in one pass:
+
+- `web/index-textured.html` — gone (only ever existed on the branch; never on `main`).
+- Local branch `design/texture-pass` (`61beba3`) — deleted.
+- Remote branch `origin/design/texture-pass` — deleted from GitHub (Will OK'd the push).
+
+`web/index.html` (v0.4) is now the sole prototype, unchanged. Note: `main` still carries one **unpushed** doc commit `d20299e` ("docs: record texture-pass variant for handoff") — harmless, just documents the now-dead variant; left unpushed per the don't-push-without-OK rule. The build details of the variant are preserved in the entry directly below for history. **Next: SwiftUI planning / port.**
 
 ---
 
