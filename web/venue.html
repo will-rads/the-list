@@ -401,21 +401,169 @@
     );
   }
 
-  function App(){
+  // Transient toast inside the phone frame — copied VERBATIM from index.html.
+  // Gives minor controls a visible reply.
+  function Toast({ msg }){
+    if(!msg) return null;
     return (
+      <div className="absolute left-0 right-0 flex justify-center z-[60] pointer-events-none" style={{bottom:104}}>
+        <div key={msg} className="anim-up px-4 py-2.5 rounded-full glass-over-image text-[12px] flex items-center gap-2" style={{maxWidth:"82%"}}>
+          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:"var(--ice)"}}/>
+          <span className="truncate">{msg}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // TODO replace in Task 5
+  function makeVenue(){ return {}; }
+  // TODO replace in Task 5
+  const SEED_EVENTS = [];
+
+  /* ========== ScreenVenueIntro — business splash ========== */
+  function ScreenVenueIntro({ onList, onLogin }){
+    return (
+      <div className="absolute inset-0 anim-fade" style={{background:"#050505", color:"#F5F1EA"}}>
+        {/* Static dark background — no video assets needed */}
+        <div className="absolute inset-0 grain" style={{background:"#050505"}}/>
+        {/* Radial vignette */}
+        <div className="absolute inset-0 pointer-events-none" style={{boxShadow:"inset 0 0 170px 46px rgba(0,0,0,.82)"}}/>
+        {/* Top + bottom scrims */}
+        <div className="absolute inset-0 pointer-events-none" style={{background:"linear-gradient(180deg, rgba(5,5,5,.72) 0%, rgba(5,5,5,0) 24%, rgba(5,5,5,0) 46%, rgba(5,5,5,.92) 100%)"}}/>
+
+        <StatusBar/>
+
+        <div className="absolute inset-0 z-10 flex flex-col px-7 pt-[120px] pb-10">
+          {/* Centered wordmark lockup */}
+          <div className="flex-1 flex flex-col items-center justify-center text-center -mt-6">
+            <div className="anim-fade stamp" style={{color:"rgba(245,241,234,.78)"}}>Est. MMXXVI · Beirut</div>
+            <div className="font-black font-display-l anim-up" style={{fontSize:66, lineHeight:.88, letterSpacing:".04em", marginTop:14, textShadow:"0 2px 40px rgba(0,0,0,.6)"}}>THE<br/>LIST</div>
+            <div className="anim-up" style={{marginTop:18, fontSize:12, letterSpacing:".26em", textTransform:"uppercase", color:"rgba(245,241,234,.82)"}}>For the rooms that matter</div>
+          </div>
+
+          {/* Bottom actions */}
+          <div className="flex flex-col gap-3 anim-up">
+            <button onClick={onList} className="press glow-primary w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em]" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+              List your venue
+            </button>
+            <button onClick={onLogin} className="press w-full h-[58px] rounded-full font-medium text-[13px] uppercase tracking-[.2em]" style={{background:"transparent", color:"#F5F1EA", border:"1px solid rgba(245,241,234,.32)"}}>
+              Business login
+            </button>
+          </div>
+
+          {/* Member link */}
+          <div className="text-center mt-4 anim-up">
+            <button onClick={()=>{ window.location.href = "./index.html"; }} className="press" style={{color:"rgba(245,241,234,.5)", fontSize:12, letterSpacing:".16em", textTransform:"uppercase", background:"transparent", border:"none"}}>
+              I'm a member
+            </button>
+          </div>
+        </div>
+
+        <HomeIndicator/>
+      </div>
+    );
+  }
+
+  /* ========== ScreenVenueLogin — mocked login ========== */
+  function ScreenVenueLogin({ onDone }){
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const canSubmit = email.length >= 3 && password.length >= 3;
+
+    return (
+      <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
+          <div className="font-black font-display-l text-[44px] leading-[.95] tracking-tight">Sign in</div>
+          <div className="text-[13px] mt-3" style={{color:"var(--ink-2)"}}>Manage your venue and its drops.</div>
+
+          <div className="mt-10 space-y-5">
+            <div>
+              <div className="stamp mb-2">Work email</div>
+              <input
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                type="text"
+                placeholder="you@yourvenue.com"
+                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+            <div>
+              <div className="stamp mb-2">Password</div>
+              <input
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                type="password"
+                placeholder="••••••••"
+                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+          </div>
+
+          <div className="flex-1"/>
+
+          <button
+            onClick={canSubmit ? onDone : undefined}
+            disabled={!canSubmit}
+            className={"press w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em] "+(canSubmit ? "glow-primary" : "")}
+            style={{
+              background: canSubmit ? "var(--ice)" : "var(--bg-elev2)",
+              color: canSubmit ? "var(--ice-ink)" : "var(--ink-mute)"
+            }}
+          >
+            Sign in
+          </button>
+          <div className="text-center text-[11px] mt-3" style={{color:"var(--ink-mute)"}}>New venue? Signing in sets you up.</div>
+        </div>
+        <HomeIndicator/>
+      </div>
+    );
+  }
+
+  /* ========== APP — onboarding state machine ========== */
+  function App(){
+    const [step, setStep] = useState("intro");
+    // intro | login | onboard-group | onboard-venue | done
+    const [light, setLight] = useState(false);
+    const [group, setGroup] = useState(null);          // {id,name,logo} | null (independent)
+    const [venue, setVenue] = useState(makeVenue());   // venue being registered
+    const [events, setEvents] = useState(SEED_EVENTS); // their drops
+    const [tab, setTab] = useState("events");          // events | applicants | venue
+    const [toast, setToast] = useState(null);
+    const toastTimer = useRef(null);
+
+    useEffect(() => { document.documentElement.classList.toggle('light', light); }, [light]);
+    const showToast = (msg) => { setToast(msg); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(()=>setToast(null), 2200); };
+
+    // wrap: page chrome (theme toggle + explanatory card + phone frame + Toast), like index.html's App return
+    const wrap = (node) => (
       <div className="min-h-screen w-full flex flex-col items-center pt-20 pb-24">
+        <button className="theme-toggle" onClick={() => setLight(l => !l)}><span className="dot"></span>{light ? 'Light' : 'Dark'} · switch</button>
         <div className="mb-8 text-center">
           <div className="stamp" style={{color:"var(--ink-mute)"}}>The List · Venue side · Prototype v0.1</div>
           <div className="font-black text-[28px] leading-none mt-2">Venue flow</div>
         </div>
         <div className="iphone"><div className="iphone-screen">
-          <StatusBar/>
-          <div className="absolute inset-0 flex items-center justify-center" style={{background:"var(--bg)"}}>
-            <div className="font-black font-display-l text-[40px]">Venue</div>
-          </div>
-          <HomeIndicator/>
+          {node}
+          <Toast msg={toast}/>
         </div></div>
       </div>
+    );
+
+    if (step === "intro") return wrap(<ScreenVenueIntro onList={()=>setStep("login")} onLogin={()=>setStep("login")}/>);
+    if (step === "login") return wrap(<ScreenVenueLogin onDone={()=>setStep("onboard-group")}/>);
+
+    // Fallback for steps not yet built (onboard-group, onboard-venue, done) — placeholder so nothing crashes.
+    return wrap(
+      <>
+        <StatusBar/>
+        <div className="absolute inset-0 flex items-center justify-center" style={{background:"var(--bg)"}}>
+          <div className="font-black font-display-l text-[34px]" style={{color:"var(--ink-mute)"}}>{step}</div>
+        </div>
+        <HomeIndicator/>
+      </>
     );
   }
   ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
