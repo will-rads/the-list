@@ -433,10 +433,61 @@
     );
   }
 
-  // TODO replace in Task 5
-  function makeVenue(){ return {}; }
-  // TODO replace in Task 5
-  const SEED_EVENTS = [];
+  const VENUE_TYPES = ["Club","Restaurant","Beach","Lounge","Gym"];
+  const BEIRUT_AREAS = ["Mar Mikhael","Gemmayze","Achrafieh","Hamra","Badaro","Saifi","Manara","Jiyeh","Batroun"];
+
+  function makeVenue(over={}){ return {
+    id: "venue-1", groupId: null, name: "", type: "Club", area: "Mar Mikhael",
+    description: "", heroImage: null, images: [null,null,null,null], ...over,
+  }; }
+
+  let _evt = 0;
+  function makeEvent(over={}){ return {
+    id: "evt-"+(++_evt), venueId: "venue-1", title: "", type: "Club", date: "", time: "",
+    mix: { girls: 15, guys: 5 },   // null === no gender preference
+    seats: 20, heroImage: null, exchange: "1 Story + venue tag", status: "draft", ...over,
+  }; }
+
+  // A couple of pre-seeded drops so the dashboard isn't empty on first load.
+  const SEED_EVENTS = [
+    makeEvent({ title:"Pool Day", type:"Beach", date:"Sun · 25 May", time:"14:00",
+                mix:{girls:15,guys:5}, seats:20, status:"live",
+                heroImage:{ src: IMG.beachClub, scale:1, x:0, y:0 } }),
+    makeEvent({ title:"Late Lounge", type:"Lounge", date:"Sun · 25 May", time:"22:00",
+                mix:null, seats:18, status:"draft",
+                heroImage:{ src: IMG.lounge, scale:1, x:0, y:0 } }),
+  ];
+
+  // Applicants for the swipe deck (vendor-neutral; mirrors a normalized provider row).
+  const APPLICANTS = [
+    { id:"a1", name:"Sara Capriotti", gender:"female", quality_score:0.94, photo:IMG.saraFull,
+      instagram_followers:28400, tiktok_followers:51200,
+      socials:{ instagram:"https://instagram.com/capriottisara", tiktok:"https://tiktok.com/@capriottisara", other:null } },
+    { id:"a2", name:"Karim Haddad", gender:"male", quality_score:0.88, photo:IMG.cocktail,
+      instagram_followers:14200, tiktok_followers:9800,
+      socials:{ instagram:"https://instagram.com/karim", tiktok:"https://tiktok.com/@karim", other:null } },
+    { id:"a3", name:"Lea Nassar", gender:"female", quality_score:0.91, photo:IMG.restaurant,
+      instagram_followers:46100, tiktok_followers:120300,
+      socials:{ instagram:"https://instagram.com/lea", tiktok:null, other:"https://leanassar.com" } },
+    { id:"a4", name:"Tariq Bou", gender:"male", quality_score:0.79, photo:IMG.club,
+      instagram_followers:8200, tiktok_followers:21000,
+      socials:{ instagram:"https://instagram.com/tariq", tiktok:"https://tiktok.com/@tariq", other:null } },
+    { id:"a5", name:"Nour Khoury", gender:"female", quality_score:0.86, photo:IMG.pool,
+      instagram_followers:33000, tiktok_followers:5400,
+      socials:{ instagram:"https://instagram.com/nour", tiktok:"https://tiktok.com/@nour", other:null } },
+    { id:"a6", name:"Maya Fares", gender:"female", quality_score:0.97, photo:IMG.lounge,
+      instagram_followers:88000, tiktok_followers:240000,
+      socials:{ instagram:"https://instagram.com/maya", tiktok:"https://tiktok.com/@maya", other:null } },
+    { id:"a7", name:"Jad Aoun", gender:"male", quality_score:0.72, photo:IMG.beachClub,
+      instagram_followers:5100, tiktok_followers:3200,
+      socials:{ instagram:"https://instagram.com/jad", tiktok:null, other:null } },
+    { id:"a8", name:"Yara Saad", gender:"female", quality_score:0.83, photo:IMG.saraFull,
+      instagram_followers:19500, tiktok_followers:42000,
+      socials:{ instagram:"https://instagram.com/yara", tiktok:"https://tiktok.com/@yara", other:null } },
+  ];
+
+  const fmtK = (n) => n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+"k" : ""+n;
+  const quality10 = (q) => (q*10).toFixed(1);   // 0.94 -> "9.4"
 
   /* ========== ScreenVenueIntro — business splash ========== */
   function ScreenVenueIntro({ onList, onLogin }){
