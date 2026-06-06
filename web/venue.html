@@ -558,6 +558,12 @@
   const fmtK = (n) => n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+"k" : ""+n;
   const quality10 = (q) => (q*10).toFixed(1);   // 0.94 -> "9.4"
 
+  function tally(pickedIds, pool){
+    const ids = new Set(pickedIds); let girls=0, guys=0;
+    pool.forEach(a => { if (ids.has(a.id)) (a.gender==="female" ? girls++ : guys++); });
+    return { girls, guys };
+  }
+
   /* ========== ScreenVenueIntro — business splash ========== */
   function ScreenVenueIntro({ onList, onLogin }){
     return (
@@ -1162,6 +1168,72 @@
     );
   }
 
+  /* ========== ScreenReview — swipe deck ========== */
+  function ScreenReview({ event, pool, onClose }){
+    const [idx, setIdx] = useState(0);
+    const [picked, setPicked] = useState([]);   // applicant ids
+    const t = tally(picked, pool);
+    const target = event.mix;                    // {girls,guys} | null
+    const done = idx >= pool.length;
+    const a = pool[idx];
+
+    const decide = (yes) => {
+      if (yes && a) setPicked(p => [...p, a.id]);
+      setIdx(i => i + 1);
+    };
+
+    return (
+      <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={onClose} className="stamp" style={{color:"var(--ink-mute)"}}>Close</button>
+          <div className="stamp" style={{color:"var(--ink-mute)"}}>{event.title}</div>
+        </div>
+
+        {target ? (
+          <div className="flex gap-3 mb-4 text-[12px]">
+            <div className="flex-1 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+              Girls <span className="font-mono" style={{color:"var(--ice)"}}>{t.girls}</span> / {target.girls}
+            </div>
+            <div className="flex-1 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+              Guys <span className="font-mono" style={{color:"var(--ice)"}}>{t.guys}</span> / {target.guys}
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4 text-[12px] px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+            Picked <span className="font-mono" style={{color:"var(--ice)"}}>{picked.length}</span> / {event.seats}
+          </div>
+        )}
+
+        {done ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
+            <div className="font-black font-display-l text-[30px]">All reviewed</div>
+            <div className="text-[13px]" style={{color:"var(--ink-2)"}}>You picked {picked.length}.</div>
+            <div className="w-full mt-4 space-y-2 overflow-y-auto">
+              {pool.filter(x=>picked.includes(x.id)).map(x => (
+                <div key={x.id} className="flex items-center gap-3 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+                  <FramedImage value={{src:x.photo,scale:1,x:0,y:0}} ratio="1/1" className="w-10 h-10"/>
+                  <div className="flex-1 text-left text-[14px]">{x.name}</div>
+                  <div className="font-mono text-[13px]" style={{color:"var(--ice)"}}>{quality10(x.quality_score)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 flex items-center"><SwipeCard a={a}/></div>
+            <div className="flex items-center justify-center gap-8 mt-5">
+              <button onClick={()=>decide(false)} className="press w-16 h-16 rounded-full flex items-center justify-center"
+                      style={{border:"1px solid var(--line-2)"}}><Icon name="x" size={26}/></button>
+              <button onClick={()=>decide(true)} className="press glow-primary w-16 h-16 rounded-full flex items-center justify-center"
+                      style={{background:"var(--ice)", color:"var(--ice-ink)"}}><Icon name="check" size={26}/></button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
   /* ========== ScreenVenueProfile — stub ========== */
   function ScreenVenueProfile({ venue, group }){ return <ScreenStub title="Venue"/>; }
 
@@ -1370,7 +1442,9 @@
     if (step === "onboard-group") return wrap(<ScreenOnboardGroup group={group} setGroup={setGroup} onNext={()=>setStep("onboard-venue")}/>);
     if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} setVenue={setVenue} group={group} onDone={()=>{ setStep("done"); setTab("events"); }}/>);
 
-    const openEvent = (e) => { showToast("Open from the Applicants tab to review"); }; // rewired in Task 15
+    const [reviewEvent, setReviewEvent] = useState(null);
+    const openReview = (e) => { setReviewEvent(e); setStep("review-deck"); };
+    const openEvent = (e) => { e.status === "live" ? openReview(e) : showToast("Draft — editing coming soon"); };
     const publishEvent = (draft) => {
       setEvents(es => [{ ...draft, status: "live" }, ...es]);
       setStep("done"); setTab("events");
@@ -1380,13 +1454,15 @@
     if (step === "done") return wrap(
       <>
         {tab === "events"     && <ScreenEvents events={events} venue={venue} onPost={()=>setStep("post")} onOpenEvent={openEvent}/>}
-        {tab === "applicants" && <ScreenApplicants events={events} onReview={openEvent}/>}
+        {tab === "applicants" && <ScreenApplicants events={events} onReview={openReview}/>}
         {tab === "venue"      && <ScreenVenueProfile venue={venue} group={group}/>}
         <VenueTabBar tab={tab} onTab={setTab}/>
       </>
     );
 
-    // Generic fallback for steps not yet built (post, review-deck).
+    if (step === "review-deck") return wrap(<ScreenReview event={reviewEvent} pool={APPLICANTS} onClose={()=>{ setStep("done"); setTab("applicants"); }}/>);
+
+    // Generic fallback for steps not yet built.
     return wrap(
       <>
         <StatusBar/>
