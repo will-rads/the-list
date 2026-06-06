@@ -384,11 +384,11 @@ function mockCreatorDataFetch(handle){
 }
 
 const EVENTS = [
-  { id:"pool",   title:"Pool Day",        venue:"Cyan Beach Club",     area:"Jiyeh",       date:"Sun · 25 May",  time:"14:00",  img:IMG.beachClub,  type:"Beach",      seats:20, applied:137, badge:"Open" },
-  { id:"sound",  title:"Sound Bath",      venue:"Pyrite Mar Mikhael",  area:"Mar Mikhael", date:"Sun · 25 May",  time:"23:00",  img:IMG.club,       type:"Club",       seats:30, applied:212, badge:"24h left" },
-  { id:"tasting",title:"Chef Tasting",    venue:"Em Sherif Café",      area:"Achrafieh",   date:"Sat · 24 May",  time:"20:00",  img:IMG.restaurant, type:"Restaurant", seats:12, applied:88,  badge:"Closing" },
-  { id:"sunset", title:"Rooftop Sundown", venue:"Sporting",            area:"Manara",      date:"Sat · 24 May",  time:"18:30",  img:IMG.pool,       type:"Pool",       seats:25, applied:154, badge:"" },
-  { id:"loungenight", title:"Late Lounge", venue:"Centrale",          area:"Saifi",       date:"Sun · 25 May",  time:"22:00",  img:IMG.lounge,     type:"Lounge",     seats:18, applied:101, badge:"" },
+  { id:"pool",   title:"Pool Day",        venue:"Cyan Beach Club",     area:"Jiyeh",       date:"Sun · 25 May",  time:"14:00",  img:IMG.beachClub,  type:"Beach",      seats:20, applied:137, badge:"Open",      gallery:[IMG.beachClub, IMG.pool, IMG.cocktail, IMG.beirut] },
+  { id:"sound",  title:"Sound Bath",      venue:"Pyrite Mar Mikhael",  area:"Mar Mikhael", date:"Sun · 25 May",  time:"23:00",  img:IMG.club,       type:"Club",       seats:30, applied:212, badge:"24h left",  gallery:[IMG.club, IMG.clubRed, IMG.cocktail, IMG.lounge] },
+  { id:"tasting",title:"Chef Tasting",    venue:"Em Sherif Café",      area:"Achrafieh",   date:"Sat · 24 May",  time:"20:00",  img:IMG.restaurant, type:"Restaurant", seats:12, applied:88,  badge:"Closing",   gallery:[IMG.restaurant, IMG.lounge, IMG.cocktail] },
+  { id:"sunset", title:"Rooftop Sundown", venue:"Sporting",            area:"Manara",      date:"Sat · 24 May",  time:"18:30",  img:IMG.pool,       type:"Pool",       seats:25, applied:154, badge:"",          gallery:[IMG.pool, IMG.rooftop, IMG.beirut, IMG.cocktail] },
+  { id:"loungenight", title:"Late Lounge", venue:"Centrale",          area:"Saifi",       date:"Sun · 25 May",  time:"22:00",  img:IMG.lounge,     type:"Lounge",     seats:18, applied:101, badge:"",          gallery:[IMG.lounge, IMG.cocktail, IMG.restaurant] },
 ];
 
 /* Seed profile = the normalized creator-data shape (estimated, pre-verify).
@@ -1026,7 +1026,9 @@ function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave }){
 
 /* ========== 03 — EVENT DETAIL ========== */
 function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved, onToggleSave, onToast }){
+  const [heroIdx, setHeroIdx] = useState(0);
   const e = event || EVENTS[0];
+  const gallery = e.gallery || [e.img];
   return (
     <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
       <StatusBar/>
@@ -1034,9 +1036,14 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
 
       {/* Hero */}
       <div className="relative h-[480px]">
-        <img src={e.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
-        <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.45) 0%, rgba(10,10,10,0) 25%, rgba(10,10,10,0) 55%, rgba(10,10,10,.95) 100%)"}}/>
-        <div className="absolute inset-0 grain"/>
+        <div className="flex overflow-x-auto snap-x snap-mandatory noscroll h-full" style={{scrollSnapType:"x mandatory"}}
+             onScroll={(ev)=>{ const w=ev.target.clientWidth; setHeroIdx(Math.round(ev.target.scrollLeft/w)); }}>
+          {gallery.map((src,i)=>(
+            <img key={i} src={src} alt="" className="w-full shrink-0 object-cover" style={{height:"480px", scrollSnapAlign:"center", minWidth:"100%"}}/>
+          ))}
+        </div>
+        <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.45) 0%, rgba(10,10,10,0) 25%, rgba(10,10,10,0) 55%, rgba(10,10,10,.95) 100%)", pointerEvents:"none"}}/>
+        <div className="absolute inset-0 grain" style={{pointerEvents:"none"}}/>
 
         <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
           <button onClick={onBack} className="press glass-over-image w-10 h-10 rounded-full flex items-center justify-center">
@@ -1057,6 +1064,14 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
           </div>
           <div className="font-black font-display-l text-[52px] leading-[0.92] tracking-tight">{e.title}</div>
           <div className="text-[12px] mt-3 max-w-[280px] opacity-80">Resident DJ Karim Sahli from 16:00. Mediterranean menu at sunset. Dress: swimwear and an attitude.</div>
+          {gallery.length > 1 && (
+            <div className="flex justify-center gap-1.5 mt-4">
+              {gallery.map((_,i)=>(
+                <div key={i} className="h-1.5 rounded-full transition-all"
+                     style={{width: i===heroIdx ? 16 : 6, background: i===heroIdx ? "var(--ice)" : "rgba(245,241,234,0.35)"}}/>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
