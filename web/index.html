@@ -362,6 +362,7 @@ function mockCreatorDataFetch(handle){
         bio: "Beirut · model · creator",
         account_type: "creator",          // personal | creator | business
         followers_count: 28400,
+        tiktok_followers: 51200,
         following_count: 712,
         media_count: 184,
         engagement_rate: 0.058,            // 5.8%
@@ -400,6 +401,7 @@ const SEED_PROFILE = {
   handle: "capriottisara",
   profile_picture_url: IMG.saraFull,
   followers_count: 28400,
+  tiktok_followers: 51200,
   engagement_rate: 0.058,
   data_status: "estimated",
   audience: {
@@ -1301,6 +1303,11 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
     ? (p.followers_count / 1000).toFixed(p.followers_count >= 10000 ? 0 : 1)
     : p.followers_count;
   const followersUnit = p.followers_count >= 1000 ? "k" : "";
+  const tiktokRaw = p.tiktok_followers || SEED_PROFILE.tiktok_followers;
+  const tiktokK = tiktokRaw >= 1000
+    ? (tiktokRaw / 1000).toFixed(tiktokRaw >= 10000 ? 0 : 1)
+    : tiktokRaw;
+  const tiktokUnit = tiktokRaw >= 1000 ? "k" : "";
   const engagementPct = (p.engagement_rate * 100).toFixed(1);
   const female = Math.round(p.audience.gender_split.female * 100);
   const male = Math.round(p.audience.gender_split.male * 100);
@@ -1346,7 +1353,8 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
         </div>
         <div className="flex flex-col items-end gap-3 pb-1">
           <div className="text-right">
-            <div className="font-mono text-[22px] leading-none">{followersK}<span style={{fontSize:13, color:"var(--ink-mute)"}}>{followersUnit}</span></div>
+            <div className="font-mono text-[22px] leading-none">{followersK}<span style={{fontSize:13, color:"var(--ink-mute)"}}>{followersUnit} IG</span></div>
+            <div className="font-mono text-[16px] leading-none mt-1">{tiktokK}<span style={{fontSize:11, color:"var(--ink-mute)"}}>{tiktokUnit} TikTok</span></div>
             <div className="stamp mt-1" style={{color:"var(--ink-mute)"}}>Followers</div>
           </div>
           <div className="text-right">
