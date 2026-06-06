@@ -1526,6 +1526,18 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
             I have an invite
           </button>
         </div>
+
+        {/* Business door — venues sign in on the other side */}
+        <div className="flex items-center gap-3 mt-4 anim-up" style={{opacity:.9}}>
+          <div className="flex-1 h-px" style={{background:"rgba(245,241,234,.16)"}}/>
+          <div className="stamp" style={{color:"rgba(245,241,234,.6)"}}>or</div>
+          <div className="flex-1 h-px" style={{background:"rgba(245,241,234,.16)"}}/>
+        </div>
+        <button onClick={()=>{ window.location.href = "./venue.html"; }}
+          className="press w-full h-[52px] rounded-full font-medium text-[12px] uppercase tracking-[.22em] anim-up mt-3"
+          style={{background:"transparent", color:"#F5F1EA", border:"1px solid rgba(245,241,234,.32)"}}>
+          List your venue · Business
+        </button>
       </div>
       <HomeIndicator/>
     </div>
