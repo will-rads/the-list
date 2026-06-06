@@ -1420,6 +1420,7 @@
     const toastTimer = useRef(null);
 
     useEffect(() => { document.documentElement.classList.toggle('light', light); }, [light]);
+    const [reviewEvent, setReviewEvent] = useState(null);
     const showToast = (msg) => { setToast(msg); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(()=>setToast(null), 2200); };
 
     // wrap: page chrome (theme toggle + explanatory card + phone frame + Toast), like index.html's App return
@@ -1442,7 +1443,6 @@
     if (step === "onboard-group") return wrap(<ScreenOnboardGroup group={group} setGroup={setGroup} onNext={()=>setStep("onboard-venue")}/>);
     if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} setVenue={setVenue} group={group} onDone={()=>{ setStep("done"); setTab("events"); }}/>);
 
-    const [reviewEvent, setReviewEvent] = useState(null);
     const openReview = (e) => { setReviewEvent(e); setStep("review-deck"); };
     const openEvent = (e) => { e.status === "live" ? openReview(e) : showToast("Draft — editing coming soon"); };
     const publishEvent = (draft) => {
