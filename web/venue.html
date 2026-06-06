@@ -1207,9 +1207,54 @@
         </div>
       );
     }
-    if (sub === "image") { /* TASK 12 */ }
-    // sub === "review"  /* TASK 12 */
-    return null;
+    if (sub === "image") {
+      return (
+        <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
+          <StatusBar/>
+          <button onClick={()=>setSub("seats")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+          <div className="font-black font-display-l text-[40px]">Image</div>
+          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Step 3 of 4 · The event photo</div>
+          <div className="text-[12px] mt-3" style={{color:"var(--ink-mute)"}}>Reuse your venue hero, or choose a new one.</div>
+          <div className="mt-5 flex-1 overflow-y-auto">
+            <ImageCropper
+              ratio="4/5"
+              value={draft.heroImage}
+              label="Event photo"
+              onChange={(v)=>{ set({heroImage:v}); setSub("review"); }}
+              onCancel={()=>setSub("seats")}
+            />
+          </div>
+        </div>
+      );
+    }
+    // sub === "review"
+    return (
+      <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <button onClick={()=>setSub("image")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+        <div className="font-black font-display-l text-[40px]">Review</div>
+        <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Step 4 of 4</div>
+        <div className="mt-5 flex-1 overflow-y-auto space-y-4">
+          <FramedImage value={draft.heroImage} ratio="4/5" className="w-full"/>
+          <div>
+            <div className="font-black text-[22px] leading-tight">{draft.title}</div>
+            <div className="text-[13px] mt-1" style={{color:"var(--ink-mute)"}}>{draft.type} · {draft.date} · {draft.time}</div>
+          </div>
+          <div className="text-[13px]" style={{color:"var(--ink-mute)"}}>
+            {draft.mix
+              ? "Girls " + draft.mix.girls + " · Guys " + draft.mix.guys + " · " + draft.seats + " seats"
+              : draft.seats + " seats · no gender preference"}
+          </div>
+          <div>
+            <div className="stamp mb-1">The exchange</div>
+            <div className="text-[14px]">{draft.exchange}</div>
+          </div>
+        </div>
+        <button onClick={()=>onPublish(draft)}
+          className="press w-full h-[58px] rounded-full text-[14px] uppercase tracking-[.2em]"
+          style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Publish</button>
+      </div>
+    );
   }
 
   /* ========== APP — onboarding state machine ========== */
@@ -1248,7 +1293,11 @@
     if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} setVenue={setVenue} group={group} onDone={()=>{ setStep("done"); setTab("events"); }}/>);
 
     const openEvent = (e) => { showToast("Open from the Applicants tab to review"); }; // rewired in Task 15
-    const publishEvent = (draft) => { setStep("done"); };
+    const publishEvent = (draft) => {
+      setEvents(es => [{ ...draft, status: "live" }, ...es]);
+      setStep("done"); setTab("events");
+      showToast("Event published");
+    };
     if (step === "post") return wrap(<ScreenPostEvent venue={venue} onCancel={()=>setStep("done")} onPublish={publishEvent}/>);
     if (step === "done") return wrap(
       <>
