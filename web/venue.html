@@ -656,6 +656,298 @@
     );
   }
 
+  /* ========== ScreenOnboardGroup — optional group registration ========== */
+  function ScreenOnboardGroup({ group, setGroup, onNext }){
+    const [name, setName] = useState(group?.name || "");
+    const [logo, setLogo] = useState(group?.logo || null);
+    const [editingLogo, setEditingLogo] = useState(false);
+    const canCreate = name.length >= 2;
+
+    return (
+      <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <div className="absolute inset-0 flex flex-col" style={{paddingTop:54}}>
+          {/* Header */}
+          <div className="px-6 pt-6 pb-2 shrink-0">
+            <div className="font-black font-display-l" style={{fontSize:44,lineHeight:.95,letterSpacing:"-.02em",color:"var(--ink)"}}>Group</div>
+            <div className="text-[13px] mt-3" style={{color:"var(--ink-2)"}}>Run more than one venue? Group them. Otherwise skip.</div>
+          </div>
+
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto noscroll px-6 pt-4 pb-4">
+            {/* Group name field */}
+            <div className="mb-5">
+              <div className="stamp mb-2">Group name</div>
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                type="text"
+                placeholder="e.g. Skyline Hospitality"
+                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+
+            {/* Logo field */}
+            <div className="mb-6">
+              <div className="stamp mb-2">Group logo</div>
+              {editingLogo ? (
+                <ImageCropper
+                  ratio="1/1"
+                  value={logo}
+                  label="Group logo"
+                  onChange={(v) => { setLogo(v); setEditingLogo(false); }}
+                  onCancel={() => setEditingLogo(false)}
+                />
+              ) : logo ? (
+                <div className="flex items-center gap-3">
+                  <FramedImage value={logo} ratio="1/1" className="w-20 h-20"/>
+                  <button
+                    onClick={() => setEditingLogo(true)}
+                    className="press text-[12px] uppercase tracking-[.18em]"
+                    style={{color:"var(--ice)", background:"transparent", border:"none"}}
+                  >Replace</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setEditingLogo(true)}
+                  className="press w-20 h-20 rounded-[14px] flex items-center justify-center"
+                  style={{border:"1px dashed var(--line-2)", background:"transparent", color:"var(--ink-mute)"}}
+                >
+                  <span className="stamp">+ Logo</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom actions */}
+          <div className="shrink-0 px-6 pb-10 flex flex-col gap-3">
+            <button
+              onClick={() => { if(canCreate){ setGroup({ id:"grp-1", name, logo }); onNext(); } }}
+              disabled={!canCreate}
+              className={"press w-full h-[52px] rounded-full font-medium text-[14px] uppercase tracking-[.2em] "+(canCreate?"glow-primary":"")}
+              style={{
+                background: canCreate ? "var(--ice)" : "var(--bg-elev2)",
+                color: canCreate ? "var(--ice-ink)" : "var(--ink-mute)"
+              }}
+            >Create group</button>
+            <button
+              onClick={() => { setGroup(null); onNext(); }}
+              className="press w-full h-[48px] rounded-full text-[12px] uppercase tracking-[.2em]"
+              style={{background:"transparent", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+            >I'm independent · skip</button>
+          </div>
+        </div>
+        <HomeIndicator/>
+      </div>
+    );
+  }
+
+  /* ========== ScreenOnboardVenue — register venue assets ========== */
+  function ScreenOnboardVenue({ venue, setVenue, group, onDone }){
+    const [editing, setEditing] = useState(null); // null | "hero" | 0..3
+
+    const canSave = venue.name && venue.name.length >= 2 && venue.heroImage;
+
+    // When editing, show only the cropper full-screen
+    if (editing !== null){
+      if (editing === "hero"){
+        return (
+          <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
+            <StatusBar/>
+            <div className="absolute inset-0 flex flex-col px-6 overflow-y-auto noscroll" style={{paddingTop:70, paddingBottom:24}}>
+              <ImageCropper
+                ratio="4/5"
+                value={venue.heroImage}
+                label="Venue hero"
+                onChange={(v) => { setVenue(p => ({...p, heroImage:v})); setEditing(null); }}
+                onCancel={() => setEditing(null)}
+              />
+            </div>
+          </div>
+        );
+      } else {
+        const i = editing;
+        return (
+          <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
+            <StatusBar/>
+            <div className="absolute inset-0 flex flex-col px-6 overflow-y-auto noscroll" style={{paddingTop:70, paddingBottom:24}}>
+              <ImageCropper
+                ratio="4/5"
+                value={venue.images[i]}
+                label={"Photo " + (i + 1)}
+                onChange={(v) => { setVenue(p => ({...p, images: p.images.map((im,idx) => idx===i ? v : im)})); setEditing(null); }}
+                onCancel={() => setEditing(null)}
+              />
+            </div>
+          </div>
+        );
+      }
+    }
+
+    // Normal form view
+    return (
+      <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <div className="absolute inset-0 flex flex-col" style={{paddingTop:54}}>
+          {/* Header */}
+          <div className="px-6 pt-6 pb-2 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="font-black font-display-l" style={{fontSize:44,lineHeight:.95,letterSpacing:"-.02em",color:"var(--ink)"}}>Venue</div>
+              {group && (
+                <div className="stamp px-2.5 py-1 rounded-full" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>
+                  Under {group.name}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Scrollable form */}
+          <div className="flex-1 overflow-y-auto noscroll px-6 pt-4 pb-4 flex flex-col gap-5">
+            {/* Venue name */}
+            <div>
+              <div className="stamp mb-2">Venue name</div>
+              <input
+                value={venue.name}
+                onChange={e => setVenue(v => ({...v, name:e.target.value}))}
+                type="text"
+                placeholder="e.g. Skybar"
+                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+
+            {/* Type pills */}
+            <div>
+              <div className="stamp mb-2">Type</div>
+              <div className="flex flex-wrap gap-2">
+                {VENUE_TYPES.map(t => {
+                  const sel = venue.type === t;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setVenue(v => ({...v, type:t}))}
+                      className="press px-4 h-9 rounded-full text-[12px] uppercase tracking-[.18em] font-medium"
+                      style={{
+                        background: sel ? "var(--ice)" : "transparent",
+                        color: sel ? "var(--ice-ink)" : "var(--ink)",
+                        border: sel ? "none" : "1px solid var(--line-2)"
+                      }}
+                    >{t}</button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Area pills */}
+            <div>
+              <div className="stamp mb-2">Area</div>
+              <div className="flex flex-wrap gap-2">
+                {BEIRUT_AREAS.map(a => {
+                  const sel = venue.area === a;
+                  return (
+                    <button
+                      key={a}
+                      onClick={() => setVenue(v => ({...v, area:a}))}
+                      className="press px-3 h-9 rounded-full text-[11px] uppercase tracking-[.14em] font-medium"
+                      style={{
+                        background: sel ? "var(--ice)" : "transparent",
+                        color: sel ? "var(--ice-ink)" : "var(--ink)",
+                        border: sel ? "none" : "1px solid var(--line-2)"
+                      }}
+                    >{a}</button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <div className="stamp mb-2">Description</div>
+              <textarea
+                rows={3}
+                value={venue.description}
+                onChange={e => setVenue(v => ({...v, description:e.target.value}))}
+                placeholder="Tell influencers what makes this venue worth posting."
+                className="w-full px-3 py-3 rounded-[12px] text-[15px] resize-none"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+
+            {/* Hero image */}
+            <div>
+              <div className="stamp mb-2">Hero image</div>
+              {venue.heroImage ? (
+                <div>
+                  <FramedImage value={venue.heroImage} ratio="4/5" className="w-full"/>
+                  <button
+                    onClick={() => setEditing("hero")}
+                    className="press mt-2 text-[12px] uppercase tracking-[.18em]"
+                    style={{color:"var(--ice)", background:"transparent", border:"none"}}
+                  >Replace</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setEditing("hero")}
+                  className="press w-full flex items-center justify-center rounded-[14px]"
+                  style={{aspectRatio:"4/5", border:"1px dashed var(--line-2)", background:"transparent", color:"var(--ink-mute)"}}
+                >
+                  <span className="stamp">+ Add hero</span>
+                </button>
+              )}
+            </div>
+
+            {/* Gallery */}
+            <div>
+              <div className="stamp mb-1">Venue photos</div>
+              <div className="text-[12px] mb-3" style={{color:"var(--ink-mute)"}}>Four photos influencers swipe through.</div>
+              <div className="grid grid-cols-2 gap-3">
+                {[0,1,2,3].map(i => (
+                  venue.images[i] ? (
+                    <button
+                      key={i}
+                      onClick={() => setEditing(i)}
+                      className="press rounded-[14px] overflow-hidden"
+                      style={{aspectRatio:"4/5", background:"var(--bg-elev)", border:"none", padding:0}}
+                    >
+                      <FramedImage value={venue.images[i]} ratio="4/5" className="w-full h-full"/>
+                    </button>
+                  ) : (
+                    <button
+                      key={i}
+                      onClick={() => setEditing(i)}
+                      className="press rounded-[14px] flex items-center justify-center"
+                      style={{aspectRatio:"4/5", border:"1px dashed var(--line-2)", background:"transparent", color:"var(--ink-mute)"}}
+                    >
+                      <span className="stamp">+</span>
+                    </button>
+                  )
+                ))}
+              </div>
+            </div>
+
+            {/* bottom spacer so CTA isn't occluded */}
+            <div style={{height:8}}/>
+          </div>
+
+          {/* Primary CTA */}
+          <div className="shrink-0 px-6 pb-10">
+            <button
+              onClick={canSave ? onDone : undefined}
+              disabled={!canSave}
+              className={"press w-full h-[52px] rounded-full font-medium text-[14px] uppercase tracking-[.2em] "+(canSave?"glow-primary":"")}
+              style={{
+                background: canSave ? "var(--ice)" : "var(--bg-elev2)",
+                color: canSave ? "var(--ice-ink)" : "var(--ink-mute)"
+              }}
+            >Save venue</button>
+          </div>
+        </div>
+        <HomeIndicator/>
+      </div>
+    );
+  }
+
   /* ========== APP — onboarding state machine ========== */
   function App(){
     const [step, setStep] = useState("intro");
@@ -688,8 +980,10 @@
 
     if (step === "intro") return wrap(<ScreenVenueIntro onList={()=>setStep("login")} onLogin={()=>setStep("login")}/>);
     if (step === "login") return wrap(<ScreenVenueLogin onDone={()=>setStep("onboard-group")}/>);
+    if (step === "onboard-group") return wrap(<ScreenOnboardGroup group={group} setGroup={setGroup} onNext={()=>setStep("onboard-venue")}/>);
+    if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} setVenue={setVenue} group={group} onDone={()=>{ setStep("done"); setTab("events"); }}/>);
 
-    // Fallback for steps not yet built (onboard-group, onboard-venue, done) — placeholder so nothing crashes.
+    // Fallback for steps not yet built (done) — placeholder so nothing crashes.
     return wrap(
       <>
         <StatusBar/>
