@@ -1162,7 +1162,51 @@
         </div>
       );
     }
-    if (sub === "seats") { /* TASK 11 */ }
+    if (sub === "seats") {
+      const noPref = draft.mix === null;
+      const total = noPref ? draft.seats : (draft.mix.girls + draft.mix.guys);
+      const Stepper = ({label, val, onDelta}) => (
+        <div className="flex items-center justify-between py-3">
+          <div className="text-[15px]">{label}</div>
+          <div className="flex items-center gap-4">
+            <button onClick={()=>onDelta(-1)} className="press w-9 h-9 rounded-full" style={{border:"1px solid var(--line-2)"}}>–</button>
+            <div className="font-mono text-[20px] w-8 text-center" style={{color:"var(--ice)"}}>{val}</div>
+            <button onClick={()=>onDelta(1)} className="press w-9 h-9 rounded-full" style={{border:"1px solid var(--line-2)"}}>+</button>
+          </div>
+        </div>
+      );
+      return (
+        <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
+          <StatusBar/>
+          <button onClick={()=>setSub("basics")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+          <div className="font-black font-display-l text-[40px]">Seats</div>
+          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Step 2 of 4 · Who fills the room</div>
+
+          <div className="flex items-center justify-between mt-6 py-3 border-b" style={{borderColor:"var(--line)"}}>
+            <div className="text-[15px]">Set a gender mix</div>
+            <button onClick={()=> set({ mix: noPref ? {girls:15,guys:5} : null }) }
+              className="press px-3 h-8 rounded-full text-[11px] uppercase tracking-[.18em]"
+              style={{background: noPref?"transparent":"var(--ice)", color: noPref?"var(--ink)":"var(--ice-ink)",
+                      border: noPref?"1px solid var(--line-2)":"none"}}>{noPref?"Off":"On"}</button>
+          </div>
+
+          {noPref ? (
+            <Stepper label="Total seats" val={draft.seats} onDelta={d=> set({ seats: Math.max(1, draft.seats+d) })}/>
+          ) : (
+            <>
+              <Stepper label="Girls" val={draft.mix.girls} onDelta={d=> set({ mix: {...draft.mix, girls: Math.max(0, draft.mix.girls+d)} })}/>
+              <Stepper label="Guys"  val={draft.mix.guys}  onDelta={d=> set({ mix: {...draft.mix, guys:  Math.max(0, draft.mix.guys+d)} })}/>
+            </>
+          )}
+
+          <div className="mt-4 stamp" style={{color:"var(--ink-mute)"}}>{total} seats total</div>
+          <div className="flex-1"/>
+          <button disabled={total<1} onClick={()=> { set({ seats: total }); setSub("image"); }}
+            className="press w-full h-[58px] rounded-full text-[14px] uppercase tracking-[.2em]"
+            style={{background: total>=1?"var(--ice)":"var(--bg-elev2)", color: total>=1?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
+        </div>
+      );
+    }
     if (sub === "image") { /* TASK 12 */ }
     // sub === "review"  /* TASK 12 */
     return null;
