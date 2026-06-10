@@ -3,43 +3,47 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>The List · Venue</title>
+<title>The List · Venue v2</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
 
 <style>
+  /* Kit V.2 — dark = Warm Cream Scale (primary), light = Anthracite Scale.
+     Var NAMES kept (--ice etc.) so call sites don't churn; --ice is now the
+     kit accent: warm cream on dark, brand anthracite on light. */
   :root{
-    --bg:        #0A0A0A;
-    --bg-elev:   #141414;
-    --bg-elev2:  #1C1C1C;
-    --ink:       #F5F1EA;
-    --ink-2:     #F5F1EA;
-    --ink-mute:  #F5F1EA;
-    --line:      rgba(245,241,234,0.10);
-    --line-2:    rgba(245,241,234,0.18);
-    --ice:       #9FD8E8;
-    --ice-dim:   #6FB5C9;
-    --ice-ink:   #0A0A0A;
-    --page:      #050505;
+    --bg:        #121315;
+    --bg-elev:   #1B1C1F;
+    --bg-elev2:  #232428;
+    --ink:       #F7F6F3;
+    --ink-2:     #EDECE6;
+    --ink-mute:  #D8D4C7;
+    --line:      rgba(247,246,243,0.10);
+    --line-2:    rgba(247,246,243,0.18);
+    --ice:       #F7F6F3;
+    --ice-dim:   #D8D4C7;
+    --ice-ink:   #121315;
+    --page:      #0D0E10;
   }
   html.light{
-    --bg:        #FFFFFF;
-    --bg-elev:   #F5F5F5;
-    --bg-elev2:  #EAEAEA;
-    --ink:       #0A0A0A;
-    --ink-2:     #0A0A0A;
-    --ink-mute:  #0A0A0A;
-    --line:      rgba(10,10,10,0.08);
-    --line-2:    rgba(10,10,10,0.14);
-    --ice:       #26768F;
-    --ice-dim:   #2C7A92;
+    --bg:        #F7F6F3;
+    --bg-elev:   #FFFFFF;
+    --bg-elev2:  #ECEAE3;
+    --ink:       #1E1E1E;
+    --ink-2:     #454B52;
+    --ink-mute:  #6A737D;
+    --line:      rgba(30,30,30,0.08);
+    --line-2:    rgba(30,30,30,0.15);
+    --ice:       #2A2D31;
+    --ice-dim:   #454B52;
     --ice-ink:   #FFFFFF;
-    --page:      #FAFAFA;
+    --page:      #F2F0EB;
   }
   html, body {
     background: var(--page);
@@ -49,26 +53,31 @@
     -webkit-font-smoothing: antialiased;
     margin: 0;
   }
-  /* One family across the app: Plus Jakarta Sans. Headers just go bolder (800);
-     everything else inherits the body weight. No second family. */
-  .font-black,
+  /* Two families per Kit V.2: Cormorant Garamond 600 for display moments
+     (screen titles, venue/event names, the wordmark), Plus Jakarta Sans for
+     everything else. No third family. Doubled .font-black.font-black beats
+     Tailwind CDN's own .font-black utility (font-weight:900), which would
+     otherwise fake-bold the serif to 900. */
+  .font-black.font-black,
   .font-display {
-    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
-    font-weight: 800;
-    letter-spacing: -0.015em;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
   .font-display-l {
-    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
-    font-weight: 800;
-    letter-spacing: -0.025em;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
-  /* font-mono = legacy class for numbers/timers. One family across the app, so
-     numbers read exactly like the body text — no monospace, no tabular fixed-width.
+  /* font-mono = legacy class for numbers/timers. Numbers stay sans per kit:
+     Plus Jakarta Sans 600 with tabular figures so timers don't jitter.
      Doubled selector (.font-mono.font-mono) so it beats Tailwind CDN's own .font-mono
-     utility, which otherwise forces a system monospace stack. Weight inherits
-     (bold only where .font-black / .font-display is also applied). */
+     utility, which otherwise forces a system monospace stack (and beats .font-black
+     so numbers never go serif). */
   .font-mono.font-mono {
     font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
 
   /* hide scrollbars inside phone screens */
@@ -102,33 +111,35 @@
     position:absolute; left:0; right:0; bottom:0; height: 88px;
     padding: 12px 18px 30px;
     display:grid; grid-template-columns:repeat(4,1fr); gap: 4px;
-    background: linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,.72) 45%, rgba(10,10,10,.92) 100%);
+    background: linear-gradient(180deg, rgba(18,19,21,0) 0%, rgba(18,19,21,.72) 45%, rgba(18,19,21,.92) 100%);
     backdrop-filter: blur(22px) saturate(1.3);
     -webkit-backdrop-filter: blur(22px) saturate(1.3);
     z-index: 30;
     border-top: 1px solid var(--line);
-    box-shadow: 0 -12px 34px -22px rgba(159,216,232,.35);
+    box-shadow: 0 -12px 34px -24px rgba(0,0,0,.55);
   }
   html.light .tabbar {
-    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.72) 45%, rgba(255,255,255,.92) 100%);
+    background: linear-gradient(180deg, rgba(247,246,243,0) 0%, rgba(247,246,243,.72) 45%, rgba(247,246,243,.92) 100%);
+    box-shadow: 0 -12px 34px -26px rgba(30,30,30,.22);
   }
   .tabbar button {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:5px; color: var(--ink-mute);
-    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    font-size: 9px; letter-spacing: 0.02em;
     padding: 4px 0; border-radius: 14px;
     transition: color .15s;
     background: transparent; border: 0; cursor: pointer;
   }
   .tabbar button.active { color: var(--ink); }
-  .tabbar button.active svg { color: var(--ice); filter: drop-shadow(0 0 8px rgba(159,216,232,.7)); }
+  .tabbar button.active svg { color: var(--ice); }
 
   .hr { height: 1px; background: var(--line); }
   .hr-2 { height: 1px; background: var(--line-2); }
 
-  .stamp { font-family:'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-mute); }
-  .smallcaps { text-transform: uppercase; letter-spacing: 0.22em; font-size: 10px; font-weight: 500; }
-  /* Calmer section marker — breaks the uniform uppercase-tracked-eyebrow cadence.
+  /* Sentence case everywhere per Will's ruling — no tracked caps. */
+  .stamp { font-family:'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: 0.02em; color: var(--ink-mute); }
+  .smallcaps { letter-spacing: 0.02em; font-size: 10px; font-weight: 500; }
+  /* Calmer section marker — a heavier sentence-case beat than the quiet .stamp.
      Used for section dividers; .stamp stays for true value labels (When/Doors/Seats). */
   .section-label { font-family:'Plus Jakarta Sans', ui-sans-serif, system-ui; font-weight: 700; font-size: 14px; letter-spacing: normal; color: var(--ink-2); }
 
@@ -151,14 +162,14 @@
 
   .page-bg {
     background:
-      radial-gradient(900px 500px at 10% -10%, rgba(159,216,232,.04), transparent 60%),
-      radial-gradient(900px 600px at 100% 100%, rgba(159,216,232,.025), transparent 60%),
+      radial-gradient(900px 500px at 10% -10%, rgba(247,246,243,.03), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(247,246,243,.02), transparent 60%),
       var(--page);
   }
   html.light .page-bg {
     background:
-      radial-gradient(900px 500px at 10% -10%, rgba(111,181,201,.10), transparent 60%),
-      radial-gradient(900px 600px at 100% 100%, rgba(111,181,201,.05), transparent 60%),
+      radial-gradient(900px 500px at 10% -10%, rgba(42,45,49,.05), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(42,45,49,.03), transparent 60%),
       var(--page);
   }
 
@@ -168,7 +179,7 @@
     padding: 8px 14px; border-radius: 999px;
     background: var(--bg-elev); border: 1px solid var(--line-2);
     color: var(--ink); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500;
-    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    font-size: 10px; letter-spacing: 0.02em;
     cursor: pointer; transition: all .2s;
   }
   .theme-toggle:hover { border-color: var(--ice); color: var(--ice); }
@@ -179,14 +190,14 @@
     display:flex; align-items:center; gap:8px;
     padding: 8px 14px; border-radius: 999px;
     background: var(--bg-elev); border: 1px solid var(--line-2);
-    color: var(--ink); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink); font-size: 10px; letter-spacing: 0.02em;
     font-weight:500; text-decoration:none; transition: all .2s;
   }
   .side-link:hover { border-color: var(--ice); color: var(--ice); }
 
   @keyframes pulseIce {
-    0% { box-shadow: 0 0 0 0 rgba(159,216,232,.5); }
-    100% { box-shadow: 0 0 0 28px rgba(159,216,232,0); }
+    0% { box-shadow: 0 0 0 0 rgba(247,246,243,.30); }
+    100% { box-shadow: 0 0 0 28px rgba(247,246,243,0); }
   }
   .pulse-ice { animation: pulseIce 1.8s cubic-bezier(.4,.2,.2,1) infinite; }
 
@@ -244,85 +255,84 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin { animation: spin .9s linear infinite; }
 
-  /* ===== polish pass: glass depth + restrained ice glow ===== */
-  /* frosted glass for top controls */
+  /* ===== polish pass: glass depth + quiet neutral shadows (no neon) ===== */
+  /* frosted glass for top controls — tinted to the kit palette */
   .glass {
-    background: rgba(20,20,20,.5) !important;
+    background: rgba(24,25,28,.55) !important;
     backdrop-filter: blur(16px) saturate(1.3);
     -webkit-backdrop-filter: blur(16px) saturate(1.3);
-    border: 1px solid rgba(245,241,234,.12) !important;
+    border: 1px solid rgba(247,246,243,.12) !important;
   }
   html.light .glass {
-    background: rgba(255,255,255,.55) !important;
-    border-color: rgba(10,10,10,.1) !important;
+    background: rgba(255,255,255,.6) !important;
+    border-color: rgba(30,30,30,.1) !important;
   }
-  /* translucent black cards: 1px glass border + softer shadow */
+  /* solid cards per kit: surface fill + hairline + soft shadow */
   .card {
-    /* Flat-At-Rest: resting cards are NOT glass. Translucent fill + hairline +
+    /* Flat-At-Rest: resting cards are NOT glass. Solid fill + hairline +
        soft shadow only. Blur is reserved for genuinely-floating surfaces. */
-    background: rgba(26,26,26,.66);
-    border: 1px solid rgba(245,241,234,.08);
-    box-shadow: 0 16px 36px -24px rgba(0,0,0,.9);
+    background: #1B1C1F;
+    border: 1px solid var(--line);
+    box-shadow: 0 16px 36px -24px rgba(0,0,0,.8);
     transition: border-color .2s, box-shadow .2s, transform .12s;
   }
   html.light .card {
-    /* #7 — firmer edge so cards read as objects on white, not flat panels. */
-    background: rgba(255,255,255,.78);
-    border-color: rgba(10,10,10,.12);
-    box-shadow: 0 12px 30px -22px rgba(10,10,10,.30);
+    /* #7 — firmer edge so cards read as objects on cream, not flat panels. */
+    background: #FFFFFF;
+    border-color: var(--line);
+    box-shadow: 0 10px 30px -18px rgba(30,30,30,.25);
   }
-  @media (hover:hover){ button.card:hover, .card.press:hover { border-color: rgba(159,216,232,.35); } }
-  @media (hover:hover){ html.light button.card:hover, html.light .card.press:hover { border-color: rgba(38,118,143,.40); } }
-  /* ice glow — active + pressed states only */
-  .glow-ice { box-shadow: 0 0 0 1px rgba(159,216,232,.4), 0 0 20px -4px rgba(159,216,232,.5); }
-  .press.glow-primary:active { box-shadow: 0 0 26px -2px rgba(159,216,232,.65); }
-  @media (hover:hover){ .glow-primary:hover { box-shadow: 0 0 24px -4px rgba(159,216,232,.55); } }
-  /* #7 — in light theme, active/press states key off the deep ice (#26768F):
-     a tighter ring, not the bright dark-theme halo that looks alien on white. */
-  html.light .glow-ice { box-shadow: 0 0 0 1px rgba(38,118,143,.55), 0 3px 12px -5px rgba(38,118,143,.40); }
-  html.light .press.glow-primary:active { box-shadow: 0 0 16px -4px rgba(38,118,143,.50); }
-  @media (hover:hover){ html.light .glow-primary:hover { box-shadow: 0 5px 16px -6px rgba(38,118,143,.40); } }
+  @media (hover:hover){ button.card:hover, .card.press:hover { border-color: rgba(247,246,243,.28); } }
+  @media (hover:hover){ html.light button.card:hover, html.light .card.press:hover { border-color: rgba(42,45,49,.35); } }
+  /* quiet rings + neutral depth — active + pressed states only */
+  .glow-ice { box-shadow: 0 0 0 1px rgba(247,246,243,.18), 0 10px 24px -14px rgba(0,0,0,.6); }
+  .press.glow-primary:active { box-shadow: 0 12px 28px -14px rgba(0,0,0,.7); }
+  @media (hover:hover){ .glow-primary:hover { box-shadow: 0 10px 26px -14px rgba(0,0,0,.6); } }
+  /* light theme: a tighter anthracite ring, neutral shadow — nothing bright. */
+  html.light .glow-ice { box-shadow: 0 0 0 1px rgba(42,45,49,.22), 0 3px 12px -6px rgba(30,30,30,.25); }
+  html.light .press.glow-primary:active { box-shadow: 0 8px 18px -10px rgba(30,30,30,.35); }
+  @media (hover:hover){ html.light .glow-primary:hover { box-shadow: 0 5px 16px -8px rgba(30,30,30,.30); } }
   /* ornamental texture — only paints outside the (opaque) phone */
   body::before {
     content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
-    background-image: radial-gradient(rgba(159,216,232,.06) 1px, transparent 1px);
+    background-image: radial-gradient(rgba(247,246,243,.05) 1px, transparent 1px);
     background-size: 26px 26px;
     -webkit-mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
     mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
   }
-  html.light body::before { background-image: radial-gradient(rgba(79,168,197,.10) 1px, transparent 1px); }
+  html.light body::before { background-image: radial-gradient(rgba(42,45,49,.08) 1px, transparent 1px); }
 
   .profile-hero-overlay {
-    background: linear-gradient(180deg, rgba(10,10,10,.3) 0%, rgba(10,10,10,0) 40%, var(--bg) 100%);
+    background: linear-gradient(180deg, rgba(18,19,21,.3) 0%, rgba(18,19,21,0) 40%, var(--bg) 100%);
   }
   html.light .profile-hero-overlay {
     background:
-      linear-gradient(180deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,0) 36%, rgba(255,255,255,.98) 100%),
-      linear-gradient(180deg, rgba(10,10,10,.08) 0%, rgba(10,10,10,0) 28%);
+      linear-gradient(180deg, rgba(247,246,243,.08) 0%, rgba(247,246,243,0) 36%, rgba(247,246,243,.98) 100%),
+      linear-gradient(180deg, rgba(30,30,30,.08) 0%, rgba(30,30,30,0) 28%);
   }
   /* #5 — one canonical "floating control over a photo" recipe. Event Detail
      header buttons and the Profile hero controls share it, so there is a single
      over-image glass, distinct from .glass (which floats over the app bg). */
   .glass-over-image, .profile-glass {
-    background: rgba(10,10,10,.46);
-    border: 1px solid rgba(245,241,234,.18);
+    background: rgba(18,19,21,.5);
+    border: 1px solid rgba(247,246,243,.18);
     backdrop-filter: blur(12px) saturate(1.25);
     -webkit-backdrop-filter: blur(12px) saturate(1.25);
   }
   html.light .glass-over-image, html.light .profile-glass {
     background: rgba(255,255,255,.72);
-    border-color: rgba(10,10,10,.12);
-    box-shadow: 0 12px 28px -22px rgba(10,10,10,.45);
+    border-color: rgba(30,30,30,.12);
+    box-shadow: 0 12px 28px -22px rgba(30,30,30,.35);
   }
   /* Profile keeps its own text-color contract on top of the shared glass. */
-  .profile-glass { color: #F5F1EA; }
-  html.light .profile-glass { color: #0A0A0A; }
-  .profile-hero-text { color: #F5F1EA; }
-  .profile-hero-muted { color: rgba(245,241,234,.72); }
-  html.light .profile-hero-text { color: #0A0A0A; }
-  html.light .profile-hero-muted { color: rgba(10,10,10,.58); }
+  .profile-glass { color: #F7F6F3; }
+  html.light .profile-glass { color: #1E1E1E; }
+  .profile-hero-text { color: #F7F6F3; }
+  .profile-hero-muted { color: rgba(247,246,243,.72); }
+  html.light .profile-hero-text { color: #1E1E1E; }
+  html.light .profile-hero-muted { color: rgba(30,30,30,.58); }
   html.light .profile-hero-text .stamp,
-  html.light .profile-hero-text .smallcaps { color: rgba(10,10,10,.58) !important; }
+  html.light .profile-hero-text .smallcaps { color: rgba(30,30,30,.58) !important; }
 </style>
 </head>
 <body class="page-bg min-h-screen">
@@ -335,7 +345,7 @@
 
   /* ========== curated imagery ========== */
   const IMG = {
-    beachClub:  "./assets/pool-day.jpg",
+    beachClub:  "../web/assets/pool-day.jpg",
     pool:       "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=900&q=80&auto=format&fit=crop",
     rooftop:    "https://images.unsplash.com/photo-1551918120-9739cb430c6d?w=900&q=80&auto=format&fit=crop",
     restaurant: "https://images.unsplash.com/photo-1592861956120-e524fc739696?w=900&q=80&auto=format&fit=crop",
@@ -512,10 +522,10 @@
           </div>
         )}
         <div className="flex gap-3">
-          <button onClick={onCancel} className="press flex-1 h-[52px] rounded-full text-[12px] uppercase tracking-[.2em]"
+          <button onClick={onCancel} className="press flex-1 h-[52px] rounded-full text-[12px] font-medium"
                   style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Cancel</button>
           <button disabled={!src} onClick={()=>onChange({ src, scale, x:pos.x, y:pos.y })}
-                  className="press flex-1 h-[52px] rounded-full text-[12px] uppercase tracking-[.2em]"
+                  className="press flex-1 h-[52px] rounded-full text-[12px] font-semibold"
                   style={{background: src?"var(--ice)":"var(--bg-elev2)", color: src?"var(--ice-ink)":"var(--ink-mute)"}}>
             Use this
           </button>
@@ -621,7 +631,7 @@
       : tone==="outline" ? {border:"1px solid var(--line-2)", color:"var(--ink)"}
       : {background:"var(--bg-elev2)", color:"var(--ink)"};
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium" style={style}>
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium" style={style}>
         {dot && <span className="w-1.5 h-1.5 rounded-full" style={{background: tone==="ice" ? "var(--ice-ink)" : "var(--ice)"}}/>}
         {label}
       </span>
@@ -633,7 +643,7 @@
     return (
       <div className="rounded-[12px] flex flex-col items-center justify-center shrink-0" style={{ width:48, height:54, ...style }}>
         <div className="font-black font-mono text-[20px] leading-none">{day}</div>
-        <div className="text-[9px] uppercase tracking-[.18em] mt-0.5" style={{opacity:.8}}>{sub}</div>
+        <div className="text-[9px] mt-0.5" style={{opacity:.8}}>{sub}</div>
       </div>
     );
   }
@@ -646,7 +656,7 @@
           <span className="section-label">{label}</span>
         </div>
         {right != null && (
-          <span className="text-[10px] uppercase tracking-[.2em] px-2.5 py-1 rounded-full" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>{right}</span>
+          <span className="text-[10px] font-medium px-2.5 py-1 rounded-full" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>{right}</span>
         )}
       </div>
     );
@@ -658,7 +668,7 @@
         {items.map(it=>{
           const on = it.id===value;
           return (
-            <button key={it.id} onClick={()=>onChange(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[10px] uppercase tracking-[.06em] font-medium"
+            <button key={it.id} onClick={()=>onChange(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[10px] font-medium"
               style={on ? {background:"var(--ink)", color:"var(--bg)"} : {color:"var(--ink)", opacity:.6}}>
               <span>{it.label}</span>
               {it.count != null && <span style={{opacity:.65}}>{it.count}</span>}
@@ -687,40 +697,40 @@
   /* ========== ScreenVenueIntro — business splash ========== */
   function ScreenVenueIntro({ onList, onLogin, onDemo }){
     return (
-      <div className="absolute inset-0 anim-fade" style={{background:"#050505", color:"#F5F1EA"}}>
+      <div className="absolute inset-0 anim-fade" style={{background:"#0D0E10", color:"#F7F6F3"}}>
         {/* Static dark background — no video assets needed */}
-        <div className="absolute inset-0 grain" style={{background:"#050505"}}/>
+        <div className="absolute inset-0 grain" style={{background:"#0D0E10"}}/>
         {/* Radial vignette */}
         <div className="absolute inset-0 pointer-events-none" style={{boxShadow:"inset 0 0 170px 46px rgba(0,0,0,.82)"}}/>
         {/* Top + bottom scrims */}
-        <div className="absolute inset-0 pointer-events-none" style={{background:"linear-gradient(180deg, rgba(5,5,5,.72) 0%, rgba(5,5,5,0) 24%, rgba(5,5,5,0) 46%, rgba(5,5,5,.92) 100%)"}}/>
+        <div className="absolute inset-0 pointer-events-none" style={{background:"linear-gradient(180deg, rgba(13,14,16,.72) 0%, rgba(13,14,16,0) 24%, rgba(13,14,16,0) 46%, rgba(13,14,16,.92) 100%)"}}/>
 
         <StatusBar/>
 
         <div className="absolute inset-0 z-10 flex flex-col px-7 pt-[120px] pb-10">
-          {/* Centered wordmark lockup */}
+          {/* Centered wordmark lockup — large serif, brand name keeps its capitals */}
           <div className="flex-1 flex flex-col items-center justify-center text-center -mt-6">
-            <div className="anim-fade stamp" style={{color:"rgba(245,241,234,.78)"}}>Est. MMXXVI · Beirut</div>
-            <div className="font-black font-display-l anim-up" style={{fontSize:66, lineHeight:.88, letterSpacing:".04em", marginTop:14, textShadow:"0 2px 40px rgba(0,0,0,.6)"}}>THE<br/>LIST</div>
-            <div className="anim-up" style={{marginTop:18, fontSize:12, letterSpacing:".26em", textTransform:"uppercase", color:"rgba(245,241,234,.82)"}}>For the rooms that matter</div>
+            <div className="anim-fade stamp" style={{color:"rgba(247,246,243,.78)"}}>Est. MMXXVI · Beirut</div>
+            <div className="font-black font-display-l anim-up" style={{fontSize:66, lineHeight:.92, marginTop:14, textShadow:"0 2px 40px rgba(0,0,0,.6)"}}>The<br/>List</div>
+            <div className="anim-up" style={{marginTop:18, fontSize:12, letterSpacing:".02em", color:"rgba(247,246,243,.82)"}}>For the rooms that matter</div>
           </div>
 
           {/* Bottom actions */}
           <div className="flex flex-col gap-3 anim-up">
-            <button onClick={onList} className="press glow-primary w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em]" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-              List your venue
+            <button onClick={onList} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[14px] flex items-center justify-center gap-2" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+              List your venue <Icon name="arrow-right" size={16} stroke={1.8}/>
             </button>
-            <button onClick={onLogin} className="press w-full h-[58px] rounded-full font-medium text-[13px] uppercase tracking-[.2em]" style={{background:"transparent", color:"#F5F1EA", border:"1px solid rgba(245,241,234,.32)"}}>
+            <button onClick={onLogin} className="press w-full h-[58px] rounded-full font-medium text-[13px]" style={{background:"transparent", color:"#F7F6F3", border:"1px solid rgba(247,246,243,.32)"}}>
               Business login
             </button>
           </div>
 
           {/* Member link + zero-typing demo path */}
           <div className="text-center mt-4 anim-up flex flex-col gap-2">
-            <button onClick={()=>{ window.location.href = "./index.html"; }} className="press" style={{color:"rgba(245,241,234,.5)", fontSize:12, letterSpacing:".16em", textTransform:"uppercase", background:"transparent", border:"none"}}>
+            <button onClick={()=>{ window.location.href = "./index.html"; }} className="press" style={{color:"rgba(247,246,243,.5)", fontSize:12, letterSpacing:".02em", background:"transparent", border:"none"}}>
               I'm a member
             </button>
-            <button onClick={onDemo} className="press" style={{color:"var(--ice)", fontSize:12, letterSpacing:".16em", textTransform:"uppercase", background:"transparent", border:"none"}}>
+            <button onClick={onDemo} className="press" style={{color:"var(--ice)", fontSize:12, letterSpacing:".02em", background:"transparent", border:"none"}}>
               Preview the desk · demo data
             </button>
           </div>
@@ -774,13 +784,13 @@
           <button
             onClick={canSubmit ? onDone : undefined}
             disabled={!canSubmit}
-            className={"press w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em] "+(canSubmit ? "glow-primary" : "")}
+            className={"press w-full h-[58px] rounded-full font-semibold text-[14px] flex items-center justify-center gap-2 "+(canSubmit ? "glow-primary" : "")}
             style={{
               background: canSubmit ? "var(--ice)" : "var(--bg-elev2)",
               color: canSubmit ? "var(--ice-ink)" : "var(--ink-mute)"
             }}
           >
-            Sign in
+            Sign in <Icon name="arrow-right" size={16} stroke={1.8}/>
           </button>
           <div className="text-center text-[11px] mt-3" style={{color:"var(--ink-mute)"}}>New venue? Signing in sets you up.</div>
         </div>
@@ -837,7 +847,7 @@
                   <FramedImage value={logo} ratio="1/1" className="w-20 h-20"/>
                   <button
                     onClick={() => setEditingLogo(true)}
-                    className="press text-[12px] uppercase tracking-[.18em]"
+                    className="press text-[12px] font-medium"
                     style={{color:"var(--ice)", background:"transparent", border:"none"}}
                   >Replace</button>
                 </div>
@@ -858,7 +868,7 @@
             <button
               onClick={() => { if(canCreate){ setGroup({ id:"grp-1", name, logo }); onNext(); } }}
               disabled={!canCreate}
-              className={"press w-full h-[52px] rounded-full font-medium text-[14px] uppercase tracking-[.2em] "+(canCreate?"glow-primary":"")}
+              className={"press w-full h-[52px] rounded-full font-semibold text-[14px] "+(canCreate?"glow-primary":"")}
               style={{
                 background: canCreate ? "var(--ice)" : "var(--bg-elev2)",
                 color: canCreate ? "var(--ice-ink)" : "var(--ink-mute)"
@@ -866,7 +876,7 @@
             >Create group</button>
             <button
               onClick={() => { setGroup(null); onNext(); }}
-              className="press w-full h-[48px] rounded-full text-[12px] uppercase tracking-[.2em]"
+              className="press w-full h-[48px] rounded-full text-[12px] font-medium"
               style={{background:"transparent", border:"1px solid var(--line-2)", color:"var(--ink)"}}
             >I'm independent · skip</button>
           </div>
@@ -960,7 +970,7 @@
                     <button
                       key={t}
                       onClick={() => setVenue(v => ({...v, type:t}))}
-                      className="press px-4 h-9 rounded-full text-[12px] uppercase tracking-[.18em] font-medium"
+                      className="press px-4 h-9 rounded-full text-[12px] font-medium"
                       style={{
                         background: sel ? "var(--ice)" : "transparent",
                         color: sel ? "var(--ice-ink)" : "var(--ink)",
@@ -982,7 +992,7 @@
                     <button
                       key={a}
                       onClick={() => setVenue(v => ({...v, area:a}))}
-                      className="press px-3 h-9 rounded-full text-[11px] uppercase tracking-[.14em] font-medium"
+                      className="press px-3 h-9 rounded-full text-[11px] font-medium"
                       style={{
                         background: sel ? "var(--ice)" : "transparent",
                         color: sel ? "var(--ice-ink)" : "var(--ink)",
@@ -1015,7 +1025,7 @@
                   <FramedImage value={venue.heroImage} ratio="4/5" className="w-full"/>
                   <button
                     onClick={() => setEditing("hero")}
-                    className="press mt-2 text-[12px] uppercase tracking-[.18em]"
+                    className="press mt-2 text-[12px] font-medium"
                     style={{color:"var(--ice)", background:"transparent", border:"none"}}
                   >Replace</button>
                 </div>
@@ -1068,12 +1078,12 @@
             <button
               onClick={canSave ? onDone : undefined}
               disabled={!canSave}
-              className={"press w-full h-[52px] rounded-full font-medium text-[14px] uppercase tracking-[.2em] "+(canSave?"glow-primary":"")}
+              className={"press w-full h-[52px] rounded-full font-semibold text-[14px] flex items-center justify-center gap-2 "+(canSave?"glow-primary":"")}
               style={{
                 background: canSave ? "var(--ice)" : "var(--bg-elev2)",
                 color: canSave ? "var(--ice-ink)" : "var(--ink-mute)"
               }}
-            >Save venue</button>
+            >Save venue <Icon name="arrow-right" size={16} stroke={1.8}/></button>
           </div>
         </div>
         <HomeIndicator/>
@@ -1090,7 +1100,7 @@
     ];
     return (
       <>
-        <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(4px)"}}/>
+        <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(13,14,16,.55)", backdropFilter:"blur(4px)"}}/>
         <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
           <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
           <div className="flex items-center justify-between mb-5">
@@ -1126,7 +1136,7 @@
         <StatusBar/>
         <div className="flex-1 overflow-y-auto noscroll pb-24">
           <div className="pt-16 px-5 flex items-center justify-between">
-            <div className="stamp" style={{opacity:.75}}>The List · Venues</div>
+            <div className="font-display text-[14px]" style={{opacity:.75}}>The List · Venues</div>
             <button onClick={()=>setNotifOpen(true)} aria-label="Activity" className="press glass w-10 h-10 rounded-full flex items-center justify-center relative">
               <Icon name="bell" size={17} stroke={1.5}/>
               <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>3</span>
@@ -1147,15 +1157,15 @@
             <div className="px-5 mt-6">
               <button onClick={()=>onReview(live)} className="press card w-full text-left rounded-[18px] overflow-hidden relative grain">
                 {live.heroImage && <img src={live.heroImage.src} className="absolute inset-0 w-full h-full object-cover" alt=""/>}
-                <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.25) 0%, rgba(10,10,10,.84) 100%)"}}/>
-                <div className="relative p-4" style={{color:"#F5F1EA"}}>
+                <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(18,19,21,.25) 0%, rgba(18,19,21,.84) 100%)"}}/>
+                <div className="relative p-4" style={{color:"#F7F6F3"}}>
                   <div className="flex items-center justify-between">
                     <StatusPill label="Open for swipe" tone="ice" dot/>
-                    <Countdown value="04:56:12" className="text-[13px] font-medium" style={{color:"var(--ice)"}}/>
+                    <Countdown value="04:56:12" className="text-[13px] font-medium" style={{color:"#F7F6F3"}}/>
                   </div>
                   <div className="font-black font-display text-[30px] leading-none mt-9">{live.title}</div>
                   <div className="text-[12px] mt-1.5" style={{opacity:.85}}>{live.date} · {live.time} · 137 applied for {live.seats} seats</div>
-                  <div className="mt-4 h-12 rounded-full flex items-center justify-center gap-2 text-[12px] uppercase tracking-[.18em] font-medium glow-primary" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                  <div className="mt-4 h-12 rounded-full flex items-center justify-center gap-2 text-[12px] font-semibold glow-primary" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
                     Start swiping <Icon name="arrow-right" size={14} stroke={1.8}/>
                   </div>
                 </div>
@@ -1184,7 +1194,7 @@
                 <div key={r.id} style={{"--i":i}} className="card rounded-[14px] p-3 flex items-center gap-3">
                   <DateChip day={m[0]||"—"} sub={m[1]||""}/>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-[15px] truncate">{r.title}</div>
+                    <div className="font-display text-[17px] leading-tight truncate">{r.title}</div>
                     <div className="text-[11px] mt-0.5" style={{opacity:.7}}>{r.time} · {r.seats} seats</div>
                   </div>
                   <StatusPill label="Draft" tone="outline"/>
@@ -1194,7 +1204,7 @@
           </div>
 
           <div className="px-5 mt-5 pb-4">
-            <button onClick={onPost} className="press w-full h-[52px] rounded-full flex items-center justify-center gap-2 text-[12px] uppercase tracking-[.18em] font-medium" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+            <button onClick={onPost} className="press w-full h-[52px] rounded-full flex items-center justify-center gap-2 text-[12px] font-medium" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
               <Icon name="plus" size={15} stroke={1.8}/> New room
             </button>
           </div>
@@ -1258,14 +1268,14 @@
                 </div>
                 {seg==="expected" && (
                   <>
-                    <button onClick={()=>noShow(g)} className="press h-9 px-3 rounded-full text-[10px] uppercase tracking-[.12em]" style={{border:"1px solid var(--line-2)", opacity:.7}}>No show</button>
-                    <button onClick={()=>checkIn(g)} className="press h-9 px-3.5 rounded-full text-[10px] uppercase tracking-[.14em] font-medium glow-primary" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Check in</button>
+                    <button onClick={()=>noShow(g)} className="press h-9 px-3 rounded-full text-[10px] font-medium" style={{border:"1px solid var(--line-2)", opacity:.7}}>No show</button>
+                    <button onClick={()=>checkIn(g)} className="press h-9 px-3.5 rounded-full text-[10px] font-semibold glow-primary" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Check in</button>
                   </>
                 )}
                 {seg==="in" && (
                   rated.includes(g.id)
                     ? <StatusPill label="Scored" tone="outline"/>
-                    : <button onClick={()=>setRateFor(g)} className="press h-9 px-3.5 rounded-full text-[10px] uppercase tracking-[.14em]" style={{border:"1px solid var(--line-2)"}}>Rate</button>
+                    : <button onClick={()=>setRateFor(g)} className="press h-9 px-3.5 rounded-full text-[10px] font-medium" style={{border:"1px solid var(--line-2)"}}>Rate</button>
                 )}
                 {seg==="noshow" && <StatusPill label="No show"/>}
               </div>
@@ -1275,13 +1285,13 @@
 
         {rateFor && (
           <>
-            <div onClick={()=>setRateFor(null)} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(4px)"}}/>
+            <div onClick={()=>setRateFor(null)} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(13,14,16,.55)", backdropFilter:"blur(4px)"}}/>
             <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
               <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
               <div className="flex items-center gap-3 mb-5">
                 <img src={rateFor.photo} className="w-11 h-11 rounded-full object-cover" alt=""/>
                 <div className="flex-1">
-                  <div className="font-black text-[18px] leading-none">{rateFor.name}</div>
+                  <div className="font-black text-[20px] leading-none">{rateFor.name}</div>
                   <div className="text-[11px] mt-1" style={{opacity:.7}}>How was the night?</div>
                 </div>
                 <button onClick={()=>setRateFor(null)} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
@@ -1295,7 +1305,7 @@
                 ))}
               </div>
               <div className="text-[11px] mt-3" style={{opacity:.7}}>Feeds their reputation. Honest beats nice — it keeps the list good.</div>
-              <button onClick={submitScore} className="press glow-primary w-full h-12 rounded-full mt-5 text-[12px] uppercase tracking-[.18em] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+              <button onClick={submitScore} className="press glow-primary w-full h-12 rounded-full mt-5 text-[12px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
                 Save score
               </button>
             </div>
@@ -1360,9 +1370,9 @@
     const visible = events.filter(e => e.status === seg);
 
     function EventStatusPill({ status }){
-      if(status === "live")  return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Live</span>;
-      if(status === "draft") return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Draft</span>;
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium" style={{background:"var(--bg-elev2)", color:"var(--ink-mute)"}}>Past</span>;
+      if(status === "live")  return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}><span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--ice-ink)"}}/>Live</span>;
+      if(status === "draft") return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Draft</span>;
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium" style={{background:"var(--bg-elev2)", color:"var(--ink-mute)"}}>Past</span>;
     }
 
     return (
@@ -1381,7 +1391,7 @@
             {segments.map(it => {
               const on = it.id === seg;
               return (
-                <button key={it.id} onClick={() => setSeg(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[10px] uppercase tracking-[.06em] font-medium"
+                <button key={it.id} onClick={() => setSeg(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[10px] font-medium"
                   style={on ? {background:"var(--ink)", color:"var(--bg)"} : {color:"var(--ink-mute)"}}>
                   <span>{it.label}</span>
                   <span style={{opacity:.65}}>{it.count}</span>
@@ -1407,7 +1417,7 @@
                   style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
                   <FramedImage value={event.heroImage} ratio="4/5" className="w-14 shrink-0"/>
                   <div className="flex-1 min-w-0">
-                    <div className="font-black text-[16px] leading-tight truncate">{event.title || "Untitled"}</div>
+                    <div className="font-black text-[18px] leading-tight truncate">{event.title || "Untitled"}</div>
                     <div className="text-[11px] mt-0.5 truncate" style={{color:"var(--ink-mute)"}}>
                       {event.type}{event.date ? " · " + event.date : ""}{event.time ? " · " + event.time : ""}
                     </div>
@@ -1428,9 +1438,9 @@
 
         {/* Pinned Post CTA */}
         <div className="shrink-0 px-5 pb-24 pt-3">
-          <button onClick={onPost} className="press glow-primary w-full h-[52px] rounded-full font-medium text-[14px] uppercase tracking-[.2em]"
+          <button onClick={onPost} className="press glow-primary w-full h-[52px] rounded-full font-semibold text-[14px] flex items-center justify-center gap-2"
             style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-            Post an event
+            Post an event <Icon name="arrow-right" size={16} stroke={1.8}/>
           </button>
         </div>
       </div>
@@ -1443,7 +1453,7 @@
     const Social = ({label, href, icon}) => href ? (
       <a href={href} target="_blank" rel="noreferrer"
          className="press flex items-center gap-1.5 px-3 h-9 rounded-full text-[12px]"
-         style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+         style={{border:"1px solid rgba(247,246,243,.32)", color:"#F7F6F3"}}>
         <Icon name={icon} size={14}/>{label}
       </a>
     ) : null;
@@ -1451,10 +1461,10 @@
       <div className="relative w-full rounded-[18px] overflow-hidden" style={{aspectRatio:"4/5", background:"var(--bg-elev)"}}>
         <FramedImage value={{src:a.photo, scale:1, x:0, y:0}} ratio="4/5" className="absolute inset-0"/>
         <div className="absolute inset-x-0 bottom-0 p-4"
-             style={{background:"linear-gradient(to top, rgba(5,5,5,.92), rgba(5,5,5,.0))"}}>
+             style={{background:"linear-gradient(to top, rgba(13,14,16,.92), rgba(13,14,16,.0))", color:"#F7F6F3"}}>
           <div className="flex items-end justify-between">
             <div className="font-black font-display-l text-[28px] leading-none">{a.name}</div>
-            <div className="flex items-center gap-1 font-mono text-[20px]" style={{color:"var(--ice)"}}>
+            <div className="flex items-center gap-1 font-mono text-[20px]" style={{color:"#F7F6F3"}}>
               {quality10(a.quality_score)}<Icon name="sparkles" size={14}/>
             </div>
           </div>
@@ -1495,7 +1505,7 @@
                   style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
                   <FramedImage value={event.heroImage} ratio="4/5" className="w-14 shrink-0"/>
                   <div className="flex-1 min-w-0">
-                    <div className="font-black text-[16px] leading-tight truncate">{event.title || "Untitled"}</div>
+                    <div className="font-black text-[18px] leading-tight truncate">{event.title || "Untitled"}</div>
                     <div className="text-[11px] mt-0.5 truncate" style={{color:"var(--ink-mute)"}}>
                       {event.type}{event.date ? " · " + event.date : ""}
                     </div>
@@ -1504,7 +1514,7 @@
                     </div>
                   </div>
                   <div className="shrink-0">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium"
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium"
                           style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Review</span>
                   </div>
                 </button>
@@ -1619,9 +1629,9 @@
           {/* Name + type/area + description */}
           <div className="px-5 pt-4">
             {name ? (
-              <div className="font-black text-[22px] leading-tight">{name}</div>
+              <div className="font-black text-[24px] leading-tight">{name}</div>
             ) : (
-              <div className="font-black text-[22px] leading-tight" style={{ color: "var(--ink-mute)" }}>Unnamed venue</div>
+              <div className="font-black text-[24px] leading-tight" style={{ color: "var(--ink-mute)" }}>Unnamed venue</div>
             )}
             <div className="text-[13px] mt-1" style={{ color: "var(--ink-mute)" }}>
               {venue.type} · {venue.area}
@@ -1677,6 +1687,27 @@
     );
   }
 
+  /* ========== StepCircles — kit-style numbered step indicator ==========
+     Purely visual: 1-2-3-4 joined by a hairline, current step = accent fill,
+     completed steps keep their outline at full ink. Same steps as before. */
+  function StepCircles({ current }){
+    return (
+      <div className="flex items-center mt-3" aria-hidden="true">
+        {[1,2,3,4].map((n,i)=>(
+          <React.Fragment key={n}>
+            {i>0 && <span style={{width:24, height:1, background:"var(--line-2)"}}/>}
+            <span className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-semibold shrink-0"
+              style={n===current
+                ? {background:"var(--ice)", color:"var(--ice-ink)"}
+                : n<current
+                  ? {border:"1px solid var(--line-2)", color:"var(--ink)"}
+                  : {border:"1px solid var(--line)", color:"var(--ink-mute)"}}>{n}</span>
+          </React.Fragment>
+        ))}
+      </div>
+    );
+  }
+
   /* ========== ScreenPostEvent — 4-step post wizard ========== */
   function ScreenPostEvent({ venue, onPublish, onCancel }){
     const [sub, setSub] = useState("basics"); // basics | seats | image | review
@@ -1690,7 +1721,8 @@
           <StatusBar/>
           <button onClick={onCancel} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Cancel</button>
           <div className="font-black font-display-l text-[40px]">Post</div>
-          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Step 1 of 4 · The basics</div>
+          <StepCircles current={1}/>
+          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>The basics</div>
           <div className="mt-6 space-y-5 flex-1 overflow-y-auto">
             <div>
               <div className="stamp mb-2">Title</div>
@@ -1712,7 +1744,7 @@
                     <button
                       key={t}
                       onClick={() => set({type:t})}
-                      className="press px-4 h-9 rounded-full text-[12px] uppercase tracking-[.18em] font-medium"
+                      className="press px-4 h-9 rounded-full text-[12px] font-medium"
                       style={{
                         background: sel ? "var(--ice)" : "transparent",
                         color: sel ? "var(--ice-ink)" : "var(--ink)",
@@ -1747,7 +1779,7 @@
             </div>
           </div>
           <button disabled={!ok} onClick={()=>setSub("seats")}
-            className="press w-full h-[58px] rounded-full text-[14px] uppercase tracking-[.2em]"
+            className="press w-full h-[58px] rounded-full text-[14px] font-semibold"
             style={{background: ok?"var(--ice)":"var(--bg-elev2)", color: ok?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
         </div>
       );
@@ -1770,12 +1802,13 @@
           <StatusBar/>
           <button onClick={()=>setSub("basics")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
           <div className="font-black font-display-l text-[40px]">Seats</div>
-          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Step 2 of 4 · Who fills the room</div>
+          <StepCircles current={2}/>
+          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Who fills the room</div>
 
           <div className="flex items-center justify-between mt-6 py-3 border-b" style={{borderColor:"var(--line)"}}>
             <div className="text-[15px]">Set a gender mix</div>
             <button onClick={()=> set({ mix: noPref ? {girls:15,guys:5} : null }) }
-              className="press px-3 h-8 rounded-full text-[11px] uppercase tracking-[.18em]"
+              className="press px-3 h-8 rounded-full text-[11px] font-medium"
               style={{background: noPref?"transparent":"var(--ice)", color: noPref?"var(--ink)":"var(--ice-ink)",
                       border: noPref?"1px solid var(--line-2)":"none"}}>{noPref?"Off":"On"}</button>
           </div>
@@ -1792,7 +1825,7 @@
           <div className="mt-4 stamp" style={{color:"var(--ink-mute)"}}>{total} seats total</div>
           <div className="flex-1"/>
           <button disabled={total<1} onClick={()=> { set({ seats: total }); setSub("image"); }}
-            className="press w-full h-[58px] rounded-full text-[14px] uppercase tracking-[.2em]"
+            className="press w-full h-[58px] rounded-full text-[14px] font-semibold"
             style={{background: total>=1?"var(--ice)":"var(--bg-elev2)", color: total>=1?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
         </div>
       );
@@ -1803,7 +1836,8 @@
           <StatusBar/>
           <button onClick={()=>setSub("seats")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
           <div className="font-black font-display-l text-[40px]">Image</div>
-          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Step 3 of 4 · The event photo</div>
+          <StepCircles current={3}/>
+          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>The event photo</div>
           <div className="text-[12px] mt-3" style={{color:"var(--ink-mute)"}}>Reuse your venue hero, or choose a new one.</div>
           <div className="mt-5 flex-1 overflow-y-auto">
             <ImageCropper
@@ -1823,11 +1857,11 @@
         <StatusBar/>
         <button onClick={()=>setSub("image")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
         <div className="font-black font-display-l text-[40px]">Review</div>
-        <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Step 4 of 4</div>
+        <StepCircles current={4}/>
         <div className="mt-5 flex-1 overflow-y-auto space-y-4">
           <FramedImage value={draft.heroImage} ratio="4/5" className="w-full"/>
           <div>
-            <div className="font-black text-[22px] leading-tight">{draft.title}</div>
+            <div className="font-black text-[24px] leading-tight">{draft.title}</div>
             <div className="text-[13px] mt-1" style={{color:"var(--ink-mute)"}}>{draft.type} · {draft.date} · {draft.time}</div>
           </div>
           <div className="text-[13px]" style={{color:"var(--ink-mute)"}}>
@@ -1841,8 +1875,8 @@
           </div>
         </div>
         <button onClick={()=>onPublish(draft)}
-          className="press w-full h-[58px] rounded-full text-[14px] uppercase tracking-[.2em]"
-          style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Publish</button>
+          className="press w-full h-[58px] rounded-full text-[14px] font-semibold flex items-center justify-center gap-2"
+          style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Publish <Icon name="arrow-right" size={16} stroke={1.8}/></button>
       </div>
     );
   }
@@ -1870,7 +1904,7 @@
         <a className="side-link" href="./">← Influencer side</a>
         <button className="theme-toggle" onClick={() => setLight(l => !l)}><span className="dot"></span>{light ? 'Light' : 'Dark'} · switch</button>
         <div className="mb-8 text-center">
-          <div className="stamp" style={{color:"var(--ink-mute)"}}>The List · Venue side · Prototype v0.1</div>
+          <div className="font-display text-[14px]" style={{color:"var(--ink-mute)"}}>The List · Venue side · Prototype v0.1</div>
           <div className="font-black text-[28px] leading-none mt-2">Venue flow</div>
         </div>
         <div className="iphone"><div className="iphone-screen">

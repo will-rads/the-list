@@ -3,43 +3,47 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>The List - Prototype</title>
+<title>The List · Prototype v2</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
 
 <style>
+  /* Kit V.2 — dark = Warm Cream Scale (primary), light = Anthracite Scale.
+     Var names kept (--ice etc.) so call sites don't churn; --ice is now the
+     monochrome accent: warm cream on dark, brand anthracite on light. */
   :root{
-    --bg:        #0A0A0A;
-    --bg-elev:   #141414;
-    --bg-elev2:  #1C1C1C;
-    --ink:       #F5F1EA;
-    --ink-2:     #F5F1EA;
-    --ink-mute:  #F5F1EA;
-    --line:      rgba(245,241,234,0.10);
-    --line-2:    rgba(245,241,234,0.18);
-    --ice:       #9FD8E8;
-    --ice-dim:   #6FB5C9;
-    --ice-ink:   #0A0A0A;
-    --page:      #050505;
+    --bg:        #121315;
+    --bg-elev:   #1B1C1F;
+    --bg-elev2:  #232428;
+    --ink:       #F7F6F3;
+    --ink-2:     #EDECE6;
+    --ink-mute:  #D8D4C7;
+    --line:      rgba(247,246,243,0.10);
+    --line-2:    rgba(247,246,243,0.18);
+    --ice:       #F7F6F3;
+    --ice-dim:   #D8D4C7;
+    --ice-ink:   #121315;
+    --page:      #0D0E10;
   }
   html.light{
-    --bg:        #FFFFFF;
-    --bg-elev:   #F5F5F5;
-    --bg-elev2:  #EAEAEA;
-    --ink:       #0A0A0A;
-    --ink-2:     #0A0A0A;
-    --ink-mute:  #0A0A0A;
-    --line:      rgba(10,10,10,0.08);
-    --line-2:    rgba(10,10,10,0.14);
-    --ice:       #26768F;
-    --ice-dim:   #2C7A92;
+    --bg:        #F7F6F3;
+    --bg-elev:   #FFFFFF;
+    --bg-elev2:  #ECEAE3;
+    --ink:       #1E1E1E;
+    --ink-2:     #454B52;
+    --ink-mute:  #6A737D;
+    --line:      rgba(30,30,30,0.08);
+    --line-2:    rgba(30,30,30,0.15);
+    --ice:       #2A2D31;
+    --ice-dim:   #454B52;
     --ice-ink:   #FFFFFF;
-    --page:      #FAFAFA;
+    --page:      #F2F0EB;
   }
   html, body {
     background: var(--page);
@@ -49,26 +53,31 @@
     -webkit-font-smoothing: antialiased;
     margin: 0;
   }
-  /* One family across the app: Plus Jakarta Sans. Headers just go bolder (800);
-     everything else inherits the body weight. No second family. */
-  .font-black,
+  /* Two families: Cormorant Garamond 600 for display (screen titles, event /
+     venue names, reveal moments), Plus Jakarta Sans for everything else.
+     Doubled selector (.font-black.font-black) so it beats Tailwind CDN's own
+     .font-black utility, which otherwise forces font-weight:900. */
+  .font-black.font-black,
   .font-display {
-    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
-    font-weight: 800;
-    letter-spacing: -0.015em;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
   .font-display-l {
-    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
-    font-weight: 800;
-    letter-spacing: -0.025em;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
-  /* font-mono = legacy class for numbers/timers. One family across the app, so
-     numbers read exactly like the body text — no monospace, no tabular fixed-width.
-     Doubled selector (.font-mono.font-mono) so it beats Tailwind CDN's own .font-mono
-     utility, which otherwise forces a system monospace stack. Weight inherits
-     (bold only where .font-black / .font-display is also applied). */
+  /* font-mono = legacy class for numbers/timers. Numbers set in Plus Jakarta
+     Sans 600 with tabular figures so timers don't jitter. Doubled selector
+     (.font-mono.font-mono) so it beats Tailwind CDN's own .font-mono utility,
+     which otherwise forces a system monospace stack. Declared after .font-black
+     so number tiles that carry both classes stay sans. */
   .font-mono.font-mono {
     font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
   }
 
   /* hide scrollbars inside phone screens */
@@ -102,35 +111,40 @@
     position:absolute; left:0; right:0; bottom:0; height: 88px;
     padding: 12px 18px 30px;
     display:grid; grid-template-columns:repeat(4,1fr); gap: 4px;
-    background: linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,.72) 45%, rgba(10,10,10,.92) 100%);
+    background: linear-gradient(180deg, rgba(18,19,21,0) 0%, rgba(18,19,21,.72) 45%, rgba(18,19,21,.92) 100%);
     backdrop-filter: blur(22px) saturate(1.3);
     -webkit-backdrop-filter: blur(22px) saturate(1.3);
     z-index: 30;
     border-top: 1px solid var(--line);
-    box-shadow: 0 -12px 34px -22px rgba(159,216,232,.35);
+    box-shadow: 0 -12px 34px -22px rgba(0,0,0,.55);
   }
   html.light .tabbar {
-    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.72) 45%, rgba(255,255,255,.92) 100%);
+    background: linear-gradient(180deg, rgba(247,246,243,0) 0%, rgba(247,246,243,.72) 45%, rgba(247,246,243,.92) 100%);
+    box-shadow: 0 -12px 34px -22px rgba(30,30,30,.18);
   }
   .tabbar button {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:5px; color: var(--ink-mute);
-    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    font-size: 10px; letter-spacing: 0.01em;
     padding: 4px 0; border-radius: 14px;
     transition: color .15s;
     background: transparent; border: 0; cursor: pointer;
   }
   .tabbar button.active { color: var(--ink); }
-  .tabbar button.active svg { color: var(--ice); filter: drop-shadow(0 0 8px rgba(159,216,232,.7)); }
+  .tabbar button.active svg { color: var(--ice); }
 
   .hr { height: 1px; background: var(--line); }
   .hr-2 { height: 1px; background: var(--line-2); }
 
-  .stamp { font-family:'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-mute); }
-  .smallcaps { text-transform: uppercase; letter-spacing: 0.22em; font-size: 10px; font-weight: 500; }
-  /* Calmer section marker — breaks the uniform uppercase-tracked-eyebrow cadence.
+  .stamp { font-family:'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: 0.01em; color: var(--ink-mute); }
+  .smallcaps { letter-spacing: 0.01em; font-size: 10px; font-weight: 500; }
+  /* Calmer section marker — sentence case, no tracking.
      Used for section dividers; .stamp stays for true value labels (When/Doors/Seats). */
   .section-label { font-family:'Plus Jakarta Sans', ui-sans-serif, system-ui; font-weight: 700; font-size: 14px; letter-spacing: normal; color: var(--ink-2); }
+  /* Brand mark eyebrows ("The List · No. 048", "The List · invitation") sit in
+     the serif so the wordmark reads as a wordmark. Declared after .stamp so
+     "stamp wordmark" call sites resolve to the serif. */
+  .wordmark { font-family:'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 13px; letter-spacing: 0.01em; }
 
   .chip-ice { background: var(--ice); color: var(--ice-ink); }
   .chip-outline { border: 1px solid var(--line-2); color: var(--ink); }
@@ -151,14 +165,14 @@
 
   .page-bg {
     background:
-      radial-gradient(900px 500px at 10% -10%, rgba(159,216,232,.04), transparent 60%),
-      radial-gradient(900px 600px at 100% 100%, rgba(159,216,232,.025), transparent 60%),
+      radial-gradient(900px 500px at 10% -10%, rgba(247,246,243,.03), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(247,246,243,.02), transparent 60%),
       var(--page);
   }
   html.light .page-bg {
     background:
-      radial-gradient(900px 500px at 10% -10%, rgba(111,181,201,.10), transparent 60%),
-      radial-gradient(900px 600px at 100% 100%, rgba(111,181,201,.05), transparent 60%),
+      radial-gradient(900px 500px at 10% -10%, rgba(42,45,49,.05), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(42,45,49,.03), transparent 60%),
       var(--page);
   }
 
@@ -168,15 +182,15 @@
     padding: 8px 14px; border-radius: 999px;
     background: var(--bg-elev); border: 1px solid var(--line-2);
     color: var(--ink); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500;
-    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    font-size: 11px; letter-spacing: 0.01em;
     cursor: pointer; transition: all .2s;
   }
   .theme-toggle:hover { border-color: var(--ice); color: var(--ice); }
   .theme-toggle .dot { width:6px; height:6px; border-radius:50%; background: var(--ice); }
 
   @keyframes pulseIce {
-    0% { box-shadow: 0 0 0 0 rgba(159,216,232,.5); }
-    100% { box-shadow: 0 0 0 28px rgba(159,216,232,0); }
+    0% { box-shadow: 0 0 0 0 rgba(247,246,243,.3); }
+    100% { box-shadow: 0 0 0 28px rgba(247,246,243,0); }
   }
   .pulse-ice { animation: pulseIce 1.8s cubic-bezier(.4,.2,.2,1) infinite; }
 
@@ -234,85 +248,83 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin { animation: spin .9s linear infinite; }
 
-  /* ===== polish pass: glass depth + restrained ice glow ===== */
-  /* frosted glass for top controls */
+  /* ===== polish pass: glass depth + quiet neutral shadows (no neon) ===== */
+  /* frosted glass for top controls — tinted to the new palette */
   .glass {
-    background: rgba(20,20,20,.5) !important;
+    background: rgba(27,28,31,.55) !important;
     backdrop-filter: blur(16px) saturate(1.3);
     -webkit-backdrop-filter: blur(16px) saturate(1.3);
-    border: 1px solid rgba(245,241,234,.12) !important;
+    border: 1px solid rgba(247,246,243,.12) !important;
   }
   html.light .glass {
-    background: rgba(255,255,255,.55) !important;
-    border-color: rgba(10,10,10,.1) !important;
+    background: rgba(255,255,255,.6) !important;
+    border-color: rgba(30,30,30,.1) !important;
   }
-  /* translucent black cards: 1px glass border + softer shadow */
+  /* solid cards: 1px hairline border + soft neutral shadow */
   .card {
-    /* Flat-At-Rest: resting cards are NOT glass. Translucent fill + hairline +
+    /* Flat-At-Rest: resting cards are NOT glass. Solid fill + hairline +
        soft shadow only. Blur is reserved for genuinely-floating surfaces. */
-    background: rgba(26,26,26,.66);
-    border: 1px solid rgba(245,241,234,.08);
-    box-shadow: 0 16px 36px -24px rgba(0,0,0,.9);
+    background: #1B1C1F;
+    border: 1px solid var(--line);
+    box-shadow: 0 16px 36px -24px rgba(0,0,0,.8);
     transition: border-color .2s, box-shadow .2s, transform .12s;
   }
   html.light .card {
-    /* #7 — firmer edge so cards read as objects on white, not flat panels. */
-    background: rgba(255,255,255,.78);
-    border-color: rgba(10,10,10,.12);
-    box-shadow: 0 12px 30px -22px rgba(10,10,10,.30);
+    /* Solid white object on warm paper, per kit. */
+    background: #FFFFFF;
+    border-color: var(--line);
+    box-shadow: 0 10px 30px -18px rgba(30,30,30,.25);
   }
-  @media (hover:hover){ button.card:hover, .card.press:hover { border-color: rgba(159,216,232,.35); } }
-  @media (hover:hover){ html.light button.card:hover, html.light .card.press:hover { border-color: rgba(38,118,143,.40); } }
-  /* ice glow — active + pressed states only */
-  .glow-ice { box-shadow: 0 0 0 1px rgba(159,216,232,.4), 0 0 20px -4px rgba(159,216,232,.5); }
-  .press.glow-primary:active { box-shadow: 0 0 26px -2px rgba(159,216,232,.65); }
-  @media (hover:hover){ .glow-primary:hover { box-shadow: 0 0 24px -4px rgba(159,216,232,.55); } }
-  /* #7 — in light theme, active/press states key off the deep ice (#26768F):
-     a tighter ring, not the bright dark-theme halo that looks alien on white. */
-  html.light .glow-ice { box-shadow: 0 0 0 1px rgba(38,118,143,.55), 0 3px 12px -5px rgba(38,118,143,.40); }
-  html.light .press.glow-primary:active { box-shadow: 0 0 16px -4px rgba(38,118,143,.50); }
-  @media (hover:hover){ html.light .glow-primary:hover { box-shadow: 0 5px 16px -6px rgba(38,118,143,.40); } }
+  @media (hover:hover){ button.card:hover, .card.press:hover { border-color: rgba(247,246,243,.28); } }
+  @media (hover:hover){ html.light button.card:hover, html.light .card.press:hover { border-color: rgba(42,45,49,.35); } }
+  /* selected / active states — soft cream ring on dark, anthracite ring on light */
+  .glow-ice { box-shadow: 0 0 0 1px rgba(247,246,243,.18), 0 10px 24px -18px rgba(0,0,0,.7); }
+  .press.glow-primary:active { box-shadow: 0 14px 28px -14px rgba(0,0,0,.8); }
+  @media (hover:hover){ .glow-primary:hover { box-shadow: 0 12px 26px -14px rgba(0,0,0,.7); } }
+  html.light .glow-ice { box-shadow: 0 0 0 1px rgba(42,45,49,.22), 0 3px 12px -6px rgba(30,30,30,.18); }
+  html.light .press.glow-primary:active { box-shadow: 0 6px 18px -8px rgba(30,30,30,.3); }
+  @media (hover:hover){ html.light .glow-primary:hover { box-shadow: 0 5px 16px -6px rgba(30,30,30,.25); } }
   /* ornamental texture — only paints outside the (opaque) phone */
   body::before {
     content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
-    background-image: radial-gradient(rgba(159,216,232,.06) 1px, transparent 1px);
+    background-image: radial-gradient(rgba(247,246,243,.05) 1px, transparent 1px);
     background-size: 26px 26px;
     -webkit-mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
     mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
   }
-  html.light body::before { background-image: radial-gradient(rgba(79,168,197,.10) 1px, transparent 1px); }
+  html.light body::before { background-image: radial-gradient(rgba(42,45,49,.08) 1px, transparent 1px); }
 
   .profile-hero-overlay {
-    background: linear-gradient(180deg, rgba(10,10,10,.3) 0%, rgba(10,10,10,0) 40%, var(--bg) 100%);
+    background: linear-gradient(180deg, rgba(18,19,21,.3) 0%, rgba(18,19,21,0) 40%, var(--bg) 100%);
   }
   html.light .profile-hero-overlay {
     background:
-      linear-gradient(180deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,0) 36%, rgba(255,255,255,.98) 100%),
-      linear-gradient(180deg, rgba(10,10,10,.08) 0%, rgba(10,10,10,0) 28%);
+      linear-gradient(180deg, rgba(247,246,243,.08) 0%, rgba(247,246,243,0) 36%, rgba(247,246,243,.98) 100%),
+      linear-gradient(180deg, rgba(30,30,30,.08) 0%, rgba(30,30,30,0) 28%);
   }
   /* #5 — one canonical "floating control over a photo" recipe. Event Detail
      header buttons and the Profile hero controls share it, so there is a single
      over-image glass, distinct from .glass (which floats over the app bg). */
   .glass-over-image, .profile-glass {
-    background: rgba(10,10,10,.46);
-    border: 1px solid rgba(245,241,234,.18);
+    background: rgba(18,19,21,.5);
+    border: 1px solid rgba(247,246,243,.18);
     backdrop-filter: blur(12px) saturate(1.25);
     -webkit-backdrop-filter: blur(12px) saturate(1.25);
   }
   html.light .glass-over-image, html.light .profile-glass {
     background: rgba(255,255,255,.72);
-    border-color: rgba(10,10,10,.12);
-    box-shadow: 0 12px 28px -22px rgba(10,10,10,.45);
+    border-color: rgba(30,30,30,.12);
+    box-shadow: 0 12px 28px -22px rgba(30,30,30,.35);
   }
   /* Profile keeps its own text-color contract on top of the shared glass. */
-  .profile-glass { color: #F5F1EA; }
-  html.light .profile-glass { color: #0A0A0A; }
-  .profile-hero-text { color: #F5F1EA; }
-  .profile-hero-muted { color: rgba(245,241,234,.72); }
-  html.light .profile-hero-text { color: #0A0A0A; }
-  html.light .profile-hero-muted { color: rgba(10,10,10,.58); }
+  .profile-glass { color: #F7F6F3; }
+  html.light .profile-glass { color: #1E1E1E; }
+  .profile-hero-text { color: #F7F6F3; }
+  .profile-hero-muted { color: rgba(247,246,243,.72); }
+  html.light .profile-hero-text { color: #1E1E1E; }
+  html.light .profile-hero-muted { color: rgba(30,30,30,.58); }
   html.light .profile-hero-text .stamp,
-  html.light .profile-hero-text .smallcaps { color: rgba(10,10,10,.58) !important; }
+  html.light .profile-hero-text .smallcaps { color: rgba(30,30,30,.58) !important; }
 </style>
 </head>
 <body class="page-bg min-h-screen">
@@ -323,7 +335,7 @@ const { useState, useEffect, useRef, useMemo } = React;
 
 /* ========== curated imagery ========== */
 const IMG = {
-  beachClub:  "./assets/pool-day.jpg",
+  beachClub:  "../web/assets/pool-day.jpg",
   pool:       "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=900&q=80&auto=format&fit=crop",
   rooftop:    "https://images.unsplash.com/photo-1551918120-9739cb430c6d?w=900&q=80&auto=format&fit=crop",
   restaurant: "https://images.unsplash.com/photo-1592861956120-e524fc739696?w=900&q=80&auto=format&fit=crop",
@@ -422,9 +434,9 @@ const SEED_PROFILE = {
    Posters are the first frame, shown before the video paints.
 ==================================================================== */
 const INTRO_CLIPS = [
-  { src:"./assets/intro-1.mp4", poster:"./assets/intro-1.jpg" },
-  { src:"./assets/intro-2.mp4", poster:"./assets/intro-2.jpg" },
-  { src:"./assets/intro-3.mp4", poster:"./assets/intro-3.jpg" },
+  { src:"../web/assets/intro-1.mp4", poster:"../web/assets/intro-1.jpg" },
+  { src:"../web/assets/intro-2.mp4", poster:"../web/assets/intro-2.jpg" },
+  { src:"../web/assets/intro-3.mp4", poster:"../web/assets/intro-3.jpg" },
 ];
 
 /* ========== Icon helper (Heroicons, inline) ==========
@@ -501,7 +513,7 @@ function SaveButton({ saved, onClick, size=36 }){
   return (
     <button
       onClick={(e)=>{ e.stopPropagation(); onClick(); }}
-      aria-label={saved ? "Saved — tap to remove" : "Save event"}
+      aria-label={saved ? "Saved · tap to remove" : "Save event"}
       aria-pressed={saved}
       className={"press rounded-full flex items-center justify-center "+(saved ? "" : "glass-over-image")}
       style={{ width:size, height:size, ...(saved ? {background:"var(--ice)", color:"var(--ice-ink)"} : {}) }}>
@@ -523,12 +535,13 @@ function Toggle({ on, onChange }){
 }
 
 // Rounded status badge. tone: ice (affirmative/open) | neutral (muted) | outline.
-function StatusPill({ label, tone="neutral", dot=false }){
+// Kit badge style: leading dot + sentence-case label ("• Popular").
+function StatusPill({ label, tone="neutral", dot=true }){
   const style = tone==="ice" ? {background:"var(--ice)", color:"var(--ice-ink)"}
     : tone==="outline" ? {border:"1px solid var(--line-2)", color:"var(--ink)"}
     : {background:"var(--bg-elev2)", color:"var(--ink)"};
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium" style={style}>
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium" style={style}>
       {dot && <span className="w-1.5 h-1.5 rounded-full" style={{background: tone==="ice" ? "var(--ice-ink)" : "var(--ice)"}}/>}
       {label}
     </span>
@@ -547,7 +560,7 @@ function DateChip({ day, sub, tone="neutral" }){
   return (
     <div className="rounded-[12px] flex flex-col items-center justify-center shrink-0" style={{ width:48, height:54, ...style }}>
       <div className="font-black font-mono text-[20px] leading-none">{day}</div>
-      <div className="text-[9px] uppercase tracking-[.18em] mt-0.5" style={{opacity:.8}}>{sub}</div>
+      <div className="text-[9px] font-medium mt-0.5" style={{opacity:.8}}>{sub}</div>
     </div>
   );
 }
@@ -573,7 +586,7 @@ function SectionHead({ label, right, className="" }){
         <span className="section-label">{label}</span>
       </div>
       {right != null && (
-        <span className="text-[10px] uppercase tracking-[.2em] px-2.5 py-1 rounded-full" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>{right}</span>
+        <span className="text-[10px] font-medium px-2.5 py-1 rounded-full" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>{right}</span>
       )}
     </div>
   );
@@ -586,7 +599,7 @@ function Segmented({ items, value, onChange }){
       {items.map(it=>{
         const on = it.id===value;
         return (
-          <button key={it.id} onClick={()=>onChange(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[10px] uppercase tracking-[.06em] font-medium"
+          <button key={it.id} onClick={()=>onChange(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[11px] font-medium"
             style={on ? {background:"var(--ink)", color:"var(--bg)"} : {color:"var(--ink-mute)"}}>
             <span>{it.label}</span>
             {it.count != null && <span style={{opacity:.65}}>{it.count}</span>}
@@ -621,7 +634,7 @@ function ShareSheet({ event, onClose, onToast }){
   ];
   return (
     <>
-      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(4px)"}}/>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(18,19,21,.55)", backdropFilter:"blur(4px)"}}/>
       <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
         <div className="flex items-center justify-between mb-5">
@@ -636,7 +649,7 @@ function ShareSheet({ event, onClose, onToast }){
           <img src={event.img} className="w-14 h-16 rounded-[10px] object-cover" alt=""/>
           <div className="flex-1 min-w-0">
             <div className="stamp">{event.type}</div>
-            <div className="font-medium text-[15px] mt-0.5 truncate">{event.title}</div>
+            <div className="font-display text-[17px] mt-0.5 truncate">{event.title}</div>
             <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{event.venue} · {event.date}</div>
           </div>
         </div>
@@ -666,7 +679,7 @@ function SettingsSheet({ profile, light, setLight, onClose, onToast }){
 
   return (
     <>
-      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(4px)"}}/>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(18,19,21,.55)", backdropFilter:"blur(4px)"}}/>
       <div className="absolute left-0 right-0 bottom-0 z-50 sheet noscroll overflow-y-auto rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)", maxHeight:"88%"}}>
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
         <div className="flex items-center justify-between mb-5">
@@ -713,12 +726,12 @@ function SettingsSheet({ profile, light, setLight, onClose, onToast }){
           Your reach and audience data are read from Instagram through a licensed provider. The List never sees your password and never posts on your behalf.
         </div>
 
-        <button onClick={()=>{ onToast("Settings saved"); onClose(); }} className="press glow-primary w-full h-12 rounded-full text-[13px] uppercase tracking-[.18em] font-medium mb-3" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+        <button onClick={()=>{ onToast("Settings saved"); onClose(); }} className="press glow-primary w-full h-12 rounded-full text-[13px] font-semibold mb-3" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
           Save changes
         </button>
         <div className="flex gap-2">
-          <button onClick={()=>onToast("Logged out (prototype)")} className="press flex-1 h-11 rounded-full text-[12px] uppercase tracking-[.16em]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Log out</button>
-          <button onClick={()=>onToast("Account deletion requested (prototype)")} className="press flex-1 h-11 rounded-full text-[12px] uppercase tracking-[.16em]" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>Delete account</button>
+          <button onClick={()=>onToast("Logged out (prototype)")} className="press flex-1 h-11 rounded-full text-[12px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Log out</button>
+          <button onClick={()=>onToast("Account deletion requested (prototype)")} className="press flex-1 h-11 rounded-full text-[12px]" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>Delete account</button>
         </div>
       </div>
     </>
@@ -729,7 +742,7 @@ function SettingsSheet({ profile, light, setLight, onClose, onToast }){
 function NotificationsSheet({ onClose, onPickEvent }){
   return (
     <>
-      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(4px)"}}/>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(18,19,21,.55)", backdropFilter:"blur(4px)"}}/>
       <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
         <div className="flex items-center justify-between mb-5">
@@ -745,7 +758,7 @@ function NotificationsSheet({ onClose, onPickEvent }){
             <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{border:"1px solid var(--line-2)"}}>
               <span className="w-2 h-2 rounded-full" style={{background:"var(--ice)"}}/>
             </span>
-            <span className="flex-1 min-w-0 text-[13px]" style={{color:"var(--ink)"}}>Cyan Beach Club picked you — Pool Day</span>
+            <span className="flex-1 min-w-0 text-[13px]" style={{color:"var(--ink)"}}>Cyan Beach Club picked you · Pool Day</span>
             <span className="text-[11px] shrink-0" style={{color:"var(--ink)"}}>2h</span>
           </button>
           {/* 2 — closing soon */}
@@ -842,7 +855,7 @@ function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, confirmedEve
           matching the display headers on Index / Invites / Profile. */}
       <div className="px-5 pt-[60px] pb-3">
         <div className="flex items-center justify-between gap-2">
-          <div className="stamp truncate min-w-0">Hi, Sara — The List · No. 048</div>
+          <div className="stamp wordmark truncate min-w-0">Hi, Sara · The List · No. 048</div>
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={onBell} aria-label="Activity" className="press glass w-10 h-10 rounded-full flex items-center justify-center relative">
               <Icon name="bell" size={16} stroke={1.4}/>
@@ -867,7 +880,7 @@ function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, confirmedEve
         <button onClick={()=>onTab("mylist")} className="press card w-full text-left rounded-[14px] p-3 flex items-center gap-3">
           <DateChip day={nextDate.day} sub={nextDate.month} tone="ice"/>
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-[15px] truncate">{nextEvent.title}</div>
+            <div className="font-display text-[17px] truncate">{nextEvent.title}</div>
             <div className="text-[11px] mt-0.5" style={{color:"var(--ink)"}}>Confirmed · {nextEvent.time}</div>
           </div>
           <Icon name="arrow-right" size={16} stroke={1.4} className="opacity-50"/>
@@ -878,11 +891,11 @@ function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, confirmedEve
       <div className="px-5">
         <button className="press card w-full text-left rounded-[18px] overflow-hidden relative grain" style={{height:380}} onClick={()=>onPickEvent(featured)}>
           <img src={featured.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
-          <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.25) 0%, rgba(10,10,10,0) 35%, rgba(10,10,10,.9) 100%)"}}/>
+          <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(18,19,21,.25) 0%, rgba(18,19,21,0) 35%, rgba(18,19,21,.9) 100%)"}}/>
           <div className="absolute top-3 left-3"><StatusPill label={featured.badge} tone="ice"/></div>
           <div className="absolute top-3 right-3"><SaveButton saved={saved.includes(featured.id)} onClick={()=>onToggleSave(featured.id)}/></div>
-          <div className="absolute bottom-4 left-4 right-4 text-[var(--ink)]" style={{color:"#F5F1EA"}}>
-            <div className="font-black font-display-l text-[40px] leading-[0.92] tracking-tight">{featured.title}</div>
+          <div className="absolute bottom-4 left-4 right-4 text-[var(--ink)]" style={{color:"#F7F6F3"}}>
+            <div className="font-black font-display-l text-[40px] leading-[0.92]">{featured.title}</div>
             <div className="flex items-center gap-2 mt-3">
               <span className="text-[12px]">{featured.venue}</span>
               <span style={{color:"var(--ink)"}}>·</span>
@@ -893,7 +906,7 @@ function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, confirmedEve
                 <span className="font-mono text-[18px]" style={{color:"var(--ice)"}}>{featured.seats}</span>
                 <span className="text-[11px] ml-1" style={{color:"var(--ink)"}}>seats · {featured.applied} applied</span>
               </div>
-              <div className="px-3 py-1.5 rounded-full chip-ice text-[10px] uppercase tracking-[.22em] font-medium">Tap to view</div>
+              <div className="px-3 py-1.5 rounded-full chip-ice text-[10px] font-medium">Tap to view</div>
             </div>
           </div>
         </button>
@@ -907,7 +920,7 @@ function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, confirmedEve
             <img src={e.img} className="w-16 h-20 rounded-[10px] object-cover" alt=""/>
             <div className="flex-1 min-w-0">
               <div className="stamp">{e.type}</div>
-              <div className="font-medium text-[15px] mt-0.5 truncate">{e.title}</div>
+              <div className="font-display text-[17px] mt-0.5 truncate">{e.title}</div>
               <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{e.venue} · {e.area}</div>
               <div className="flex items-center gap-2 mt-1.5">
                 <span className="font-mono text-[11px]" style={{color:"var(--ice)"}}>{e.seats} seats</span>
@@ -941,7 +954,7 @@ function FilterSheet({ open, onClose, advFilters, setAdvFilters }){
 
   return (
     <>
-      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(4px)"}}/>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(18,19,21,.55)", backdropFilter:"blur(4px)"}}/>
       <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
 
@@ -981,7 +994,7 @@ function FilterSheet({ open, onClose, advFilters, setAdvFilters }){
           {timings.map(t=>{
             const on = advFilters.timing === t;
             return (
-              <button key={t} onClick={()=>setAdvFilters({...advFilters, timing: t})} className={"press flex-1 h-10 rounded-[12px] text-[12px] uppercase tracking-[.16em] "+(on?"glow-ice":"")} style={on ? {background:"var(--ink)", color:"var(--bg)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+              <button key={t} onClick={()=>setAdvFilters({...advFilters, timing: t})} className={"press flex-1 h-10 rounded-[12px] text-[12px] "+(on?"glow-ice":"")} style={on ? {background:"var(--ink)", color:"var(--bg)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
                 {t}
               </button>
             );
@@ -989,10 +1002,10 @@ function FilterSheet({ open, onClose, advFilters, setAdvFilters }){
         </div>
 
         <div className="flex gap-2">
-          <button onClick={()=>setAdvFilters({ verticals:[], distance:null, timing:"Tonight" })} className="press flex-1 h-12 rounded-full text-[12px] uppercase tracking-[.18em]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+          <button onClick={()=>setAdvFilters({ verticals:[], distance:null, timing:"Tonight" })} className="press flex-1 h-12 rounded-full text-[12px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
             Reset
           </button>
-          <button onClick={onClose} className="press glow-primary flex-[2] h-12 rounded-full text-[13px] uppercase tracking-[.18em] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+          <button onClick={onClose} className="press glow-primary flex-[2] h-12 rounded-full text-[13px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
             Show rooms
           </button>
         </div>
@@ -1007,7 +1020,7 @@ function CalendarSheet({ onClose, activeDay, onPick }){
   const blanks = 3; // May here starts on a Thursday — 3 leading gaps in a Mon-first grid
   return (
     <>
-      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(4px)"}}/>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(18,19,21,.55)", backdropFilter:"blur(4px)"}}/>
       <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
         <div className="flex items-center justify-between mb-5">
@@ -1076,7 +1089,7 @@ function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast }
           </button>
           <button onClick={()=>setSheetOpen(true)} className="press glass flex items-center gap-1.5 px-3 h-9 rounded-full">
             <Icon name="sliders-horizontal" size={13} stroke={1.5}/>
-            <span className="text-[11px] uppercase tracking-[.18em]">Filters</span>
+            <span className="text-[11px] font-medium">Filters</span>
             {activeAdvCount > 0 && <span className="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-mono" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>{activeAdvCount}</span>}
           </button>
         </div>
@@ -1090,7 +1103,7 @@ function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast }
           return (
             <div key={d.d} className={"flex-shrink-0 w-[58px] h-[68px] rounded-[12px] flex flex-col items-center justify-center "+(on?"glow-ice":"border")} style={{background: on ? "var(--ice)" : "transparent", borderColor:"var(--line-2)", color: on ? "var(--ice-ink)" : "var(--ink)"}}>
               <div className="font-mono text-[20px] leading-none">{d.d}</div>
-              <div className="text-[9px] uppercase tracking-[.2em] mt-1 opacity-75">{d.w}</div>
+              <div className="text-[9px] font-medium mt-1 opacity-75">{d.w}</div>
             </div>
           );
         })}
@@ -1098,8 +1111,8 @@ function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast }
 
       <div className="px-5 pt-4 flex gap-2 overflow-x-auto noscroll">
         {filters.map(f=>(
-          <button key={f} onClick={()=>setFilter(f)} className={"press flex-shrink-0 px-3 h-8 rounded-full text-[11px] uppercase tracking-[.18em] "+(filter===f?"glow-ice":"chip-outline")} style={filter===f ? {background:"var(--ink)", color:"var(--bg)"} : {}}>
-            {f}
+          <button key={f} onClick={()=>setFilter(f)} className={"press flex-shrink-0 px-3 h-8 rounded-full text-[11px] font-medium "+(filter===f?"glow-ice":"chip-outline")} style={filter===f ? {background:"var(--ink)", color:"var(--bg)"} : {}}>
+            {f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
       </div>
@@ -1119,15 +1132,15 @@ function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast }
             <div className="px-5">
               <button onClick={()=>onPickEvent(lead)} className="press card w-full text-left rounded-[18px] overflow-hidden grain relative" style={{height:300}}>
                 <img src={lead.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
-                <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.3) 0%, rgba(10,10,10,0) 38%, rgba(10,10,10,.92) 100%)"}}/>
+                <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(18,19,21,.3) 0%, rgba(18,19,21,0) 38%, rgba(18,19,21,.92) 100%)"}}/>
                 <div className="absolute top-3 left-3 flex gap-1.5">
-                  <span className="text-[10px] uppercase tracking-[.2em] px-2 py-1 rounded-full glass-over-image" style={{color:"#F5F1EA"}}>{lead.type}</span>
+                  <span className="text-[10px] font-medium px-2 py-1 rounded-full glass-over-image" style={{color:"#F7F6F3"}}>{lead.type}</span>
                   {lead.badge && <StatusPill label={lead.badge} tone="ice"/>}
                 </div>
                 <div className="absolute top-3 right-3"><SaveButton saved={saved.includes(lead.id)} onClick={()=>onToggleSave(lead.id)}/></div>
-                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between" style={{color:"#F5F1EA"}}>
+                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between" style={{color:"#F7F6F3"}}>
                   <div className="min-w-0">
-                    <div className="font-black font-display-l text-[34px] leading-[0.95] tracking-tight">{lead.title}</div>
+                    <div className="font-black font-display-l text-[34px] leading-[0.95]">{lead.title}</div>
                     <div className="text-[12px] mt-1.5 opacity-80 truncate">{lead.venue} · {lead.area}</div>
                   </div>
                   <div className="text-right shrink-0 ml-3">
@@ -1147,7 +1160,7 @@ function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast }
                     <img src={e.img} className="w-14 h-16 rounded-[10px] object-cover shrink-0" alt=""/>
                     <div className="flex-1 min-w-0">
                       <div className="stamp">{e.type}</div>
-                      <div className="font-medium text-[15px] mt-0.5 truncate">{e.title}</div>
+                      <div className="font-display text-[17px] mt-0.5 truncate">{e.title}</div>
                       <div className="text-[11px] truncate" style={{color:"var(--ink-mute)"}}>{e.venue} · {e.area}</div>
                     </div>
                     <div className="text-right shrink-0">
@@ -1185,7 +1198,7 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
             <img key={i} src={src} alt="" className="w-full shrink-0 object-cover" style={{height:"480px", scrollSnapAlign:"center", minWidth:"100%"}}/>
           ))}
         </div>
-        <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.45) 0%, rgba(10,10,10,0) 25%, rgba(10,10,10,0) 55%, rgba(10,10,10,.95) 100%)", pointerEvents:"none"}}/>
+        <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(18,19,21,.45) 0%, rgba(18,19,21,0) 25%, rgba(18,19,21,0) 55%, rgba(18,19,21,.95) 100%)", pointerEvents:"none"}}/>
         <div className="absolute inset-0 grain" style={{pointerEvents:"none"}}/>
 
         <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
@@ -1200,12 +1213,12 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-5 right-5 pb-6 z-10" style={{color:"#F5F1EA"}}>
+        <div className="absolute bottom-0 left-5 right-5 pb-6 z-10" style={{color:"#F7F6F3"}}>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-[10px] uppercase tracking-[.22em] px-2 py-1 rounded-full chip-ice font-medium">{e.type}</span>
-            <span className="text-[10px] uppercase tracking-[.22em]">{e.venue}</span>
+            <span className="text-[10px] font-medium px-2 py-1 rounded-full chip-ice">{e.type}</span>
+            <span className="text-[10px] font-medium">{e.venue}</span>
           </div>
-          <div className="font-black font-display-l text-[52px] leading-[0.92] tracking-tight">{e.title}</div>
+          <div className="font-black font-display-l text-[52px] leading-[0.92]">{e.title}</div>
           <div className="text-[12px] mt-3 max-w-[280px] opacity-80">Resident DJ Karim Sahli from 16:00. Mediterranean menu at sunset. Dress: swimwear and an attitude.</div>
           {gallery.length > 1 && (
             <div className="flex justify-center gap-1.5 mt-4">
@@ -1246,7 +1259,7 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
             <Icon name="map-pin" size={14} stroke={1.5}/>
           </div>
           <div className="flex-1">
-            <div className="text-[14px] font-medium">{e.venue}</div>
+            <div className="font-display text-[16px]">{e.venue}</div>
             <div className="text-[12px]" style={{color:"var(--ink-mute)"}}>{e.area} · 22 km south of city</div>
           </div>
           <button onClick={()=>onToast("Opening in Maps")} className="press text-[11px] px-3 h-8 rounded-full" style={{border:"1px solid var(--line-2)"}}>Map</button>
@@ -1275,7 +1288,7 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
       </div>
 
       {/* Sticky Apply CTA — sibling of the scroll container so it stays anchored */}
-      <div className="absolute left-0 right-0 bottom-0 pt-8 px-5 pb-7 z-30" style={{background:"linear-gradient(180deg, transparent 0%, rgba(10,10,10,.92) 40%, var(--bg) 80%)"}}>
+      <div className="absolute left-0 right-0 bottom-0 pt-8 px-5 pb-7 z-30" style={{background:"linear-gradient(180deg, transparent 0%, rgba(18,19,21,.92) 40%, var(--bg) 80%)"}}>
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <div className="stamp" style={{color:"var(--ink-mute)"}}>Closes in</div>
@@ -1283,15 +1296,15 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
           </div>
           <button onClick={onApply} disabled={applyState !== 'idle'} className={"press flex items-center gap-3 h-[56px] px-6 rounded-full "+(applyState==='idle'?"glow-primary":"")} style={{background: applyState === 'idle' ? "var(--ice)" : "var(--bg-elev2)", color: applyState === 'idle' ? "var(--ice-ink)" : "var(--ink)", minWidth: 168, justifyContent:'center'}}>
             {applyState === 'idle' && (<>
-              <span className="font-medium text-[15px] uppercase tracking-[.18em]">Apply · Free</span>
+              <span className="font-semibold text-[15px]">Apply · free</span>
               <Icon name="arrow-right" size={16} stroke={1.6}/>
             </>)}
             {applyState === 'submitting' && (<>
-              <span className="font-medium text-[15px] uppercase tracking-[.18em]">Reviewing</span>
+              <span className="font-semibold text-[15px]">Reviewing</span>
               <span className="spin inline-block w-4 h-4 rounded-full" style={{border:"2px solid currentColor", borderTopColor:"transparent"}}/>
             </>)}
             {applyState === 'submitted' && (<>
-              <span className="font-medium text-[15px] uppercase tracking-[.18em]">Submitted</span>
+              <span className="font-semibold text-[15px]">Submitted</span>
               <Icon name="check" size={16} stroke={1.8}/>
             </>)}
           </button>
@@ -1348,9 +1361,9 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent, savedEvents, onToggleSave,
           <div className="card rounded-[18px] overflow-hidden">
             <div className="relative h-[160px]">
               <img src={confirmedEvent.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
-              <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,0) 30%, rgba(10,10,10,.95) 100%)"}}/>
+              <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(27,28,31,0) 30%, rgba(27,28,31,.95) 100%)"}}/>
               <div className="absolute top-3 left-3"><StatusPill label="Confirmed" tone="ice" dot/></div>
-              <div className="absolute bottom-3 left-3 right-3" style={{color:"#F5F1EA"}}>
+              <div className="absolute bottom-3 left-3 right-3" style={{color:"#F7F6F3"}}>
                 <div className="font-black text-[22px] leading-none">{confirmedEvent.title}</div>
                 <div className="text-[11px] mt-1 opacity-80">{confirmedEvent.venue} · {confirmedEvent.date}</div>
               </div>
@@ -1361,7 +1374,7 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent, savedEvents, onToggleSave,
                 <div className="stamp">Check-in</div>
                 <div className="text-[13px] font-medium mt-0.5 font-mono">{confirmedEvent.time}</div>
               </div>
-              <button onClick={()=>onToast("Pass — show the QR at the door")} className="press px-3 h-9 rounded-full text-[11px] uppercase tracking-[.18em]" style={{background:"var(--ink)", color:"var(--bg)"}}>View pass</button>
+              <button onClick={()=>onToast("Pass · show the QR at the door")} className="press px-3 h-9 rounded-full text-[11px] font-medium" style={{background:"var(--ink)", color:"var(--bg)"}}>View pass</button>
             </div>
           </div>
         </div>
@@ -1375,7 +1388,7 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent, savedEvents, onToggleSave,
           <button onClick={()=>onPickEvent(EVENTS[1])} className="press card w-full text-left flex items-center gap-3 p-3 rounded-[14px]">
             <img src={IMG.club} className="w-14 h-14 rounded-[10px] object-cover" alt=""/>
             <div className="flex-1 min-w-0">
-              <div className="text-[14px]">Sound Bath</div>
+              <div className="font-display text-[16px]">Sound Bath</div>
               <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Pyrite Mar Mikhael · Sun 25 May</div>
               <div className="mt-1.5"><StatusPill label="Under review" tone="outline" dot/></div>
             </div>
@@ -1396,7 +1409,7 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent, savedEvents, onToggleSave,
                 <img src={e.img} className="w-14 h-16 rounded-[10px] object-cover shrink-0" alt=""/>
                 <div className="flex-1 min-w-0">
                   <div className="stamp">{e.type}</div>
-                  <div className="font-medium text-[15px] mt-0.5 truncate">{e.title}</div>
+                  <div className="font-display text-[17px] mt-0.5 truncate">{e.title}</div>
                   <div className="text-[11px] truncate" style={{color:"var(--ink-mute)"}}>{e.venue} · {e.area}</div>
                   <div className="mt-1.5"><span className="font-mono text-[11px]" style={{color:"var(--ice)"}}>{e.seats} seats</span><span className="font-mono text-[11px]" style={{color:"var(--ink-mute)"}}> · {e.date}</span></div>
                 </div>
@@ -1427,7 +1440,7 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent, savedEvents, onToggleSave,
             <div key={i} className="card flex items-center gap-3 p-3 rounded-[14px]" style={{"--i":i, opacity: e.notSelected ? 0.6 : 1}}>
               <img src={e.img} className="w-14 h-14 rounded-[10px] object-cover" style={{filter: e.notSelected ? "grayscale(1)" : "grayscale(.25)"}} alt=""/>
               <div className="flex-1">
-                <div className="text-[14px]">{e.t}</div>
+                <div className="font-display text-[16px]">{e.t}</div>
                 <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{e.notSelected ? e.v+" · venue picked others" : e.v+" · "+e.date}</div>
               </div>
               <div className="text-right">
@@ -1488,12 +1501,12 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
         </div>
 
         <div className="profile-hero-text absolute right-3 top-[130px] vt z-10">
-          <span className="stamp" style={{color:"rgba(245,241,234,.7)"}}>Beirut · MMXXVI · No. 048</span>
+          <span className="stamp" style={{color:"rgba(247,246,243,.7)"}}>Beirut · MMXXVI · No. 048</span>
         </div>
 
         <div className="profile-hero-text absolute bottom-5 left-5 right-5 z-10">
-          <div className="smallcaps mb-2" style={{color:"rgba(245,241,234,.7)"}}>Member since '24</div>
-          <div className="font-black font-display-l text-[48px] leading-[0.9] tracking-tight">{firstName}{lastName ? <><br/>{lastName}</> : ""}</div>
+          <div className="smallcaps mb-2" style={{color:"rgba(247,246,243,.7)"}}>Member since '24</div>
+          <div className="font-black font-display-l text-[48px] leading-[0.9]">{firstName}{lastName ? <><br/>{lastName}</> : ""}</div>
           <div className="flex items-center gap-2 mt-3">
             <Icon name="instagram" size={13} stroke={1.5} className="opacity-70"/>
             <span className="text-[13px] opacity-80">@{p.handle}</span>
@@ -1516,7 +1529,7 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
             <div className="text-[12px] font-medium">Verify with Instagram</div>
             <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Numbers below are estimated. Connect for real data + tier upgrade.</div>
           </div>
-          <button onClick={onVerify} className="press px-3 h-7 rounded-full text-[10px] uppercase tracking-[.18em] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+          <button onClick={onVerify} className="press px-3 h-7 rounded-full text-[11px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
             Connect
           </button>
         </div>
@@ -1556,7 +1569,7 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
           <div key={i} className="flex items-center gap-3">
             <img src={e.img} className="w-12 h-14 rounded-[10px] object-cover" alt=""/>
             <div className="flex-1">
-              <div className="text-[14px]">{e.t}</div>
+              <div className="font-display text-[16px]">{e.t}</div>
               <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{e.v} · {e.date}</div>
             </div>
             <div className="font-mono text-[16px]" style={{color:"var(--ice)"}}>{e.score}</div>
@@ -1573,7 +1586,7 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
 function ScreenPicked({ event, onConfirm, onLater }){
   const e = event || EVENTS[0];
   return (
-    <div className="absolute inset-0 anim-fade" style={{background:"#0A0A0A", color:"#F5F1EA"}}>
+    <div className="absolute inset-0 anim-fade" style={{background:"#121315", color:"#F7F6F3"}}>
       <StatusBar/>
 
       <div className="absolute inset-0 opacity-30 pointer-events-none">
@@ -1581,26 +1594,27 @@ function ScreenPicked({ event, onConfirm, onLater }){
       </div>
 
       <div className="absolute inset-0 z-10 flex flex-col px-7 pt-[100px] pb-10">
-        <div className="stamp picked-stagger" style={{color:"rgba(245,241,234,.7)", animationDelay:"0ms"}}>The List · invitation</div>
+        <div className="stamp wordmark picked-stagger" style={{color:"rgba(247,246,243,.7)", animationDelay:"0ms"}}>The List · invitation</div>
 
         <div className="flex-1 flex flex-col justify-center items-center text-center -mt-6">
-          <div className="w-[180px] h-[180px] rounded-full flex items-center justify-center pulse-ice ring-pop" style={{background:"var(--ice)", color:"var(--ice-ink)", animationDelay:"120ms"}}>
+          <div className="w-[180px] h-[180px] rounded-full flex items-center justify-center pulse-ice ring-pop" style={{background:"#F7F6F3", color:"#121315", animationDelay:"120ms"}}>
             <div className="font-black text-[48px] leading-none">You're<br/>in</div>
           </div>
-          <div className="font-black font-display-l text-[34px] leading-[0.95] mt-10 tracking-tight picked-stagger" style={{animationDelay:"680ms"}}>{e.title}</div>
+          <div className="font-black font-display-l text-[34px] leading-[0.95] mt-10 picked-stagger" style={{animationDelay:"680ms"}}>{e.title}</div>
           <div className="text-[13px] mt-2 opacity-75 picked-stagger" style={{animationDelay:"820ms"}}>{e.venue} · {e.date} · {e.time}</div>
 
-          <div className="mt-8 px-4 py-3 rounded-[12px] picked-stagger" style={{background:"rgba(245,241,234,.08)", border:"1px solid rgba(245,241,234,.15)", animationDelay:"960ms"}}>
-            <div className="stamp" style={{color:"rgba(245,241,234,.65)"}}>Confirm within</div>
-            <div className="font-black text-[28px] mt-0.5" style={{color:"var(--ice)"}}><Countdown value="23:59:47"/></div>
+          <div className="mt-8 px-4 py-3 rounded-[12px] picked-stagger" style={{background:"rgba(247,246,243,.08)", border:"1px solid rgba(247,246,243,.15)", animationDelay:"960ms"}}>
+            <div className="stamp" style={{color:"rgba(247,246,243,.65)"}}>Confirm within</div>
+            <div className="font-black text-[28px] mt-0.5" style={{color:"#F7F6F3"}}><Countdown value="23:59:47"/></div>
           </div>
         </div>
 
         <div className="flex flex-col gap-3 picked-stagger" style={{animationDelay:"1120ms"}}>
-          <button onClick={onConfirm} className="press glow-primary w-full h-[58px] rounded-full font-medium text-[15px] uppercase tracking-[.2em]" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-            Confirm my seat
+          <button onClick={onConfirm} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5" style={{background:"#F7F6F3", color:"#121315"}}>
+            <span>Confirm my seat</span>
+            <Icon name="arrow-right" size={16} stroke={1.6}/>
           </button>
-          <button onClick={onLater} className="press w-full h-[58px] rounded-full font-medium text-[13px] uppercase tracking-[.2em]" style={{background:"transparent", color:"rgba(245,241,234,.7)", border:"1px solid rgba(245,241,234,.2)"}}>
+          <button onClick={onLater} className="press w-full h-[58px] rounded-full font-medium text-[13px]" style={{background:"transparent", color:"rgba(247,246,243,.7)", border:"1px solid rgba(247,246,243,.2)"}}>
             Decline
           </button>
         </div>
@@ -1633,7 +1647,7 @@ function IntroVideoBG(){
   }, [active]);
 
   return (
-    <div className="absolute inset-0 overflow-hidden" style={{background:"#050505"}}>
+    <div className="absolute inset-0 overflow-hidden" style={{background:"#0D0E10"}}>
       {INTRO_CLIPS.map((c,i)=>(
         <video key={i} ref={el => vids.current[i] = el}
           src={c.src} poster={c.poster}
@@ -1646,12 +1660,37 @@ function IntroVideoBG(){
       {/* vignette */}
       <div className="absolute inset-0 pointer-events-none" style={{boxShadow:"inset 0 0 170px 46px rgba(0,0,0,.82)"}}/>
       {/* top + bottom scrims for status bar / lockup / buttons */}
-      <div className="absolute inset-0 pointer-events-none" style={{background:"linear-gradient(180deg, rgba(5,5,5,.72) 0%, rgba(5,5,5,0) 24%, rgba(5,5,5,0) 46%, rgba(5,5,5,.92) 100%)"}}/>
+      <div className="absolute inset-0 pointer-events-none" style={{background:"linear-gradient(180deg, rgba(13,14,16,.72) 0%, rgba(13,14,16,0) 24%, rgba(13,14,16,0) 46%, rgba(13,14,16,.92) 100%)"}}/>
     </div>
   );
 }
 
 /* ========== 00 — ONBOARDING ========== */
+/* Step indicator — numbered circles joined by a hairline, current = accent fill
+   (kit 05 progress pattern). `dark` forces the cream-on-dark palette on the
+   hardcoded takeover screens so it reads in both themes. Visual only. */
+function Steps({ current, total=3, dark=false, className="" }){
+  const accent    = dark ? "#F7F6F3" : "var(--ice)";
+  const accentInk = dark ? "#121315" : "var(--ice-ink)";
+  const line      = dark ? "rgba(247,246,243,.22)" : "var(--line-2)";
+  const mute      = dark ? "rgba(247,246,243,.55)" : "var(--ink-mute)";
+  return (
+    <div className={"flex items-center "+className} aria-hidden="true">
+      {Array.from({length: total}, (_,i)=>i+1).map(n=>(
+        <React.Fragment key={n}>
+          {n>1 && <span style={{width:24, height:1, background:line}}/>}
+          <span className="rounded-full flex items-center justify-center font-mono text-[11px]"
+            style={n===current
+              ? {width:24, height:24, background:accent, color:accentInk}
+              : {width:24, height:24, border:"1px solid "+line, color:mute}}>
+            {n}
+          </span>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
 function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
   const [phone, setPhone] = useState("");
   const [handle, setHandle] = useState("");
@@ -1673,36 +1712,37 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
   };
 
   if (step === 'intro') return (
-    <div className="absolute inset-0 anim-fade" style={{background:"#050505", color:"#F5F1EA"}}>
+    <div className="absolute inset-0 anim-fade" style={{background:"#0D0E10", color:"#F7F6F3"}}>
       <IntroVideoBG/>
       <StatusBar/>
       <div className="absolute inset-0 z-10 flex flex-col px-7 pt-[120px] pb-10">
-        {/* Centered wordmark lockup */}
+        {/* Centered wordmark lockup — serif wordmark, sentence-case copy */}
         <div className="flex-1 flex flex-col items-center justify-center text-center -mt-6">
-          <div className="anim-fade" style={{fontSize:10, fontWeight:500, letterSpacing:".42em", textTransform:"uppercase", color:"rgba(245,241,234,.78)"}}>Est. MMXXVI · Beirut</div>
-          <div className="font-black font-display-l anim-up" style={{fontSize:66, lineHeight:.88, letterSpacing:".04em", marginTop:14, textShadow:"0 2px 40px rgba(0,0,0,.6)"}}>THE<br/>LIST</div>
-          <div className="anim-up" style={{marginTop:18, fontSize:12, letterSpacing:".26em", textTransform:"uppercase", color:"rgba(245,241,234,.82)"}}>By invitation only</div>
+          <div className="anim-fade" style={{fontSize:11, fontWeight:500, letterSpacing:".02em", color:"rgba(247,246,243,.78)"}}>Est. MMXXVI · Beirut</div>
+          <div className="font-black font-display-l anim-up" style={{fontSize:66, lineHeight:.88, marginTop:14, textShadow:"0 2px 40px rgba(0,0,0,.6)"}}>The<br/>List</div>
+          <div className="anim-up" style={{marginTop:18, fontSize:13, letterSpacing:".01em", color:"rgba(247,246,243,.82)"}}>By invitation only</div>
         </div>
 
-        {/* Bottom actions — solid Apply (ice) + ghost invite, TSS pattern */}
+        {/* Bottom actions — solid Apply (accent) + ghost invite, TSS pattern */}
         <div className="flex flex-col gap-3 anim-up">
-          <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em]" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-            Apply for access
+          <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5" style={{background:"#F7F6F3", color:"#121315"}}>
+            <span>Apply for access</span>
+            <Icon name="arrow-right" size={16} stroke={1.6}/>
           </button>
-          <button onClick={()=>setStep('phone')} className="press w-full h-[58px] rounded-full font-medium text-[13px] uppercase tracking-[.2em]" style={{background:"transparent", color:"#F5F1EA", border:"1px solid rgba(245,241,234,.32)"}}>
+          <button onClick={()=>setStep('phone')} className="press w-full h-[58px] rounded-full font-medium text-[13px]" style={{background:"transparent", color:"#F7F6F3", border:"1px solid rgba(247,246,243,.32)"}}>
             I have an invite
           </button>
         </div>
 
         {/* Business door — venues sign in on the other side */}
         <div className="flex items-center gap-3 mt-4 anim-up" style={{opacity:.9}}>
-          <div className="flex-1 h-px" style={{background:"rgba(245,241,234,.16)"}}/>
-          <div className="stamp" style={{color:"rgba(245,241,234,.6)"}}>or</div>
-          <div className="flex-1 h-px" style={{background:"rgba(245,241,234,.16)"}}/>
+          <div className="flex-1 h-px" style={{background:"rgba(247,246,243,.16)"}}/>
+          <div className="stamp" style={{color:"rgba(247,246,243,.6)"}}>or</div>
+          <div className="flex-1 h-px" style={{background:"rgba(247,246,243,.16)"}}/>
         </div>
         <button onClick={()=>{ window.location.href = "./venue.html"; }}
-          className="press w-full h-[52px] rounded-full font-medium text-[12px] uppercase tracking-[.22em] anim-up mt-3"
-          style={{background:"transparent", color:"#F5F1EA", border:"1px solid rgba(245,241,234,.32)"}}>
+          className="press w-full h-[52px] rounded-full font-medium text-[12px] anim-up mt-3"
+          style={{background:"transparent", color:"#F7F6F3", border:"1px solid rgba(247,246,243,.32)"}}>
           List your venue · Business
         </button>
       </div>
@@ -1714,8 +1754,9 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
     <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
       <StatusBar/>
       <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
-        <div className="stamp">The List · No. 048</div>
-        <div className="font-black font-display-l text-[44px] leading-[.95] tracking-tight mt-3">Apply</div>
+        <div className="stamp wordmark">The List · No. 048</div>
+        <Steps current={1} className="mt-4"/>
+        <div className="font-black font-display-l text-[44px] leading-[.95] mt-3">Apply</div>
         <div className="text-[13px] mt-3 max-w-[280px]" style={{color:"var(--ink-2)"}}>By invitation only. We review every profile manually. Approval typically takes 24 hours.</div>
 
         <div className="mt-10 space-y-5">
@@ -1734,8 +1775,9 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
 
         <div className="flex-1"/>
 
-        <button onClick={submit} disabled={!canSubmit} className={"press w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em] "+(canSubmit?"glow-primary":"")} style={{background: canSubmit ? "var(--ice)" : "var(--bg-elev2)", color: canSubmit ? "var(--ice-ink)" : "var(--ink-mute)"}}>
-          Apply for access
+        <button onClick={submit} disabled={!canSubmit} className={"press w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5 "+(canSubmit?"glow-primary":"")} style={{background: canSubmit ? "var(--ice)" : "var(--bg-elev2)", color: canSubmit ? "var(--ice-ink)" : "var(--ink-mute)"}}>
+          <span>Apply for access</span>
+          <Icon name="arrow-right" size={16} stroke={1.6}/>
         </button>
         <div className="text-center text-[11px] mt-3" style={{color:"var(--ink-mute)"}}>No password. We verify through your Instagram.</div>
       </div>
@@ -1744,13 +1786,16 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
   );
 
   if (step === 'reviewing') return (
-    <div className="absolute inset-0 anim-fade" style={{background:"#0A0A0A", color:"#F5F1EA"}}>
+    <div className="absolute inset-0 anim-fade" style={{background:"#121315", color:"#F7F6F3"}}>
       <StatusBar/>
+      <div className="absolute top-[110px] left-0 right-0 flex justify-center">
+        <Steps current={2} dark/>
+      </div>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-7">
-        <div className="w-[160px] h-[160px] rounded-full border-2 flex items-center justify-center" style={{borderColor:"rgba(245,241,234,.2)"}}>
-          <div className="w-[120px] h-[120px] rounded-full border-2 spin" style={{borderColor:"rgba(245,241,234,.3)", borderTopColor:"#F5F1EA"}}/>
+        <div className="w-[160px] h-[160px] rounded-full border-2 flex items-center justify-center" style={{borderColor:"rgba(247,246,243,.2)"}}>
+          <div className="w-[120px] h-[120px] rounded-full border-2 spin" style={{borderColor:"rgba(247,246,243,.3)", borderTopColor:"#F7F6F3"}}/>
         </div>
-        <div className="font-black font-display-l text-[28px] mt-10 tracking-tight">Reading</div>
+        <div className="font-black font-display-l text-[28px] mt-10">Reading</div>
         <div className="text-[13px] mt-3 max-w-[260px]">Pulling @{handle || "your-handle"}'s reach, demographics, and engagement.</div>
       </div>
       <HomeIndicator/>
@@ -1758,18 +1803,18 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
   );
 
   if (step === 'error') return (
-    <div className="absolute inset-0 anim-fade" style={{background:"#0A0A0A", color:"#F5F1EA"}}>
+    <div className="absolute inset-0 anim-fade" style={{background:"#121315", color:"#F7F6F3"}}>
       <StatusBar/>
       <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
-        <div className="stamp" style={{color:"rgba(245,241,234,.7)"}}>The List · No. 048</div>
+        <div className="stamp wordmark" style={{color:"rgba(247,246,243,.7)"}}>The List · No. 048</div>
         <div className="flex-1 flex flex-col justify-center items-center text-center">
-          <div className="w-[120px] h-[120px] rounded-full flex items-center justify-center" style={{border:"2px solid rgba(245,241,234,.25)", color:"rgba(245,241,234,.85)"}}>
+          <div className="w-[120px] h-[120px] rounded-full flex items-center justify-center" style={{border:"2px solid rgba(247,246,243,.25)", color:"rgba(247,246,243,.85)"}}>
             <Icon name="x" size={40} stroke={1.4}/>
           </div>
-          <div className="font-black font-display-l text-[30px] leading-[.95] mt-10 tracking-tight">Couldn't<br/>read that</div>
+          <div className="font-black font-display-l text-[30px] leading-[.95] mt-10">Couldn't<br/>read that</div>
           <div className="text-[13px] mt-3 opacity-75 max-w-[280px]">We couldn't pull @{handle || "your-handle"} from Instagram. Check the spelling, or try another handle.</div>
         </div>
-        <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em]" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+        <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px]" style={{background:"#F7F6F3", color:"#121315"}}>
           Try another handle
         </button>
       </div>
@@ -1779,21 +1824,23 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
 
   // tier-reveal
   return (
-    <div className="absolute inset-0 anim-fade" style={{background:"#0A0A0A", color:"#F5F1EA"}}>
+    <div className="absolute inset-0 anim-fade" style={{background:"#121315", color:"#F7F6F3"}}>
       <StatusBar/>
       <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
-        <div className="stamp picked-stagger" style={{color:"rgba(245,241,234,.7)", animationDelay:"0ms"}}>The List · invitation</div>
+        <div className="stamp wordmark picked-stagger" style={{color:"rgba(247,246,243,.7)", animationDelay:"0ms"}}>The List · invitation</div>
+        <Steps current={3} dark className="mt-4 picked-stagger"/>
 
         <div className="flex-1 flex flex-col justify-center items-center text-center">
-          <div className="ring-pop w-[180px] h-[180px] rounded-full flex items-center justify-center" style={{border:"2px solid var(--ice)", color:"var(--ice)", animationDelay:"120ms", boxShadow:"inset 0 0 0 7px rgba(159,216,232,.12)"}}>
+          <div className="ring-pop w-[180px] h-[180px] rounded-full flex items-center justify-center" style={{border:"2px solid #F7F6F3", color:"#F7F6F3", animationDelay:"120ms", boxShadow:"inset 0 0 0 7px rgba(247,246,243,.12)"}}>
             <div className="font-black text-[36px] leading-none">Tier<br/>One</div>
           </div>
-          <div className="font-black font-display-l text-[34px] leading-[.95] mt-10 tracking-tight picked-stagger" style={{animationDelay:"680ms"}}>Listed</div>
+          <div className="font-black font-display-l text-[34px] leading-[.95] mt-10 picked-stagger" style={{animationDelay:"680ms"}}>Listed</div>
           <div className="text-[13px] mt-3 opacity-80 max-w-[280px] picked-stagger" style={{animationDelay:"820ms"}}>Your audience fits the rooms. Tier reviews happen quarterly.</div>
         </div>
 
-        <button onClick={onComplete} className="press glow-primary w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em] picked-stagger" style={{background:"var(--ice)", color:"var(--ice-ink)", animationDelay:"1100ms"}}>
-          Enter The List
+        <button onClick={onComplete} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5 picked-stagger" style={{background:"#F7F6F3", color:"#121315", animationDelay:"1100ms"}}>
+          <span>Enter The List</span>
+          <Icon name="arrow-right" size={16} stroke={1.6}/>
         </button>
       </div>
       <HomeIndicator/>
@@ -1869,7 +1916,7 @@ function App(){
   const onVerify = () => {
     setProfile(p => ({ ...(p || SEED_PROFILE), data_status: "verified" }));
     setSettingsOpen(false);
-    showToast("Instagram connected — verified");
+    showToast("Instagram connected · verified");
   };
 
   const savedEvents = useMemo(() => EVENTS.filter(e => saved.includes(e.id)), [saved]);
@@ -1917,7 +1964,7 @@ function App(){
         <div className="stamp mb-2" style={{color:"var(--ink-mute)"}}>How to use</div>
         <div className="text-[12px]" style={{color:"var(--ink-2)"}}>
           {onboardActive
-            ? "Entry splash plays the grainy Beirut montage — tap Apply for access. Type anything in the two fields, watch the review animation, tap Enter The List on the tier reveal."
+            ? "Entry splash plays the grainy Beirut montage. Tap Apply for access, type anything in the two fields, watch the review animation, tap Enter The List on the tier reveal."
             : "Tap any event card, hit Apply → “You're in” slides up → Confirm lands in Invites. Bookmark a card to fill the Saved tab. Profile → gear opens Settings; Connect verifies. Share opens from the event header. Filters pill on Index opens the sheet."}
         </div>
       </div>

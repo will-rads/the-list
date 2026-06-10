@@ -78,6 +78,7 @@ venv/
 
 # ─── claude / agent local state ─────────────────────────────────────
 .claude/settings.local.json
+.superpowers/
 
 # ─── design source files (binary, optional) ─────────────────────────
 *.sketch
@@ -92,3 +93,8 @@ research/voice-notes/*.opus
 
 # Entry-screen video assets are required app media — override *.mp4 above so they ship
 !web/assets/*.mp4
+
+# ─── archives + raw exports + rasterized scratch (keep source PDFs) ──
+*.zip
+Intro Video/
+Brand Kit Proposal/_pages/

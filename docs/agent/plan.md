@@ -2,7 +2,7 @@
 
 ## Where we are right now
 
-**Phase: both marketplace sides prototyped.** User side (`web/index.html`) is v0.4, merged to `main`, deployed to Vercel (`the-list-omega.vercel.app`) — TSS-style grainy entry, full interaction pass, and now a 4-image swipeable event gallery + TikTok on the profile. **Venue side (`web/venue.html`) is now built** on branch `venue-side` (mocked, not merged/pushed): role-split entry, group-optional onboarding, image crop-to-frame, Events dashboard, post-event with seats + soft gender mix, Tinder applicant swipe (quality 0–10 + IG/TikTok + links) with a soft gender counter + Picked, Venue tab. Built brainstorm → spec → plan → subagent-driven from `docs/superpowers/`. Same locked carbon+ice+Plus Jakarta Sans system. Next: Will's browser walkthrough → merge decision → SwiftUI port (both sides).
+**Phase: both marketplace sides prototyped.** User side (`web/index.html`) is v0.4, merged to `main`, deployed to Vercel (`the-list-omega.vercel.app`) — TSS-style grainy entry, full interaction pass, and now a 4-image swipeable event gallery + TikTok on the profile. **Venue side (`web/venue.html`) is now built** on branch `venue-side` (mocked, not merged/pushed): role-split entry, group-optional onboarding, image crop-to-frame, Events dashboard, post-event with seats + soft gender mix, Tinder applicant swipe (quality 0–10 + IG/TikTok + links) with a soft gender counter + Picked, Venue tab. Built brainstorm → spec → plan → subagent-driven from `docs/superpowers/`. Same locked carbon+ice+Plus Jakarta Sans system. **2026-06-10 fullness pass on top — UNCOMMITTED + NOT BROWSER-VERIFIED:** venue side got a zero-typing demo path ("Preview the desk"), a Desk/"Tonight" dashboard tab (widget stat tiles + urgent swipe card + bell/Activity), a Door night-of check-in tab, and real applicant portraits; member side got bell/Activity, "Hi, Sara" + pinned night, widget stat tiles (Profile + My Events), and a month calendar on Explore. Will's style call: TSS-style widget stat tiles replace editorial stats, both sides. Next: check branch (`venue-side`?), Will's browser walkthrough → verify (broken images / console errors) → commit → merge decision → SwiftUI port (both sides).
 
 ```text
 [done]      Voice notes transcribed + plan synthesized
@@ -18,7 +18,9 @@
 [done]      TSS-style grainy entry screen (v0.4): 3 Veo clips from Nano Banana stills, crossfading montage
 [done]      Reviewed → merged to main → deployed to Vercel (the-list-omega.vercel.app)
 [done]      Venue side prototype (web/venue.html, branch venue-side): role split, onboarding, post-event + gender mix, applicant swipe + counter, member-side gallery + TikTok
-[doing]     Venue-side walkthrough + merge decision → then SwiftUI port (both sides)  ◄── HERE
+[done]      Fullness pass both sides (2026-06-10): venue demo path + Desk tiles + Door check-in; member bell + greeting + stat tiles + calendar — UNCOMMITTED, unverified
+[done]      Brand Kit V.2 received → v2/ reskin built (2026-06-11): anthracite/cream monochrome, Cormorant Garamond + Plus Jakarta Sans, sentence case, arrows on CTAs — UNCOMMITTED
+[doing]     Will eyeballs v2/index.html + v2/venue.html → feedback → adopt/iterate → docs sync + commit  ◄── HERE
 [next]      Lock working name (test with Dima's top 30)
 [next]      Venue anchor contracts (5-10 Beirut venues)
 [next]      Supabase backend scaffold

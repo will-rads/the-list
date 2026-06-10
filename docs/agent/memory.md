@@ -6,7 +6,48 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## Current state (one line)
 
-**Venue side built — `web/venue.html` prototype done on branch `venue-side` (not merged, not pushed).** The marketplace now has both sides. Member side `web/index.html` = v0.4 (live on `main` → Vercel), now with a 4-image swipeable event gallery + TikTok on the profile. New venue side `web/venue.html` (mocked, same carbon+ice+Plus Jakarta Sans system): role-split entry (Member/Business door on the member intro), group-optional onboarding, image crop-to-frame, Events dashboard, post-event with seats + soft gender mix, Tinder applicant swipe (quality 0–10 + IG/TikTok + social links) with a soft gender counter + Picked list, Venue tab. Built subagent-driven from `docs/superpowers/plans/2026-06-06-venue-side.md`. **Not browser-verified yet — Will's walkthrough pending. Next: walkthrough → merge decision → SwiftUI port (both sides).**
+**Venue side built — `web/venue.html` prototype done on branch `venue-side` (not merged, not pushed).** The marketplace now has both sides. Member side `web/index.html` = v0.4 (live on `main` → Vercel), now with a 4-image swipeable event gallery + TikTok on the profile. New venue side `web/venue.html` (mocked, same carbon+ice+Plus Jakarta Sans system): role-split entry (Member/Business door on the member intro), group-optional onboarding, image crop-to-frame, Events dashboard, post-event with seats + soft gender mix, Tinder applicant swipe (quality 0–10 + IG/TikTok + social links) with a soft gender counter + Picked list, Venue tab. Built subagent-driven from `docs/superpowers/plans/2026-06-06-venue-side.md`. **2026-06-10 fullness pass on top (uncommitted):** venue got a zero-typing demo path, Desk dashboard (widget stat tiles + urgent swipe card + bell), Door check-in tab, real portraits; member side got bell/Activity, greeting + pinned night, stat tiles (Profile + My Events), month calendar. **Not browser-verified — classifier outage blocked eval/git that session. Next: check branch (`venue-side`?), Will walkthrough → verify → commit → merge decision → SwiftUI port (both sides).**
+
+---
+
+## 2026-06-11 — v2 brand-kit reskin built (`v2/index.html` + `v2/venue.html`, uncommitted)
+
+Will delivered **Brand Kit V.2** (`Brand Kit Proposal/The List - Kit V.2 (Low Res.).pdf`; page renders in `_pages/`, rasterized via PyMuPDF — the PDF has no text layer and the Read tool's pdftoppm is missing on this machine). New `v2/` folder at root: copies of both prototypes reskinned to the kit, **functionality untouched**. Spec: `docs/superpowers/specs/2026-06-11-v2-brand-kit-reskin-design.md`. Built by 2 parallel subagents (one per file), my cross-check after.
+
+**The kit:** light "Anthracite Scale" (bg `#F7F6F3`, ink `#1E1E1E`, brand `#2A2D31`, CTA `#454B52`, highlight `#6A737D`) / dark "Warm Cream Scale" (bg `#121315`, cream `#F7F6F3`, `#EDECE6`, `#D8D4C7`). **No chromatic accent — ice blue is dead in v2.** Cormorant Garamond (display/headings, 600) + body sans. Pill CTAs with trailing arrows, white cards, numbered step circles, "• label" dot badges, minimal line icons (kept Heroicons = kit 06.0).
+
+**Will's rulings (override kit where they conflict):**
+- Kit says Inter for body → **rejected, Plus Jakarta Sans stays** (Inter ban holds). Two-family system now: Cormorant Garamond + Plus Jakarta Sans.
+- Kit's grey text hierarchy → **approved** ("try the grey") — reverses the no-grey-text rule from 2026-05-31, in v2 only for now.
+- **All-caps banned everywhere** (overrides the kit's own tracked-caps labels). Sentence case; brand/venue names keep capitals. Statusbar exempt.
+- 2026-06-10 accent-gradient exploration **archived** (`design-explorations/accent-direction.html`) — kit's monochrome wins.
+- Dark stays primary.
+
+Mechanics worth remembering: Tailwind CDN's own `.font-black` (weight 900) fights the serif rule the same way its `.font-mono` did — both files now use doubled selectors (`.font-black.font-black`, `.font-mono.font-mono`); venue's was my post-pass fix (index subagent caught it, venue's didn't). Both files Babel/parser-verified by the subagents; my greps confirm 0 ice/Satoshi/Host/uppercase leftovers + identical tokens.
+
+**`web/` (v1) untouched and still live. v2 not committed, not pushed, not visually eyeballed by Will yet.** Next: Will opens `v2/index.html` + `v2/venue.html` from disk → feedback → then DESIGN.md/PRODUCT.md sync for v2 (deliberately NOT done yet — docs still describe v1; sync only if v2 is adopted).
+
+---
+
+## 2026-06-10 — Venue prototype filled out + influencer "fullness" pass (NOT yet browser-verified)
+
+Spec: `docs/superpowers/specs/2026-06-10-venue-prototype-design.md` (approved in chat). Two workstreams, parallel (subagent on index.html, main agent on venue.html). **Will's style call: TSS-style widget stat tiles (big number + small label in rounded cards) replace the editorial stat treatment, both sides.**
+
+**`web/venue.html` (built 2026-06-06, entry below — augmented, not replaced):**
+- **Zero-typing demo path** (Will's ask): "Preview the desk · demo data" on the splash → seeds `DEMO_VENUE` (Cyan Beach Club, Jiyeh, pool-day hero) and jumps straight in. No email, no photo upload.
+- **New Desk/"Tonight" tab** (dashboard, default): bell + badge + Activity sheet, urgent card ("Open for swipe" + countdown + Start swiping → review deck), 2×2 **StatTiles** (137 Applied / To review / Confirmed (ice) / 1 Room tonight), upcoming drafts list, + New room.
+- **New Door tab** (night-of): Expected / In / No show segments, check-in + no-show actions with toasts, rate sheet (6–10 chips) feeding reputation copy.
+- **Picks lifted to App state** — swiping in the review deck now moves the desk's Confirmed/To review tiles (was thrown away locally).
+- Applicant photos swapped from venue shots to 8 Unsplash portraits (`FACE` map — a cocktail photo was standing in for "Karim Haddad").
+- Tab bar 3 → 4 (Tonight / Events / Door / Venue); Applicants tab folded into Desk + Events (ScreenApplicants left as dead code). Atoms copied from index.html (Countdown, StatusPill, DateChip, SectionHead, Segmented, StatTile, NotifSheet). "← Influencer side" page link.
+
+**`web/index.html` (subagent; favorites + calendar-strip already existed, skipped):**
+- StatTile atom; Profile's asymmetric hero stats → 3 tiles (Reputation ice / Followers / Engagement); My Events gets Applied/Confirmed/Past tiles that switch segments on tap.
+- Bell + badge on Home → Activity sheet (picked / closes-soon / Story-verified rows).
+- "Hi, Sara" greeting in the eyebrow + "Your night" pinned confirmed-event row above Featured → taps to My List.
+- Full-month May calendar sheet on Explore (event days dotted, selected = ice) wired to the day strip.
+
+**NOT visually verified** — auto-mode classifier outage blocked browser eval + git this session (file edits worked). Will eyeballs at `http://127.0.0.1:5555/venue.html` and `/index.html`. **Next chat: check current branch first (`venue-side` vs `main` — venue.html lives on `venue-side` per the 2026-06-06 entry), browser-verify both (broken images, console errors, font/ice budget), then commit. Not committed, not pushed.**
 
 ---
 
