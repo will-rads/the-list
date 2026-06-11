@@ -13,6 +13,8 @@ const REQUIRED = {
     "function ScreenHome", "function ScreenExplore", "function ScreenEventDetail",
     "function ScreenMyEvents", "function ScreenProfile", "function ScreenPicked",
     "function ScreenOnboard",
+    "const STAGE = {", "const GS = {", "const SS = {", "const STAGE_COPY = {",
+    "const GS_COPY = {", "const SS_COPY = {", "const MY_EVENTS = [", "const SEED_NOTIFS = [", "LST-4F",
   ],
   "venue.html": [
     "function ScreenVenueIntro", "function ScreenVenueLogin", "function ScreenOnboardGroup",

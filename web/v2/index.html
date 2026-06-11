@@ -396,12 +396,102 @@ function mockCreatorDataFetch(handle){
   });
 }
 
+// Event stages
+const STAGE = { draft:"draft", open:"open", locked:"locked", past:"past", cancelled:"cancelled" };
+// Guest attendance states (one axis)
+const GS = { applied:"applied", waitlist:"waitlist", picked:"picked", confirmed:"confirmed",
+  declined:"declined", expired:"expired", withdrawn:"withdrawn", checkedIn:"checked_in",
+  noShow:"no_show", notSelected:"not_selected", cancelled:"cancelled" };
+// Story states (second axis)
+const SS = { due:"due", review:"review", needsReview:"needs_review", rejected:"rejected", missed:"missed", verified:"verified" };
+// Member-facing copy. The member NEVER sees the word "Locked".
+const STAGE_COPY = { open:"Open", locked:"List closed", past:"Past", cancelled:"Cancelled" };
+const GS_COPY = {
+  applied:"Applied · under review", waitlist:"Still under review", picked:"Confirm your seat",
+  confirmed:"Confirmed", declined:"Declined", expired:"Pick expired", withdrawn:"Withdrawn",
+  checked_in:"Checked in", no_show:"No show", not_selected:"Not selected", cancelled:"Event cancelled" };
+const SS_COPY = { due:"Story due", review:"Under review", needs_review:"Needs review",
+  rejected:"Rejected — try another screenshot", missed:"Missed", verified:"Verified" };
+
 const EVENTS = [
-  { id:"pool",   title:"Pool Day",        venue:"Cyan Beach Club",     area:"Jiyeh",       date:"Sun · 25 May",  time:"14:00",  img:IMG.beachClub,  type:"Beach",      seats:20, applied:137, badge:"Open",      gallery:[IMG.beachClub, IMG.pool, IMG.cocktail, IMG.beirut] },
-  { id:"sound",  title:"Sound Bath",      venue:"Pyrite Mar Mikhael",  area:"Mar Mikhael", date:"Sun · 25 May",  time:"23:00",  img:IMG.club,       type:"Club",       seats:30, applied:212, badge:"24h left",  gallery:[IMG.club, IMG.clubRed, IMG.cocktail, IMG.lounge] },
-  { id:"tasting",title:"Chef Tasting",    venue:"Em Sherif Café",      area:"Achrafieh",   date:"Sat · 24 May",  time:"20:00",  img:IMG.restaurant, type:"Restaurant", seats:12, applied:88,  badge:"Closing",   gallery:[IMG.restaurant, IMG.lounge, IMG.cocktail] },
-  { id:"sunset", title:"Rooftop Sundown", venue:"Sporting",            area:"Manara",      date:"Sat · 24 May",  time:"18:30",  img:IMG.pool,       type:"Pool",       seats:25, applied:154, badge:"",          gallery:[IMG.pool, IMG.rooftop, IMG.beirut, IMG.cocktail] },
-  { id:"loungenight", title:"Late Lounge", venue:"Centrale",          area:"Saifi",       date:"Sun · 25 May",  time:"22:00",  img:IMG.lounge,     type:"Lounge",     seats:18, applied:101, badge:"",          gallery:[IMG.lounge, IMG.cocktail, IMG.restaurant] },
+  // 1. Pool Day — locked, the confirmed-seat demo event
+  { id:"pool",    title:"Pool Day",         venue:"Cyan Beach Club",  area:"Jiyeh",
+    date:"Sun · 25 May",  time:"14:00", doors:"14:00", img:IMG.beachClub, type:"Beach",
+    stage:STAGE.locked, seats:20, applied:137, mix:{girls:15,guys:5},
+    closesAt:"Sat · 24 May · 20:00",
+    badge:"List closed",
+    gallery:[IMG.beachClub, IMG.pool, IMG.cocktail, IMG.beirut],
+    brief:{ arrival:"14:00 – 15:00", dress:"Beach chic", meeting:"Host stand — ask for Rami", rules:"1 Story + venue tag during the event" } },
+
+  // 2. Late Lounge — open
+  { id:"lounge",  title:"Late Lounge",      venue:"Cyan Beach Club",  area:"Jiyeh",
+    date:"Fri · 30 May",  time:"22:00", doors:"22:00", img:IMG.lounge, type:"Lounge",
+    stage:STAGE.open, seats:20, applied:137, mix:{girls:15,guys:5},
+    closesAt:"Fri · 30 May · 20:00", closingSoon:false,
+    badge:"Open",
+    gallery:[IMG.lounge, IMG.cocktail, IMG.restaurant],
+    brief:{ arrival:"21:30 – 22:30", dress:"Smart dark", meeting:"Door host", rules:"1 Story + venue tag during the event" } },
+
+  // 3. Sound Bath — past
+  { id:"bath",    title:"Sound Bath",       venue:"Cyan Beach Club",  area:"Jiyeh",
+    date:"Sat · 24 May",  time:"19:00", doors:"19:00", img:IMG.gym, type:"Gym",
+    stage:STAGE.past, seats:20, applied:137, mix:{girls:15,guys:5},
+    badge:"Past",
+    gallery:[IMG.gym, IMG.cocktail] },
+
+  // 4. Vinyl Night — past
+  { id:"vinyl",   title:"Vinyl Night",      venue:"Cyan Beach Club",  area:"Jiyeh",
+    date:"Sun · 11 May",  time:"21:00", doors:"21:00", img:IMG.lounge, type:"Lounge",
+    stage:STAGE.past, seats:12, applied:72, mix:{girls:10,guys:2},
+    badge:"Past",
+    gallery:[IMG.lounge, IMG.cocktail, IMG.restaurant] },
+
+  // 5. Sunset Tasting — past, different venue
+  { id:"tasting", title:"Sunset Tasting",   venue:"Mar Mikhael House",area:"Mar Mikhael",
+    date:"Fri · 23 May",  time:"19:30", doors:"19:30", img:IMG.restaurant, type:"Restaurant",
+    stage:STAGE.past, seats:12, applied:88,
+    badge:"Past",
+    gallery:[IMG.restaurant, IMG.lounge, IMG.cocktail] },
+
+  // 6. Harbor Club Night — cancelled
+  { id:"harbor",  title:"Harbor Club Night",venue:"Harbor Club",      area:"Dbayeh",
+    date:"Thu · 22 May",  time:"22:00", doors:"22:00", img:IMG.club, type:"Club",
+    stage:STAGE.cancelled, seats:20, applied:64,
+    badge:"Cancelled",
+    gallery:[IMG.club, IMG.clubRed] },
+
+  // 7. Sunset Sessions — open, closing-soon badge demo
+  { id:"sunset",  title:"Sunset Sessions",  venue:"North Shore",      area:"Batroun",
+    date:"Sat · 31 May",  time:"17:00", doors:"17:00", img:IMG.pool, type:"Beach",
+    stage:STAGE.open, seats:30, applied:64,
+    closesAt:"Sat · 31 May · 12:00", closingSoon:true,
+    badge:"Closing soon",
+    gallery:[IMG.pool, IMG.rooftop, IMG.beirut, IMG.cocktail],
+    brief:{ arrival:"16:30 – 17:30", dress:"Beach casual", meeting:"Main entrance", rules:"1 Story + venue tag during the event" } },
+
+  // 8. Rooftop Cocktails — open browsing event, stocked Explore
+  { id:"rooftop", title:"Rooftop Cocktails", venue:"Beirut Terrasse", area:"Achrafieh",
+    date:"Sat · 7 Jun",   time:"20:00", doors:"20:00", img:IMG.rooftop, type:"Rooftop",
+    stage:STAGE.open, seats:18, applied:54,
+    closesAt:"Sat · 7 Jun · 18:00", closingSoon:false,
+    badge:"Open",
+    gallery:[IMG.rooftop, IMG.cocktail, IMG.beirut],
+    brief:{ arrival:"20:00 – 21:00", dress:"Smart casual", meeting:"Rooftop elevator", rules:"1 Story + venue tag during the event" } },
+];
+
+const MY_EVENTS = [
+  { eventId:"pool",    state:GS.confirmed, code:"LST-4F" },
+  { eventId:"lounge",  state:GS.applied },
+  { eventId:"bath",    state:GS.checkedIn, story:SS.due },
+  { eventId:"vinyl",   state:GS.checkedIn, story:SS.verified,
+    verdict:{ score:92, reason:"Tag visible, posted in window" } },
+  { eventId:"tasting", state:GS.notSelected },
+  { eventId:"harbor",  state:GS.cancelled },
+];
+const SEED_NOTIFS = [
+  { id:"n1", kind:"pass",  text:"Tonight · Pool Day — your pass is ready", eventId:"pool", read:false },
+  { id:"n2", kind:"story", text:"Sound Bath — your Story is due", eventId:"bath", read:false },
+  { id:"n3", kind:"drop",  text:"New room Friday — Late Lounge", eventId:"lounge", read:false },
 ];
 
 /* Seed profile = the normalized creator-data shape (estimated, pre-verify).
@@ -738,8 +828,10 @@ function SettingsSheet({ profile, light, setLight, onClose, onToast }){
   );
 }
 
-/* ========== Notifications sheet — Activity feed, 3 seeded rows ========== */
-function NotificationsSheet({ onClose, onPickEvent }){
+/* ========== Notifications sheet — Activity feed, driven by notifs state ========== */
+function NotificationsSheet({ notifs, onClose, onPickEvent }){
+  // Icon per notification kind
+  const kindIcon = { pass:"check", story:"instagram", drop:"bell" };
   return (
     <>
       <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(18,19,21,.55)", backdropFilter:"blur(4px)"}}/>
@@ -753,30 +845,24 @@ function NotificationsSheet({ onClose, onPickEvent }){
         </div>
 
         <div className="space-y-2">
-          {/* 1 — the pick. Tappable: opens Pool Day, closes the sheet. */}
-          <button onClick={()=>{ onPickEvent(EVENTS[0]); onClose(); }} className="press card w-full text-left rounded-[14px] p-3 flex items-center gap-3">
-            <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{border:"1px solid var(--line-2)"}}>
-              <span className="w-2 h-2 rounded-full" style={{background:"var(--ice)"}}/>
-            </span>
-            <span className="flex-1 min-w-0 text-[13px]" style={{color:"var(--ink)"}}>Cyan Beach Club picked you · Pool Day</span>
-            <span className="text-[11px] shrink-0" style={{color:"var(--ink)"}}>2h</span>
-          </button>
-          {/* 2 — closing soon */}
-          <div className="card rounded-[14px] p-3 flex items-center gap-3">
-            <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{border:"1px solid var(--line-2)"}}>
-              <Icon name="bell" size={14} stroke={1.5}/>
-            </span>
-            <span className="flex-1 min-w-0 text-[13px]" style={{color:"var(--ink)"}}>Sound Bath closes in 5 hours</span>
-            <span className="text-[11px] shrink-0" style={{color:"var(--ink)"}}>4h</span>
-          </div>
-          {/* 3 — story verified */}
-          <div className="card rounded-[14px] p-3 flex items-center gap-3">
-            <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{border:"1px solid var(--line-2)"}}>
-              <Icon name="check" size={14} stroke={1.5}/>
-            </span>
-            <span className="flex-1 min-w-0 text-[13px]" style={{color:"var(--ink)"}}>Your Story for Late Lounge was verified</span>
-            <span className="text-[11px] shrink-0" style={{color:"var(--ink)"}}>1d</span>
-          </div>
+          {notifs.map(n => {
+            const ev = n.eventId ? EVENTS.find(e => e.id === n.eventId) : null;
+            const icon = kindIcon[n.kind] || "bell";
+            const isRead = n.read;
+            return (
+              <button key={n.id}
+                onClick={()=>{ if (ev) onPickEvent(ev); onClose(); }}
+                className="press card w-full text-left rounded-[14px] p-3 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{border:"1px solid var(--line-2)", opacity: isRead ? 0.55 : 1}}>
+                  {n.kind === "pass"
+                    ? <span className="w-2 h-2 rounded-full" style={{background:"var(--ice)"}}/>
+                    : <Icon name={icon} size={14} stroke={1.5}/>}
+                </span>
+                <span className="flex-1 min-w-0 text-[13px]" style={{color:"var(--ink)", opacity: isRead ? 0.65 : 1}}>{n.text}</span>
+                {!isRead && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:"var(--ice)"}}/>}
+              </button>
+            );
+          })}
         </div>
       </div>
     </>
@@ -842,12 +928,14 @@ function TabBar({ active, onChange }){
 }
 
 /* ========== 01 — HOME ========== */
-function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, confirmedEvent, onBell }){
-  const featured = EVENTS[0];
-  const tonight  = [EVENTS[1], EVENTS[4]];
-  // Pinned next room — the confirmed event when one exists, else the same
-  // Sound Bath seed ScreenMyEvents leans on, so the slot always renders.
-  const nextEvent = confirmedEvent || EVENTS[1];
+function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, onBell }){
+  const featured = EVENTS.find(e => e.id === "pool");
+  // Tonight: the two open events other than Pool Day
+  const tonight  = EVENTS.filter(e => e.id === "lounge" || e.id === "sunset");
+  // Pinned next room — derive from myEvents confirmed row, else Late Lounge as default
+  const confirmedRow = (myEvents || []).find(r => r.state === GS.confirmed);
+  const confirmedEvent = confirmedRow ? EVENTS.find(e => e.id === confirmedRow.eventId) : null;
+  const nextEvent = confirmedEvent || EVENTS.find(e => e.id === "lounge");
   const nextDate  = parseDate(nextEvent.date);
   return (
     <PhoneScreen tab={tab} onTab={onTab}>
@@ -1316,17 +1404,33 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
 }
 
 /* ========== 04 — MY EVENTS ========== */
-function ScreenMyEvents({ tab, onTab, confirmedEvent, savedEvents, onToggleSave, onPickEvent, onToast }){
-  const [seg, setSeg] = useState(confirmedEvent ? "confirmed" : "applied");
+function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPickEvent, onToast }){
+  // Derive segments from myEvents data layer
+  const appliedStates   = new Set([GS.applied, GS.waitlist, GS.picked]);
+  const confirmedStates = new Set([GS.confirmed]);
+  const pastStates      = new Set([GS.checkedIn, GS.noShow, GS.notSelected, GS.cancelled, GS.expired, GS.declined, GS.withdrawn]);
+
+  const appliedRows   = myEvents.filter(r => appliedStates.has(r.state));
+  const confirmedRows = myEvents.filter(r => confirmedStates.has(r.state));
+  const pastRows      = myEvents.filter(r => pastStates.has(r.state));
+
+  // Join eventId → EVENTS for display
+  const joinEvent = (r) => ({ ...r, event: EVENTS.find(e => e.id === r.eventId) });
+
+  // The confirmed event for the confirmed-seat UI (first confirmed row)
+  const confirmedMyRow = confirmedRows[0] ? joinEvent(confirmedRows[0]) : null;
+  const confirmedEvent = confirmedMyRow ? confirmedMyRow.event : null;
   const conf = confirmedEvent ? parseDate(confirmedEvent.date) : null;
+
+  const [seg, setSeg] = useState(confirmedEvent ? "confirmed" : "applied");
 
   // One source of truth for the counts — the stat tiles and the segmented
   // control both read from here.
   const counts = {
-    applied:   confirmedEvent ? 0 : 1,
-    confirmed: confirmedEvent ? 1 : 0,
+    applied:   appliedRows.length,
+    confirmed: confirmedRows.length,
     saved:     savedEvents.length,
-    past:      24,
+    past:      pastRows.length,
   };
   const segs = [
     { id:"applied",   label:"Applied",   count: counts.applied },
@@ -1362,7 +1466,7 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent, savedEvents, onToggleSave,
             <div className="relative h-[160px]">
               <img src={confirmedEvent.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
               <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(27,28,31,0) 30%, rgba(27,28,31,.95) 100%)"}}/>
-              <div className="absolute top-3 left-3"><StatusPill label="Confirmed" tone="ice" dot/></div>
+              <div className="absolute top-3 left-3"><StatusPill label={GS_COPY[GS.confirmed]} tone="ice" dot/></div>
               <div className="absolute bottom-3 left-3 right-3" style={{color:"#F7F6F3"}}>
                 <div className="font-black text-[22px] leading-none">{confirmedEvent.title}</div>
                 <div className="text-[11px] mt-1 opacity-80">{confirmedEvent.venue} · {confirmedEvent.date}</div>
@@ -1382,18 +1486,24 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent, savedEvents, onToggleSave,
         <div className="px-5 pt-6 text-[13px]" style={{color:"var(--ink-mute)"}}>No confirmed seats yet. Apply to a room, then watch for the pick.</div>
       ))}
 
-      {/* APPLIED — an application still under review (you applied; the venue hasn't picked yet) */}
-      {seg==="applied" && (!confirmedEvent ? (
+      {/* APPLIED — applications still under review */}
+      {seg==="applied" && (appliedRows.length > 0 ? (
         <div className="px-5 pt-1 space-y-4 anim-up">
-          <button onClick={()=>onPickEvent(EVENTS[1])} className="press card w-full text-left flex items-center gap-3 p-3 rounded-[14px]">
-            <img src={IMG.club} className="w-14 h-14 rounded-[10px] object-cover" alt=""/>
-            <div className="flex-1 min-w-0">
-              <div className="font-display text-[16px]">Sound Bath</div>
-              <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Pyrite Mar Mikhael · Sun 25 May</div>
-              <div className="mt-1.5"><StatusPill label="Under review" tone="outline" dot/></div>
-            </div>
-            <div className="text-[10px] shrink-0" style={{color:"var(--ink-mute)"}}>applied 2h ago</div>
-          </button>
+          {appliedRows.map(r => {
+            const ev = EVENTS.find(e => e.id === r.eventId);
+            if (!ev) return null;
+            return (
+              <button key={r.eventId} onClick={()=>onPickEvent(ev)} className="press card w-full text-left flex items-center gap-3 p-3 rounded-[14px]">
+                <img src={ev.img} className="w-14 h-14 rounded-[10px] object-cover" alt=""/>
+                <div className="flex-1 min-w-0">
+                  <div className="font-display text-[16px]">{ev.title}</div>
+                  <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{ev.venue} · {ev.date}</div>
+                  <div className="mt-1.5"><StatusPill label={GS_COPY[r.state]} tone="outline" dot/></div>
+                </div>
+                <Icon name="arrow-right" size={16} stroke={1.4} className="opacity-50"/>
+              </button>
+            );
+          })}
           <div className="text-[12px]" style={{color:"var(--ink-mute)"}}>Venues pick applicants up to doors. We notify you if you're in. Not every application is picked.</div>
         </div>
       ) : (
@@ -1431,28 +1541,25 @@ function ScreenMyEvents({ tab, onTab, confirmedEvent, savedEvents, onToggleSave,
       {/* PAST */}
       {seg==="past" && (
         <div className="px-5 pt-1 space-y-3 stagger">
-          {[
-            { t:"Late Lounge",    v:"Centrale",  date:"22 Apr", score:"9.2", img:IMG.lounge   },
-            { t:"Chef Tasting",   v:"Em Sherif", date:"15 Apr", score:"8.8", img:IMG.restaurant},
-            { t:"Rooftop Sundown", v:"Sporting", date:"11 Apr", notSelected:true, img:IMG.pool },
-            { t:"Pool Day vol. II", v:"Cyan",     date:"08 Apr", score:"9.5", img:IMG.beachClub },
-          ].map((e,i)=>(
-            <div key={i} className="card flex items-center gap-3 p-3 rounded-[14px]" style={{"--i":i, opacity: e.notSelected ? 0.6 : 1}}>
-              <img src={e.img} className="w-14 h-14 rounded-[10px] object-cover" style={{filter: e.notSelected ? "grayscale(1)" : "grayscale(.25)"}} alt=""/>
-              <div className="flex-1">
-                <div className="font-display text-[16px]">{e.t}</div>
-                <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{e.notSelected ? e.v+" · venue picked others" : e.v+" · "+e.date}</div>
+          {pastRows.map((r, i) => {
+            const ev = EVENTS.find(e => e.id === r.eventId);
+            if (!ev) return null;
+            const notSelected = r.state === GS.notSelected || r.state === GS.cancelled;
+            const score = r.verdict ? (r.verdict.score / 10).toFixed(1) : null;
+            return (
+              <div key={r.eventId} className="card flex items-center gap-3 p-3 rounded-[14px]" style={{"--i":i, opacity: notSelected ? 0.6 : 1}}>
+                <img src={ev.img} className="w-14 h-14 rounded-[10px] object-cover" style={{filter: notSelected ? "grayscale(1)" : "grayscale(.25)"}} alt=""/>
+                <div className="flex-1">
+                  <div className="font-display text-[16px]">{ev.title}</div>
+                  <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{ev.venue} · {ev.date}</div>
+                </div>
+                <div className="text-right">
+                  <StatusPill label={GS_COPY[r.state] || r.state} tone={notSelected ? "outline" : "neutral"}/>
+                  {score && <div className="font-black text-[18px] font-mono mt-1" style={{color:"var(--ice)"}}>{score}</div>}
+                </div>
               </div>
-              <div className="text-right">
-                {e.notSelected
-                  ? <StatusPill label="Not selected" tone="outline"/>
-                  : <>
-                      <div className="font-black text-[18px] font-mono" style={{color:"var(--ice)"}}>{e.score}</div>
-                      <div className="stamp">Venue rating</div>
-                    </>}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -1856,6 +1963,8 @@ function App(){
   const [currentEvent, setCurrentEvent] = useState(null);
   const [applyState, setApplyState] = useState("idle");   // idle | submitting | submitted
   const [confirmedEvent, setConfirmedEvent] = useState(null);
+  const [myEvents, setMyEvents] = useState(MY_EVENTS);   // member's event relationships
+  const [notifs, setNotifs] = useState(SEED_NOTIFS);     // member's notification feed
   const [light, setLight] = useState(false);
   const [profile, setProfile] = useState(null);       // creator-data provider response (vendor-neutral)
   const [saved, setSaved] = useState([]);             // saved / bookmarked event ids
@@ -1892,6 +2001,16 @@ function App(){
 
   const onConfirmPick = () => {
     setConfirmedEvent(currentEvent);
+    // Reflect confirmation in myEvents data layer
+    if (currentEvent) {
+      setMyEvents(prev => {
+        const exists = prev.find(r => r.eventId === currentEvent.id);
+        if (exists) {
+          return prev.map(r => r.eventId === currentEvent.id ? { ...r, state: GS.confirmed } : r);
+        }
+        return [...prev, { eventId: currentEvent.id, state: GS.confirmed }];
+      });
+    }
     setScreen("mylist");
     setTab("mylist");
   };
@@ -1945,17 +2064,17 @@ function App(){
       <div className="iphone">
         <div className="iphone-screen">
           {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={skipOnboarding} onProfileFetched={setProfile}/>}
-          {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} confirmedEvent={confirmedEvent} onBell={()=>setNotifOpen(true)}/>}
+          {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} myEvents={myEvents} onBell={()=>setNotifOpen(true)}/>}
           {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} onToast={showToast}/>}
           {!onboardActive && screen === "detail"  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply} onShare={()=>setShareEvent(currentEvent)} saved={saved} onToggleSave={toggleSave} onToast={showToast}/>}
-          {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} confirmedEvent={confirmedEvent} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast}/>}
+          {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} myEvents={myEvents} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast}/>}
           {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab} profile={profile} onSettings={()=>setSettingsOpen(true)} onVerify={onVerify}/>}
           {!onboardActive && screen === "picked"  && <ScreenPicked event={currentEvent} onConfirm={onConfirmPick} onLater={onDeclinePick}/>}
 
           {/* Overlays — scoped to the phone frame */}
           {!onboardActive && <ShareSheet event={shareEvent} onClose={()=>setShareEvent(null)} onToast={showToast}/>}
           {!onboardActive && settingsOpen && <SettingsSheet profile={profile} light={light} setLight={setLight} onClose={()=>setSettingsOpen(false)} onToast={showToast}/>}
-          {!onboardActive && notifOpen && <NotificationsSheet onClose={()=>setNotifOpen(false)} onPickEvent={pickEvent}/>}
+          {!onboardActive && notifOpen && <NotificationsSheet notifs={notifs} onClose={()=>setNotifOpen(false)} onPickEvent={pickEvent}/>}
           <Toast msg={toast}/>
         </div>
       </div>
