@@ -16,6 +16,7 @@ const REQUIRED = {
     "const STAGE = {", "const GS = {", "const SS = {", "const STAGE_COPY = {",
     "const GS_COPY = {", "const SS_COPY = {", "const MY_EVENTS = [", "const SEED_NOTIFS = [", "LST-4F",
     "List closed", "Closing soon", "The list is closed",
+    "function simulatePick", "Confirm within", "Seat released", "Confirm your seat",
   ],
   "venue.html": [
     "function ScreenVenueIntro", "function ScreenVenueLogin", "function ScreenOnboardGroup",
