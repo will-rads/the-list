@@ -27,6 +27,7 @@ const REQUIRED = {
     "const BUNDLES = [", "function StepBundle", "function StepBrief", "Applications close",
     "function ApplicantSheet", "Undo last", "Keep open", "Close applications",
     "Needs attention", "Pick a replacement", "function venueNotifs", "const TODAY = ",
+    "Close the night", "No room tonight",
   ],
 };
 
