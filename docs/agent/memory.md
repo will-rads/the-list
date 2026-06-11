@@ -6,7 +6,28 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## Current state (one line)
 
-**Everything merged to `main` + deployed (2026-06-11). Both sides + v2 reskin now LIVE on Vercel.** Production `the-list-omega.vercel.app` (Vercel project `the-list` = `prj_0eEd1e3V6M7fUKbsYYFBv7Hdzp5o`, team `team_OYAkDhYump5FEH2U2tnEIX7F`, root dir = `web/`, cleanUrls): `/` = v1 member side (v0.4 + grainy intro + 2026-06-10 fullness pass), `/venue` = v1 venue side, **`/v2` = v2 member side, `/v2/venue` = v2 venue side** (Kit V.2 reskin: anthracite/cream monochrome, Cormorant Garamond + Plus Jakarta Sans, sentence case, no ice). `main` == `venue-side` == `7aad801`. v2 files live at `web/v2/` (moved from repo-root so Vercel serves them; assets ref `../assets/`). Brand-kit PDFs committed; `.gitignore` now drops `*.zip` / `Intro Video/` / `_pages/` scratch. **Caveat: the 2026-06-10 fullness pass shipped to production without ever being browser-verified (classifier outage that session) — eyeball the live `/` and `/venue` for regressions.** Next: Will reviews v2 live → adopt/iterate; if v2 wins, sync DESIGN.md/PRODUCT.md to the kit (docs still describe v1).
+**v2 ADOPTED as the product base + feature-complete v1 spec approved (2026-06-11, entry below). Next: Will reviews the spec → writing-plans → 2-wave build in `web/v2/`. DESIGN.md/PRODUCT.md sync to Kit V.2 is now due (docs still describe v1).**
+
+Deploy state: everything merged to `main` + deployed (2026-06-11). Both sides + v2 reskin LIVE on Vercel. Production `the-list-omega.vercel.app` (Vercel project `the-list` = `prj_0eEd1e3V6M7fUKbsYYFBv7Hdzp5o`, team `team_OYAkDhYump5FEH2U2tnEIX7F`, root dir = `web/`, cleanUrls): `/` = v1 member side (v0.4 + grainy intro + 2026-06-10 fullness pass), `/venue` = v1 venue side, **`/v2` = v2 member side, `/v2/venue` = v2 venue side** (Kit V.2 reskin: anthracite/cream monochrome, Cormorant Garamond + Plus Jakarta Sans, sentence case, no ice). `main` == `venue-side` == `7aad801`. v2 files live at `web/v2/` (moved from repo-root so Vercel serves them; assets ref `../assets/`). Brand-kit PDFs committed; `.gitignore` now drops `*.zip` / `Intro Video/` / `_pages/` scratch. **Caveat: the 2026-06-10 fullness pass shipped to production without ever being browser-verified (classifier outage that session) — eyeball the live `/` and `/venue` for regressions.** Next: Will reviews v2 live → adopt/iterate; if v2 wins, sync DESIGN.md/PRODUCT.md to the kit (docs still describe v1).
+
+---
+
+## 2026-06-11 — v2 ADOPTED + v1 feature-complete spec approved (brainstorm, 5 sections)
+
+Will's calls, locked in a full brainstorm (spec: `docs/superpowers/specs/2026-06-11-v1-feature-complete-design.md`):
+
+- **v2 (Kit V.2) is the product.** All feature work in `web/v2/`; v1 files frozen as archive. The pending "Will reviews v2" gate is resolved: adopted.
+- **Backend parked.** UI/UX feature-completeness first; Supabase/DB gets its own session later. Mocks stay normalized/vendor-neutral.
+- **Lifecycle spine:** Draft → Open → Locked → Past, + **Cancelled** exception (no charge, no strikes). Locked closes *applications*, not *picks* — un-swiped applicants flip to **Waitlist** ("Still under review" member-facing), and the venue swipes the waitlist for replacements when a pick **Expires** (24h no-confirm) or **Declines**. Member never sees the word "Locked" — copy is "List closed".
+- **Apply ≠ picked fix:** Apply → "Applied · under review"; the Picked takeover fires on a simulated venue pick (~10s) via notification, with a real 24h confirm countdown.
+- **Concierge comms (TSS-style):** no chat anywhere in v1; statuses + venue-authored Brief (arrival window, dress code, meeting point, house rules).
+- **Door:** member **Pass screen** (photo + name + short code LST-4F) eyeballed against the Door list. No QR. Venue gets "Close the night" → rating queue → Recap.
+- **Story proof = AI-assisted review v1:** in-app screenshot upload → Gemini first-pass against rubric (tag visible, real Story, right venue/event, time window, not faked, quality) → verified / needs review / rejected + score + reason; founders override. Production note recorded: Supabase Storage, Gemini key backend-only. Prototype simulates verdicts.
+- **Money in venue UI:** transparent bundles (The Ten/Twenty/Forty + custom, placeholder prices) at posting; Recap carries the invoice (Due/Paid only, settle via Whish/OMT/cash outside app).
+- **Demo world:** both files seed the SAME fictional world (events, states, pass codes, story proofs, recap numbers; canonical today Sun 25 May) — static agreement, no cross-file sync. Hidden **switchboard** (tucked in Settings sheet / Venue tab) jumps states for pitches.
+- **2 build waves:** wave 1 = the complete night loop; wave 2 = billing, insights, invites, tiers, strikes, polish. **Cut list locked:** no chat, QR, in-app payments, auto-IG verification, multi-venue switching, DJ marketplace, Android, web member app.
+
+Next: Will reviews the spec file → writing-plans → wave 1 build.
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## Where we are right now
 
-**Phase: everything live on Vercel — v1 both sides + the v2 brand-kit reskin. Will is reviewing v2.** `main` == `venue-side` == `7aad801`, deployed to `the-list-omega.vercel.app` (root dir `web/`, cleanUrls): `/` = v1 member (v0.4 + grainy intro + 2026-06-10 fullness pass: bell/Activity, greeting + pinned night, widget stat tiles, month calendar), `/venue` = v1 venue (demo path, Desk dashboard, Door check-in, applicant swipe), **`/v2` + `/v2/venue` = Kit V.2 reskin** (files at `web/v2/`): anthracite/cream monochrome (ice blue dead in v2), Cormorant Garamond + Plus Jakarta Sans (Inter rejected), kit greys approved, sentence case everywhere, arrows on CTAs. Spec: `docs/superpowers/specs/2026-06-11-v2-brand-kit-reskin-design.md`; kit PDF in `Brand Kit Proposal/`. **DESIGN.md/PRODUCT.md still describe v1 — sync only if Will adopts v2.** Caveat: the 2026-06-10 fullness pass shipped without browser verification — check live `/` + `/venue` for regressions. Next: Will reviews `/v2` → adopt/iterate → docs sync → SwiftUI port.
+**Phase: v2 ADOPTED as the product. Feature-complete v1 spec approved (2026-06-11) — next: spec review → implementation plan → 2-wave build in `web/v2/`.** `main` == `venue-side` == `7aad801`, deployed to `the-list-omega.vercel.app` (root dir `web/`, cleanUrls): `/` = v1 member (v0.4 + grainy intro + 2026-06-10 fullness pass: bell/Activity, greeting + pinned night, widget stat tiles, month calendar), `/venue` = v1 venue (demo path, Desk dashboard, Door check-in, applicant swipe), **`/v2` + `/v2/venue` = Kit V.2 reskin** (files at `web/v2/`): anthracite/cream monochrome (ice blue dead in v2), Cormorant Garamond + Plus Jakarta Sans (Inter rejected), kit greys approved, sentence case everywhere, arrows on CTAs. Spec: `docs/superpowers/specs/2026-06-11-v2-brand-kit-reskin-design.md`; kit PDF in `Brand Kit Proposal/`. **DESIGN.md/PRODUCT.md still describe v1 — sync only if Will adopts v2.** Caveat: the 2026-06-10 fullness pass shipped without browser verification — check live `/` + `/venue` for regressions. Next: Will reviews the spec → implementation plan → wave builds → docs sync to Kit V.2 → SwiftUI port.
 
 ```text
 [done]      Voice notes transcribed + plan synthesized
@@ -21,7 +21,11 @@
 [done]      Fullness pass both sides (2026-06-10): venue demo path + Desk tiles + Door check-in; member bell + greeting + stat tiles + calendar — UNCOMMITTED, unverified
 [done]      Brand Kit V.2 received → v2 reskin built (2026-06-11): anthracite/cream monochrome, Cormorant Garamond + Plus Jakarta Sans, sentence case, arrows on CTAs
 [done]      All merged to main + deployed (2026-06-11): v1 at /, v2 LIVE at /v2 on the-list-omega.vercel.app (v2 moved to web/v2)
-[doing]     Will reviews v2 live (/v2) → adopt/iterate → if adopted, sync DESIGN.md/PRODUCT.md to Kit V.2  ◄── HERE
+[done]      v2 reviewed → ADOPTED as product base (2026-06-11); v1 frozen as archive
+[done]      Feature-complete v1 brainstorm → spec approved (docs/superpowers/specs/2026-06-11-v1-feature-complete-design.md)
+[doing]     Will reviews spec → writing-plans → build wave 1 (complete night loop) then wave 2 (money + meta) in web/v2/  ◄── HERE
+[next]      Sync DESIGN.md/PRODUCT.md to Kit V.2 (docs still describe v1)
+[next]      Backend session: Supabase architecture (uploads, events, confirmations) — deliberately parked
 [next]      Lock working name (test with Dima's top 30)
 [next]      Venue anchor contracts (5-10 Beirut venues)
 [next]      Supabase backend scaffold
