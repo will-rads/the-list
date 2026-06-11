@@ -2232,7 +2232,7 @@
     const selectTemplate = (b) => {
       set({ bundle: { name: b.name, price: b.price }, seats: b.seats });
     };
-    const canNext = !!selected;
+    const canNext = !!selected && !(selected.name === "Custom" && !(selected.price > 0));
 
     return (
       <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"var(--bg)"}}>
@@ -2360,14 +2360,14 @@
 
   /* ========== StepBasics — step 1 of post wizard ========== */
   function StepBasics({ draft, set, onNext, onCancel }){
-    const ok = draft.title.length>=2 && draft.date && draft.time;
     const closesChips = ["24h before doors", "48h before doors", "Custom"];
-    const PRESETS = ["24h before doors", "48h before doors"];
     const [customMode, setCustomMode] = useState(() => {
       const c = draft.closesAt;
       return !!c && c !== "24h before doors" && c !== "48h before doors";
     });
     const currentCloses = draft.closesAt || "24h before doors";
+    const ok = draft.title.length>=2 && draft.date && draft.time &&
+               (!customMode || draft.closesAt.trim() !== "");
 
     return (
       <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"var(--bg)"}}>
