@@ -2,7 +2,7 @@
 
 ## Where we are right now
 
-**Phase: both marketplace sides prototyped.** User side (`web/index.html`) is v0.4, merged to `main`, deployed to Vercel (`the-list-omega.vercel.app`) — TSS-style grainy entry, full interaction pass, and now a 4-image swipeable event gallery + TikTok on the profile. **Venue side (`web/venue.html`) is now built** on branch `venue-side` (mocked, not merged/pushed): role-split entry, group-optional onboarding, image crop-to-frame, Events dashboard, post-event with seats + soft gender mix, Tinder applicant swipe (quality 0–10 + IG/TikTok + links) with a soft gender counter + Picked, Venue tab. Built brainstorm → spec → plan → subagent-driven from `docs/superpowers/`. Same locked carbon+ice+Plus Jakarta Sans system. **2026-06-10 fullness pass on top — UNCOMMITTED + NOT BROWSER-VERIFIED:** venue side got a zero-typing demo path ("Preview the desk"), a Desk/"Tonight" dashboard tab (widget stat tiles + urgent swipe card + bell/Activity), a Door night-of check-in tab, and real applicant portraits; member side got bell/Activity, "Hi, Sara" + pinned night, widget stat tiles (Profile + My Events), and a month calendar on Explore. Will's style call: TSS-style widget stat tiles replace editorial stats, both sides. Next: check branch (`venue-side`?), Will's browser walkthrough → verify (broken images / console errors) → commit → merge decision → SwiftUI port (both sides).
+**Phase: everything live on Vercel — v1 both sides + the v2 brand-kit reskin. Will is reviewing v2.** `main` == `venue-side` == `7aad801`, deployed to `the-list-omega.vercel.app` (root dir `web/`, cleanUrls): `/` = v1 member (v0.4 + grainy intro + 2026-06-10 fullness pass: bell/Activity, greeting + pinned night, widget stat tiles, month calendar), `/venue` = v1 venue (demo path, Desk dashboard, Door check-in, applicant swipe), **`/v2` + `/v2/venue` = Kit V.2 reskin** (files at `web/v2/`): anthracite/cream monochrome (ice blue dead in v2), Cormorant Garamond + Plus Jakarta Sans (Inter rejected), kit greys approved, sentence case everywhere, arrows on CTAs. Spec: `docs/superpowers/specs/2026-06-11-v2-brand-kit-reskin-design.md`; kit PDF in `Brand Kit Proposal/`. **DESIGN.md/PRODUCT.md still describe v1 — sync only if Will adopts v2.** Caveat: the 2026-06-10 fullness pass shipped without browser verification — check live `/` + `/venue` for regressions. Next: Will reviews `/v2` → adopt/iterate → docs sync → SwiftUI port.
 
 ```text
 [done]      Voice notes transcribed + plan synthesized
@@ -19,8 +19,9 @@
 [done]      Reviewed → merged to main → deployed to Vercel (the-list-omega.vercel.app)
 [done]      Venue side prototype (web/venue.html, branch venue-side): role split, onboarding, post-event + gender mix, applicant swipe + counter, member-side gallery + TikTok
 [done]      Fullness pass both sides (2026-06-10): venue demo path + Desk tiles + Door check-in; member bell + greeting + stat tiles + calendar — UNCOMMITTED, unverified
-[done]      Brand Kit V.2 received → v2/ reskin built (2026-06-11): anthracite/cream monochrome, Cormorant Garamond + Plus Jakarta Sans, sentence case, arrows on CTAs — UNCOMMITTED
-[doing]     Will eyeballs v2/index.html + v2/venue.html → feedback → adopt/iterate → docs sync + commit  ◄── HERE
+[done]      Brand Kit V.2 received → v2 reskin built (2026-06-11): anthracite/cream monochrome, Cormorant Garamond + Plus Jakarta Sans, sentence case, arrows on CTAs
+[done]      All merged to main + deployed (2026-06-11): v1 at /, v2 LIVE at /v2 on the-list-omega.vercel.app (v2 moved to web/v2)
+[doing]     Will reviews v2 live (/v2) → adopt/iterate → if adopted, sync DESIGN.md/PRODUCT.md to Kit V.2  ◄── HERE
 [next]      Lock working name (test with Dima's top 30)
 [next]      Venue anchor contracts (5-10 Beirut venues)
 [next]      Supabase backend scaffold

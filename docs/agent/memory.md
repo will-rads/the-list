@@ -6,7 +6,20 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## Current state (one line)
 
-**Venue side built — `web/venue.html` prototype done on branch `venue-side` (not merged, not pushed).** The marketplace now has both sides. Member side `web/index.html` = v0.4 (live on `main` → Vercel), now with a 4-image swipeable event gallery + TikTok on the profile. New venue side `web/venue.html` (mocked, same carbon+ice+Plus Jakarta Sans system): role-split entry (Member/Business door on the member intro), group-optional onboarding, image crop-to-frame, Events dashboard, post-event with seats + soft gender mix, Tinder applicant swipe (quality 0–10 + IG/TikTok + social links) with a soft gender counter + Picked list, Venue tab. Built subagent-driven from `docs/superpowers/plans/2026-06-06-venue-side.md`. **2026-06-10 fullness pass on top (uncommitted):** venue got a zero-typing demo path, Desk dashboard (widget stat tiles + urgent swipe card + bell), Door check-in tab, real portraits; member side got bell/Activity, greeting + pinned night, stat tiles (Profile + My Events), month calendar. **Not browser-verified — classifier outage blocked eval/git that session. Next: check branch (`venue-side`?), Will walkthrough → verify → commit → merge decision → SwiftUI port (both sides).**
+**Everything merged to `main` + deployed (2026-06-11). Both sides + v2 reskin now LIVE on Vercel.** Production `the-list-omega.vercel.app` (Vercel project `the-list` = `prj_0eEd1e3V6M7fUKbsYYFBv7Hdzp5o`, team `team_OYAkDhYump5FEH2U2tnEIX7F`, root dir = `web/`, cleanUrls): `/` = v1 member side (v0.4 + grainy intro + 2026-06-10 fullness pass), `/venue` = v1 venue side, **`/v2` = v2 member side, `/v2/venue` = v2 venue side** (Kit V.2 reskin: anthracite/cream monochrome, Cormorant Garamond + Plus Jakarta Sans, sentence case, no ice). `main` == `venue-side` == `7aad801`. v2 files live at `web/v2/` (moved from repo-root so Vercel serves them; assets ref `../assets/`). Brand-kit PDFs committed; `.gitignore` now drops `*.zip` / `Intro Video/` / `_pages/` scratch. **Caveat: the 2026-06-10 fullness pass shipped to production without ever being browser-verified (classifier outage that session) — eyeball the live `/` and `/venue` for regressions.** Next: Will reviews v2 live → adopt/iterate; if v2 wins, sync DESIGN.md/PRODUCT.md to the kit (docs still describe v1).
+
+---
+
+## 2026-06-11 — Pushed everything to `main` + deployed; v2 live at `/v2`
+
+Will said push the repo + publish v2 on Vercel "same project, as v2." Done:
+
+- **GitHub:** committed the v2 reskin + 2026-06-10 fullness pass + brand-kit PDFs + docs; gitignored the junk (`*.zip` incl. 35M/44M archives, `Intro Video/` 35M, `Brand Kit Proposal/_pages/` 13M scratch). Pushed `venue-side`, then fast-forward-merged `venue-side` → `main` (main was 25 commits behind) and pushed `main` (`d20299e..7aad801`).
+- **Vercel:** the project deploys `web/` from `main` (root dir = web/), so v2 had to live under web/ to serve. Moved `v2/` → `web/v2/`, repointed assets `../web/assets/` → `../assets/`. Push triggered the GitHub-integration build; production deploy `dpl_8Kgd1i7u5MG5mRosJSUXuwFcTweh` = READY. **Verified live** via Vercel web_fetch: `the-list-omega.vercel.app/v2` returns title "The List · Prototype v2", Cormorant + `#121315`, 0 ice-blue leftovers, `../assets/` refs resolving.
+- **Live URL map** (cleanUrls): `/` v1 member · `/venue` v1 venue · `/v2` v2 member · `/v2/venue` v2 venue · `/gallery` · `/mockup-v1`.
+- Will chose "/v2 on live domain" (over root-reconfig / preview-only) knowing it updates production to current. The decision moved v2 out of repo-root (his earlier structural pick) into web/v2 — accepted via that option's text.
+
+Risk shipped knowingly: the 2026-06-10 fullness pass (web/) went to production unverified. Static-checked only.
 
 ---
 
