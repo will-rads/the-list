@@ -479,6 +479,8 @@ const EVENTS = [
     brief:{ arrival:"20:00 – 21:00", dress:"Smart casual", meeting:"Rooftop elevator", rules:"1 Story + venue tag during the event" } },
 ];
 
+const eventById = (id) => EVENTS.find(e => e.id === id);
+
 const MY_EVENTS = [
   { eventId:"pool",    state:GS.confirmed, code:"LST-4F" },
   { eventId:"lounge",  state:GS.applied },
