@@ -2,6 +2,7 @@
 // Usage: node web/v2/check-v2.mjs            (checks both files)
 //        node web/v2/check-v2.mjs venue      (one file)
 import { readFileSync } from "node:fs";
+import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -53,8 +54,26 @@ for (const [file, tokens] of Object.entries(REQUIRED)) {
   const roots = (src.match(/createRoot/g) || []).length;
   if (roots !== 1) problems.push(`createRoot count ${roots} (want 1)`);
   for (const t of tokens) if (!src.includes(t)) problems.push(`missing token: ${t}`);
-  for (const banned of ["#9FD8E8", "Instrument Serif", "font-family: Inter", "'Inter'", '"Inter"']) {
-    if (src.includes(banned)) problems.push(`banned token present: ${banned}`);
+  // Curly/smart quotes inside JS source = Babel SyntaxError = blank app (caught live 2026-06-11, T11).
+  for (const banned of ["#9FD8E8", "Instrument Serif", "font-family: Inter", "'Inter'", '"Inter"',
+                        "“", "”", "‘", "’"]) {
+    if (src.includes(banned)) problems.push(`banned token present: ${JSON.stringify(banned)}`);
+  }
+  // Parse gate: hand the babel script block to esbuild as JSX. Catches what token checks can't
+  // (smart quotes, truncated JSX, mismatched tags). Skips gracefully if esbuild is unavailable.
+  const scriptMatch = src.match(/<script type="text\/babel"[^>]*>([\s\S]*?)<\/script>/);
+  if (!scriptMatch) problems.push("no text/babel script block found");
+  else {
+    try {
+      execSync("npx -y esbuild --loader=jsx --log-level=error", {
+        input: scriptMatch[1], stdio: ["pipe", "ignore", "pipe"],
+        env: { ...process.env, NODE_OPTIONS: "--use-system-ca" },
+      });
+    } catch (err) {
+      const msg = (err.stderr || "").toString();
+      if (msg.includes("ERROR")) problems.push("JSX parse failed:\n  " + msg.split(/\r?\n/).slice(0, 10).join("\n  "));
+      else console.warn(`note: parse gate skipped for ${file} (esbuild unavailable)`);
+    }
   }
   if (problems.length) { failed = true; console.error(`FAIL ${file}\n  ` + problems.join("\n  ")); }
   else console.log(`OK   ${file} (${src.split(/\r?\n/).length} lines)`);

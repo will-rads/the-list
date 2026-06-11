@@ -2055,22 +2055,22 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
 
 /* ========== genCode — LST-XX where XX = 2 uppercase alphanum, no collision ========== */
 function genCode(existing){
-  const chars = “ABCDEFGHJKLMNPQRSTUVWXYZ23456789”; // no I/O/1/0 lookalikes
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/1/0 lookalikes
   const used = new Set((existing || []).map(r => r.code).filter(Boolean));
   let code;
   do {
-    code = “LST-” + chars[Math.floor(Math.random()*chars.length)] + chars[Math.floor(Math.random()*chars.length)];
+    code = "LST-" + chars[Math.floor(Math.random()*chars.length)] + chars[Math.floor(Math.random()*chars.length)];
   } while (used.has(code));
   return code;
 }
 
 /* ========== APP — navigation state ========== */
 function App(){
-  const [onboardStep, setOnboardStep] = useState(“intro”); // intro | phone | reviewing | tier-reveal | error | done
-  const [screen, setScreen] = useState(“home”);           // home | explore | detail | mylist | profile | picked
-  const [tab, setTab] = useState(“home”);
+  const [onboardStep, setOnboardStep] = useState("intro"); // intro | phone | reviewing | tier-reveal | error | done
+  const [screen, setScreen] = useState("home");           // home | explore | detail | mylist | profile | picked
+  const [tab, setTab] = useState("home");
   const [currentEvent, setCurrentEvent] = useState(null);
-  const [applyState, setApplyState] = useState(“idle”);   // idle | submitting | submitted
+  const [applyState, setApplyState] = useState("idle");   // idle | submitting | submitted
   const [pickedEventId, setPickedEventId] = useState(null); // which event the picked takeover shows
   const [myEvents, setMyEvents] = useState(MY_EVENTS);   // member's event relationships
   const [notifs, setNotifs] = useState(SEED_NOTIFS);     // member's notification feed
@@ -2100,17 +2100,17 @@ function App(){
 
   const goTab = (id) => {
     setTab(id);
-    if (id === “home”)    setScreen(“home”);
-    if (id === “explore”) setScreen(“explore”);
-    if (id === “mylist”)  setScreen(“mylist”);
-    if (id === “profile”) setScreen(“profile”);
-    setApplyState(“idle”);
+    if (id === "home")    setScreen("home");
+    if (id === "explore") setScreen("explore");
+    if (id === "mylist")  setScreen("mylist");
+    if (id === "profile") setScreen("profile");
+    setApplyState("idle");
   };
 
   const pickEvent = (e) => {
     setCurrentEvent(e);
-    setApplyState(“idle”);
-    setScreen(“detail”);
+    setApplyState("idle");
+    setScreen("detail");
   };
 
   // simulatePick — flip a myEvents row to picked + prepend a picked notif
@@ -2121,15 +2121,16 @@ function App(){
     const now = Date.now();
     setMyEvents(prev => {
       const exists = prev.find(r => r.eventId === eventId);
+      if (exists && exists.state !== GS.applied) return prev; // only an applied row can be picked — never resurrect declined/confirmed
       if (exists) {
         return prev.map(r => r.eventId === eventId ? { ...r, state: GS.picked, pickedAt: now } : r);
       }
       return [...prev, { eventId, state: GS.picked, pickedAt: now }];
     });
     setNotifs(prev => [{
-      id: “pick-” + eventId + “-” + now,
-      kind: “picked”,
-      text: “Cyan Beach Club picked you · “ + ev.title,
+      id: "pick-" + eventId + "-" + now,
+      kind: "picked",
+      text: "Cyan Beach Club picked you · " + ev.title,
       eventId,
       read: false,
     }, ...prev]);
@@ -2145,7 +2146,7 @@ function App(){
       clearTimeout(pickTimersRef.current[eventId]);
       delete pickTimersRef.current[eventId];
     }
-    setApplyState(“submitting”);
+    setApplyState("submitting");
     applyTimerRef.current = setTimeout(() => {
       applyTimerRef.current = null;
       // Upsert the applied row — no duplicates
@@ -2156,8 +2157,8 @@ function App(){
         }
         return [...prev, { eventId, state: GS.applied }];
       });
-      setApplyState(“submitted”);
-      showToast(“Application sent”);
+      setApplyState("submitted");
+      showToast("Application sent");
       // Auto-arm: 10s after apply, simulatePick fires
       pickTimersRef.current[eventId] = setTimeout(() => {
         delete pickTimersRef.current[eventId];
@@ -2172,7 +2173,7 @@ function App(){
     if (!ev) return;
     setCurrentEvent(ev);
     setPickedEventId(eventId);
-    setScreen(“picked”);
+    setScreen("picked");
   };
 
   const onConfirmPick = () => {
@@ -2185,10 +2186,10 @@ function App(){
       }
       return [...prev, { eventId: pickedEventId, state: GS.confirmed, code }];
     });
-    showToast(“You're in — pass ready”);
+    showToast("You're in — pass ready");
     setPickedEventId(null);
-    setScreen(“mylist”);
-    setTab(“mylist”);
+    setScreen("mylist");
+    setTab("mylist");
   };
 
   const onDeclinePick = () => {
@@ -2200,8 +2201,8 @@ function App(){
       }
       return [...prev, { eventId: pickedEventId, state: GS.declined }];
     });
-    showToast(“Seat released”);
-    const prevScreen = tab === “explore” ? “explore” : “home”;
+    showToast("Seat released");
+    const prevScreen = tab === "explore" ? "explore" : "home";
     setPickedEventId(null);
     setScreen(prevScreen);
   };
@@ -2215,20 +2216,20 @@ function App(){
   const toggleSave = (id) => {
     const wasSaved = saved.includes(id);
     setSaved(s => wasSaved ? s.filter(x => x !== id) : [...s, id]);
-    showToast(wasSaved ? “Removed from saved” : “Saved to your list”);
+    showToast(wasSaved ? "Removed from saved" : "Saved to your list");
   };
 
   // Verify-with-Instagram: flips the (vendor-neutral) creator data to verified.
   const onVerify = () => {
-    setProfile(p => ({ ...(p || SEED_PROFILE), data_status: “verified” }));
+    setProfile(p => ({ ...(p || SEED_PROFILE), data_status: "verified" }));
     setSettingsOpen(false);
-    showToast(“Instagram connected · verified”);
+    showToast("Instagram connected · verified");
   };
 
   const savedEvents = useMemo(() => EVENTS.filter(e => saved.includes(e.id)), [saved]);
 
-  const skipOnboarding = () => setOnboardStep(“done”);
-  const onboardActive = onboardStep !== “done”;
+  const skipOnboarding = () => setOnboardStep("done");
+  const onboardActive = onboardStep !== "done";
 
   // Derive pickedAt for the currently-shown picked event
   const pickedRow = pickedEventId ? myEvents.find(r => r.eventId === pickedEventId) : null;
@@ -2238,32 +2239,32 @@ function App(){
   const unreadCount = notifs.filter(n => !n.read).length;
 
   return (
-    <div className=”min-h-screen w-full flex flex-col items-center pt-20 pb-24”>
-      <button className=”theme-toggle” onClick={() => setLight(l => !l)}>
-        <span className=”dot”></span>
+    <div className="min-h-screen w-full flex flex-col items-center pt-20 pb-24">
+      <button className="theme-toggle" onClick={() => setLight(l => !l)}>
+        <span className="dot"></span>
         {light ? 'Light' : 'Dark'} · switch
       </button>
       {onboardActive && (
-        <button className=”theme-toggle” style={{right:140}} onClick={skipOnboarding}>
+        <button className="theme-toggle" style={{right:140}} onClick={skipOnboarding}>
           Skip onboarding
         </button>
       )}
 
-      <div className=”mb-8 text-center”>
-        <div className=”stamp” style={{color:”var(--ink-mute)”}}>The List · Influencer side · Prototype v0.3</div>
-        <div className=”font-black text-[28px] leading-none mt-2”>Tap through Sara's flow</div>
-        <div className=”text-[12px] mt-2” style={{color:”var(--ink-mute)”}}>{onboardActive ? “Grainy entry splash → apply → review → tier reveal.” : “Tap an event → Apply → 10s later venue picks you → Activity bell → confirm.”}</div>
+      <div className="mb-8 text-center">
+        <div className="stamp" style={{color:"var(--ink-mute)"}}>The List · Influencer side · Prototype v0.3</div>
+        <div className="font-black text-[28px] leading-none mt-2">Tap through Sara's flow</div>
+        <div className="text-[12px] mt-2" style={{color:"var(--ink-mute)"}}>{onboardActive ? "Grainy entry splash → apply → review → tier reveal." : "Tap an event → Apply → 10s later venue picks you → Activity bell → confirm."}</div>
       </div>
 
-      <div className=”iphone”>
-        <div className=”iphone-screen”>
+      <div className="iphone">
+        <div className="iphone-screen">
           {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={skipOnboarding} onProfileFetched={setProfile}/>}
-          {!onboardActive && screen === “home”    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} myEvents={myEvents} onBell={()=>setNotifOpen(true)} unreadCount={unreadCount}/>}
-          {!onboardActive && screen === “explore” && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} onToast={showToast}/>}
-          {!onboardActive && screen === “detail”  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab===”explore”?”explore”:”home”)} onApply={onApply} onShare={()=>setShareEvent(currentEvent)} saved={saved} onToggleSave={toggleSave} onToast={showToast} myEvents={myEvents} onOpenPicked={openPickedTakeover}/>}
-          {!onboardActive && screen === “mylist”  && <ScreenMyEvents tab={tab} onTab={goTab} myEvents={myEvents} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast}/>}
-          {!onboardActive && screen === “profile” && <ScreenProfile tab={tab} onTab={goTab} profile={profile} onSettings={()=>setSettingsOpen(true)} onVerify={onVerify}/>}
-          {!onboardActive && screen === “picked”  && <ScreenPicked event={currentEvent} pickedAt={pickedAt} onConfirm={onConfirmPick} onDecline={onDeclinePick}/>}
+          {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} myEvents={myEvents} onBell={()=>setNotifOpen(true)} unreadCount={unreadCount}/>}
+          {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} onToast={showToast}/>}
+          {!onboardActive && screen === "detail"  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply} onShare={()=>setShareEvent(currentEvent)} saved={saved} onToggleSave={toggleSave} onToast={showToast} myEvents={myEvents} onOpenPicked={openPickedTakeover}/>}
+          {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} myEvents={myEvents} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast}/>}
+          {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab} profile={profile} onSettings={()=>setSettingsOpen(true)} onVerify={onVerify}/>}
+          {!onboardActive && screen === "picked"  && <ScreenPicked event={currentEvent} pickedAt={pickedAt} onConfirm={onConfirmPick} onDecline={onDeclinePick}/>}
 
           {/* Overlays — scoped to the phone frame */}
           {!onboardActive && <ShareSheet event={shareEvent} onClose={()=>setShareEvent(null)} onToast={showToast}/>}
@@ -2273,12 +2274,12 @@ function App(){
         </div>
       </div>
 
-      <div className=”mt-8 text-center max-w-[420px]”>
-        <div className=”stamp mb-2” style={{color:”var(--ink-mute)”}}>How to use</div>
-        <div className=”text-[12px]” style={{color:”var(--ink-2)”}}>
+      <div className="mt-8 text-center max-w-[420px]">
+        <div className="stamp mb-2" style={{color:"var(--ink-mute)"}}>How to use</div>
+        <div className="text-[12px]" style={{color:"var(--ink-2)"}}>
           {onboardActive
-            ? “Entry splash plays the grainy Beirut montage. Tap Apply for access, type anything in the two fields, watch the review animation, tap Enter The List on the tier reveal.”
-            : “Tap Sunset Sessions → Apply → 10 seconds later the Activity bell gets a badge → tap it → tap the pick notification → confirm or decline.”}
+            ? "Entry splash plays the grainy Beirut montage. Tap Apply for access, type anything in the two fields, watch the review animation, tap Enter The List on the tier reveal."
+            : "Tap Sunset Sessions → Apply → 10 seconds later the Activity bell gets a badge → tap it → tap the pick notification → confirm or decline."}
         </div>
       </div>
     </div>
