@@ -941,12 +941,12 @@ function stageBadge(event){
 /* ========== 01 — HOME ========== */
 function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, onBell }){
   const featured = EVENTS.find(e => e.id === "pool");
-  // Tonight: open events only (no cancelled, no past) other than Pool Day
-  const tonight  = EVENTS.filter(e => e.stage === STAGE.open && e.id !== "pool");
   // Pinned next room — derive from myEvents confirmed row, else Late Lounge as default
   const confirmedRow = (myEvents || []).find(r => r.state === GS.confirmed);
   const confirmedEvent = confirmedRow ? EVENTS.find(e => e.id === confirmedRow.eventId) : null;
   const nextEvent = confirmedEvent || EVENTS.find(e => e.id === "lounge");
+  // Tonight: open events only (no cancelled, no past), minus whatever is already featured or pinned
+  const tonight  = EVENTS.filter(e => e.stage === STAGE.open && e.id !== featured.id && e.id !== nextEvent.id);
   const nextDate  = parseDate(nextEvent.date);
   return (
     <PhoneScreen tab={tab} onTab={onTab}>
