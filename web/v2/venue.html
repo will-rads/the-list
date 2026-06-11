@@ -549,6 +549,8 @@
     seats: 20, heroImage: null, exchange: "1 Story + venue tag", status: "draft", ...over,
   }; }
 
+  const TODAY = "Sun · 25 May"; // canonical demo today — time never advances
+
   // Event stages
   const STAGE = { draft:"draft", open:"open", locked:"locked", past:"past", cancelled:"cancelled" };
   // Guest attendance states (one axis)
@@ -738,8 +740,8 @@
         makeGuest("a21", GS.confirmed, { code:"LST-2T", inAt:null, rating:null }),
         // Sara Capriotti — code MUST be LST-4F
         makeGuest("a1",  GS.confirmed, { code:"LST-4F", inAt:null, rating:null }),
-        // picked — Maya Rahme, code LST-9Q (expiring-pick demo)
-        makeGuest("a10", GS.picked, { code:"LST-9Q" }),
+        // expired — Maya Rahme, code LST-9Q (expired-pick demo — T7 seed flip)
+        makeGuest("a10", GS.expired, { code:"LST-9Q" }),
         // 2 waitlist
         makeGuest("a22", GS.waitlist),
         makeGuest("a23", GS.waitlist),
@@ -913,12 +915,6 @@
 
   const fmtK = (n) => n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+"k" : ""+n;
   const quality10 = (q) => (q*10).toFixed(1);   // 0.94 -> "9.4"
-
-  function tally(pickedIds, pool){
-    const ids = new Set(pickedIds); let girls=0, guys=0;
-    pool.forEach(a => { if (ids.has(a.id)) (a.gender==="female" ? girls++ : guys++); });
-    return { girls, guys };
-  }
 
   /* Demo seed — lets Will (or a venue in a pitch) see the whole desk with zero
      typing. Entered via "Preview the desk" on the intro screen. */
@@ -1416,12 +1412,78 @@
   }
 
   /* ========== NotifSheet — venue activity feed ========== */
-  function NotifSheet({ onClose }){
-    const rows = [
-      { txt:"Sara Capriotti confirmed her seat — Pool Day", time:"2h", ice:true },
-      { txt:"Pool Day swipe window closes in 5 hours",      time:"4h" },
-      { txt:"Story posted by @lea — review it on the desk", time:"1d" },
-    ];
+  /* ========== venueNotifs — derived activity feed (pure, module-level) ========== */
+  function venueNotifs(events){
+    const rows = [];
+    let idSeq = 0;
+    const mkId = () => "notif-" + (++idSeq);
+
+    events.forEach(e => {
+      if (e.stage === STAGE.open) {
+        // Un-swiped applicants
+        const unswiped = (e.guests || []).filter(g => g.state === GS.applied).length;
+        if (unswiped > 0) {
+          rows.push({ id: mkId(), kind:"applicants",
+            text: e.title + " — " + unswiped + " new applicant" + (unswiped !== 1 ? "s" : ""),
+            eventId: e.id, action:"review" });
+        }
+      }
+
+      if (e.stage === STAGE.locked) {
+        const confirmed = (e.guests || []).filter(g => g.state === GS.confirmed);
+        if (confirmed.length > 0) {
+          rows.push({ id: mkId(), kind:"confirmed",
+            text: e.title + " — " + confirmed.length + " confirmed",
+            eventId: e.id, action:"guestlist" });
+        }
+        const expired = (e.guests || []).filter(g => g.state === GS.expired);
+        if (expired.length > 0) {
+          rows.push({ id: mkId(), kind:"expired",
+            text: e.title + " — a pick expired · pick a replacement",
+            eventId: e.id, action:"review" });
+        }
+        const declined = (e.guests || []).filter(g => g.state === GS.declined);
+        if (declined.length > 0) {
+          rows.push({ id: mkId(), kind:"declined",
+            text: e.title + " — a pick declined · pick a replacement",
+            eventId: e.id, action:"review" });
+        }
+      }
+
+      if (e.stage === STAGE.past && e.recap) {
+        const inReview = (e.guests || []).filter(g => g.story === SS.review).length;
+        const due      = (e.guests || []).filter(g => g.story === SS.due).length;
+        const verified = (e.guests || []).filter(g => g.story === SS.verified).length;
+        if (inReview > 0 || due > 0) {
+          rows.push({ id: mkId(), kind:"stories",
+            text: e.title + " — " + verified + " stor" + (verified !== 1 ? "ies" : "y") + " verified · " + (inReview + due) + " pending",
+            eventId: e.id, action:"recap" });
+        }
+        if (e.invoice && e.invoice.status === "due") {
+          rows.push({ id: mkId(), kind:"invoice",
+            text: e.title + " — invoice due · $" + (e.invoice.price || 0),
+            eventId: e.id, action:"recap" });
+        }
+      }
+    });
+
+    return rows;
+  }
+
+  /* ========== NotifSheet — renders venueNotifs() rows ========== */
+  function NotifSheet({ events, onClose, onReview, onGuestList, onToast }){
+    const rows = venueNotifs(events);
+    const handleRow = (r) => {
+      onClose();
+      if (r.action === "review") {
+        const evt = events.find(e => e.id === r.eventId);
+        if (evt) onReview(evt);
+      } else if (r.action === "guestlist") {
+        onGuestList(r.eventId);
+      } else {
+        onToast("Recap — next build step");
+      }
+    };
     return (
       <>
         <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(13,14,16,.55)", backdropFilter:"blur(4px)"}}/>
@@ -1434,12 +1496,17 @@
             </button>
           </div>
           <div className="space-y-2">
-            {rows.map((r,i)=>(
-              <div key={i} className="card rounded-[14px] p-3.5 flex items-center gap-3">
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background: r.ice ? "var(--ice)" : "var(--line-2)"}}/>
-                <div className="flex-1 text-[13px] leading-snug">{r.txt}</div>
-                <div className="text-[11px] shrink-0" style={{opacity:.6}}>{r.time}</div>
-              </div>
+            {rows.length === 0 && (
+              <div className="card rounded-[14px] p-4 text-center text-[13px]" style={{opacity:.6}}>All clear</div>
+            )}
+            {rows.map((r) => (
+              <button key={r.id} onClick={() => handleRow(r)}
+                className="press card w-full text-left rounded-[14px] p-3.5 flex items-center gap-3">
+                <span className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{background: (r.kind==="applicants"||r.kind==="confirmed") ? "var(--ice)" : "var(--line-2)"}}/>
+                <div className="flex-1 text-[13px] leading-snug">{r.text}</div>
+                <Icon name="arrow-right" size={13} stroke={1.8} className="shrink-0" style={{opacity:.5}}/>
+              </button>
             ))}
           </div>
         </div>
@@ -1447,23 +1514,72 @@
     );
   }
 
-  /* ========== ScreenDesk — the venue dashboard (Tonight tab) ========== */
-  function ScreenDesk({ venue, events, pool, pickedIds, onReview, onPost }){
+  /* ========== ScreenDesk — stage-driven venue dashboard (Task 7) ========== */
+  function ScreenDesk({ venue, events, onReview, onPost, onEditDraft, onGuestList, onToast, onTab }){
     const [notifOpen, setNotifOpen] = useState(false);
-    const live = events.find(e => e.status === "live");
-    const drafts = events.filter(e => e.status === "draft");
-    const confirmed = 14 + pickedIds.length;
-    const toReview = Math.max(0, pool.length - pickedIds.length);
+
+    // 1. Tonight card — the locked event dated TODAY
+    const tonightEvent = events.find(e => e.stage === STAGE.locked && e.date === TODAY) || null;
+
+    // 2. Needs attention rows
+    const openWithUnswiped = events.filter(e =>
+      e.stage === STAGE.open && (e.guests || []).some(g => g.state === GS.applied)
+    );
+    const lockedWithExpiredOrDeclined = events.filter(e =>
+      e.stage === STAGE.locked && (e.guests || []).some(g => g.state === GS.expired || g.state === GS.declined)
+    );
+    const attentionRows = [
+      ...openWithUnswiped.map(e => {
+        const n = (e.guests || []).filter(g => g.state === GS.applied).length;
+        return { key:"open-"+e.id, label: e.title + " · " + n + " to review →", action: () => onReview(e) };
+      }),
+      ...lockedWithExpiredOrDeclined.map(e => ({
+        key:"locked-"+e.id,
+        label: "Pick a replacement",
+        sublabel: e.title + " — a pick expired",
+        action: () => onReview(e),
+      })),
+    ];
+
+    // 3. Drafts
+    const drafts = events.filter(e => e.stage === STAGE.draft);
+
+    // 4. Last recap teaser — most recent past event with a recap
+    const recapEvent = [...events]
+      .filter(e => e.stage === STAGE.past && e.recap)
+      .sort((a, b) => {
+        // parse "Sat · 24 May" style dates — just compare raw strings desc (seed order works)
+        return events.indexOf(a) - events.indexOf(b);
+      })[0] || null;
+
+    // 5. Stat tiles — derived from stage
+    const openEvents = events.filter(e => e.stage === STAGE.open);
+    const appliedTotal = openEvents.reduce((s, e) => s + (e.appliedTotal || 0), 0);
+    const toReview     = openEvents.reduce((s, e) => s + (e.guests || []).filter(g => g.state === GS.applied).length, 0);
+    const tonightConfirmed = tonightEvent ? (tonightEvent.guests || []).filter(g => g.state === GS.confirmed).length : 0;
+    const roomsTonight = events.filter(e => e.stage === STAGE.locked && e.date === TODAY).length;
+
+    const firstOpenEvent = openEvents[0] || null;
+
+    // Bell badge count
+    const notifCount = venueNotifs(events).length;
+
+    // Tonight card sub-line
+    const tonightConfirmedCount = tonightEvent ? (tonightEvent.guests || []).filter(g => g.state === GS.confirmed).length : 0;
+    const tonightWaitlistCount  = tonightEvent ? (tonightEvent.guests || []).filter(g => g.state === GS.waitlist).length : 0;
 
     return (
       <div className="absolute inset-0 flex flex-col" style={{background:"var(--bg)"}}>
         <StatusBar/>
         <div className="flex-1 overflow-y-auto noscroll pb-24">
+          {/* Header row */}
           <div className="pt-16 px-5 flex items-center justify-between">
             <div className="font-display text-[14px]" style={{opacity:.75}}>The List · Venues</div>
             <button onClick={()=>setNotifOpen(true)} aria-label="Activity" className="press glass w-10 h-10 rounded-full flex items-center justify-center relative">
               <Icon name="bell" size={17} stroke={1.5}/>
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>3</span>
+              {notifCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>{notifCount}</span>
+              )}
             </button>
           </div>
           <div className="px-5 mt-2 flex items-end justify-between">
@@ -1476,37 +1592,74 @@
             <div className="text-[12px] font-mono pb-1" style={{opacity:.75}}>Sun · 25.05</div>
           </div>
 
-          {/* urgent task — the one thing to do now */}
-          {live && (
+          {/* 1. Tonight card — locked event dated TODAY */}
+          {tonightEvent && (
             <div className="px-5 mt-6">
-              <button onClick={()=>onReview(live)} className="press card w-full text-left rounded-[18px] overflow-hidden relative grain">
-                {live.heroImage && <img src={live.heroImage.src} className="absolute inset-0 w-full h-full object-cover" alt=""/>}
-                <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(18,19,21,.25) 0%, rgba(18,19,21,.84) 100%)"}}/>
+              <div className="press card rounded-[18px] overflow-hidden relative grain">
+                {tonightEvent.heroImage && <img src={tonightEvent.heroImage.src} className="absolute inset-0 w-full h-full object-cover" alt=""/>}
+                <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(18,19,21,.22) 0%, rgba(18,19,21,.85) 100%)"}}/>
                 <div className="relative p-4" style={{color:"#F7F6F3"}}>
                   <div className="flex items-center justify-between">
-                    <StatusPill label="Open for swipe" tone="ice" dot/>
-                    <Countdown value="04:56:12" className="text-[13px] font-medium" style={{color:"#F7F6F3"}}/>
+                    <StatusPill label="Tonight" tone="ice" dot/>
                   </div>
-                  <div className="font-black font-display text-[30px] leading-none mt-9">{live.title}</div>
-                  <div className="text-[12px] mt-1.5" style={{opacity:.85}}>{live.date} · {live.time} · 137 applied for {live.seats} seats</div>
-                  <div className="mt-4 h-12 rounded-full flex items-center justify-center gap-2 text-[12px] font-semibold glow-primary" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-                    Start swiping <Icon name="arrow-right" size={14} stroke={1.8}/>
+                  <div className="font-black font-display text-[30px] leading-none mt-9">{tonightEvent.title}</div>
+                  <div className="text-[12px] mt-1.5" style={{opacity:.85}}>
+                    {tonightConfirmedCount} confirmed · {tonightWaitlistCount} waitlist
                   </div>
+                  <button
+                    onClick={() => onTab("door")}
+                    className="press mt-4 w-full h-12 rounded-full flex items-center justify-center gap-2 text-[12px] font-semibold glow-primary"
+                    style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                    Door <Icon name="arrow-right" size={14} stroke={1.8}/>
+                  </button>
                 </div>
-              </button>
+              </div>
             </div>
           )}
 
-          {/* the desk numbers — TSS widget tiles, our skin */}
+          {/* 2. Needs attention */}
+          {attentionRows.length > 0 && (
+            <>
+              <SectionHead label="Needs attention" className="pt-7 pb-3"/>
+              <div className="px-5 space-y-2">
+                {attentionRows.map(row => (
+                  <button key={row.key} onClick={row.action}
+                    className="press card w-full text-left rounded-[14px] p-4 flex items-center gap-3">
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:"var(--ice)"}}/>
+                    <div className="flex-1 min-w-0">
+                      {row.sublabel && (
+                        <div className="text-[11px] mb-0.5" style={{color:"var(--ink-mute)"}}>{row.sublabel}</div>
+                      )}
+                      <div className="text-[13px] font-medium leading-snug">{row.label}</div>
+                    </div>
+                    <Icon name="arrow-right" size={14} stroke={1.8} className="shrink-0" style={{opacity:.6}}/>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* 3. Stat tiles */}
           <SectionHead label="The desk" className="pt-7 pb-3"/>
           <div className="px-5 grid grid-cols-2 gap-2.5 stagger">
-            <div style={{"--i":0}}><StatTile n={137} label="Applied"/></div>
-            <div style={{"--i":1}}><StatTile n={toReview} label="To review" onClick={live ? ()=>onReview(live) : undefined}/></div>
-            <div style={{"--i":2}}><StatTile n={confirmed} label="Confirmed" ice/></div>
-            <div style={{"--i":3}}><StatTile n={1} label="Room tonight"/></div>
+            <div style={{"--i":0}}>
+              <StatTile n={appliedTotal} label="Applied"
+                onClick={firstOpenEvent ? ()=>onReview(firstOpenEvent) : undefined}/>
+            </div>
+            <div style={{"--i":1}}>
+              <StatTile n={toReview} label="To review"
+                onClick={firstOpenEvent ? ()=>onReview(firstOpenEvent) : undefined}/>
+            </div>
+            <div style={{"--i":2}}>
+              <StatTile n={tonightConfirmed} label="Confirmed" ice
+                onClick={tonightEvent ? ()=>onGuestList(tonightEvent.id) : undefined}/>
+            </div>
+            <div style={{"--i":3}}>
+              <StatTile n={roomsTonight} label="Rooms tonight"/>
+            </div>
           </div>
 
-          {/* upcoming rooms */}
+          {/* 4. Drafts */}
           <SectionHead label="Upcoming rooms" right={drafts.length + " draft"} className="pt-8 pb-3"/>
           <div className="px-5 space-y-2 stagger">
             {drafts.length===0 && (
@@ -1515,25 +1668,54 @@
             {drafts.map((r,i)=>{
               const m = (r.date.split("·")[1]||"").trim().split(" ");
               return (
-                <div key={r.id} style={{"--i":i}} className="card rounded-[14px] p-3 flex items-center gap-3">
+                <button key={r.id} style={{"--i":i}} onClick={()=>onEditDraft(r)}
+                  className="press card w-full text-left rounded-[14px] p-3 flex items-center gap-3">
                   <DateChip day={m[0]||"—"} sub={m[1]||""}/>
                   <div className="flex-1 min-w-0">
                     <div className="font-display text-[17px] leading-tight truncate">{r.title}</div>
                     <div className="text-[11px] mt-0.5" style={{opacity:.7}}>{r.time} · {r.seats} seats</div>
                   </div>
                   <StatusPill label="Draft" tone="outline"/>
-                </div>
+                </button>
               );
             })}
           </div>
 
-          <div className="px-5 mt-5 pb-4">
+          <div className="px-5 mt-5 pb-2">
             <button onClick={onPost} className="press w-full h-[52px] rounded-full flex items-center justify-center gap-2 text-[12px] font-medium" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
               <Icon name="plus" size={15} stroke={1.8}/> New room
             </button>
           </div>
+
+          {/* 5. Last recap teaser */}
+          {recapEvent && (
+            <div className="px-5 mt-4 pb-4">
+              <SectionHead label="Last recap" className="pb-3"/>
+              <button onClick={()=>onToast("Recap — next build step")}
+                className="press card w-full text-left rounded-[14px] p-4 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="font-display text-[17px] leading-tight truncate">{recapEvent.title}</div>
+                  <div className="text-[12px] mt-1" style={{opacity:.75}}>
+                    {recapEvent.recap.showed} of {recapEvent.recap.confirmed} showed
+                    {" · "}{(recapEvent.guests||[]).filter(g=>g.story===SS.verified).length} stories verified
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-[12px] font-medium" style={{color:"var(--ice)", flexShrink:0}}>
+                  Recap <Icon name="arrow-right" size={13} stroke={1.8}/>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
-        {notifOpen && <NotifSheet onClose={()=>setNotifOpen(false)}/>}
+        {notifOpen && (
+          <NotifSheet
+            events={events}
+            onClose={()=>setNotifOpen(false)}
+            onReview={onReview}
+            onGuestList={(id)=>onGuestList(id)}
+            onToast={onToast}
+          />
+        )}
       </div>
     );
   }
@@ -2155,7 +2337,7 @@
   }
 
   /* ========== ScreenReview — swipe deck (Task 6: serves event guests, undo, close apps, replacements) ========== */
-  function ScreenReview({ eventId, events, setEvents, onClose, pickedIds, setPickedIds, askConfirm, onToast }){
+  function ScreenReview({ eventId, events, setEvents, onClose, askConfirm, onToast }){
     // Derive live event from events array so guest-state writes show up immediately.
     const event = events.find(e => e.id === eventId) || null;
 
@@ -2175,7 +2357,7 @@
     }, []); // intentionally stable: computed once at open
 
     const [idx, setIdx] = useState(0);
-    const [undoEntry, setUndoEntry] = useState(null); // { prevIdx, prevGuestState, applicantId, wasPickedIdsAdded }
+    const [undoEntry, setUndoEntry] = useState(null); // { prevIdx, prevGuestState, applicantId }
     const [sheetEntry, setSheetEntry] = useState(null); // { applicant, guest } captured together at card-tap time
 
     // Timers for replacement-mode auto-confirm (locked event picks)
@@ -2228,12 +2410,6 @@
         };
       }));
 
-      // For open events: mirror to legacy pickedIds (interim Desk truth — remove in T7)
-      if (!isLocked) {
-        if (yes) setPickedIds(p => p.includes(applicantId) ? p : [...p, applicantId]);
-        else     setPickedIds(p => p.filter(id => id !== applicantId));
-      }
-
       // For locked events: if picked, start 12s auto-confirm timer
       if (isLocked && yes) {
         const code = genCode(applicantId);
@@ -2255,14 +2431,14 @@
       }
 
       // Save undo entry for this decision; cleared on next decide
-      setUndoEntry({ prevIdx: idx, prevGuestState: prevState, applicantId, wasPickedIdsAdded: yes && !isLocked });
+      setUndoEntry({ prevIdx: idx, prevGuestState: prevState, applicantId });
       setIdx(i => i + 1);
     };
 
     // Undo last decision
     const handleUndo = () => {
       if (!undoEntry) return;
-      const { prevIdx, prevGuestState, applicantId, wasPickedIdsAdded } = undoEntry;
+      const { prevIdx, prevGuestState, applicantId } = undoEntry;
       // Clear any running auto-confirm timer for this applicant
       if (confirmTimers.current[applicantId]) {
         clearTimeout(confirmTimers.current[applicantId]);
@@ -2277,7 +2453,6 @@
           ),
         };
       }));
-      if (wasPickedIdsAdded) setPickedIds(p => p.filter(id => id !== applicantId));
       setIdx(prevIdx);
       setUndoEntry(null);
     };
@@ -2300,8 +2475,6 @@
               ),
             };
           }));
-          // T7 retires pickedIds — mirror cleared here so Desk tiles don't count picks on a locked event
-          setPickedIds(p => p.filter(id => !event.guests.some(g => g.applicantId === id)));
           onToast("Applications closed");
           onClose();
         },
@@ -2970,7 +3143,6 @@
     const [venue, setVenue] = useState(makeVenue());   // venue being registered
     const [events, setEvents] = useState(SEED_EVENTS); // their drops
     const [tab, setTab] = useState("desk");            // desk | events | door | venue
-    const [pickedIds, setPickedIds] = useState([]);    // swipe picks — shared with the desk tiles
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
     const [confirm, setConfirm] = useState(null);      // {title,body,confirmLabel,onConfirm} | null
@@ -3066,7 +3238,7 @@
     />);
     if (step === "done") return wrap(
       <>
-        {tab === "desk"   && <ScreenDesk venue={venue} events={events} pool={APPLICANTS} pickedIds={pickedIds} onReview={openReview} onPost={()=>setStep("post")}/>}
+        {tab === "desk"   && <ScreenDesk venue={venue} events={events} onReview={openReview} onPost={()=>setStep("post")} onEditDraft={editDraft} onGuestList={(id)=>setGuestListEventId(id)} onToast={showToast} onTab={setTab}/>}
         {tab === "events" && <ScreenEvents events={events} setEvents={setEvents} venue={venue}
                                onPost={()=>setStep("post")} onOpenEvent={openEvent}
                                onEditDraft={editDraft} onGuestList={(e) => setGuestListEventId(e.id)}
@@ -3077,7 +3249,7 @@
       </>
     );
 
-    if (step === "review-deck") return wrap(<ScreenReview eventId={reviewEventId} events={events} setEvents={setEvents} pickedIds={pickedIds} setPickedIds={setPickedIds} askConfirm={askConfirm} onToast={showToast} onClose={()=>{ setStep("done"); setTab("desk"); }}/>);
+    if (step === "review-deck") return wrap(<ScreenReview eventId={reviewEventId} events={events} setEvents={setEvents} askConfirm={askConfirm} onToast={showToast} onClose={()=>{ setStep("done"); setTab("desk"); }}/>);
 
     // Generic fallback for steps not yet built.
     return wrap(

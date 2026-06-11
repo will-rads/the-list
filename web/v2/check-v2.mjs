@@ -26,6 +26,7 @@ const REQUIRED = {
     "function GuestListSheet", "function ConfirmDialog", "Cancel event", "Cancelled",
     "const BUNDLES = [", "function StepBundle", "function StepBrief", "Applications close",
     "function ApplicantSheet", "Undo last", "Keep open", "Close applications",
+    "Needs attention", "Pick a replacement", "function venueNotifs", "const TODAY = ",
   ],
 };
 
