@@ -23,6 +23,7 @@ const REQUIRED = {
     "function ScreenPostEvent",
     "const STAGE = {", "const GS = {", "const SS = {", "function makeGuest",
     "LST-4F", "LST-9Q", "stage:", "guests:", "bundle:", "brief:",
+    "function GuestListSheet", "function ConfirmDialog", "Cancel event", "Cancelled",
   ],
 };
 

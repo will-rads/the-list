@@ -1675,29 +1675,166 @@
     );
   }
 
-  /* ========== ScreenEvents — Events dashboard (Task 9) ========== */
-  function ScreenEvents({ events, venue, onPost, onOpenEvent }){
-    const [seg, setSeg] = useState("live");
+  /* ========== ConfirmDialog — generic bottom-sheet confirm (reused by multiple tasks) ========== */
+  function ConfirmDialog({ title, body, confirmLabel, onConfirm, onClose }){
+    return (
+      <>
+        <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(13,14,16,.55)", backdropFilter:"blur(4px)"}}/>
+        <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-8" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
+          <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
+          <div className="font-black font-display-l text-[26px] leading-tight mb-2">{title}</div>
+          <div className="text-[13px] leading-relaxed mb-6" style={{color:"var(--ink-2)"}}>{body}</div>
+          <div className="flex gap-3">
+            <button onClick={onClose}
+              className="press flex-1 h-[52px] rounded-full text-[13px] font-medium"
+              style={{border:"1px solid var(--line-2)", color:"var(--ink)", background:"transparent"}}>
+              Keep it
+            </button>
+            <button onClick={()=>{ onConfirm(); onClose(); }}
+              className="press glow-primary flex-1 h-[52px] rounded-full text-[13px] font-semibold"
+              style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+              {confirmLabel}
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  /* ========== GuestListSheet — locked event's guest roster ========== */
+  function GuestListSheet({ event, onClose }){
+    const confirmed = (event.guests || []).filter(g => g.state === GS.confirmed);
+    const awaiting  = (event.guests || []).filter(g => g.state === GS.picked || g.state === GS.expired);
+    const waitlist  = (event.guests || []).filter(g => g.state === GS.waitlist);
+    const seats     = event.seats || (event.mix ? event.mix.girls + event.mix.guys : 0);
+
+    function GuestRow({ g, statusText }){
+      const ap = applicantById[g.applicantId] || {};
+      return (
+        <div className="flex items-center gap-3 py-2.5">
+          <img src={ap.photo || ""} alt="" className="w-10 h-10 rounded-full object-cover shrink-0"
+               style={{background:"var(--bg-elev2)"}}/>
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-[14px] truncate">{ap.name || "—"}</div>
+            {statusText && (
+              <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{statusText}</div>
+            )}
+          </div>
+          <div className="shrink-0 flex flex-col items-end gap-0.5">
+            {g.code && (
+              <span className="font-mono text-[11px]" style={{color:"var(--ice)", letterSpacing:".04em"}}>{g.code}</span>
+            )}
+            {ap.quality_score != null && (
+              <span className="text-[10px]" style={{color:"var(--ink-mute)"}}>{quality10(ap.quality_score)}</span>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const Group = ({ label, children, count }) => (
+      <div className="mb-4">
+        <div className="stamp mb-1 flex items-center justify-between">
+          <span>{label}</span>
+          <span style={{color:"var(--ink-mute)"}}>{count}</span>
+        </div>
+        <div style={{borderTop:"1px solid var(--line)"}}>
+          {children}
+        </div>
+      </div>
+    );
+
+    return (
+      <>
+        <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(13,14,16,.55)", backdropFilter:"blur(4px)"}}/>
+        <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-8"
+             style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)", maxHeight:"78%", display:"flex", flexDirection:"column"}}>
+          <div className="w-10 h-1 rounded-full mx-auto mb-5 shrink-0" style={{background:"var(--ink)", opacity:.4}}/>
+          <div className="flex items-start justify-between mb-4 shrink-0">
+            <div>
+              <div className="font-black font-display-l text-[22px] leading-tight">{event.title}</div>
+              <div className="text-[12px] mt-0.5" style={{color:"var(--ink-mute)"}}>
+                <span className="font-mono">{confirmed.length}</span> confirmed of <span className="font-mono">{seats}</span>
+              </div>
+            </div>
+            <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{background:"var(--bg-elev)"}}>
+              <Icon name="x" size={14} stroke={1.5}/>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto noscroll">
+            {confirmed.length > 0 && (
+              <Group label="Confirmed" count={confirmed.length}>
+                {confirmed.map((g,i) => <GuestRow key={i} g={g}/>)}
+              </Group>
+            )}
+            {awaiting.length > 0 && (
+              <Group label="Awaiting confirm" count={awaiting.length}>
+                {awaiting.map((g,i) => <GuestRow key={i} g={g} statusText={g.state === GS.expired ? "Pick expired" : "Awaiting confirm"}/>)}
+              </Group>
+            )}
+            {waitlist.length > 0 && (
+              <Group label="Waitlist" count={waitlist.length}>
+                {waitlist.map((g,i) => <GuestRow key={i} g={g} statusText="Still under review"/>)}
+              </Group>
+            )}
+            {confirmed.length === 0 && awaiting.length === 0 && waitlist.length === 0 && (
+              <div className="flex items-center justify-center py-10">
+                <span className="stamp" style={{color:"var(--ink-mute)"}}>No guests yet</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  /* ========== ScreenEvents — Events dashboard (stage-driven, Task 4) ========== */
+  function ScreenEvents({ events, venue, onPost, onOpenEvent, onEditDraft, onGuestList, askConfirm, setEvents, onToast }){
+    const [seg, setSeg] = useState("open");
 
     const counts = {
-      live:  events.filter(e => e.status === "live").length,
-      draft: events.filter(e => e.status === "draft").length,
-      past:  events.filter(e => e.status === "past").length,
+      open:    events.filter(e => e.stage === STAGE.open).length,
+      locked:  events.filter(e => e.stage === STAGE.locked).length,
+      draft:   events.filter(e => e.stage === STAGE.draft).length,
+      past:    events.filter(e => e.stage === STAGE.past || e.stage === STAGE.cancelled).length,
     };
 
     const segments = [
-      { id:"live",  label:"Live",  count: counts.live  },
-      { id:"draft", label:"Draft", count: counts.draft },
-      { id:"past",  label:"Past",  count: counts.past  },
+      { id:"open",   label:"Open",   count: counts.open   },
+      { id:"locked", label:"Locked", count: counts.locked },
+      { id:"draft",  label:"Drafts", count: counts.draft  },
+      { id:"past",   label:"Past",   count: counts.past   },
     ];
 
-    const visible = events.filter(e => e.status === seg);
+    const visible = events.filter(e => {
+      if (seg === "past") return e.stage === STAGE.past || e.stage === STAGE.cancelled;
+      return e.stage === seg;
+    });
 
-    function EventStatusPill({ status }){
-      if(status === "live")  return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}><span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--ice-ink)"}}/>Live</span>;
-      if(status === "draft") return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Draft</span>;
-      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium" style={{background:"var(--bg-elev2)", color:"var(--ink-mute)"}}>Past</span>;
+    function StagePill({ stage }){
+      if (stage === STAGE.open)      return <StatusPill label="Open" tone="ice" dot/>;
+      if (stage === STAGE.locked)    return <StatusPill label="Locked" tone="outline"/>;
+      if (stage === STAGE.draft)     return <StatusPill label="Draft" tone="outline"/>;
+      if (stage === STAGE.cancelled) return <StatusPill label="Cancelled"/>;
+      return <StatusPill label="Past"/>;
     }
+
+    const handleCancel = (event) => {
+      askConfirm({
+        title: "Cancel this event?",
+        body: "Everyone gets notified. No charge, no strikes.",
+        confirmLabel: "Cancel event",
+        onConfirm: () => {
+          setEvents(es => es.map(e => e.id !== event.id ? e : {
+            ...e,
+            stage: STAGE.cancelled,
+            status: stageToStatus(STAGE.cancelled),
+            guests: (e.guests || []).map(g => ({ ...g, state: GS.cancelled })),
+          }));
+          onToast("Event cancelled — guests notified");
+        },
+      });
+    };
 
     return (
       <div className="absolute inset-0 flex flex-col" style={{background:"var(--bg)"}}>
@@ -1711,18 +1848,7 @@
 
         {/* Segmented control */}
         <div className="shrink-0 px-5 mb-4">
-          <div className="flex gap-1 p-1 rounded-full" style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
-            {segments.map(it => {
-              const on = it.id === seg;
-              return (
-                <button key={it.id} onClick={() => setSeg(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[10px] font-medium"
-                  style={on ? {background:"var(--ink)", color:"var(--bg)"} : {color:"var(--ink-mute)"}}>
-                  <span>{it.label}</span>
-                  <span style={{opacity:.65}}>{it.count}</span>
-                </button>
-              );
-            })}
-          </div>
+          <Segmented items={segments} value={seg} onChange={setSeg}/>
         </div>
 
         {/* Scrollable event list */}
@@ -1730,31 +1856,89 @@
           {visible.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <span className="stamp" style={{color:"var(--ink-mute)"}}>
-                {seg === "live" ? "No live events" : seg === "draft" ? "No drafts" : "No past events"}
+                {seg === "open" ? "No open events" : seg === "locked" ? "No locked events" : seg === "draft" ? "No drafts" : "No past events"}
               </span>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
               {visible.map(event => (
-                <button key={event.id} onClick={() => onOpenEvent(event)}
-                  className="press w-full text-left flex items-center gap-3 p-3 rounded-[14px]"
+                <div key={event.id} className="w-full text-left rounded-[14px] overflow-hidden"
                   style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
-                  <FramedImage value={event.heroImage} ratio="4/5" className="w-14 shrink-0"/>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-black text-[18px] leading-tight truncate">{event.title || "Untitled"}</div>
-                    <div className="text-[11px] mt-0.5 truncate" style={{color:"var(--ink-mute)"}}>
-                      {event.type}{event.date ? " · " + event.date : ""}{event.time ? " · " + event.time : ""}
+                  {/* Card body */}
+                  <div className="flex items-start gap-3 p-3">
+                    <FramedImage value={event.heroImage} ratio="4/5" className="w-14 shrink-0"/>
+                    <div className="flex-1 min-w-0 py-0.5">
+                      <div className="font-black text-[18px] leading-tight truncate">{event.title || "Untitled"}</div>
+                      <div className="text-[11px] mt-0.5 truncate" style={{color:"var(--ink-mute)"}}>
+                        {event.type}{event.date ? " · " + event.date : ""}{event.time ? " · " + event.time : ""}
+                      </div>
+                      {/* Open-specific meta */}
+                      {event.stage === STAGE.open && event.closesAt && (
+                        <div className="text-[11px] mt-1" style={{color:"var(--ink-mute)"}}>
+                          Closes {event.closesAt}
+                        </div>
+                      )}
+                      {event.stage === STAGE.open && event.appliedTotal != null && (
+                        <div className="text-[11px] mt-0.5" style={{color:"var(--ink-mute)"}}>
+                          <span className="font-mono">{event.appliedTotal}</span> applied
+                        </div>
+                      )}
+                      {/* Mix / seats */}
+                      <div className="text-[10px] mt-1" style={{color:"var(--ink-mute)"}}>
+                        {event.mix
+                          ? "Girls " + event.mix.girls + " · Guys " + event.mix.guys
+                          : event.seats + " seats"}
+                      </div>
+                    </div>
+                    <div className="shrink-0 pt-0.5">
+                      <StagePill stage={event.stage}/>
                     </div>
                   </div>
-                  <div className="shrink-0 flex flex-col items-end gap-1.5">
-                    <EventStatusPill status={event.status}/>
-                    <span className="stamp text-[10px]" style={{color:"var(--ink-mute)"}}>
-                      {event.mix
-                        ? "Girls " + event.mix.girls + " · Guys " + event.mix.guys
-                        : event.seats + " seats"}
-                    </span>
+
+                  {/* Action row */}
+                  <div className="flex items-center justify-between px-3 pb-3 gap-2">
+                    <div className="flex-1">
+                      {event.stage === STAGE.open && (
+                        <button onClick={() => onOpenEvent(event)}
+                          className="press text-[12px] font-semibold flex items-center gap-1"
+                          style={{color:"var(--ice)", background:"transparent", border:"none"}}>
+                          Review applicants <Icon name="arrow-right" size={13} stroke={1.8}/>
+                        </button>
+                      )}
+                      {event.stage === STAGE.locked && (
+                        <button onClick={() => onGuestList(event)}
+                          className="press text-[12px] font-semibold flex items-center gap-1"
+                          style={{color:"var(--ice)", background:"transparent", border:"none"}}>
+                          Guest list <Icon name="arrow-right" size={13} stroke={1.8}/>
+                        </button>
+                      )}
+                      {event.stage === STAGE.draft && (
+                        <button onClick={() => onEditDraft(event)}
+                          className="press text-[12px] font-semibold flex items-center gap-1"
+                          style={{color:"var(--ice)", background:"transparent", border:"none"}}>
+                          Edit <Icon name="arrow-right" size={13} stroke={1.8}/>
+                        </button>
+                      )}
+                      {event.stage === STAGE.past && (
+                        <button onClick={() => onToast("Recap — next build step")}
+                          className="press text-[12px] font-semibold flex items-center gap-1"
+                          style={{color:"var(--ice)", background:"transparent", border:"none"}}>
+                          Recap <Icon name="arrow-right" size={13} stroke={1.8}/>
+                        </button>
+                      )}
+                      {event.stage === STAGE.cancelled && (
+                        <span className="text-[11px]" style={{color:"var(--ink-mute)"}}>Cancelled</span>
+                      )}
+                    </div>
+                    {(event.stage === STAGE.open || event.stage === STAGE.locked) && (
+                      <button onClick={() => handleCancel(event)}
+                        className="press text-[11px]"
+                        style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
+                        Cancel event
+                      </button>
+                    )}
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           )}
@@ -2217,10 +2401,13 @@
     const [pickedIds, setPickedIds] = useState([]);    // swipe picks — shared with the desk tiles
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
+    const [confirm, setConfirm] = useState(null);      // {title,body,confirmLabel,onConfirm} | null
+    const [guestListEvent, setGuestListEvent] = useState(null); // event | null
 
     useEffect(() => { document.documentElement.classList.toggle('light', light); }, [light]);
     const [reviewEvent, setReviewEvent] = useState(null);
     const showToast = (msg) => { setToast(msg); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(()=>setToast(null), 2200); };
+    const askConfirm = (cfg) => setConfirm(cfg);
 
     // wrap: page chrome (theme toggle + explanatory card + phone frame + Toast), like index.html's App return
     const wrap = (node) => (
@@ -2234,6 +2421,18 @@
         <div className="iphone"><div className="iphone-screen">
           {node}
           <Toast msg={toast}/>
+          {confirm && (
+            <ConfirmDialog
+              title={confirm.title}
+              body={confirm.body}
+              confirmLabel={confirm.confirmLabel}
+              onConfirm={confirm.onConfirm}
+              onClose={() => setConfirm(null)}
+            />
+          )}
+          {guestListEvent && (
+            <GuestListSheet event={guestListEvent} onClose={() => setGuestListEvent(null)}/>
+          )}
         </div></div>
       </div>
     );
@@ -2245,9 +2444,16 @@
     if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} setVenue={setVenue} group={group} onDone={()=>{ setStep("done"); setTab("desk"); }}/>);
 
     const openReview = (e) => { setReviewEvent(e); setStep("review-deck"); };
-    const openEvent = (e) => { e.status === "live" ? openReview(e) : showToast("Draft — editing coming soon"); };
+    // open → review deck (same as before); locked → guest list; draft/past handled in ScreenEvents
+    const openEvent = (e) => {
+      if (e.stage === STAGE.open)   return openReview(e);
+      if (e.stage === STAGE.locked) return setGuestListEvent(e);
+      // fallback (should not be reached from ScreenEvents which handles its own routes)
+      showToast("Draft — editing coming soon");
+    };
+    const editDraft = () => { setStep("post"); };  // Task 5 adds prefill; for now opens blank wizard
     const publishEvent = (draft) => {
-      setEvents(es => [{ ...draft, status: "live" }, ...es]);
+      setEvents(es => [{ ...draft, stage: STAGE.open, status: "live" }, ...es]);
       setStep("done"); setTab("events");
       showToast("Event published");
     };
@@ -2255,7 +2461,10 @@
     if (step === "done") return wrap(
       <>
         {tab === "desk"   && <ScreenDesk venue={venue} events={events} pool={APPLICANTS} pickedIds={pickedIds} onReview={openReview} onPost={()=>setStep("post")}/>}
-        {tab === "events" && <ScreenEvents events={events} venue={venue} onPost={()=>setStep("post")} onOpenEvent={openEvent}/>}
+        {tab === "events" && <ScreenEvents events={events} setEvents={setEvents} venue={venue}
+                               onPost={()=>setStep("post")} onOpenEvent={openEvent}
+                               onEditDraft={editDraft} onGuestList={setGuestListEvent}
+                               askConfirm={askConfirm} onToast={showToast}/>}
         {tab === "door"   && <ScreenDoor pool={APPLICANTS} onToast={showToast}/>}
         {tab === "venue"  && <ScreenVenueProfile venue={venue} group={group} onEdit={()=>setStep("onboard-venue")} onLogout={()=>setStep("intro")} onToast={showToast}/>}
         <VenueTabBar tab={tab} onTab={setTab}/>
