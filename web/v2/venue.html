@@ -2232,10 +2232,6 @@
     const selectTemplate = (b) => {
       set({ bundle: { name: b.name, price: b.price }, seats: b.seats });
     };
-    const selectCustom = () => {
-      set({ bundle: { name: "Custom", price: customPrice ? parseInt(customPrice,10)||0 : 0 } });
-    };
-
     const canNext = !!selected;
 
     return (
@@ -2366,8 +2362,12 @@
   function StepBasics({ draft, set, onNext, onCancel }){
     const ok = draft.title.length>=2 && draft.date && draft.time;
     const closesChips = ["24h before doors", "48h before doors", "Custom"];
+    const PRESETS = ["24h before doors", "48h before doors"];
+    const [customMode, setCustomMode] = useState(() => {
+      const c = draft.closesAt;
+      return !!c && c !== "24h before doors" && c !== "48h before doors";
+    });
     const currentCloses = draft.closesAt || "24h before doors";
-    const isCustomClose = currentCloses !== "24h before doors" && currentCloses !== "48h before doors";
 
     return (
       <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"var(--bg)"}}>
@@ -2429,14 +2429,15 @@
             <div className="flex flex-wrap gap-2">
               {closesChips.map(chip => {
                 const isThisCustom = chip === "Custom";
-                const sel = isThisCustom ? isCustomClose : currentCloses === chip;
+                const sel = isThisCustom ? customMode : (!customMode && currentCloses === chip);
                 return (
                   <button key={chip}
                     onClick={() => {
                       if (isThisCustom) {
-                        // Switch to custom — pre-fill with current value if already custom, else empty
-                        set({ closesAt: isCustomClose ? currentCloses : "" });
+                        setCustomMode(true);
+                        set({ closesAt: "" });
                       } else {
+                        setCustomMode(false);
                         set({ closesAt: chip });
                       }
                     }}
@@ -2446,9 +2447,9 @@
                 );
               })}
             </div>
-            {isCustomClose && (
+            {customMode && (
               <input
-                value={currentCloses}
+                value={draft.closesAt}
                 onChange={e => set({ closesAt: e.target.value })}
                 type="text"
                 placeholder="Fri · 30 May · 20:00"
