@@ -1679,8 +1679,8 @@
   function ConfirmDialog({ title, body, confirmLabel, onConfirm, onClose }){
     return (
       <>
-        <div onClick={onClose} className="absolute inset-0 z-60 sheet-backdrop" style={{background:"rgba(13,14,16,.55)", backdropFilter:"blur(4px)"}}/>
-        <div className="absolute left-0 right-0 bottom-0 z-70 sheet rounded-t-[24px] px-5 pt-4 pb-8" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
+        <div onClick={onClose} className="absolute inset-0 z-[60] sheet-backdrop" style={{background:"rgba(13,14,16,.55)", backdropFilter:"blur(4px)"}}/>
+        <div className="absolute left-0 right-0 bottom-0 z-[70] sheet rounded-t-[24px] px-5 pt-4 pb-8" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
           <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
           <div className="font-black font-display-l text-[26px] leading-tight mb-2">{title}</div>
           <div className="text-[13px] leading-relaxed mb-6" style={{color:"var(--ink-2)"}}>{body}</div>
