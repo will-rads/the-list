@@ -26,7 +26,7 @@ Make the prototype the **complete v1 experience** — every flow on both sides t
 ### Venue stages
 
 ```text
-Draft ──publish──► Open ──lock the list──► Locked ──close the night──► Past
+Draft ──publish──► Open ──close applications──► Locked ──close the night──► Past
                      │                        │
                      └────────cancel──────────┴──► Cancelled (shown in Past segment)
 ```
@@ -35,16 +35,16 @@ Draft ──publish──► Open ──lock the list──► Locked ──clos
 | --- | --- | --- |
 | Draft | Building. Members never see it. Fully editable. | Publish |
 | Open | Members apply. Venue swipes as applications arrive. Mix counter fills. | Review applicants (badge: N new) |
-| Locked | **Applications** closed (venue action or auto at apply deadline). Picks NOT final: venue keeps swiping the remaining pool for replacements until the night starts. Brief + passes out. Editable: time + brief only. | Door (night-of) / Guest list |
+| Locked | **Applications** closed (venue action "Close applications" or auto at apply deadline). Picks NOT final: venue keeps swiping the waitlist for replacements until the night starts. **Pass + Brief are issued per guest when she confirms — never at close.** Editable: time + brief only. | Door (night-of) / Guest list |
 | Past | Night closed from Door. Recap + invoice ready. | Recap |
 | Cancelled | Venue cancelled from an Open/Locked event card. Confirm dialog: "Everyone gets notified. No charge." All guests/applicants notified, statuses flip to Cancelled, no strikes. | — (badge in Past segment) |
 
-Stage flips: publish, lock, cancel, close-the-night are venue actions. Open→Locked also auto-fires at the applications-close time (default 24h before doors).
+Stage flips: publish, close applications, cancel, close-the-night are venue actions. Open→Locked also auto-fires at the applications-close time (default 24h before doors). "Locked" is internal/venue vocabulary only — the action is always worded "Close applications" because it closes applications, not final picks.
 
 ### Per-guest state machine (one vocabulary, no synonyms)
 
 ```text
-Applied ──venue ✓──► Picked ──confirm──► Confirmed ──door──► Checked in ──post──► Story due ──upload──► Story under review ──► Verified
+Applied ──venue ✓──► Picked ──confirm──► Confirmed ──door──► Checked in ──event ends──► Story due ──upload──► Under review ──► Verified
    │                   │  │                                      └──► No show                                  ├──► Needs review (founder check)
    │                   │  └─ no confirm in 24h ──► Expired (seat returns to venue → replacement pick)          └──► Rejected (reason + re-upload)
    │                   └─ member declines ──► Declined (seat returns to venue)
@@ -74,7 +74,7 @@ Key flow fix: today Apply instantly fires the "You're in" takeover. New: Apply �
 | --- | --- |
 | **Desk (Tonight tab)** | Stage-driven dashboard, top to bottom: (1) Tonight card — tonight's Locked event, guest count (confirmed/expected), one button → Door. (2) "Needs attention" stack — Open events with new-applicant badges → Review deck; expired/declined seats → "Pick a replacement" → deck over remaining pool + waitlist. (3) Drafts — tap = edit (resume wizard). (4) Last recap teaser (showed x/y, stories verified) → Recap. Stat tiles stay, wired to real stage data. Activity bell → venue notification model (below). |
 | **Post wizard** | 6 steps, progress dots: **Basics** (title, type, date, time, + applications-close picker, default 24h before doors) → **Seats & mix** (existing steppers) → **Bundle** (3 templates: The Ten / The Twenty / The Forty + Custom; placeholder prices; line: "Settle after the night · Whish / OMT / USD cash"; concierge line: "We handle all guest comms") → **Brief** (arrival window, dress code, meeting point, house rules — optional fields, concierge promise repeated) → **Image** (existing cropper) → **Review** (now shows bundle + brief + deadline) → Publish. |
-| **Review deck (swipe)** | Tap card → **Applicant sheet**: photo large, reputation score + attendance history (nights, shows, no-shows, strikes), IG + TikTok counts, audience split (gender + top countries), past nights at this venue. ✗/✓ unchanged. **Undo chip** appears after each decision (reverses last swipe). Deck end → **"Lock the list"** CTA (confirm dialog: "Applications close. Picks must confirm within 24h.") or "Keep open". On lock, every un-swiped applicant flips to Waitlist; while Locked, the deck serves the **waitlist** for replacement picks. Counter: mix fill or picked x/seats. |
+| **Review deck (swipe)** | Tap card → **Applicant sheet**: photo large, reputation score + attendance history (nights, shows, no-shows, strikes), IG + TikTok counts, audience split (gender + top countries), past nights at this venue. ✗/✓ unchanged. **Undo chip** appears after each decision (reverses last swipe). Deck end → **"Close applications"** CTA (confirm dialog: "No new applications. Members get notified. Picks must confirm within 24h — the waitlist stays available for replacements.") or "Keep open". On close, every un-swiped applicant flips to Waitlist; while Locked, the deck serves the **waitlist** for replacement picks. Counter: mix fill or picked x/seats. |
 | **Door tab** | Existing check-in / no-show / rate kept. Each row adds the guest's **pass code** (e.g. LST-4F) to eyeball against her Pass screen. New footer action: **"Close the night"** → rating queue for any checked-in-but-unrated guests → event flips Past → toast "Recap ready". |
 | **Recap (new screen)** | Reached from Past event card or Desk teaser. (1) Tiles: Confirmed / Showed (x/y) / No-shows / Avg rating given. (2) Story wall: per-guest status — Verified ✓ (screenshot thumbnail + score + reason), In review, Needs review, Due, Missed. (3) **Total verified reach** (sum of verified guests' followers) — the ROI number, biggest number on screen. (4) Invoice block: bundle name + price, status Due / Paid, settle line (Whish / OMT / USD cash), concierge line "The List will contact you to settle." (5) "Run it again" → prefilled draft (wave 2). |
 | **Events tab** | Segments: **Open / Locked / Drafts / Past** (replaces Live/Draft/Past). Cards state stage + one action. Draft tap = edit. Open/Locked cards expose **Cancel** (confirm dialog) → Cancelled badge in Past segment. Locked cards → **Guest list** (a sheet over the Events tab: confirmed rows with pass codes + waitlist rows, statuses live — same row treatment as Door's Expected list). |
@@ -123,7 +123,7 @@ Both files seed the **same fictional world** — same events, same states, same 
 
 ## 6. Build waves
 
-**Wave 1 — the complete night.** Lifecycle states both sides · apply fix + Picked-via-notification · post wizard (+ Bundle + Brief + deadline) · applicant sheet + undo · Lock the list · waitlist + replacements · Pass + door codes · Close the night → Recap (incl. invoice block) · story upload → AI verdict path · Cancel event · seed world + switchboard.
+**Wave 1 — the complete night.** Lifecycle states both sides · apply fix + Picked-via-notification · post wizard (+ Bundle + Brief + deadline) · applicant sheet + undo · Close applications · waitlist + replacements · Pass + door codes · Close the night → Recap (incl. invoice block) · story upload → AI verdict path · Cancel event · seed world + switchboard.
 
 **Wave 2 — money + meta.** Billing list + Insights tiles · member invite codes · tier-gated events · Standing/strikes block · Withdraw + Decline polish · full notification models · edit-Open (time/brief) · "Run it again" rebook.
 
