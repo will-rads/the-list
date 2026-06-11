@@ -1955,6 +1955,9 @@
     );
   }
 
+  // px reserved at card bottom for the social pill row (p-4 + h-9 + mt-3) — keep in sync with SwipeCard's footer
+  const CARD_LINK_ZONE = 80;
+
   /* ========== SwipeCard — one applicant card ========== */
   // One applicant card. Shows photo, name, quality 0-10, IG + TikTok, tappable socials.
   function SwipeCard({ a }){
@@ -2173,7 +2176,7 @@
 
     const [idx, setIdx] = useState(0);
     const [undoEntry, setUndoEntry] = useState(null); // { prevIdx, prevGuestState, applicantId, wasPickedIdsAdded }
-    const [sheetApplicant, setSheetApplicant] = useState(null); // applicant to show in ApplicantSheet
+    const [sheetEntry, setSheetEntry] = useState(null); // { applicant, guest } captured together at card-tap time
 
     // Timers for replacement-mode auto-confirm (locked event picks)
     const confirmTimers = useRef({});
@@ -2297,6 +2300,8 @@
               ),
             };
           }));
+          // T7 retires pickedIds — mirror cleared here so Desk tiles don't count picks on a locked event
+          setPickedIds(p => p.filter(id => !event.guests.some(g => g.applicantId === id)));
           onToast("Applications closed");
           onClose();
         },
@@ -2329,7 +2334,7 @@
           <div className="stamp mb-3 shrink-0" style={{color:"var(--ink-mute)"}}>
             {isLocked
               ? `${deckPool.length} on the waitlist`
-              : `${event.appliedTotal || deckPool.length} applied · ${deckPool.length} to review`}
+              : `${event.appliedTotal != null ? event.appliedTotal : deckPool.length} applied · ${deckPool.length} to review`}
           </div>
 
           {/* Mix counter */}
@@ -2404,8 +2409,8 @@
                   <SwipeCard a={current.applicant}/>
                   <button
                     className="absolute inset-x-0 top-0 z-10"
-                    style={{background:"transparent", border:"none", bottom:80}}
-                    onClick={() => setSheetApplicant(current.applicant)}
+                    style={{background:"transparent", border:"none", bottom:CARD_LINK_ZONE}}
+                    onClick={() => setSheetEntry({ applicant: current.applicant, guest: current.guest })}
                     aria-label={"View " + current.applicant.name}
                   />
                 </div>
@@ -2421,12 +2426,12 @@
         </div>
 
         {/* ApplicantSheet overlay */}
-        {sheetApplicant && (
+        {sheetEntry && (
           <ApplicantSheet
-            applicant={sheetApplicant}
-            guest={current && current.guest}
-            onDecide={(yes) => { setSheetApplicant(null); decide(yes); }}
-            onClose={() => setSheetApplicant(null)}
+            applicant={sheetEntry.applicant}
+            guest={sheetEntry.guest}
+            onDecide={(yes) => { setSheetEntry(null); decide(yes); }}
+            onClose={() => setSheetEntry(null)}
           />
         )}
       </div>
