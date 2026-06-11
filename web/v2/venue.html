@@ -1679,8 +1679,8 @@
   function ConfirmDialog({ title, body, confirmLabel, onConfirm, onClose }){
     return (
       <>
-        <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(13,14,16,.55)", backdropFilter:"blur(4px)"}}/>
-        <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-8" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
+        <div onClick={onClose} className="absolute inset-0 z-60 sheet-backdrop" style={{background:"rgba(13,14,16,.55)", backdropFilter:"blur(4px)"}}/>
+        <div className="absolute left-0 right-0 bottom-0 z-70 sheet rounded-t-[24px] px-5 pt-4 pb-8" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
           <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
           <div className="font-black font-display-l text-[26px] leading-tight mb-2">{title}</div>
           <div className="text-[13px] leading-relaxed mb-6" style={{color:"var(--ink-2)"}}>{body}</div>
@@ -1764,17 +1764,17 @@
           <div className="flex-1 overflow-y-auto noscroll">
             {confirmed.length > 0 && (
               <Group label="Confirmed" count={confirmed.length}>
-                {confirmed.map((g,i) => <GuestRow key={i} g={g}/>)}
+                {confirmed.map((g) => <GuestRow key={g.applicantId} g={g}/>)}
               </Group>
             )}
             {awaiting.length > 0 && (
               <Group label="Awaiting confirm" count={awaiting.length}>
-                {awaiting.map((g,i) => <GuestRow key={i} g={g} statusText={g.state === GS.expired ? "Pick expired" : "Awaiting confirm"}/>)}
+                {awaiting.map((g) => <GuestRow key={g.applicantId} g={g} statusText={g.state === GS.expired ? "Pick expired" : "Awaiting confirm"}/>)}
               </Group>
             )}
             {waitlist.length > 0 && (
               <Group label="Waitlist" count={waitlist.length}>
-                {waitlist.map((g,i) => <GuestRow key={i} g={g} statusText="Still under review"/>)}
+                {waitlist.map((g) => <GuestRow key={g.applicantId} g={g} statusText="Still under review"/>)}
               </Group>
             )}
             {confirmed.length === 0 && awaiting.length === 0 && waitlist.length === 0 && (
@@ -2402,7 +2402,7 @@
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
     const [confirm, setConfirm] = useState(null);      // {title,body,confirmLabel,onConfirm} | null
-    const [guestListEvent, setGuestListEvent] = useState(null); // event | null
+    const [guestListEventId, setGuestListEventId] = useState(null); // event id | null
 
     useEffect(() => { document.documentElement.classList.toggle('light', light); }, [light]);
     const [reviewEvent, setReviewEvent] = useState(null);
@@ -2430,9 +2430,11 @@
               onClose={() => setConfirm(null)}
             />
           )}
-          {guestListEvent && (
-            <GuestListSheet event={guestListEvent} onClose={() => setGuestListEvent(null)}/>
-          )}
+          {(() => {
+            const guestListEvent = guestListEventId ? events.find(e => e.id === guestListEventId) : null;
+            if (guestListEventId && !guestListEvent) { setGuestListEventId(null); return null; }
+            return guestListEvent ? <GuestListSheet event={guestListEvent} onClose={() => setGuestListEventId(null)}/> : null;
+          })()}
         </div></div>
       </div>
     );
@@ -2447,7 +2449,7 @@
     // open → review deck (same as before); locked → guest list; draft/past handled in ScreenEvents
     const openEvent = (e) => {
       if (e.stage === STAGE.open)   return openReview(e);
-      if (e.stage === STAGE.locked) return setGuestListEvent(e);
+      if (e.stage === STAGE.locked) return setGuestListEventId(e.id);
       // fallback (should not be reached from ScreenEvents which handles its own routes)
       showToast("Draft — editing coming soon");
     };
@@ -2463,7 +2465,7 @@
         {tab === "desk"   && <ScreenDesk venue={venue} events={events} pool={APPLICANTS} pickedIds={pickedIds} onReview={openReview} onPost={()=>setStep("post")}/>}
         {tab === "events" && <ScreenEvents events={events} setEvents={setEvents} venue={venue}
                                onPost={()=>setStep("post")} onOpenEvent={openEvent}
-                               onEditDraft={editDraft} onGuestList={setGuestListEvent}
+                               onEditDraft={editDraft} onGuestList={(e) => setGuestListEventId(e.id)}
                                askConfirm={askConfirm} onToast={showToast}/>}
         {tab === "door"   && <ScreenDoor pool={APPLICANTS} onToast={showToast}/>}
         {tab === "venue"  && <ScreenVenueProfile venue={venue} group={group} onEdit={()=>setStep("onboard-venue")} onLogout={()=>setStep("intro")} onToast={showToast}/>}
