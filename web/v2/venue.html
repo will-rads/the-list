@@ -2086,8 +2086,22 @@
             <div className="mb-4 px-1">
               <div className="stamp mb-2">Socials</div>
               <div className="flex gap-2 text-[13px]" style={{color:"var(--ink-2)"}}>
-                <span><span className="font-mono">{fmtK(applicant.instagram_followers)}</span> IG</span>
-                <span><span className="font-mono">{fmtK(applicant.tiktok_followers)}</span> TikTok</span>
+                {applicant.socials?.instagram ? (
+                  <a href={applicant.socials.instagram} target="_blank" rel="noreferrer"
+                     style={{color:"var(--ink-2)"}}>
+                    <span className="font-mono">{fmtK(applicant.instagram_followers)}</span> IG
+                  </a>
+                ) : (
+                  <span><span className="font-mono">{fmtK(applicant.instagram_followers)}</span> IG</span>
+                )}
+                {applicant.socials?.tiktok ? (
+                  <a href={applicant.socials.tiktok} target="_blank" rel="noreferrer"
+                     style={{color:"var(--ink-2)"}}>
+                    <span className="font-mono">{fmtK(applicant.tiktok_followers)}</span> TikTok
+                  </a>
+                ) : (
+                  <span><span className="font-mono">{fmtK(applicant.tiktok_followers)}</span> TikTok</span>
+                )}
               </div>
             </div>
 
