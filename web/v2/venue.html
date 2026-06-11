@@ -851,7 +851,7 @@
         bundle: { name:"The twenty", price:700 },
         brief: { arrival:"18:30 – 19:00", dress:"Comfortable active", meeting:"Front desk", rules:"1 Story + venue tag during the event" },
         guests,
-        recap: { confirmed:20, showed:18, noShows:2, avgRating:8.6, reach:412000 },
+        recap: { confirmed:20, showed:18, noShows:2, avgRating:8.6 }, // reach is DERIVED on the recap screen (sum of verified guests' followers) — never stored
         invoice: { bundle:"The twenty", price:700, status:"due" },
         endedAt: 2,
       };
@@ -886,7 +886,7 @@
         bundle: { name:"The ten", price:400 },
         brief: { arrival:"21:00 – 22:00", dress:"Smart casual", meeting:"Host at door", rules:"1 Story + venue tag during the event" },
         guests,
-        recap: { confirmed:12, showed:12, noShows:0, avgRating:8.9, reach:301000 },
+        recap: { confirmed:12, showed:12, noShows:0, avgRating:8.9 },
         invoice: { bundle:"The ten", price:400, status:"paid" },
         endedAt: 1,
       };
@@ -1854,7 +1854,6 @@
               showed: checkedInCount,
               noShows: noShowCount + confirmedCount,  // original no_shows + newly converted
               avgRating,
-              reach: 0,
             },
             invoice: {
               bundle: e.bundle?.name || "Custom",
