@@ -549,42 +549,362 @@
     seats: 20, heroImage: null, exchange: "1 Story + venue tag", status: "draft", ...over,
   }; }
 
-  // A couple of pre-seeded drops so the dashboard isn't empty on first load.
-  const SEED_EVENTS = [
-    makeEvent({ title:"Pool Day", type:"Beach", date:"Sun · 25 May", time:"14:00",
-                mix:{girls:15,guys:5}, seats:20, status:"live",
-                heroImage:{ src: IMG.beachClub, scale:1, x:0, y:0 } }),
-    makeEvent({ title:"Late Lounge", type:"Lounge", date:"Sun · 25 May", time:"22:00",
-                mix:null, seats:18, status:"draft",
-                heroImage:{ src: IMG.lounge, scale:1, x:0, y:0 } }),
-  ];
+  // Event stages
+  const STAGE = { draft:"draft", open:"open", locked:"locked", past:"past", cancelled:"cancelled" };
+  // Guest attendance states (one axis)
+  const GS = { applied:"applied", waitlist:"waitlist", picked:"picked", confirmed:"confirmed",
+    declined:"declined", expired:"expired", withdrawn:"withdrawn", checkedIn:"checked_in",
+    noShow:"no_show", notSelected:"not_selected", cancelled:"cancelled" };
+  // Story states (second axis; only meaningful after checked_in + event past)
+  const SS = { due:"due", review:"review", needsReview:"needs_review", rejected:"rejected", verified:"verified" };
+
+  // Derive legacy status from stage so current renders don't crash.
+  function stageToStatus(stage){
+    if (stage === STAGE.draft)      return "draft";
+    if (stage === STAGE.open)       return "live";
+    if (stage === STAGE.locked)     return "live";
+    if (stage === STAGE.past)       return "past";
+    if (stage === STAGE.cancelled)  return "past";
+    return "draft";
+  }
+
+  function makeGuest(applicantId, state, opts = {}) {
+    return { applicantId, state, story: opts.story || null, code: opts.code || null,
+             rating: opts.rating || null, inAt: opts.inAt || null };
+  }
 
   // Applicants for the swipe deck (vendor-neutral; mirrors a normalized provider row).
   const APPLICANTS = [
+    // ---- original 8 (kept exactly, with added reputation + audience) ----
     { id:"a1", name:"Sara Capriotti", gender:"female", quality_score:0.94, photo:FACE.sara,
       instagram_followers:28400, tiktok_followers:51200,
-      socials:{ instagram:"https://instagram.com/capriottisara", tiktok:"https://tiktok.com/@capriottisara", other:null } },
+      socials:{ instagram:"https://instagram.com/capriottisara", tiktok:"https://tiktok.com/@capriottisara", other:null },
+      reputation:{ score:9.1, nights:18, shows:17, noShows:1, strikes:0, withYou:3 },
+      audience:{ female:0.68, countries:[["Lebanon",0.72],["UAE",0.12],["France",0.08]] } },
     { id:"a2", name:"Karim Haddad", gender:"male", quality_score:0.88, photo:FACE.karim,
       instagram_followers:14200, tiktok_followers:9800,
-      socials:{ instagram:"https://instagram.com/karim", tiktok:"https://tiktok.com/@karim", other:null } },
+      socials:{ instagram:"https://instagram.com/karim", tiktok:"https://tiktok.com/@karim", other:null },
+      reputation:{ score:8.7, nights:12, shows:11, noShows:1, strikes:0, withYou:2 },
+      audience:{ female:0.42, countries:[["Lebanon",0.70],["UAE",0.14],["KSA",0.06]] } },
     { id:"a3", name:"Lea Nassar", gender:"female", quality_score:0.91, photo:FACE.lina,
       instagram_followers:46100, tiktok_followers:120300,
-      socials:{ instagram:"https://instagram.com/lea", tiktok:null, other:"https://leanassar.com" } },
+      socials:{ instagram:"https://instagram.com/lea", tiktok:null, other:"https://leanassar.com" },
+      reputation:{ score:9.4, nights:22, shows:22, noShows:0, strikes:0, withYou:4 },
+      audience:{ female:0.71, countries:[["Lebanon",0.65],["UAE",0.18],["KSA",0.07]] } },
     { id:"a4", name:"Tariq Bou", gender:"male", quality_score:0.79, photo:FACE.rami,
       instagram_followers:8200, tiktok_followers:21000,
-      socials:{ instagram:"https://instagram.com/tariq", tiktok:"https://tiktok.com/@tariq", other:null } },
+      socials:{ instagram:"https://instagram.com/tariq", tiktok:"https://tiktok.com/@tariq", other:null },
+      reputation:{ score:8.2, nights:7, shows:6, noShows:1, strikes:0, withYou:1 },
+      audience:{ female:0.38, countries:[["Lebanon",0.74],["Cyprus",0.10],["UAE",0.08]] } },
     { id:"a5", name:"Nour Khoury", gender:"female", quality_score:0.86, photo:FACE.nour,
       instagram_followers:33000, tiktok_followers:5400,
-      socials:{ instagram:"https://instagram.com/nour", tiktok:"https://tiktok.com/@nour", other:null } },
+      socials:{ instagram:"https://instagram.com/nour", tiktok:"https://tiktok.com/@nour", other:null },
+      reputation:{ score:8.9, nights:14, shows:13, noShows:1, strikes:0, withYou:2 },
+      audience:{ female:0.64, countries:[["Lebanon",0.70],["UAE",0.14],["KSA",0.06]] } },
     { id:"a6", name:"Maya Fares", gender:"female", quality_score:0.97, photo:FACE.maya,
       instagram_followers:88000, tiktok_followers:240000,
-      socials:{ instagram:"https://instagram.com/maya", tiktok:"https://tiktok.com/@maya", other:null } },
+      socials:{ instagram:"https://instagram.com/maya", tiktok:"https://tiktok.com/@maya", other:null },
+      reputation:{ score:9.6, nights:24, shows:24, noShows:0, strikes:0, withYou:4 },
+      audience:{ female:0.78, countries:[["Lebanon",0.60],["UAE",0.20],["France",0.08]] } },
     { id:"a7", name:"Jad Aoun", gender:"male", quality_score:0.72, photo:FACE.karim,
       instagram_followers:5100, tiktok_followers:3200,
-      socials:{ instagram:"https://instagram.com/jad", tiktok:null, other:null } },
+      socials:{ instagram:"https://instagram.com/jad", tiktok:null, other:null },
+      reputation:{ score:7.9, nights:5, shows:4, noShows:1, strikes:1, withYou:0 },
+      audience:{ female:0.41, countries:[["Lebanon",0.80],["Cyprus",0.09],["Qatar",0.05]] } },
     { id:"a8", name:"Yara Saad", gender:"female", quality_score:0.83, photo:FACE.yasmine,
       instagram_followers:19500, tiktok_followers:42000,
-      socials:{ instagram:"https://instagram.com/yara", tiktok:"https://tiktok.com/@yara", other:null } },
+      socials:{ instagram:"https://instagram.com/yara", tiktok:"https://tiktok.com/@yara", other:null },
+      reputation:{ score:8.6, nights:10, shows:10, noShows:0, strikes:0, withYou:2 },
+      audience:{ female:0.66, countries:[["Lebanon",0.68],["UAE",0.16],["KSA",0.08]] } },
+    // ---- 18 new applicants (female first, then male) ----
+    { id:"a9", name:"Lea Khoury", gender:"female", quality_score:0.82, photo:FACE.sara,
+      instagram_followers:22000, tiktok_followers:38000,
+      socials:{ instagram:"https://instagram.com/leakhoury", tiktok:"https://tiktok.com/@leakhoury", other:null },
+      reputation:{ score:8.8, nights:9, shows:9, noShows:0, strikes:0, withYou:1 },
+      audience:{ female:0.65, countries:[["Lebanon",0.71],["UAE",0.13],["KSA",0.07]] } },
+    { id:"a10", name:"Maya Rahme", gender:"female", quality_score:0.87, photo:FACE.maya,
+      instagram_followers:34000, tiktok_followers:61000,
+      socials:{ instagram:"https://instagram.com/mayarahme", tiktok:"https://tiktok.com/@mayarahme", other:null },
+      reputation:{ score:9.0, nights:11, shows:11, noShows:0, strikes:0, withYou:2 },
+      audience:{ female:0.70, countries:[["Lebanon",0.66],["UAE",0.17],["France",0.09]] } },
+    { id:"a11", name:"Nour Saab", gender:"female", quality_score:0.79, photo:FACE.nour,
+      instagram_followers:15000, tiktok_followers:27000,
+      socials:{ instagram:"https://instagram.com/noursaab", tiktok:"https://tiktok.com/@noursaab", other:null },
+      reputation:{ score:8.3, nights:6, shows:6, noShows:0, strikes:0, withYou:1 },
+      audience:{ female:0.62, countries:[["Lebanon",0.75],["UAE",0.12],["Qatar",0.06]] } },
+    { id:"a12", name:"Yara Chami", gender:"female", quality_score:0.84, photo:FACE.yasmine,
+      instagram_followers:27000, tiktok_followers:45000,
+      socials:{ instagram:"https://instagram.com/yarachami", tiktok:"https://tiktok.com/@yarachami", other:null },
+      reputation:{ score:8.7, nights:13, shows:12, noShows:1, strikes:0, withYou:2 },
+      audience:{ female:0.67, countries:[["Lebanon",0.69],["UAE",0.15],["KSA",0.07]] } },
+    { id:"a13", name:"Tala Aoun", gender:"female", quality_score:0.76, photo:FACE.tala,
+      instagram_followers:12000, tiktok_followers:19000,
+      socials:{ instagram:"https://instagram.com/talaaoun", tiktok:"https://tiktok.com/@talaaoun", other:null },
+      reputation:{ score:8.1, nights:5, shows:5, noShows:0, strikes:0, withYou:0 },
+      audience:{ female:0.63, countries:[["Lebanon",0.76],["Cyprus",0.10],["UAE",0.07]] } },
+    { id:"a14", name:"Rita Sleiman", gender:"female", quality_score:0.88, photo:FACE.sara,
+      instagram_followers:41000, tiktok_followers:78000,
+      socials:{ instagram:"https://instagram.com/ritasleiman", tiktok:"https://tiktok.com/@ritasleiman", other:null },
+      reputation:{ score:9.2, nights:19, shows:18, noShows:1, strikes:0, withYou:3 },
+      audience:{ female:0.72, countries:[["Lebanon",0.64],["UAE",0.18],["France",0.10]] } },
+    { id:"a15", name:"Dana Fakhry", gender:"female", quality_score:0.81, photo:FACE.lina,
+      instagram_followers:18000, tiktok_followers:30000,
+      socials:{ instagram:"https://instagram.com/danafakhry", tiktok:"https://tiktok.com/@danafakhry", other:null },
+      reputation:{ score:8.5, nights:8, shows:8, noShows:0, strikes:0, withYou:1 },
+      audience:{ female:0.66, countries:[["Lebanon",0.72],["UAE",0.14],["Qatar",0.07]] } },
+    { id:"a16", name:"Lana Matar", gender:"female", quality_score:0.92, photo:FACE.maya,
+      instagram_followers:55000, tiktok_followers:92000,
+      socials:{ instagram:"https://instagram.com/lanamatar", tiktok:"https://tiktok.com/@lanamatar", other:null },
+      reputation:{ score:9.3, nights:20, shows:20, noShows:0, strikes:0, withYou:4 },
+      audience:{ female:0.75, countries:[["Lebanon",0.62],["UAE",0.20],["KSA",0.09]] } },
+    { id:"a17", name:"Cyrine Nassar", gender:"female", quality_score:0.78, photo:FACE.nour,
+      instagram_followers:11000, tiktok_followers:16000,
+      socials:{ instagram:"https://instagram.com/cyrinenassar", tiktok:"https://tiktok.com/@cyrinenassar", other:null },
+      reputation:{ score:8.2, nights:4, shows:4, noShows:0, strikes:0, withYou:0 },
+      audience:{ female:0.61, countries:[["Lebanon",0.78],["Cyprus",0.08],["UAE",0.07]] } },
+    { id:"a18", name:"Joelle Abou Jaoude", gender:"female", quality_score:0.85, photo:FACE.yasmine,
+      instagram_followers:31000, tiktok_followers:54000,
+      socials:{ instagram:"https://instagram.com/joelleaj", tiktok:"https://tiktok.com/@joelleaj", other:null },
+      reputation:{ score:8.9, nights:15, shows:14, noShows:1, strikes:0, withYou:2 },
+      audience:{ female:0.68, countries:[["Lebanon",0.68],["UAE",0.16],["France",0.08]] } },
+    { id:"a19", name:"Karen Daou", gender:"female", quality_score:0.71, photo:FACE.tala,
+      instagram_followers:9000, tiktok_followers:12000,
+      socials:{ instagram:"https://instagram.com/karendaou", tiktok:"https://tiktok.com/@karendaou", other:null },
+      reputation:{ score:8.0, nights:3, shows:3, noShows:0, strikes:0, withYou:0 },
+      audience:{ female:0.60, countries:[["Lebanon",0.80],["UAE",0.10],["Qatar",0.05]] } },
+    { id:"a20", name:"Mira Haddad", gender:"female", quality_score:0.89, photo:FACE.lina,
+      instagram_followers:47000, tiktok_followers:88000,
+      socials:{ instagram:"https://instagram.com/mirahaddad", tiktok:"https://tiktok.com/@mirahaddad", other:null },
+      reputation:{ score:9.1, nights:16, shows:16, noShows:0, strikes:0, withYou:3 },
+      audience:{ female:0.73, countries:[["Lebanon",0.65],["UAE",0.19],["KSA",0.08]] } },
+    { id:"a21", name:"Omar Khalil", gender:"male", quality_score:0.80, photo:FACE.karim,
+      instagram_followers:17000, tiktok_followers:25000,
+      socials:{ instagram:"https://instagram.com/omarkhalil", tiktok:"https://tiktok.com/@omarkhalil", other:null },
+      reputation:{ score:8.4, nights:8, shows:7, noShows:1, strikes:0, withYou:1 },
+      audience:{ female:0.40, countries:[["Lebanon",0.73],["UAE",0.14],["KSA",0.06]] } },
+    { id:"a22", name:"Ziad Karam", gender:"male", quality_score:0.75, photo:FACE.rami,
+      instagram_followers:10000, tiktok_followers:0,
+      socials:{ instagram:"https://instagram.com/ziadkaram", tiktok:null, other:null },
+      reputation:{ score:8.1, nights:4, shows:4, noShows:0, strikes:0, withYou:0 },
+      audience:{ female:0.39, countries:[["Lebanon",0.77],["Cyprus",0.11],["UAE",0.07]] } },
+    { id:"a23", name:"Jad Nassif", gender:"male", quality_score:0.83, photo:FACE.karim,
+      instagram_followers:23000, tiktok_followers:41000,
+      socials:{ instagram:"https://instagram.com/jadnassif", tiktok:"https://tiktok.com/@jadnassif", other:null },
+      reputation:{ score:8.6, nights:11, shows:10, noShows:1, strikes:0, withYou:2 },
+      audience:{ female:0.44, countries:[["Lebanon",0.70],["UAE",0.15],["France",0.08]] } },
+    { id:"a24", name:"Marc Abboud", gender:"male", quality_score:0.77, photo:FACE.rami,
+      instagram_followers:13000, tiktok_followers:18000,
+      socials:{ instagram:"https://instagram.com/marcabboud", tiktok:"https://tiktok.com/@marcabboud", other:null },
+      reputation:{ score:8.3, nights:6, shows:6, noShows:0, strikes:0, withYou:1 },
+      audience:{ female:0.43, countries:[["Lebanon",0.74],["Qatar",0.10],["UAE",0.08]] } },
+    { id:"a25", name:"Rami Saliba", gender:"male", quality_score:0.85, photo:FACE.karim,
+      instagram_followers:30000, tiktok_followers:52000,
+      socials:{ instagram:"https://instagram.com/ramisaliba", tiktok:"https://tiktok.com/@ramisaliba", other:null },
+      reputation:{ score:8.8, nights:14, shows:13, noShows:1, strikes:0, withYou:2 },
+      audience:{ female:0.46, countries:[["Lebanon",0.67],["UAE",0.17],["KSA",0.09]] } },
+    { id:"a26", name:"Elie Tannous", gender:"male", quality_score:0.73, photo:FACE.rami,
+      instagram_followers:9000, tiktok_followers:0,
+      socials:{ instagram:"https://instagram.com/elietannous", tiktok:null, other:null },
+      reputation:{ score:8.0, nights:3, shows:3, noShows:0, strikes:0, withYou:0 },
+      audience:{ female:0.38, countries:[["Lebanon",0.79],["Cyprus",0.09],["UAE",0.06]] } },
+  ];
+
+  // ---- demo world events ----
+  // canonical today = Sun 25 May
+  const SEED_EVENTS = [
+    // 1. Pool Day — stage:locked (today, 18 confirmed + 1 picked + 2 waitlist)
+    (() => {
+      const guests = [
+        makeGuest("a3",  GS.confirmed, { code:"LST-2A", inAt:null, rating:null }),
+        makeGuest("a4",  GS.confirmed, { code:"LST-2B", inAt:null, rating:null }),
+        makeGuest("a5",  GS.confirmed, { code:"LST-2C", inAt:null, rating:null }),
+        makeGuest("a6",  GS.confirmed, { code:"LST-2D", inAt:null, rating:null }),
+        makeGuest("a8",  GS.confirmed, { code:"LST-2E", inAt:null, rating:null }),
+        makeGuest("a9",  GS.confirmed, { code:"LST-2F", inAt:null, rating:null }),
+        makeGuest("a11", GS.confirmed, { code:"LST-2G", inAt:null, rating:null }),
+        makeGuest("a12", GS.confirmed, { code:"LST-2H", inAt:null, rating:null }),
+        makeGuest("a13", GS.confirmed, { code:"LST-2J", inAt:null, rating:null }),
+        makeGuest("a14", GS.confirmed, { code:"LST-2K", inAt:null, rating:null }),
+        makeGuest("a15", GS.confirmed, { code:"LST-2L", inAt:null, rating:null }),
+        makeGuest("a16", GS.confirmed, { code:"LST-2M", inAt:null, rating:null }),
+        makeGuest("a17", GS.confirmed, { code:"LST-2N", inAt:null, rating:null }),
+        makeGuest("a18", GS.confirmed, { code:"LST-2P", inAt:null, rating:null }),
+        makeGuest("a19", GS.confirmed, { code:"LST-2R", inAt:null, rating:null }),
+        makeGuest("a20", GS.confirmed, { code:"LST-2S", inAt:null, rating:null }),
+        makeGuest("a21", GS.confirmed, { code:"LST-2T", inAt:null, rating:null }),
+        // Sara Capriotti — code MUST be LST-4F
+        makeGuest("a1",  GS.confirmed, { code:"LST-4F", inAt:null, rating:null }),
+        // picked — Maya Rahme, code LST-9Q (expiring-pick demo)
+        makeGuest("a10", GS.picked, { code:"LST-9Q" }),
+        // 2 waitlist
+        makeGuest("a22", GS.waitlist),
+        makeGuest("a23", GS.waitlist),
+      ];
+      return {
+        ...makeEvent({ id:"pool", title:"Pool Day", type:"Beach", date:"Sun · 25 May", time:"14:00",
+          mix:{girls:15,guys:5}, seats:20, exchange:"1 Story + venue tag",
+          heroImage:{ src:IMG.beachClub, scale:1, x:0, y:0 } }),
+        stage: STAGE.locked,
+        status: stageToStatus(STAGE.locked),
+        closesAt: "Sat · 24 May · 20:00",
+        bundle: { name:"The twenty", price:700 },
+        brief: { arrival:"14:00 – 15:00", dress:"Beach chic", meeting:"Host stand — ask for Rami", rules:"1 Story + venue tag during the event" },
+        appliedTotal: 137,
+        guests,
+      };
+    })(),
+
+    // 2. Late Lounge — stage:open (24 applied, Sara among them)
+    (() => {
+      const guests = [
+        makeGuest("a1",  GS.applied),
+        makeGuest("a2",  GS.applied),
+        makeGuest("a3",  GS.applied),
+        makeGuest("a4",  GS.applied),
+        makeGuest("a5",  GS.applied),
+        makeGuest("a6",  GS.applied),
+        makeGuest("a7",  GS.applied),
+        makeGuest("a8",  GS.applied),
+        makeGuest("a9",  GS.applied),
+        makeGuest("a11", GS.applied),
+        makeGuest("a12", GS.applied),
+        makeGuest("a13", GS.applied),
+        makeGuest("a14", GS.applied),
+        makeGuest("a15", GS.applied),
+        makeGuest("a16", GS.applied),
+        makeGuest("a17", GS.applied),
+        makeGuest("a18", GS.applied),
+        makeGuest("a19", GS.applied),
+        makeGuest("a20", GS.applied),
+        makeGuest("a21", GS.applied),
+        makeGuest("a22", GS.applied),
+        makeGuest("a23", GS.applied),
+        makeGuest("a24", GS.applied),
+        makeGuest("a25", GS.applied),
+      ];
+      return {
+        ...makeEvent({ id:"lounge", title:"Late Lounge", type:"Lounge", date:"Fri · 30 May", time:"22:00",
+          mix:{girls:15,guys:5}, seats:20, exchange:"1 Story + venue tag",
+          heroImage:{ src:IMG.lounge, scale:1, x:0, y:0 } }),
+        stage: STAGE.open,
+        status: stageToStatus(STAGE.open),
+        closesAt: "Fri · 30 May · 20:00",
+        bundle: { name:"The twenty", price:700 },
+        brief: { arrival:"21:30 – 22:30", dress:"Smart dark", meeting:"Door host", rules:"1 Story + venue tag during the event" },
+        appliedTotal: 137,
+        guests,
+      };
+    })(),
+
+    // 3. Rooftop Session — stage:draft (no guests, no bundle yet)
+    (() => {
+      return {
+        ...makeEvent({ id:"roof", title:"Rooftop Session", type:"Club", date:"Sat · 31 May", time:"21:00",
+          mix:null, seats:30, exchange:"1 Story + venue tag",
+          heroImage:{ src:IMG.rooftop, scale:1, x:0, y:0 } }),
+        stage: STAGE.draft,
+        status: stageToStatus(STAGE.draft),
+        bundle: null,
+        brief: null,
+        guests: [],
+      };
+    })(),
+
+    // 4. Sound Bath — stage:past (last night, story windows still open)
+    (() => {
+      // 18 checked_in: 14 verified, 1 review, 3 due — Sara is checked_in + story "due"
+      const guests = [
+        makeGuest("a3",  GS.checkedIn, { inAt:"19:04", rating:8.8, story:SS.verified }),
+        makeGuest("a4",  GS.checkedIn, { inAt:"19:07", rating:8.5, story:SS.verified }),
+        makeGuest("a5",  GS.checkedIn, { inAt:"19:09", rating:8.9, story:SS.verified }),
+        makeGuest("a6",  GS.checkedIn, { inAt:"19:11", rating:9.0, story:SS.verified }),
+        makeGuest("a8",  GS.checkedIn, { inAt:"19:14", rating:8.7, story:SS.verified }),
+        makeGuest("a9",  GS.checkedIn, { inAt:"19:16", rating:8.4, story:SS.verified }),
+        makeGuest("a11", GS.checkedIn, { inAt:"19:19", rating:8.6, story:SS.verified }),
+        makeGuest("a12", GS.checkedIn, { inAt:"19:21", rating:8.8, story:SS.verified }),
+        makeGuest("a13", GS.checkedIn, { inAt:"19:24", rating:8.5, story:SS.verified }),
+        makeGuest("a14", GS.checkedIn, { inAt:"19:28", story:SS.review }),
+        makeGuest("a15", GS.checkedIn, { inAt:"19:31", rating:8.6, story:SS.verified }),
+        makeGuest("a16", GS.checkedIn, { inAt:"19:33", rating:8.7, story:SS.verified }),
+        makeGuest("a17", GS.checkedIn, { inAt:"19:36", story:SS.due }),
+        makeGuest("a18", GS.checkedIn, { inAt:"19:39", story:SS.due }),
+        // Sara — story "due" (member-side upload demo)
+        makeGuest("a1",  GS.checkedIn, { inAt:"19:08", story:SS.due }),
+        makeGuest("a20", GS.checkedIn, { inAt:"19:43", rating:8.9, story:SS.verified }),
+        makeGuest("a21", GS.checkedIn, { inAt:"19:45", rating:8.5, story:SS.verified }),
+        makeGuest("a22", GS.checkedIn, { inAt:"19:47", rating:8.6, story:SS.verified }),
+        makeGuest("a2",  GS.noShow),
+        makeGuest("a7",  GS.noShow),
+      ];
+      return {
+        ...makeEvent({ id:"bath", title:"Sound Bath", type:"Gym", date:"Sat · 24 May", time:"19:00",
+          mix:{girls:15,guys:5}, seats:20, exchange:"1 Story + venue tag",
+          heroImage:{ src:IMG.gym, scale:1, x:0, y:0 } }),
+        stage: STAGE.past,
+        status: stageToStatus(STAGE.past),
+        bundle: { name:"The twenty", price:700 },
+        brief: { arrival:"18:30 – 19:00", dress:"Comfortable active", meeting:"Front desk", rules:"1 Story + venue tag during the event" },
+        guests,
+        recap: { confirmed:20, showed:18, noShows:2, avgRating:8.6, reach:412000 },
+        invoice: { bundle:"The twenty", price:700, status:"due" },
+      };
+    })(),
+
+    // 5. Vinyl Night — stage:past (two weeks ago, invoiced+paid)
+    (() => {
+      // 12 checked_in: 10 verified + 2 "missed" (story string literal)
+      // Sara is checked_in + story verified with a verdict
+      const guests = [
+        makeGuest("a3",  GS.checkedIn, { inAt:"21:10", rating:8.9, story:SS.verified }),
+        makeGuest("a4",  GS.checkedIn, { inAt:"21:14", rating:8.7, story:SS.verified }),
+        makeGuest("a5",  GS.checkedIn, { inAt:"21:17", rating:9.0, story:SS.verified }),
+        makeGuest("a6",  GS.checkedIn, { inAt:"21:20", rating:9.1, story:SS.verified }),
+        makeGuest("a8",  GS.checkedIn, { inAt:"21:24", rating:8.8, story:SS.verified }),
+        makeGuest("a9",  GS.checkedIn, { inAt:"21:27", rating:8.6, story:SS.verified }),
+        makeGuest("a11", GS.checkedIn, { inAt:"21:31", rating:8.9, story:SS.verified }),
+        makeGuest("a12", GS.checkedIn, { inAt:"21:35", rating:8.7, story:SS.verified }),
+        makeGuest("a14", GS.checkedIn, { inAt:"21:38", story:"missed" }),
+        makeGuest("a16", GS.checkedIn, { inAt:"21:41", story:"missed" }),
+        makeGuest("a18", GS.checkedIn, { inAt:"21:44", rating:8.8, story:SS.verified }),
+        // Sara — checked_in + story verified with verdict
+        { ...makeGuest("a1", GS.checkedIn, { inAt:"21:22", rating:9.2, story:SS.verified }),
+          verdict: { score:92, reason:"Tag visible, posted in window" } },
+      ];
+      return {
+        ...makeEvent({ id:"vinyl", title:"Vinyl Night", type:"Lounge", date:"Sun · 11 May", time:"21:00",
+          mix:{girls:10,guys:2}, seats:12, exchange:"1 Story + venue tag",
+          heroImage:{ src:IMG.lounge, scale:1, x:0, y:0 } }),
+        stage: STAGE.past,
+        status: stageToStatus(STAGE.past),
+        bundle: { name:"The ten", price:400 },
+        brief: { arrival:"21:00 – 22:00", dress:"Smart casual", meeting:"Host at door", rules:"1 Story + venue tag during the event" },
+        guests,
+        recap: { confirmed:12, showed:12, noShows:0, avgRating:8.9, reach:301000 },
+        invoice: { bundle:"The ten", price:400, status:"paid" },
+      };
+    })(),
+
+    // 6. Harbor Club Night — stage:cancelled (6 guests all cancelled)
+    (() => {
+      const guests = [
+        makeGuest("a2",  GS.cancelled),
+        makeGuest("a7",  GS.cancelled),
+        makeGuest("a21", GS.cancelled),
+        makeGuest("a23", GS.cancelled),
+        makeGuest("a24", GS.cancelled),
+        makeGuest("a25", GS.cancelled),
+      ];
+      return {
+        ...makeEvent({ id:"harbor", title:"Harbor Club Night", type:"Club", date:"Thu · 22 May", time:"22:00",
+          mix:{girls:15,guys:5}, seats:20, exchange:"1 Story + venue tag",
+          heroImage:{ src:IMG.club, scale:1, x:0, y:0 } }),
+        stage: STAGE.cancelled,
+        status: stageToStatus(STAGE.cancelled),
+        bundle: { name:"The twenty", price:700 },
+        brief: null,
+        guests,
+      };
+    })(),
   ];
 
   const fmtK = (n) => n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+"k" : ""+n;

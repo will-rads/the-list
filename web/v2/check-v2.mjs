@@ -19,6 +19,8 @@ const REQUIRED = {
     "function ScreenOnboardVenue", "function ScreenDesk", "function ScreenDoor",
     "function ScreenEvents", "function ScreenReview", "function ScreenVenueProfile",
     "function ScreenPostEvent",
+    "const STAGE = {", "const GS = {", "const SS = {", "function makeGuest",
+    "LST-4F", "LST-9Q", "stage:", "guests:", "bundle:", "brief:",
   ],
 };
 
