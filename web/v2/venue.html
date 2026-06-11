@@ -853,6 +853,7 @@
         guests,
         recap: { confirmed:20, showed:18, noShows:2, avgRating:8.6, reach:412000 },
         invoice: { bundle:"The twenty", price:700, status:"due" },
+        endedAt: 2,
       };
     })(),
 
@@ -887,6 +888,7 @@
         guests,
         recap: { confirmed:12, showed:12, noShows:0, avgRating:8.9, reach:301000 },
         invoice: { bundle:"The ten", price:400, status:"paid" },
+        endedAt: 1,
       };
     })(),
 
@@ -1533,24 +1535,29 @@
         const n = (e.guests || []).filter(g => g.state === GS.applied).length;
         return { key:"open-"+e.id, label: e.title + " · " + n + " to review →", action: () => onReview(e) };
       }),
-      ...lockedWithExpiredOrDeclined.map(e => ({
-        key:"locked-"+e.id,
-        label: "Pick a replacement",
-        sublabel: e.title + " — a pick expired",
-        action: () => onReview(e),
-      })),
+      ...lockedWithExpiredOrDeclined.map(e => {
+        const hasExpired  = (e.guests || []).some(g => g.state === GS.expired);
+        const hasDeclined = (e.guests || []).some(g => g.state === GS.declined);
+        const sublabelSuffix = (hasExpired && hasDeclined) ? "picks need replacing"
+          : hasDeclined ? "a pick declined"
+          : "a pick expired";
+        return {
+          key:"locked-"+e.id,
+          label: "Pick a replacement",
+          sublabel: e.title + " — " + sublabelSuffix,
+          action: () => onReview(e),
+        };
+      }),
     ];
 
     // 3. Drafts
     const drafts = events.filter(e => e.stage === STAGE.draft);
 
     // 4. Last recap teaser — most recent past event with a recap
+    // endedAt: monotonic close ordinal — Close the night (T8) must set endedAt = max(existing)+1
     const recapEvent = [...events]
       .filter(e => e.stage === STAGE.past && e.recap)
-      .sort((a, b) => {
-        // parse "Sat · 24 May" style dates — just compare raw strings desc (seed order works)
-        return events.indexOf(a) - events.indexOf(b);
-      })[0] || null;
+      .sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0))[0] || null;
 
     // 5. Stat tiles — derived from stage
     const openEvents = events.filter(e => e.stage === STAGE.open);
@@ -1565,8 +1572,7 @@
     const notifCount = venueNotifs(events).length;
 
     // Tonight card sub-line
-    const tonightConfirmedCount = tonightEvent ? (tonightEvent.guests || []).filter(g => g.state === GS.confirmed).length : 0;
-    const tonightWaitlistCount  = tonightEvent ? (tonightEvent.guests || []).filter(g => g.state === GS.waitlist).length : 0;
+    const tonightWaitlistCount = tonightEvent ? (tonightEvent.guests || []).filter(g => g.state === GS.waitlist).length : 0;
 
     return (
       <div className="absolute inset-0 flex flex-col" style={{background:"var(--bg)"}}>
@@ -1604,7 +1610,7 @@
                   </div>
                   <div className="font-black font-display text-[30px] leading-none mt-9">{tonightEvent.title}</div>
                   <div className="text-[12px] mt-1.5" style={{opacity:.85}}>
-                    {tonightConfirmedCount} confirmed · {tonightWaitlistCount} waitlist
+                    {tonightConfirmed} confirmed · {tonightWaitlistCount} waitlist
                   </div>
                   <button
                     onClick={() => onTab("door")}
