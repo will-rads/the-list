@@ -2198,13 +2198,13 @@
   /* ========== StepCircles — kit-style numbered step indicator ==========
      Purely visual: 1-2-3-4 joined by a hairline, current step = accent fill,
      completed steps keep their outline at full ink. Same steps as before. */
-  function StepCircles({ current }){
+  function StepCircles({ current, total=6 }){
     return (
       <div className="flex items-center mt-3" aria-hidden="true">
-        {[1,2,3,4].map((n,i)=>(
+        {Array.from({length:total},(_,i)=>i+1).map((n,i)=>(
           <React.Fragment key={n}>
-            {i>0 && <span style={{width:24, height:1, background:"var(--line-2)"}}/>}
-            <span className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-semibold shrink-0"
+            {i>0 && <span style={{flex:1, height:1, background:"var(--line-2)", minWidth:8}}/>}
+            <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0"
               style={n===current
                 ? {background:"var(--ice)", color:"var(--ice-ink)"}
                 : n<current
@@ -2216,82 +2216,271 @@
     );
   }
 
-  /* ========== ScreenPostEvent — 4-step post wizard ========== */
-  function ScreenPostEvent({ venue, onPublish, onCancel }){
-    const [sub, setSub] = useState("basics"); // basics | seats | image | review
-    const [draft, setDraft] = useState(makeEvent({ venueId: venue.id, heroImage: venue.heroImage }));
+  /* ========== Bundle options ========== */
+  const BUNDLES = [
+    { id:"ten",    name:"The ten",    seats:10, price:400 },
+    { id:"twenty", name:"The twenty", seats:20, price:700 },
+    { id:"forty",  name:"The forty",  seats:40, price:1200 },
+  ];
+
+  /* ========== StepBundle — step 3 of post wizard ========== */
+  function StepBundle({ draft, set, onNext, onBack }){
+    const selected = draft.bundle;
+    const isCustom = selected && selected.name === "Custom";
+    const [customPrice, setCustomPrice] = useState(isCustom ? String(selected.price||"") : "");
+
+    const selectTemplate = (b) => {
+      set({ bundle: { name: b.name, price: b.price }, seats: b.seats });
+    };
+    const selectCustom = () => {
+      set({ bundle: { name: "Custom", price: customPrice ? parseInt(customPrice,10)||0 : 0 } });
+    };
+
+    const canNext = !!selected;
+
+    return (
+      <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <button onClick={onBack} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+        <div className="font-black font-display-l text-[40px]">Bundle</div>
+        <StepCircles current={3}/>
+        <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Choose your package</div>
+
+        <div className="mt-5 flex-1 overflow-y-auto noscroll space-y-3">
+          {BUNDLES.map(b => {
+            const sel = selected && selected.name === b.name;
+            return (
+              <button key={b.id} onClick={()=>selectTemplate(b)}
+                className={"press card rounded-[16px] w-full text-left p-4 flex items-center justify-between"+(sel?" glow-ice":"")}
+                style={sel ? {borderColor:"var(--ice)"} : {}}>
+                <div>
+                  <div className="font-semibold text-[15px]">{b.name}</div>
+                  <div className="stamp mt-0.5">{b.seats} seats</div>
+                </div>
+                <div className="font-mono text-[18px]" style={{color: sel?"var(--ice)":"var(--ink-2)"}}>
+                  ${b.price}
+                </div>
+              </button>
+            );
+          })}
+
+          {/* Custom card */}
+          {(() => {
+            const sel = isCustom;
+            return (
+              <button onClick={()=>{ set({ bundle: { name:"Custom", price: customPrice ? parseInt(customPrice,10)||0 : 0 } }); }}
+                className={"press card rounded-[16px] w-full text-left p-4"+(sel?" glow-ice":"")}
+                style={sel ? {borderColor:"var(--ice)"} : {}}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-[15px]">Custom</div>
+                    <div className="stamp mt-0.5">Current seats: {draft.seats}</div>
+                  </div>
+                  {sel && (
+                    <div className="font-mono text-[18px]" style={{color:"var(--ice)"}}>
+                      {customPrice ? "$"+customPrice : "—"}
+                    </div>
+                  )}
+                </div>
+                {sel && (
+                  <div className="mt-3">
+                    <div className="stamp mb-1.5">Price ($)</div>
+                    <input
+                      value={customPrice}
+                      onChange={e => {
+                        const v = e.target.value.replace(/\D/g,"");
+                        setCustomPrice(v);
+                        set({ bundle: { name:"Custom", price: parseInt(v,10)||0 } });
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="e.g. 500"
+                      className="w-full h-10 px-3 rounded-[10px] text-[14px]"
+                      style={{background:"var(--bg-elev2)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+                    />
+                  </div>
+                )}
+              </button>
+            );
+          })()}
+
+          {/* Footer notes */}
+          <div className="pt-2 pb-1 space-y-1">
+            <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Settle after the night · Whish / OMT / USD cash</div>
+            <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>We handle all guest comms.</div>
+          </div>
+        </div>
+
+        <button disabled={!canNext} onClick={canNext ? onNext : undefined}
+          className="press w-full h-[58px] rounded-full text-[14px] font-semibold mt-4 shrink-0"
+          style={{background: canNext?"var(--ice)":"var(--bg-elev2)", color: canNext?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
+      </div>
+    );
+  }
+
+  /* ========== StepBrief — step 4 of post wizard (all optional) ========== */
+  function StepBrief({ draft, set, onNext, onBack }){
+    const brief = draft.brief || {};
+    const setBrief = (patch) => set({ brief: { ...brief, ...patch } });
+
+    const fields = [
+      { key:"arrival",  label:"Arrival window",  placeholder:"21:30 – 22:30" },
+      { key:"dress",    label:"Dress code",       placeholder:"Smart dark" },
+      { key:"meeting",  label:"Meeting point",    placeholder:"Door host" },
+      { key:"rules",    label:"House rules",      placeholder:"1 Story + venue tag during the event" },
+    ];
+
+    return (
+      <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <button onClick={onBack} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+        <div className="font-black font-display-l text-[40px]">Brief</div>
+        <StepCircles current={4}/>
+        <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Guest instructions · all optional</div>
+
+        <div className="mt-5 flex-1 overflow-y-auto noscroll space-y-4">
+          {fields.map(f => (
+            <div key={f.key}>
+              <div className="stamp mb-1.5">{f.label}</div>
+              <input
+                value={brief[f.key] || ""}
+                onChange={e => setBrief({ [f.key]: e.target.value })}
+                type="text"
+                placeholder={f.placeholder}
+                className="w-full h-11 px-3 rounded-[12px] text-[14px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+          ))}
+          <div className="pt-2 text-[11px]" style={{color:"var(--ink-mute)"}}>We handle all guest comms.</div>
+        </div>
+
+        <button onClick={onNext}
+          className="press w-full h-[58px] rounded-full text-[14px] font-semibold mt-4 shrink-0"
+          style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Next</button>
+      </div>
+    );
+  }
+
+  /* ========== StepBasics — step 1 of post wizard ========== */
+  function StepBasics({ draft, set, onNext, onCancel }){
+    const ok = draft.title.length>=2 && draft.date && draft.time;
+    const closesChips = ["24h before doors", "48h before doors", "Custom"];
+    const currentCloses = draft.closesAt || "24h before doors";
+    const isCustomClose = currentCloses !== "24h before doors" && currentCloses !== "48h before doors";
+
+    return (
+      <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <button onClick={onCancel} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Cancel</button>
+        <div className="font-black font-display-l text-[40px]">Post</div>
+        <StepCircles current={1}/>
+        <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>The basics</div>
+        <div className="mt-5 space-y-4 flex-1 overflow-y-auto noscroll">
+          <div>
+            <div className="stamp mb-1.5">Title</div>
+            <input
+              value={draft.title}
+              onChange={e => set({title:e.target.value})}
+              type="text"
+              placeholder="e.g. Pool Day"
+              className="w-full h-11 px-3 rounded-[12px] text-[15px]"
+              style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+            />
+          </div>
+          <div>
+            <div className="stamp mb-1.5">Type</div>
+            <div className="flex flex-wrap gap-2">
+              {VENUE_TYPES.map(t => {
+                const sel = draft.type === t;
+                return (
+                  <button key={t} onClick={() => set({type:t})}
+                    className="press px-4 h-9 rounded-full text-[12px] font-medium"
+                    style={{ background: sel?"var(--ice)":"transparent", color: sel?"var(--ice-ink)":"var(--ink)", border: sel?"none":"1px solid var(--line-2)" }}
+                  >{t}</button>
+                );
+              })}
+            </div>
+          </div>
+          <div>
+            <div className="stamp mb-1.5">Date</div>
+            <input
+              value={draft.date}
+              onChange={e => set({date:e.target.value})}
+              type="text"
+              placeholder="Sun · 25 May"
+              className="w-full h-11 px-3 rounded-[12px] text-[15px]"
+              style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+            />
+          </div>
+          <div>
+            <div className="stamp mb-1.5">Time</div>
+            <input
+              value={draft.time}
+              onChange={e => set({time:e.target.value})}
+              type="text"
+              placeholder="22:00"
+              className="w-full h-11 px-3 rounded-[12px] text-[15px]"
+              style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+            />
+          </div>
+          <div>
+            <div className="stamp mb-1.5">Applications close</div>
+            <div className="flex flex-wrap gap-2">
+              {closesChips.map(chip => {
+                const isThisCustom = chip === "Custom";
+                const sel = isThisCustom ? isCustomClose : currentCloses === chip;
+                return (
+                  <button key={chip}
+                    onClick={() => {
+                      if (isThisCustom) {
+                        // Switch to custom — pre-fill with current value if already custom, else empty
+                        set({ closesAt: isCustomClose ? currentCloses : "" });
+                      } else {
+                        set({ closesAt: chip });
+                      }
+                    }}
+                    className="press px-3 h-8 rounded-full text-[11px] font-medium"
+                    style={{ background: sel?"var(--ice)":"transparent", color: sel?"var(--ice-ink)":"var(--ink)", border: sel?"none":"1px solid var(--line-2)" }}
+                  >{chip}</button>
+                );
+              })}
+            </div>
+            {isCustomClose && (
+              <input
+                value={currentCloses}
+                onChange={e => set({ closesAt: e.target.value })}
+                type="text"
+                placeholder="Fri · 30 May · 20:00"
+                className="w-full h-10 px-3 rounded-[10px] text-[13px] mt-2"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            )}
+          </div>
+        </div>
+        <button disabled={!ok} onClick={ok ? onNext : undefined}
+          className="press w-full h-[58px] rounded-full text-[14px] font-semibold mt-4 shrink-0"
+          style={{background: ok?"var(--ice)":"var(--bg-elev2)", color: ok?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
+      </div>
+    );
+  }
+
+  /* ========== ScreenPostEvent — 6-step post wizard ========== */
+  // Substeps: basics → seats → bundle → brief → image → review
+  // initialDraft: if set, prefills the wizard (edit mode); draftId: id of event being edited
+  function ScreenPostEvent({ venue, onPublish, onCancel, initialDraft, draftId }){
+    const isEdit = !!draftId;
+    const [sub, setSub] = useState("basics");
+    const [draft, setDraft] = useState(() => {
+      if (initialDraft) return { ...initialDraft };
+      return makeEvent({ venueId: venue.id, heroImage: venue.heroImage, closesAt:"24h before doors" });
+    });
     const set = (patch) => setDraft(d => ({ ...d, ...patch }));
 
     if (sub === "basics") {
-      const ok = draft.title.length>=2 && draft.date && draft.time;
-      return (
-        <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
-          <StatusBar/>
-          <button onClick={onCancel} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Cancel</button>
-          <div className="font-black font-display-l text-[40px]">Post</div>
-          <StepCircles current={1}/>
-          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>The basics</div>
-          <div className="mt-6 space-y-5 flex-1 overflow-y-auto">
-            <div>
-              <div className="stamp mb-2">Title</div>
-              <input
-                value={draft.title}
-                onChange={e => set({title:e.target.value})}
-                type="text"
-                placeholder="e.g. Pool Day"
-                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
-                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-              />
-            </div>
-            <div>
-              <div className="stamp mb-2">Type</div>
-              <div className="flex flex-wrap gap-2">
-                {VENUE_TYPES.map(t => {
-                  const sel = draft.type === t;
-                  return (
-                    <button
-                      key={t}
-                      onClick={() => set({type:t})}
-                      className="press px-4 h-9 rounded-full text-[12px] font-medium"
-                      style={{
-                        background: sel ? "var(--ice)" : "transparent",
-                        color: sel ? "var(--ice-ink)" : "var(--ink)",
-                        border: sel ? "none" : "1px solid var(--line-2)"
-                      }}
-                    >{t}</button>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <div className="stamp mb-2">Date</div>
-              <input
-                value={draft.date}
-                onChange={e => set({date:e.target.value})}
-                type="text"
-                placeholder="Sun · 25 May"
-                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
-                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-              />
-            </div>
-            <div>
-              <div className="stamp mb-2">Time</div>
-              <input
-                value={draft.time}
-                onChange={e => set({time:e.target.value})}
-                type="text"
-                placeholder="22:00"
-                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
-                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-              />
-            </div>
-          </div>
-          <button disabled={!ok} onClick={()=>setSub("seats")}
-            className="press w-full h-[58px] rounded-full text-[14px] font-semibold"
-            style={{background: ok?"var(--ice)":"var(--bg-elev2)", color: ok?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
-        </div>
-      );
+      return <StepBasics draft={draft} set={set} onNext={()=>setSub("seats")} onCancel={onCancel}/>;
     }
+
     if (sub === "seats") {
       const noPref = draft.mix === null;
       const total = noPref ? draft.seats : (draft.mix.girls + draft.mix.guys);
@@ -2306,7 +2495,7 @@
         </div>
       );
       return (
-        <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
+        <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"var(--bg)"}}>
           <StatusBar/>
           <button onClick={()=>setSub("basics")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
           <div className="font-black font-display-l text-[40px]">Seats</div>
@@ -2332,19 +2521,30 @@
 
           <div className="mt-4 stamp" style={{color:"var(--ink-mute)"}}>{total} seats total</div>
           <div className="flex-1"/>
-          <button disabled={total<1} onClick={()=> { set({ seats: total }); setSub("image"); }}
+          <button disabled={total<1} onClick={()=> { set({ seats: total }); setSub("bundle"); }}
             className="press w-full h-[58px] rounded-full text-[14px] font-semibold"
             style={{background: total>=1?"var(--ice)":"var(--bg-elev2)", color: total>=1?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
         </div>
       );
     }
+
+    if (sub === "bundle") {
+      return <StepBundle draft={draft} set={set}
+        onNext={()=>setSub("brief")} onBack={()=>setSub("seats")}/>;
+    }
+
+    if (sub === "brief") {
+      return <StepBrief draft={draft} set={set}
+        onNext={()=>setSub("image")} onBack={()=>setSub("bundle")}/>;
+    }
+
     if (sub === "image") {
       return (
-        <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
+        <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"var(--bg)"}}>
           <StatusBar/>
-          <button onClick={()=>setSub("seats")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+          <button onClick={()=>setSub("brief")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
           <div className="font-black font-display-l text-[40px]">Image</div>
-          <StepCircles current={3}/>
+          <StepCircles current={5}/>
           <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>The event photo</div>
           <div className="text-[12px] mt-3" style={{color:"var(--ink-mute)"}}>Reuse your venue hero, or choose a new one.</div>
           <div className="mt-5 flex-1 overflow-y-auto">
@@ -2353,20 +2553,29 @@
               value={draft.heroImage}
               label="Event photo"
               onChange={(v)=>{ set({heroImage:v}); setSub("review"); }}
-              onCancel={()=>setSub("seats")}
+              onCancel={()=>setSub("brief")}
             />
           </div>
         </div>
       );
     }
+
     // sub === "review"
+    const briefData = draft.brief || {};
+    const briefLines = [
+      briefData.arrival && ["Arrival window", briefData.arrival],
+      briefData.dress   && ["Dress code",     briefData.dress],
+      briefData.meeting && ["Meeting point",  briefData.meeting],
+      briefData.rules   && ["House rules",    briefData.rules],
+    ].filter(Boolean);
+
     return (
-      <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
+      <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"var(--bg)"}}>
         <StatusBar/>
         <button onClick={()=>setSub("image")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
         <div className="font-black font-display-l text-[40px]">Review</div>
-        <StepCircles current={4}/>
-        <div className="mt-5 flex-1 overflow-y-auto space-y-4">
+        <StepCircles current={6}/>
+        <div className="mt-4 flex-1 overflow-y-auto noscroll space-y-4">
           <FramedImage value={draft.heroImage} ratio="4/5" className="w-full"/>
           <div>
             <div className="font-black text-[24px] leading-tight">{draft.title}</div>
@@ -2377,14 +2586,38 @@
               ? "Girls " + draft.mix.girls + " · Guys " + draft.mix.guys + " · " + draft.seats + " seats"
               : draft.seats + " seats · no gender preference"}
           </div>
+          {draft.closesAt && (
+            <div className="text-[13px]" style={{color:"var(--ink-mute)"}}>Applications close · {draft.closesAt}</div>
+          )}
+          {draft.bundle && (
+            <div>
+              <div className="stamp mb-1">Bundle</div>
+              <div className="text-[14px]">{draft.bundle.name} · ${draft.bundle.price}</div>
+            </div>
+          )}
           <div>
             <div className="stamp mb-1">The exchange</div>
             <div className="text-[14px]">{draft.exchange}</div>
           </div>
+          {briefLines.length > 0 && (
+            <div>
+              <div className="stamp mb-2">Brief</div>
+              <div className="space-y-1.5">
+                {briefLines.map(([label, val]) => (
+                  <div key={label} className="flex items-start gap-2 text-[13px]">
+                    <span style={{color:"var(--ink-mute)", minWidth:100}}>{label}</span>
+                    <span>{val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        <button onClick={()=>onPublish(draft)}
-          className="press w-full h-[58px] rounded-full text-[14px] font-semibold flex items-center justify-center gap-2"
-          style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Publish <Icon name="arrow-right" size={16} stroke={1.8}/></button>
+        <button onClick={()=>onPublish(draft, draftId)}
+          className="press w-full h-[58px] rounded-full text-[14px] font-semibold flex items-center justify-center gap-2 mt-4 shrink-0"
+          style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+          {isEdit ? "Save & publish" : "Publish"} <Icon name="arrow-right" size={16} stroke={1.8}/>
+        </button>
       </div>
     );
   }
@@ -2403,6 +2636,7 @@
     const toastTimer = useRef(null);
     const [confirm, setConfirm] = useState(null);      // {title,body,confirmLabel,onConfirm} | null
     const [guestListEventId, setGuestListEventId] = useState(null); // event id | null
+    const [editingDraft, setEditingDraft] = useState(null);         // event being edited | null
 
     useEffect(() => { document.documentElement.classList.toggle('light', light); }, [light]);
     const [reviewEvent, setReviewEvent] = useState(null);
@@ -2447,19 +2681,49 @@
 
     const openReview = (e) => { setReviewEvent(e); setStep("review-deck"); };
     // open → review deck (same as before); locked → guest list; draft/past handled in ScreenEvents
+
     const openEvent = (e) => {
       if (e.stage === STAGE.open)   return openReview(e);
       if (e.stage === STAGE.locked) return setGuestListEventId(e.id);
-      // fallback (should not be reached from ScreenEvents which handles its own routes)
+      // fallback
       showToast("Draft — editing coming soon");
     };
-    const editDraft = () => { setStep("post"); };  // Task 5 adds prefill; for now opens blank wizard
-    const publishEvent = (draft) => {
-      setEvents(es => [{ ...draft, stage: STAGE.open, status: "live" }, ...es]);
+    const editDraft = (event) => {
+      setEditingDraft(event);
+      setStep("post");
+    };
+    const publishEvent = (draft, draftId) => {
+      const published = {
+        ...draft,
+        stage: STAGE.open,
+        status: stageToStatus(STAGE.open),
+        guests: draft.guests || [],
+        appliedTotal: draft.appliedTotal || 0,
+      };
+      if (draftId) {
+        // Edit mode: update in place
+        setEvents(es => es.map(e => e.id === draftId ? { ...published, id: draftId } : e));
+      } else {
+        // New event
+        setEvents(es => [published, ...es]);
+      }
+      setEditingDraft(null);
       setStep("done"); setTab("events");
       showToast("Event published");
     };
-    if (step === "post") return wrap(<ScreenPostEvent venue={venue} onCancel={()=>setStep("done")} onPublish={publishEvent}/>);
+    const cancelPost = () => {
+      if (editingDraft) {
+        showToast("Draft unchanged");
+        setEditingDraft(null);
+      }
+      setStep("done");
+    };
+    if (step === "post") return wrap(<ScreenPostEvent venue={venue}
+      onCancel={cancelPost}
+      onPublish={publishEvent}
+      initialDraft={editingDraft || undefined}
+      draftId={editingDraft ? editingDraft.id : undefined}
+    />);
     if (step === "done") return wrap(
       <>
         {tab === "desk"   && <ScreenDesk venue={venue} events={events} pool={APPLICANTS} pickedIds={pickedIds} onReview={openReview} onPost={()=>setStep("post")}/>}
