@@ -2034,67 +2034,386 @@
     );
   }
 
-  /* ========== ScreenReview — swipe deck ========== */
-  function ScreenReview({ event, pool, onClose, picked, setPicked }){
-    // picked state lives in App so the desk tiles move when you swipe.
-    const [idx, setIdx] = useState(0);
-    const t = tally(picked, pool);
-    const target = event.mix;                    // {girls,guys} | null
-    const done = idx >= pool.length;
-    const a = pool[idx];
+  /* ========== ApplicantSheet — detailed applicant bottom sheet ========== */
+  function ApplicantSheet({ applicant, guest, onDecide, onClose }){
+    if (!applicant) return null;
+    const rep = applicant.reputation || {};
+    const aud = applicant.audience || {};
+    const femalePct = Math.round((aud.female || 0) * 100);
+    const malePct = 100 - femalePct;
+    const countries = aud.countries || [];
 
+    return (
+      <>
+        <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(13,14,16,.62)", backdropFilter:"blur(4px)"}}/>
+        <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-8"
+             style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)", maxHeight:"85%", display:"flex", flexDirection:"column"}}>
+          <div className="w-10 h-1 rounded-full mx-auto mb-4 shrink-0" style={{background:"var(--ink)", opacity:.4}}/>
+
+          {/* Photo + name header */}
+          <div className="flex-1 overflow-y-auto noscroll">
+            <div className="relative w-full rounded-[16px] overflow-hidden mb-4" style={{aspectRatio:"4/5"}}>
+              <FramedImage value={{src:applicant.photo, scale:1, x:0, y:0}} ratio="4/5" className="absolute inset-0 w-full h-full"/>
+              <div className="absolute inset-x-0 bottom-0 p-4"
+                   style={{background:"linear-gradient(to top, rgba(13,14,16,.92), transparent)", color:"#F7F6F3"}}>
+                <div className="font-black font-display-l text-[28px] leading-none">{applicant.name}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="font-mono text-[18px]">{quality10(applicant.quality_score)}</span>
+                  <Icon name="sparkles" size={14} className="opacity-80"/>
+                </div>
+              </div>
+            </div>
+
+            {/* Reputation block */}
+            <div className="mb-4 px-1">
+              <div className="stamp mb-2">Reputation</div>
+              <div className="flex items-baseline gap-1.5 mb-1">
+                <span className="font-mono text-[28px] leading-none" style={{color:"var(--ice)"}}>{rep.score != null ? rep.score.toFixed(1) : "—"}</span>
+                <span className="text-[12px]" style={{color:"var(--ink-mute)"}}>/ 10</span>
+              </div>
+              <div className="text-[12px]" style={{color:"var(--ink-mute)"}}>
+                Nights {rep.nights || 0} · Shows {rep.shows || 0} · No-shows {rep.noShows || 0}
+              </div>
+              {rep.strikes > 0 && (
+                <div className="text-[12px] mt-0.5" style={{color:"var(--ink-mute)"}}>Strikes {rep.strikes}</div>
+              )}
+              {rep.withYou > 0 && (
+                <div className="text-[12px] mt-0.5" style={{color:"var(--ink-mute)"}}>With you × {rep.withYou}</div>
+              )}
+            </div>
+
+            {/* Socials */}
+            <div className="mb-4 px-1">
+              <div className="stamp mb-2">Socials</div>
+              <div className="flex gap-2 text-[13px]" style={{color:"var(--ink-2)"}}>
+                <span><span className="font-mono">{fmtK(applicant.instagram_followers)}</span> IG</span>
+                <span><span className="font-mono">{fmtK(applicant.tiktok_followers)}</span> TikTok</span>
+              </div>
+            </div>
+
+            {/* Audience */}
+            {(aud.female != null || countries.length > 0) && (
+              <div className="mb-4 px-1">
+                <div className="stamp mb-2">Audience</div>
+                {aud.female != null && (
+                  <div className="mb-2">
+                    <div className="flex justify-between text-[11px] mb-1" style={{color:"var(--ink-mute)"}}>
+                      <span>{femalePct}% female</span>
+                      <span>{malePct}% male</span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{background:"var(--bg-elev2)"}}>
+                      <div className="h-full rounded-full" style={{width:`${femalePct}%`, background:"var(--ice)"}}/>
+                    </div>
+                  </div>
+                )}
+                {countries.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {countries.map(([name, pct]) => (
+                      <span key={name} className="px-2 py-0.5 rounded-full text-[11px]" style={{background:"var(--bg-elev2)", color:"var(--ink-mute)"}}>
+                        {name} {Math.round(pct*100)}%
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Footer decide pills */}
+          <div className="shrink-0 flex gap-3 pt-3">
+            <button onClick={()=> onDecide(false)}
+              className="press flex-1 h-[52px] rounded-full text-[14px] font-semibold flex items-center justify-center"
+              style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+              <Icon name="x" size={20} className="mr-1.5"/> Pass
+            </button>
+            <button onClick={()=> onDecide(true)}
+              className="press flex-1 h-[52px] rounded-full text-[14px] font-semibold flex items-center justify-center glow-primary"
+              style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+              <Icon name="check" size={20} className="mr-1.5"/> Pick
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  /* ========== ScreenReview — swipe deck (Task 6: serves event guests, undo, close apps, replacements) ========== */
+  function ScreenReview({ eventId, events, setEvents, onClose, pickedIds, setPickedIds, askConfirm, onToast }){
+    // Derive live event from events array so guest-state writes show up immediately.
+    const event = events.find(e => e.id === eventId) || null;
+
+    const isLocked = event && event.stage === STAGE.locked;
+
+    // Build the deck pool ONCE at mount (stable snapshot so idx stays in sync).
+    // Open events: guests with state=applied; locked events: state=waitlist.
+    // Guest state writes go to `events` (live), but deck navigation uses this snapshot.
+    const deckPool = useMemo(() => {
+      if (!event) return [];
+      const targetState = isLocked ? GS.waitlist : GS.applied;
+      return (event.guests || [])
+        .filter(g => g.state === targetState)
+        .map(g => ({ guest: { ...g }, applicant: applicantById[g.applicantId] }))
+        .filter(x => x.applicant);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // intentionally stable: computed once at open
+
+    const [idx, setIdx] = useState(0);
+    const [undoEntry, setUndoEntry] = useState(null); // { prevIdx, prevGuestState, applicantId, wasPickedIdsAdded }
+    const [sheetApplicant, setSheetApplicant] = useState(null); // applicant to show in ApplicantSheet
+
+    // Timers for replacement-mode auto-confirm (locked event picks)
+    const confirmTimers = useRef({});
+    useEffect(() => {
+      return () => {
+        Object.values(confirmTimers.current).forEach(t => clearTimeout(t));
+      };
+    }, []);
+
+    if (!event) return null;
+
+    const done = idx >= deckPool.length;
+    const current = deckPool[idx];
+
+    // Derive mix counters from live event guests
+    const pickedOrConfirmed = (event.guests || []).filter(g => g.state === GS.picked || g.state === GS.confirmed);
+    const mixGirls = pickedOrConfirmed.filter(g => (applicantById[g.applicantId]||{}).gender === "female").length;
+    const mixGuys  = pickedOrConfirmed.filter(g => (applicantById[g.applicantId]||{}).gender === "male").length;
+    const target = event.mix;
+
+    // Generate a unique LST code for replacement picks
+    const genCode = (applicantId) => {
+      const existingCodes = new Set((event.guests || []).map(g => g.code).filter(Boolean));
+      const base = "LST-" + applicantId.replace(/^a/, "").toUpperCase().padStart(2, "0");
+      if (!existingCodes.has(base)) return base;
+      const letters = "ABCDEFGHJKLMNPRSTUVWXY";
+      for (const l of letters) {
+        const candidate = base + l;
+        if (!existingCodes.has(candidate)) return candidate;
+      }
+      return base + Date.now().toString(36).slice(-3).toUpperCase();
+    };
+
+    // Core decide function: mutates guest state on the event and advances the deck.
     const decide = (yes) => {
-      if (yes && a) setPicked(p => [...p, a.id]);
+      if (!current) return;
+      const { guest: entry, applicant: ap } = current;
+      const applicantId = entry.applicantId;
+      const prevState = entry.state;
+      const newState = yes ? GS.picked : GS.notSelected;
+
+      setEvents(es => es.map(e => {
+        if (e.id !== eventId) return e;
+        return {
+          ...e,
+          guests: e.guests.map(g =>
+            g.applicantId === applicantId ? { ...g, state: newState } : g
+          ),
+        };
+      }));
+
+      // For open events: mirror to legacy pickedIds (interim Desk truth — remove in T7)
+      if (!isLocked) {
+        if (yes) setPickedIds(p => p.includes(applicantId) ? p : [...p, applicantId]);
+        else     setPickedIds(p => p.filter(id => id !== applicantId));
+      }
+
+      // For locked events: if picked, start 12s auto-confirm timer
+      if (isLocked && yes) {
+        const code = genCode(applicantId);
+        if (confirmTimers.current[applicantId]) clearTimeout(confirmTimers.current[applicantId]);
+        confirmTimers.current[applicantId] = setTimeout(() => {
+          setEvents(es => es.map(e => {
+            if (e.id !== eventId) return e;
+            return {
+              ...e,
+              guests: e.guests.map(g =>
+                g.applicantId === applicantId && g.state === GS.picked
+                  ? { ...g, state: GS.confirmed, code }
+                  : g
+              ),
+            };
+          }));
+          onToast((ap ? ap.name : applicantId) + " confirmed");
+        }, 12000);
+      }
+
+      // Save undo entry for this decision; cleared on next decide
+      setUndoEntry({ prevIdx: idx, prevGuestState: prevState, applicantId, wasPickedIdsAdded: yes && !isLocked });
       setIdx(i => i + 1);
     };
 
+    // Undo last decision
+    const handleUndo = () => {
+      if (!undoEntry) return;
+      const { prevIdx, prevGuestState, applicantId, wasPickedIdsAdded } = undoEntry;
+      // Clear any running auto-confirm timer for this applicant
+      if (confirmTimers.current[applicantId]) {
+        clearTimeout(confirmTimers.current[applicantId]);
+        delete confirmTimers.current[applicantId];
+      }
+      setEvents(es => es.map(e => {
+        if (e.id !== eventId) return e;
+        return {
+          ...e,
+          guests: e.guests.map(g =>
+            g.applicantId === applicantId ? { ...g, state: prevGuestState } : g
+          ),
+        };
+      }));
+      if (wasPickedIdsAdded) setPickedIds(p => p.filter(id => id !== applicantId));
+      setIdx(prevIdx);
+      setUndoEntry(null);
+    };
+
+    // Close applications: lock the event + flip remaining applied → waitlist
+    const handleCloseApplications = () => {
+      askConfirm({
+        title: "Close applications?",
+        body: "No new applications. Members get notified. Picks must confirm within 24h — the waitlist stays available for replacements.",
+        confirmLabel: "Close applications",
+        onConfirm: () => {
+          setEvents(es => es.map(e => {
+            if (e.id !== eventId) return e;
+            return {
+              ...e,
+              stage: STAGE.locked,
+              status: stageToStatus(STAGE.locked),
+              guests: e.guests.map(g =>
+                g.state === GS.applied ? { ...g, state: GS.waitlist } : g
+              ),
+            };
+          }));
+          onToast("Applications closed");
+          onClose();
+        },
+      });
+    };
+
     return (
-      <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
+      <div className="absolute inset-0 flex flex-col" style={{background:"var(--bg)"}}>
         <StatusBar/>
-        <div className="flex items-center justify-between mb-3">
-          <button onClick={onClose} className="stamp" style={{color:"var(--ink-mute)"}}>Close</button>
-          <div className="stamp" style={{color:"var(--ink-mute)"}}>{event.title}</div>
+        <div className="flex flex-col px-5 pt-[64px] pb-4 flex-1">
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-1 shrink-0">
+            <button onClick={onClose} className="stamp" style={{color:"var(--ink-mute)"}}>Close</button>
+            <div className="stamp text-center" style={{color:"var(--ink-mute)"}}>
+              {isLocked
+                ? "Pick replacements"
+                : event.title}
+            </div>
+            {!isLocked && (
+              <button onClick={handleCloseApplications}
+                className="press px-3 h-8 rounded-full text-[11px] font-semibold flex items-center gap-1"
+                style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                Close applications <Icon name="arrow-right" size={12} stroke={2}/>
+              </button>
+            )}
+            {isLocked && <div style={{width:64}}/>}
+          </div>
+
+          {/* Sub-header: applied/waitlist count */}
+          <div className="stamp mb-3 shrink-0" style={{color:"var(--ink-mute)"}}>
+            {isLocked
+              ? `${deckPool.length} on the waitlist`
+              : `${event.appliedTotal || deckPool.length} applied · ${deckPool.length} to review`}
+          </div>
+
+          {/* Mix counter */}
+          <div className="shrink-0 mb-3">
+            {target ? (
+              <div className="flex gap-3 text-[12px]">
+                <div className="flex-1 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+                  Girls <span className="font-mono" style={{color:"var(--ice)"}}>{mixGirls}</span> / {target.girls}
+                </div>
+                <div className="flex-1 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+                  Guys <span className="font-mono" style={{color:"var(--ice)"}}>{mixGuys}</span> / {target.guys}
+                </div>
+              </div>
+            ) : (
+              <div className="text-[12px] px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+                Picked <span className="font-mono" style={{color:"var(--ice)"}}>{pickedOrConfirmed.length}</span> / {event.seats}
+              </div>
+            )}
+          </div>
+
+          {/* Undo chip */}
+          {undoEntry && !done && (
+            <div className="shrink-0 flex justify-center mb-2">
+              <button onClick={handleUndo}
+                className="press px-4 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+                <Icon name="arrow-left" size={12} stroke={2}/> Undo last
+              </button>
+            </div>
+          )}
+
+          {/* Deck or end-state */}
+          {done ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 px-4">
+              {isLocked ? (
+                <>
+                  <div className="font-black font-display-l text-[26px]">No one left on the waitlist.</div>
+                  <button onClick={onClose} className="press text-[13px] font-medium" style={{color:"var(--ice)", background:"transparent", border:"none"}}>
+                    Close
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="font-black font-display-l text-[26px]">All reviewed</div>
+                  <div className="text-[13px]" style={{color:"var(--ink-2)"}}>
+                    {target
+                      ? `Girls ${mixGirls}/${target.girls} · Guys ${mixGuys}/${target.guys}`
+                      : `Picked ${pickedOrConfirmed.length} of ${event.seats}`}
+                  </div>
+                  <div className="flex flex-col gap-2 w-full mt-2">
+                    <button onClick={handleCloseApplications}
+                      className="press w-full h-[52px] rounded-full text-[13px] font-semibold flex items-center justify-center gap-1.5 glow-primary"
+                      style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                      Close applications <Icon name="arrow-right" size={14} stroke={2}/>
+                    </button>
+                    <button onClick={onClose}
+                      className="press w-full h-[48px] rounded-full text-[13px] font-medium flex items-center justify-center"
+                      style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+                      Keep open
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="flex-1 flex items-center min-h-0">
+                {/* Tapping the photo/name area opens ApplicantSheet.
+                    A transparent button covers everything except the ~80px social link row at the bottom,
+                    so the links inside SwipeCard stay tappable. */}
+                <div className="relative w-full">
+                  <SwipeCard a={current.applicant}/>
+                  <button
+                    className="absolute inset-x-0 top-0 z-10"
+                    style={{background:"transparent", border:"none", bottom:80}}
+                    onClick={() => setSheetApplicant(current.applicant)}
+                    aria-label={"View " + current.applicant.name}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-center gap-8 mt-4 shrink-0 pb-4">
+                <button onClick={()=>decide(false)} className="press w-16 h-16 rounded-full flex items-center justify-center"
+                        style={{border:"1px solid var(--line-2)"}}><Icon name="x" size={26}/></button>
+                <button onClick={()=>decide(true)} className="press glow-primary w-16 h-16 rounded-full flex items-center justify-center"
+                        style={{background:"var(--ice)", color:"var(--ice-ink)"}}><Icon name="check" size={26}/></button>
+              </div>
+            </>
+          )}
         </div>
 
-        {target ? (
-          <div className="flex gap-3 mb-4 text-[12px]">
-            <div className="flex-1 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
-              Girls <span className="font-mono" style={{color:"var(--ice)"}}>{t.girls}</span> / {target.girls}
-            </div>
-            <div className="flex-1 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
-              Guys <span className="font-mono" style={{color:"var(--ice)"}}>{t.guys}</span> / {target.guys}
-            </div>
-          </div>
-        ) : (
-          <div className="mb-4 text-[12px] px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
-            Picked <span className="font-mono" style={{color:"var(--ice)"}}>{picked.length}</span> / {event.seats}
-          </div>
-        )}
-
-        {done ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
-            <div className="font-black font-display-l text-[30px]">All reviewed</div>
-            <div className="text-[13px]" style={{color:"var(--ink-2)"}}>You picked {picked.length}.</div>
-            <div className="w-full mt-4 space-y-2 overflow-y-auto">
-              {pool.filter(x=>picked.includes(x.id)).map(x => (
-                <div key={x.id} className="flex items-center gap-3 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
-                  <FramedImage value={{src:x.photo,scale:1,x:0,y:0}} ratio="1/1" className="w-10 h-10"/>
-                  <div className="flex-1 text-left text-[14px]">{x.name}</div>
-                  <div className="font-mono text-[13px]" style={{color:"var(--ice)"}}>{quality10(x.quality_score)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex-1 flex items-center"><SwipeCard a={a}/></div>
-            <div className="flex items-center justify-center gap-8 mt-5">
-              <button onClick={()=>decide(false)} className="press w-16 h-16 rounded-full flex items-center justify-center"
-                      style={{border:"1px solid var(--line-2)"}}><Icon name="x" size={26}/></button>
-              <button onClick={()=>decide(true)} className="press glow-primary w-16 h-16 rounded-full flex items-center justify-center"
-                      style={{background:"var(--ice)", color:"var(--ice-ink)"}}><Icon name="check" size={26}/></button>
-            </div>
-          </>
+        {/* ApplicantSheet overlay */}
+        {sheetApplicant && (
+          <ApplicantSheet
+            applicant={sheetApplicant}
+            guest={current && current.guest}
+            onDecide={(yes) => { setSheetApplicant(null); decide(yes); }}
+            onClose={() => setSheetApplicant(null)}
+          />
         )}
       </div>
     );
@@ -2640,7 +2959,8 @@
     const [editingDraft, setEditingDraft] = useState(null);         // event being edited | null
 
     useEffect(() => { document.documentElement.classList.toggle('light', light); }, [light]);
-    const [reviewEvent, setReviewEvent] = useState(null);
+    // Store event ID (not snapshot) so ScreenReview sees live guest-state writes.
+    const [reviewEventId, setReviewEventId] = useState(null);
     const showToast = (msg) => { setToast(msg); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(()=>setToast(null), 2200); };
     const askConfirm = (cfg) => setConfirm(cfg);
 
@@ -2680,8 +3000,8 @@
     if (step === "onboard-group") return wrap(<ScreenOnboardGroup group={group} setGroup={setGroup} onNext={()=>setStep("onboard-venue")}/>);
     if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} setVenue={setVenue} group={group} onDone={()=>{ setStep("done"); setTab("desk"); }}/>);
 
-    const openReview = (e) => { setReviewEvent(e); setStep("review-deck"); };
-    // open → review deck (same as before); locked → guest list; draft/past handled in ScreenEvents
+    const openReview = (e) => { setReviewEventId(e.id); setStep("review-deck"); };
+    // open → review deck; locked → review deck (replacement mode) OR guest list (from ScreenDesk)
 
     const openEvent = (e) => {
       if (e.stage === STAGE.open)   return openReview(e);
@@ -2738,7 +3058,7 @@
       </>
     );
 
-    if (step === "review-deck") return wrap(<ScreenReview event={reviewEvent} pool={APPLICANTS} picked={pickedIds} setPicked={setPickedIds} onClose={()=>{ setStep("done"); setTab("desk"); }}/>);
+    if (step === "review-deck") return wrap(<ScreenReview eventId={reviewEventId} events={events} setEvents={setEvents} pickedIds={pickedIds} setPickedIds={setPickedIds} askConfirm={askConfirm} onToast={showToast} onClose={()=>{ setStep("done"); setTab("desk"); }}/>);
 
     // Generic fallback for steps not yet built.
     return wrap(
