@@ -28,6 +28,7 @@ const REQUIRED = {
     "function ApplicantSheet", "Undo last", "Keep open", "Close applications",
     "Needs attention", "Pick a replacement", "function venueNotifs", "const TODAY = ",
     "Close the night", "No room tonight",
+    "function ScreenRecap", "Verified reach", "Invoice",
   ],
 };
 

@@ -1473,7 +1473,7 @@
   }
 
   /* ========== NotifSheet — renders venueNotifs() rows ========== */
-  function NotifSheet({ events, onClose, onReview, onGuestList, onToast }){
+  function NotifSheet({ events, onClose, onReview, onGuestList, onToast, onRecap }){
     const rows = venueNotifs(events);
     const handleRow = (r) => {
       onClose();
@@ -1482,8 +1482,10 @@
         if (evt) onReview(evt);
       } else if (r.action === "guestlist") {
         onGuestList(r.eventId);
+      } else if (r.action === "recap") {
+        onRecap(r.eventId);
       } else {
-        onToast("Recap — next build step");
+        onToast("—");
       }
     };
     return (
@@ -1517,7 +1519,7 @@
   }
 
   /* ========== ScreenDesk — stage-driven venue dashboard (Task 7) ========== */
-  function ScreenDesk({ venue, events, onReview, onPost, onEditDraft, onGuestList, onToast, onTab }){
+  function ScreenDesk({ venue, events, onReview, onPost, onEditDraft, onGuestList, onToast, onTab, onRecap }){
     const [notifOpen, setNotifOpen] = useState(false);
 
     // 1. Tonight card — the locked event dated TODAY
@@ -1697,7 +1699,7 @@
           {recapEvent && (
             <div className="px-5 mt-4 pb-4">
               <SectionHead label="Last recap" className="pb-3"/>
-              <button onClick={()=>onToast("Recap — next build step")}
+              <button onClick={()=>onRecap(recapEvent.id)}
                 className="press card w-full text-left rounded-[14px] p-4 flex items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="font-display text-[17px] leading-tight truncate">{recapEvent.title}</div>
@@ -1720,6 +1722,7 @@
             onReview={onReview}
             onGuestList={(id)=>onGuestList(id)}
             onToast={onToast}
+            onRecap={onRecap}
           />
         )}
       </div>
@@ -2180,7 +2183,7 @@
   }
 
   /* ========== ScreenEvents — Events dashboard (stage-driven, Task 4) ========== */
-  function ScreenEvents({ events, venue, onPost, onOpenEvent, onEditDraft, onGuestList, askConfirm, setEvents, onToast }){
+  function ScreenEvents({ events, venue, onPost, onOpenEvent, onEditDraft, onGuestList, askConfirm, setEvents, onToast, onRecap }){
     const [seg, setSeg] = useState("open");
 
     const counts = {
@@ -2311,7 +2314,7 @@
                         </button>
                       )}
                       {event.stage === STAGE.past && (
-                        <button onClick={() => onToast("Recap — next build step")}
+                        <button onClick={() => onRecap(event.id)}
                           className="press text-[12px] font-semibold flex items-center gap-1"
                           style={{color:"var(--ice)", background:"transparent", border:"none"}}>
                           Recap <Icon name="arrow-right" size={13} stroke={1.8}/>
@@ -3343,6 +3346,159 @@
     );
   }
 
+  /* ========== ScreenRecap — post-event summary (Task 9) ========== */
+  function ScreenRecap({ eventId, events, onClose }){
+    // Derive live event by id so any future writes propagate
+    const event = events.find(e => e.id === eventId) || null;
+    if (!event) return null;
+
+    const recap   = event.recap   || {};
+    const invoice = event.invoice || null;
+    const guests  = event.guests  || [];
+
+    // Story wall: only checked_in guests
+    const wallGuests = guests.filter(g => g.state === GS.checkedIn);
+
+    // Verified reach: sum of instagram_followers of guests with story === verified
+    const verifiedGuests = wallGuests.filter(g => g.story === SS.verified);
+    const verifiedReach  = verifiedGuests.reduce((sum, g) => {
+      const ap = applicantById[g.applicantId] || {};
+      return sum + (ap.instagram_followers || 0);
+    }, 0);
+
+    function fmtReach(n){
+      return n.toLocaleString("en-US");
+    }
+
+    function StoryRow({ g, i }){
+      const ap = applicantById[g.applicantId] || {};
+      const story = g.story;
+
+      let pill = null;
+      if (story === SS.verified)     pill = <StatusPill label="Verified" tone="ice"/>;
+      else if (story === SS.review)  pill = <StatusPill label="Under review" tone="neutral"/>;
+      else if (story === SS.needsReview) pill = <StatusPill label="Needs review" tone="neutral"/>;
+      else if (story === SS.due)     pill = <StatusPill label="Story due" tone="outline"/>;
+      else if (story === SS.missed)  pill = <StatusPill label="Missed" tone="neutral"/>;
+      else                           pill = null;
+
+      return (
+        <div style={{"--i": i}} className="flex items-start gap-3 py-3">
+          {/* Face */}
+          <img src={ap.photo || ""} alt="" className="w-10 h-10 rounded-full object-cover shrink-0"
+               style={{background:"var(--bg-elev2)"}}/>
+          {/* Name + pill + extras */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[14px] font-medium leading-tight">{ap.name || "—"}</span>
+              {pill}
+            </div>
+            {/* Verified: thumbnail stand-in (face image in small rounded frame) */}
+            {story === SS.verified && (
+              <div className="mt-2 flex items-start gap-2">
+                <img src={ap.photo || ""} alt="Story"
+                     className="w-12 h-12 rounded-[10px] object-cover shrink-0"
+                     style={{background:"var(--bg-elev2)", border:"1px solid var(--line)"}}/>
+                {/* Verdict if present */}
+                {g.verdict && (
+                  <div className="text-[11px] leading-snug mt-0.5" style={{color:"var(--ink-mute)"}}>
+                    <span className="font-mono">{g.verdict.score}</span>
+                    {" · "}{g.verdict.reason}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="absolute inset-0 flex flex-col anim-fade" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+
+        {/* Header */}
+        <div className="shrink-0 px-5 pt-[60px] pb-4">
+          <div className="flex items-center mb-3">
+            <button onClick={onClose} className="press stamp flex items-center gap-1"
+                    style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
+              <Icon name="arrow-left" size={14} stroke={2}/> Back
+            </button>
+          </div>
+          <div className="font-black font-display-l text-[34px] leading-none">{event.title}</div>
+          <div className="stamp mt-2" style={{color:"var(--ink-mute)"}}>{event.date}{event.date && event.time ? " · " : ""}{event.time}</div>
+        </div>
+        <div className="hr mx-5 shrink-0"/>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto noscroll px-5 pb-24">
+
+          {/* 1. Stat tiles 2×2 */}
+          <div className="grid grid-cols-2 gap-3 mt-5">
+            <StatTile n={recap.confirmed ?? "—"} label="Confirmed"/>
+            <StatTile n={recap.confirmed != null && recap.showed != null
+                          ? recap.showed + " of " + recap.confirmed
+                          : "—"}
+                      label="Showed" ice={true}/>
+            <StatTile n={recap.noShows ?? "—"} label="No-shows"/>
+            <StatTile n={recap.avgRating != null ? recap.avgRating : "—"} label="Avg rating"/>
+          </div>
+
+          {/* 2. Stories section */}
+          {wallGuests.length > 0 && (
+            <>
+              <SectionHead label="Stories" className="mt-6 mb-1"/>
+              <div className="stagger">
+                {wallGuests.map((g, i) => (
+                  <StoryRow key={g.applicantId} g={g} i={i}/>
+                ))}
+              </div>
+              <div className="hr mt-1"/>
+            </>
+          )}
+
+          {/* 3. Verified reach — THE number */}
+          <div className="mt-6 mb-2">
+            <div className="stamp mb-2" style={{color:"var(--ink-mute)"}}>Verified reach</div>
+            {verifiedReach > 0 ? (
+              <div className="font-black font-display-l text-[52px] leading-none" style={{color:"var(--ice)"}}>
+                {fmtReach(verifiedReach)}
+              </div>
+            ) : (
+              <div className="text-[15px]" style={{color:"var(--ink-mute)"}}>No verified stories yet</div>
+            )}
+          </div>
+
+          {/* 4. Invoice block */}
+          {invoice && (
+            <div className="card rounded-[16px] p-4 mt-6">
+              <div className="stamp mb-3" style={{color:"var(--ink-mute)"}}>Invoice</div>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <div className="font-display text-[18px] leading-tight">{invoice.bundle}</div>
+                  <div className="font-mono text-[22px] leading-none mt-1">${invoice.price}</div>
+                </div>
+                <StatusPill
+                  label={invoice.status === "paid" ? "Paid" : "Due"}
+                  tone={invoice.status === "paid" ? "neutral" : "outline"}
+                />
+              </div>
+              {invoice.status !== "paid" && (
+                <>
+                  <div className="hr mb-3"/>
+                  <div className="text-[12px]" style={{color:"var(--ink-2)"}}>Settle via Whish / OMT / USD cash</div>
+                  <div className="text-[12px] mt-1" style={{color:"var(--ink-mute)"}}>The List will contact you to settle.</div>
+                </>
+              )}
+            </div>
+          )}
+
+        </div>
+        <HomeIndicator/>
+      </div>
+    );
+  }
+
   /* ========== APP — onboarding state machine ========== */
   function App(){
     const [step, setStep] = useState("intro");
@@ -3357,6 +3513,7 @@
     const [confirm, setConfirm] = useState(null);      // {title,body,confirmLabel,onConfirm} | null
     const [guestListEventId, setGuestListEventId] = useState(null); // event id | null
     const [editingDraft, setEditingDraft] = useState(null);         // event being edited | null
+    const [recapEventId, setRecapEventId] = useState(null);        // event id for recap screen | null
 
     useEffect(() => { document.documentElement.classList.toggle('light', light); }, [light]);
     // Store event ID (not snapshot) so ScreenReview sees live guest-state writes.
@@ -3401,6 +3558,7 @@
     if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} setVenue={setVenue} group={group} onDone={()=>{ setStep("done"); setTab("desk"); }}/>);
 
     const openReview = (e) => { setReviewEventId(e.id); setStep("review-deck"); };
+    const openRecap  = (eventId) => { setRecapEventId(eventId); setStep("recap"); };
     // open → review deck; locked → review deck (replacement mode) OR guest list (from ScreenDesk)
 
     const openEvent = (e) => {
@@ -3447,11 +3605,11 @@
     />);
     if (step === "done") return wrap(
       <>
-        {tab === "desk"   && <ScreenDesk venue={venue} events={events} onReview={openReview} onPost={()=>setStep("post")} onEditDraft={editDraft} onGuestList={(id)=>setGuestListEventId(id)} onToast={showToast} onTab={setTab}/>}
+        {tab === "desk"   && <ScreenDesk venue={venue} events={events} onReview={openReview} onPost={()=>setStep("post")} onEditDraft={editDraft} onGuestList={(id)=>setGuestListEventId(id)} onToast={showToast} onTab={setTab} onRecap={openRecap}/>}
         {tab === "events" && <ScreenEvents events={events} setEvents={setEvents} venue={venue}
                                onPost={()=>setStep("post")} onOpenEvent={openEvent}
                                onEditDraft={editDraft} onGuestList={(e) => setGuestListEventId(e.id)}
-                               askConfirm={askConfirm} onToast={showToast}/>}
+                               askConfirm={askConfirm} onToast={showToast} onRecap={openRecap}/>}
         {tab === "door"   && <ScreenDoor events={events} setEvents={setEvents} askConfirm={askConfirm} onToast={showToast} onTab={setTab}/>}
         {tab === "venue"  && <ScreenVenueProfile venue={venue} group={group} onEdit={()=>setStep("onboard-venue")} onLogout={()=>setStep("intro")} onToast={showToast}/>}
         <VenueTabBar tab={tab} onTab={setTab}/>
@@ -3459,6 +3617,7 @@
     );
 
     if (step === "review-deck") return wrap(<ScreenReview eventId={reviewEventId} events={events} setEvents={setEvents} askConfirm={askConfirm} onToast={showToast} onClose={()=>{ setStep("done"); setTab("desk"); }}/>);
+    if (step === "recap") return wrap(<ScreenRecap eventId={recapEventId} events={events} onClose={()=>setStep("done")}/>);
 
     // Generic fallback for steps not yet built.
     return wrap(
