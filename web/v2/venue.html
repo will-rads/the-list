@@ -556,8 +556,10 @@
     declined:"declined", expired:"expired", withdrawn:"withdrawn", checkedIn:"checked_in",
     noShow:"no_show", notSelected:"not_selected", cancelled:"cancelled" };
   // Story states (second axis; only meaningful after checked_in + event past)
-  const SS = { due:"due", review:"review", needsReview:"needs_review", rejected:"rejected", verified:"verified" };
+  const SS = { due:"due", review:"review", needsReview:"needs_review", rejected:"rejected", missed:"missed", verified:"verified" };
 
+  // open AND locked both fold to legacy "live" until Task 4 migrates filters to stage —
+  // so two events can sit in the old Live segment at once. Expected interim state.
   // Derive legacy status from stage so current renders don't crash.
   function stageToStatus(stage){
     if (stage === STAGE.draft)      return "draft";
@@ -708,6 +710,8 @@
       reputation:{ score:8.0, nights:3, shows:3, noShows:0, strikes:0, withYou:0 },
       audience:{ female:0.38, countries:[["Lebanon",0.79],["Cyprus",0.09],["UAE",0.06]] } },
   ];
+
+  const applicantById = Object.fromEntries(APPLICANTS.map(a => [a.id, a]));
 
   // ---- demo world events ----
   // canonical today = Sun 25 May
@@ -863,8 +867,8 @@
         makeGuest("a9",  GS.checkedIn, { inAt:"21:27", rating:8.6, story:SS.verified }),
         makeGuest("a11", GS.checkedIn, { inAt:"21:31", rating:8.9, story:SS.verified }),
         makeGuest("a12", GS.checkedIn, { inAt:"21:35", rating:8.7, story:SS.verified }),
-        makeGuest("a14", GS.checkedIn, { inAt:"21:38", story:"missed" }),
-        makeGuest("a16", GS.checkedIn, { inAt:"21:41", story:"missed" }),
+        makeGuest("a14", GS.checkedIn, { inAt:"21:38", story:SS.missed }),
+        makeGuest("a16", GS.checkedIn, { inAt:"21:41", story:SS.missed }),
         makeGuest("a18", GS.checkedIn, { inAt:"21:44", rating:8.8, story:SS.verified }),
         // Sara — checked_in + story verified with verdict
         { ...makeGuest("a1", GS.checkedIn, { inAt:"21:22", rating:9.2, story:SS.verified }),
