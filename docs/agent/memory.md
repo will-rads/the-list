@@ -8,7 +8,7 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 **v2 ADOPTED as the product base + feature-complete v1 spec approved (2026-06-11, entry below). Next: Will reviews the spec → writing-plans → 2-wave build in `web/v2/`. DESIGN.md/PRODUCT.md sync to Kit V.2 is now due (docs still describe v1).**
 
-Deploy state: everything merged to `main` + deployed (2026-06-11). Both sides + v2 reskin LIVE on Vercel. Production `the-list-omega.vercel.app` (Vercel project `the-list` = `prj_0eEd1e3V6M7fUKbsYYFBv7Hdzp5o`, team `team_OYAkDhYump5FEH2U2tnEIX7F`, root dir = `web/`, cleanUrls): `/` = v1 member side (v0.4 + grainy intro + 2026-06-10 fullness pass), `/venue` = v1 venue side, **`/v2` = v2 member side, `/v2/venue` = v2 venue side** (Kit V.2 reskin: anthracite/cream monochrome, Cormorant Garamond + Plus Jakarta Sans, sentence case, no ice). `main` == `venue-side` == `7aad801`. v2 files live at `web/v2/` (moved from repo-root so Vercel serves them; assets ref `../assets/`). Brand-kit PDFs committed; `.gitignore` now drops `*.zip` / `Intro Video/` / `_pages/` scratch. **Caveat: the 2026-06-10 fullness pass shipped to production without ever being browser-verified (classifier outage that session) — eyeball the live `/` and `/venue` for regressions.** Next: Will reviews v2 live → adopt/iterate; if v2 wins, sync DESIGN.md/PRODUCT.md to the kit (docs still describe v1).
+Deploy state (updated 2026-06-12): **`main` fast-forwarded to `v1-complete` (`6e1a1a8`, 24 commits) and deployed** — Will wanted public links for Radwan + Dima; the `v1-complete` preview URLs were behind Vercel's default deployment protection (previews always SSO-gate; production domain never does). Production `the-list-omega.vercel.app` (Vercel project `the-list` = `prj_0eEd1e3V6M7fUKbsYYFBv7Hdzp5o`, team `team_OYAkDhYump5FEH2U2tnEIX7F`, root dir = `web/`, cleanUrls): `/` = v1 member side (now incl. the v1-complete work: picked flow/simulatePick, live countdown takeover, honest apply states, curly-quote purge), `/venue` = v1 venue side, **`/v2` + `/v2/venue` = Kit V.2 reskin** (`web/v2/`, assets ref `../assets/`). Founder-share links sent: `the-list-omega.vercel.app` + `/venue` (public, verified logged-out). Share rule: only `the-list-omega.vercel.app/...` links are public; anything `the-list-<hash>-…` or `-git-<branch>-` is a login-walled preview.
 
 ---
 
@@ -28,6 +28,12 @@ Will's calls, locked in a full brainstorm (spec: `docs/superpowers/specs/2026-06
 - **2 build waves:** wave 1 = the complete night loop; wave 2 = billing, insights, invites, tiers, strikes, polish. **Cut list locked:** no chat, QR, in-app payments, auto-IG verification, multi-venue switching, DJ marketplace, Android, web member app.
 
 Next: Will reviews the spec file → writing-plans → wave 1 build.
+
+---
+
+## 2026-06-12 — `v1-complete` merged to `main` + deployed; public founder links
+
+Will: preview links for the v1-complete work were asking Radwan/Dima to log in. Cause: Vercel deployment protection SSO-gates ALL preview URLs (`the-list-<hash>-…`, `…-git-<branch>-…`) by default; the production domain is public. Fix: fast-forwarded `main` to `origin/v1-complete` (`7aad801..6e1a1a8`, 24 commits — picked flow, countdown takeover, honest apply states, venue recap refactor, curly-quote purge + JSX parse gate in the checker), pushed, production deploy `dpl_9wmUGiZ6hYP6vZ8L23JmvuwieRGh` READY, verified `/` + `/venue` serve logged-out. Founder links = `the-list-omega.vercel.app` + `/venue` (+ `/v2`, `/v2/venue`). Alternative (not taken, needs Will in dashboard): Settings → Deployment Protection → off, which would un-gate previews.
 
 ---
 
