@@ -98,3 +98,6 @@ research/voice-notes/*.opus
 *.zip
 Intro Video/
 Brand Kit Proposal/_pages/
+
+# Brand banner PNGs — local source assets, ~7MB, keep repo lean
+Brand Kit Proposal/Banner/
