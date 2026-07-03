@@ -949,7 +949,7 @@ function stageBadge(event){
 }
 
 /* ========== 01 — HOME ========== */
-function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, onBell, unreadCount }){
+function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, onBell, unreadCount, onOpenPass }){
   const featured = EVENTS.find(e => e.id === "pool");
   // Pinned next room — derive from myEvents confirmed row, else Late Lounge as default
   const confirmedRow = (myEvents || []).find(r => r.state === GS.confirmed);
@@ -986,11 +986,13 @@ function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, on
       {/* Pinned — your next room, one calm row. Tap lands on Invites. */}
       <SectionHead label="Your night" className="pb-3"/>
       <div className="px-5 pb-5">
-        <button onClick={()=>onTab("mylist")} className="press card w-full text-left rounded-[14px] p-3 flex items-center gap-3">
+        <button onClick={()=> confirmedEvent ? onOpenPass(confirmedEvent.id) : onTab("mylist")} className="press card w-full text-left rounded-[14px] p-3 flex items-center gap-3">
           <DateChip day={nextDate.day} sub={nextDate.month} tone="ice"/>
           <div className="flex-1 min-w-0">
             <div className="font-display text-[17px] truncate">{nextEvent.title}</div>
-            <div className="text-[11px] mt-0.5" style={{color:"var(--ink)"}}>Confirmed · {nextEvent.time}</div>
+            <div className="text-[11px] mt-0.5" style={{color:"var(--ink)"}}>
+              {confirmedEvent ? "Doors " + (nextEvent.doors || nextEvent.time) + " · View pass" : "Confirmed · " + nextEvent.time}
+            </div>
           </div>
           <Icon name="arrow-right" size={16} stroke={1.4} className="opacity-50"/>
         </button>
@@ -1483,7 +1485,7 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
 }
 
 /* ========== 04 — MY EVENTS ========== */
-function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPickEvent, onToast }){
+function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPickEvent, onToast, onOpenPass, onOpenPicked, onOpenStory }){
   // Derive segments from myEvents data layer
   const appliedStates   = new Set([GS.applied, GS.waitlist, GS.picked]);
   const confirmedStates = new Set([GS.confirmed]);
@@ -1557,9 +1559,10 @@ function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPic
                 <div className="stamp">Check-in</div>
                 <div className="text-[13px] font-medium mt-0.5 font-mono">{confirmedEvent.time}</div>
               </div>
-              <button onClick={()=>onToast("Pass · show the QR at the door")} className="press px-3 h-9 rounded-full text-[11px] font-medium" style={{background:"var(--ink)", color:"var(--bg)"}}>View pass</button>
+              <button onClick={()=>onOpenPass(confirmedEvent.id)} className="press px-3 h-9 rounded-full text-[11px] font-medium flex items-center gap-1.5" style={{background:"var(--ink)", color:"var(--bg)"}}>View pass <Icon name="arrow-right" size={12} stroke={1.6}/></button>
             </div>
           </div>
+          <BriefBlock brief={confirmedEvent.brief}/>
         </div>
       ) : (
         <div className="px-5 pt-6 text-[13px]" style={{color:"var(--ink-mute)"}}>No confirmed seats yet. Apply to a room, then watch for the pick.</div>
@@ -1829,6 +1832,84 @@ function ScreenPicked({ event, pickedAt, onConfirm, onDecline }){
   );
 }
 
+/* ========== Pass — the ticket artifact (T12) ==========
+   Full-screen over the tab bar. What she shows at the door: photo, name,
+   the big short code, the Brief. Door staff eyeballs the code against the
+   venue's Door list (same codes, venue.html). No QR, no camera — v1 spec. ========== */
+function BriefBlock({ brief, className="" }){
+  if (!brief) return null;
+  const rows = [
+    ["Arrival window", brief.arrival],
+    ["Dress code",     brief.dress],
+    ["Meeting point",  brief.meeting],
+    ["House rules",    brief.rules],
+  ].filter(r => r[1]);
+  if (!rows.length) return null;
+  return (
+    <div className={className}>
+      <div className="stamp mb-2">The brief</div>
+      <div className="card rounded-[14px] px-4">
+        {rows.map(([label, val], i) => (
+          <div key={label} className="flex items-start justify-between gap-4 py-3" style={i > 0 ? {borderTop:"1px solid var(--line)"} : null}>
+            <div className="text-[11px] shrink-0 pt-0.5" style={{color:"var(--ink-mute)"}}>{label}</div>
+            <div className="text-[13px] text-right">{val}</div>
+          </div>
+        ))}
+      </div>
+      <div className="text-[11px] mt-2.5" style={{color:"var(--ink-mute)"}}>Plans change? The List handles it.</div>
+    </div>
+  );
+}
+
+function ScreenPass({ event, row, profile, onBack }){
+  const e = event || EVENTS[0];
+  const p = profile || SEED_PROFILE;
+  const checkedIn = row && row.state === GS.checkedIn;
+  return (
+    <div className="absolute inset-0 anim-fade noscroll overflow-y-auto" style={{background:"var(--bg)"}}>
+      <StatusBar/>
+      <div className="px-5 pt-[60px] pb-8">
+        <div className="flex items-center justify-between">
+          <button onClick={onBack} aria-label="Back" className="press glass w-10 h-10 rounded-full flex items-center justify-center">
+            <Icon name="arrow-left" size={16} stroke={1.4}/>
+          </button>
+          <div className="stamp wordmark">The List · pass</div>
+          <div className="w-10"/>
+        </div>
+
+        {/* The ticket */}
+        <div className="card rounded-[18px] mt-6 overflow-hidden">
+          <div className="px-6 pt-7 pb-6 text-center">
+            <img src={p.profile_picture_url} className="w-[76px] h-[76px] rounded-full object-cover mx-auto" style={{border:"1px solid var(--line-2)"}} alt=""/>
+            <div className="font-black font-display text-[26px] leading-none mt-4">{p.full_name}</div>
+            <div className="text-[11px] mt-1.5" style={{color:"var(--ink-mute)"}}>@{p.handle}</div>
+          </div>
+          <div className="mx-5" style={{borderTop:"1px dashed var(--line-2)"}}/>
+          <div className="px-6 py-5 text-center">
+            <div className="font-display text-[19px]">{e.title}</div>
+            <div className="text-[12px] mt-1" style={{color:"var(--ink-mute)"}}>{e.venue} · {e.area}</div>
+            <div className="text-[12px] mt-0.5 font-mono">{e.date} · Doors {e.doors || e.time}</div>
+            <div className="stamp mt-5">Door code</div>
+            <div className="font-black font-display-l leading-none mt-1" style={{fontSize:56, letterSpacing:".08em"}}>{(row && row.code) || "LST-4F"}</div>
+          </div>
+          {checkedIn ? (
+            <div className="px-6 py-3.5 text-center text-[13px] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+              Checked in ✓{row.inAt ? " · " + row.inAt : ""}
+            </div>
+          ) : (
+            <div className="px-6 py-3.5 text-center text-[12px]" style={{background:"var(--bg-elev)", color:"var(--ink-mute)", borderTop:"1px solid var(--line)"}}>
+              Show this at the door
+            </div>
+          )}
+        </div>
+
+        <BriefBlock brief={e.brief} className="mt-6"/>
+        <div className="h-6"/>
+      </div>
+    </div>
+  );
+}
+
 /* ========== Intro video background — crossfading 5s clips ==========
    TSS-style: full-bleed grainy montage that cross-dissolves between clips,
    each held ~5s, looping. Muted + autoplay + playsInline so it runs as a
@@ -2072,6 +2153,7 @@ function App(){
   const [currentEvent, setCurrentEvent] = useState(null);
   const [applyState, setApplyState] = useState("idle");   // idle | submitting | submitted
   const [pickedEventId, setPickedEventId] = useState(null); // which event the picked takeover shows
+  const [passEventId, setPassEventId] = useState(null);     // which event's pass is open (null = closed)
   const [myEvents, setMyEvents] = useState(MY_EVENTS);   // member's event relationships
   const [notifs, setNotifs] = useState(SEED_NOTIFS);     // member's notification feed
   const [light, setLight] = useState(false);
@@ -2167,6 +2249,13 @@ function App(){
     }, 1400);
   };
 
+  // Open the pass (ticket) for a confirmed/checked-in event
+  const openPass = (eventId) => {
+    const row = myEvents.find(r => r.eventId === eventId);
+    if (!row || (row.state !== GS.confirmed && row.state !== GS.checkedIn)) return;
+    setPassEventId(eventId);
+  };
+
   // Open the picked takeover for a given eventId
   const openPickedTakeover = (eventId) => {
     const ev = eventById(eventId);
@@ -2259,12 +2348,20 @@ function App(){
       <div className="iphone">
         <div className="iphone-screen">
           {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={skipOnboarding} onProfileFetched={setProfile}/>}
-          {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} myEvents={myEvents} onBell={()=>setNotifOpen(true)} unreadCount={unreadCount}/>}
+          {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} myEvents={myEvents} onBell={()=>setNotifOpen(true)} unreadCount={unreadCount} onOpenPass={openPass}/>}
           {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} onToast={showToast}/>}
           {!onboardActive && screen === "detail"  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply} onShare={()=>setShareEvent(currentEvent)} saved={saved} onToggleSave={toggleSave} onToast={showToast} myEvents={myEvents} onOpenPicked={openPickedTakeover}/>}
-          {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} myEvents={myEvents} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast}/>}
+          {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} myEvents={myEvents} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast} onOpenPass={openPass} onOpenPicked={openPickedTakeover} onOpenStory={()=>{}}/>}
           {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab} profile={profile} onSettings={()=>setSettingsOpen(true)} onVerify={onVerify}/>}
           {!onboardActive && screen === "picked"  && <ScreenPicked event={currentEvent} pickedAt={pickedAt} onConfirm={onConfirmPick} onDecline={onDeclinePick}/>}
+
+          {/* Pass — full-screen overlay above screens, below sheets */}
+          {!onboardActive && passEventId && (
+            <ScreenPass event={eventById(passEventId)}
+                        row={myEvents.find(r => r.eventId === passEventId)}
+                        profile={profile}
+                        onBack={()=>setPassEventId(null)}/>
+          )}
 
           {/* Overlays — scoped to the phone frame */}
           {!onboardActive && <ShareSheet event={shareEvent} onClose={()=>setShareEvent(null)} onToast={showToast}/>}
