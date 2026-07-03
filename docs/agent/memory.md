@@ -4,6 +4,19 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-07-03 — Story verification model locked: the @thelist mention spine
+
+Will's calls, same session as the wave-1 ship (spec §4 updated with full detail):
+
+- **Verification is The List's job, never the venue's.** Venue rates attendance at the Door only; never reviews content. Their view = Recap story wall + verified reach.
+- **Story requirement becomes `tag @venue + tag @thelist`.** Will's insight: routing every story through OUR one IG business account (mention webhook, media retrievable 24h, video included) means **no venue ever connects a Graph API** — one Meta integration total, zero venue onboarding friction. Bonus: every story broadcasts @thelist = proof mechanism doubles as marketing. Same play TSS runs.
+- Video stories: no special handling — mention media includes video; the upload fallback accepts screen recordings; Gemini reads video natively with the same rubric.
+- New vetting rule: member accounts must be public/creator (private mention media isn't retrievable).
+- Enforcement: due → reminder +12h → Missed at 24h → strike; 3 strikes pause. Missed-story-strike = working default, founders ratify. Handle hunt (@thelist likely taken) joins Dima's name test.
+- Backend implications parked for the Supabase session: our IG professional account + story-mentions app review; handle↔member matching; no venue OAuth.
+
+---
+
 ## 2026-07-03 — Wave 1 shipped (the complete night loop) + pitch-black dark mode
 
 **Branch `wave-1` (local, not pushed).** Resumed the existing plan `docs/superpowers/plans/2026-06-11-v1-feature-complete.md` at T12 (T1–T11 were already built and committed through `6e1a1a8` — plan.md's "writing-plans next" line was stale). Completed T12–T18:

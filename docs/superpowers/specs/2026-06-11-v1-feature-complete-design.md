@@ -97,12 +97,23 @@ Key flow fix: today Apply instantly fires the "You're in" takeover. New: Apply �
 
 ## 4. Story proof — production architecture note (recorded, not built now)
 
-Prototype simulates all of this; the SwiftUI/backend build implements it:
+**Verification model locked 2026-07-03 (Will):** verification is The List's job, never the venue's. Venue rates attendance at the Door only; content verification is part of what the venue pays for. The venue's whole view of story proof is the Recap wall (per-guest status + verified reach).
 
-- Upload → **Supabase Storage** (private bucket). Gemini API key lives **backend-only** (Edge Function); the client never holds it.
-- Edge Function sends screenshot + event context to Gemini with the rubric: (1) venue tag visible, (2) looks like a real IG Story frame, (3) correct venue/event, (4) posted within the event's time window, (5) no obvious fake/crop/recycle, (6) content quality.
+**The mention spine (Will's call, 2026-07-03): the story requirement is `tag @venue + tag @thelist`.** The @thelist tag routes every story — photo or video — to OUR single IG business account as a mention:
+
+- One Meta integration total (our professional account + story-mentions permission, one-time app review). **No venue ever connects their Graph API.** Zero venue onboarding friction.
+- Mention webhook → fetch the mentioned media (retrievable for 24h, video included) → match username → member, timestamp → event window → Gemini checks the venue tag is in frame → auto-verified.
+- Side effect: every story broadcasts @thelist to the member's audience — the proof mechanism doubles as the marketing channel. (Same play TSS runs.)
+- Vetting rule (new): member account must be **public/creator** — mention media from private accounts is not retrievable, and a private account can't do the influencer job anyway.
+- Handle TBD — @thelist likely taken; handle hunt joins Dima's name test.
+
+**Fallback path (already built in the prototype):** member forgets @thelist or edge cases → "Story due" nag → in-app upload (screenshot or screen recording — Gemini reads video natively, same rubric) → Supabase Storage (private bucket). Gemini API key lives **backend-only** (Edge Function); the client never holds it.
+
+- Edge Function sends the media + event context to Gemini with the rubric: (1) venue tag visible, (2) looks like a real IG Story frame, (3) correct venue/event, (4) posted within the event's time window, (5) no obvious fake/crop/recycle, (6) content quality.
 - Gemini returns `{ verdict: verified | needs_review | rejected, score: 0-100, reason: "one line" }`.
 - **Gemini is first-pass, not final judge.** Founders see a review queue (needs_review + spot-checks) and can override any verdict. Member status only says "Under review" until a final state.
+
+**Enforcement loop (we chase, not the venue):** event ends → Story due → reminder at +12h → Missed at 24h → strike. 3 strikes pause the account. Missed story = strike is the working default — Radwan + Dima to ratify.
 
 ## 5. The demo world (shared seeds + switchboard)
 
