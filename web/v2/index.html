@@ -762,6 +762,41 @@ function ShareSheet({ event, onClose, onToast }){
 }
 
 /* ========== Settings sheet — profile fields + notifications + account ========== */
+/* ========== Demo switchboard (T16) ==========
+   Hidden panel at the bottom of Settings — drives the simulated world for
+   pitches without waiting on timers. Deliberately plain: this is rig, not
+   product UI. Venue side has its own equivalent (venue.html). ========== */
+function DemoPanel({ demo }){
+  const [open, setOpen] = useState(false);
+  const Row = ({ label, onTap }) => (
+    <button onClick={onTap} className="press w-full text-left py-2.5 text-[12px]" style={{color:"var(--ink-2)", borderTop:"1px solid var(--line)"}}>{label}</button>
+  );
+  return (
+    <div className="mt-5">
+      <button onClick={()=>setOpen(o=>!o)} className="press w-full flex items-center justify-between py-2 text-[11px]" style={{color:"var(--ink-mute)"}}>
+        <span>Demo</span>
+        <Icon name="arrow-right" size={12} stroke={1.5} className={open ? "rotate-90" : ""}/>
+      </button>
+      {open && (
+        <div>
+          <Row label="Venue picks you now" onTap={()=>demo.pickNow()}/>
+          <Row label="Expire a pick" onTap={()=>demo.expirePick()}/>
+          <Row label="Check me in" onTap={()=>demo.checkIn()}/>
+          <div className="py-2.5" style={{borderTop:"1px solid var(--line)"}}>
+            <div className="text-[12px] mb-2" style={{color:"var(--ink-2)"}}>Story verdict</div>
+            <div className="flex gap-2">
+              <button onClick={()=>demo.verdict(SS.verified)} className="press px-3 h-8 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Verified</button>
+              <button onClick={()=>demo.verdict(SS.needsReview)} className="press px-3 h-8 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Needs review</button>
+              <button onClick={()=>demo.verdict(SS.rejected)} className="press px-3 h-8 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Rejected</button>
+            </div>
+          </div>
+          <Row label="Reset demo" onTap={()=>demo.reset()}/>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ========== Story upload sheet (T14) ==========
    The exchange, honored: 1 Story + venue tag. Screenshot in, simulated
    AI first-pass verdict out (production: Supabase Storage + Edge Function
@@ -820,7 +855,7 @@ function StorySheet({ event, onClose, onSubmit }){
   );
 }
 
-function SettingsSheet({ profile, light, setLight, onClose, onToast }){
+function SettingsSheet({ profile, light, setLight, onClose, onToast, demo }){
   const seed = profile || SEED_PROFILE;
   const [name, setName] = useState(seed.full_name);
   const [handle, setHandle] = useState(seed.handle);
@@ -885,6 +920,8 @@ function SettingsSheet({ profile, light, setLight, onClose, onToast }){
           <button onClick={()=>onToast("Logged out (prototype)")} className="press flex-1 h-11 rounded-full text-[12px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Log out</button>
           <button onClick={()=>onToast("Account deletion requested (prototype)")} className="press flex-1 h-11 rounded-full text-[12px]" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>Delete account</button>
         </div>
+
+        {demo && <DemoPanel demo={demo}/>}
       </div>
     </>
   );
@@ -2392,6 +2429,33 @@ function App(){
     setPassEventId(eventId);
   };
 
+  // ---- Demo switchboard actions (T16) — the rig behind Settings › Demo ----
+  const demoActions = {
+    pickNow: () => { simulatePick("lounge"); showToast("Picked · check the bell"); },
+    expirePick: () => {
+      const row = myEvents.find(r => r.state === GS.picked);
+      if (!row) { showToast("No pick to expire — apply first"); return; }
+      setMyEvents(prev => prev.map(r => r.eventId === row.eventId ? { ...r, state: GS.expired, pickedAt: undefined } : r));
+      const ev = eventById(row.eventId);
+      setNotifs(prev => [{ id: "expired-" + row.eventId + "-" + Date.now(), kind: "expiring",
+        text: "Pick expired · " + (ev ? ev.title : ""), eventId: row.eventId, read: false }, ...prev]);
+    },
+    checkIn: () => {
+      setMyEvents(prev => prev.map(r => r.eventId === "pool" && r.state === GS.confirmed ? { ...r, state: GS.checkedIn, inAt: "22:41" } : r));
+      showToast("Checked in · Pool Day");
+    },
+    verdict: (v) => forceVerdict("bath", v),
+    reset: () => {
+      Object.values(pickTimersRef.current).forEach(id => clearTimeout(id));
+      Object.values(verdictTimersRef.current).forEach(id => clearTimeout(id));
+      pickTimersRef.current = {}; verdictTimersRef.current = {};
+      setMyEvents(MY_EVENTS); setNotifs(SEED_NOTIFS); setSaved([]);
+      setApplyState("idle"); setPassEventId(null); setStoryEventId(null); setPickedEventId(null);
+      setSettingsOpen(false);
+      showToast("Demo reset");
+    },
+  };
+
   // notifTarget — every Activity row deep-links somewhere real (T15).
   // Falls back to Event Detail / My Events when the state has moved on.
   function notifTarget(n) {
@@ -2531,7 +2595,7 @@ function App(){
           {/* Overlays — scoped to the phone frame */}
           {!onboardActive && storyEventId && <StorySheet event={eventById(storyEventId)} onClose={()=>setStoryEventId(null)} onSubmit={()=>submitStory(storyEventId)}/>}
           {!onboardActive && <ShareSheet event={shareEvent} onClose={()=>setShareEvent(null)} onToast={showToast}/>}
-          {!onboardActive && settingsOpen && <SettingsSheet profile={profile} light={light} setLight={setLight} onClose={()=>setSettingsOpen(false)} onToast={showToast}/>}
+          {!onboardActive && settingsOpen && <SettingsSheet profile={profile} light={light} setLight={setLight} onClose={()=>setSettingsOpen(false)} onToast={showToast} demo={demoActions}/>}
           {!onboardActive && notifOpen && <NotificationsSheet notifs={notifs} onClose={closeNotifs} onTarget={notifTarget}/>}
           <Toast msg={toast}/>
         </div>

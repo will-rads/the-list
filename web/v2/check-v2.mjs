@@ -22,6 +22,7 @@ const REQUIRED = {
     "Still under review", "Story due", "no strike",
     "function StorySheet", "we check within a few hours", "function forceVerdict",
     "function notifTarget", "Confirm your seat — 2h left",
+    "function DemoPanel", "Reset demo",
   ],
   "venue.html": [
     "function ScreenVenueIntro", "function ScreenVenueLogin", "function ScreenOnboardGroup",
