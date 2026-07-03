@@ -37,6 +37,7 @@ const REQUIRED = {
     "Needs attention", "Pick a replacement", "function venueNotifs", "const TODAY = ",
     "Close the night", "No room tonight",
     "function ScreenRecap", "Verified reach", "Invoice",
+    "function DemoPanel", "Reset demo", "New applicants arrive", "Advance to tonight",
   ],
 };
 

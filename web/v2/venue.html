@@ -2823,7 +2823,34 @@
   }
 
   /* ========== ScreenVenueProfile — venue tab ========== */
-  function ScreenVenueProfile({ venue, group, onEdit, onLogout, onToast }){
+  /* ========== Demo switchboard (T17) ==========
+     Hidden rig at the bottom of the Venue tab — drives the simulated world
+     during pitches. Plain rows, deliberately not product UI. Member side has
+     its own equivalent (index.html Settings › Demo). ========== */
+  function DemoPanel({ demo }){
+    const [open, setOpen] = useState(false);
+    const Row = ({ label, onTap }) => (
+      <button onClick={onTap} className="press w-full text-left py-2.5 text-[12px]" style={{color:"var(--ink-2)", background:"transparent", border:"none", borderTop:"1px solid var(--line)"}}>{label}</button>
+    );
+    return (
+      <div className="px-5 pt-6 pb-2">
+        <button onClick={()=>setOpen(o=>!o)} className="press w-full flex items-center justify-between py-2 text-[11px]" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
+          <span>Demo</span>
+          <Icon name="arrow-right" size={12} stroke={1.5} className={open ? "rotate-90" : ""}/>
+        </button>
+        {open && (
+          <div>
+            <Row label="New applicants arrive" onTap={()=>demo.newApplicants()}/>
+            <Row label="A pick declines" onTap={()=>demo.pickDeclines()}/>
+            <Row label="Advance to tonight" onTap={()=>demo.advanceToTonight()}/>
+            <Row label="Reset demo" onTap={()=>demo.reset()}/>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function ScreenVenueProfile({ venue, group, onEdit, onLogout, onToast, demo }){
     const name = venue.name && venue.name.length > 0 ? venue.name : null;
     const hasDesc = venue.description && venue.description.length > 0;
 
@@ -2911,6 +2938,8 @@
               <SettingsRow label="Log out" onTap={onLogout}/>
             </div>
           </div>
+
+          {demo && <DemoPanel demo={demo}/>}
 
         </div>
       </div>
@@ -3558,6 +3587,67 @@
 
     const openReview = (e) => { setReviewEventId(e.id); setStep("review-deck"); };
     const openRecap  = (eventId) => { setRecapEventId(eventId); setStep("recap"); };
+
+    // ---- Demo switchboard actions (T17) — the rig behind Venue › Demo ----
+    const genDoorCode = (taken) => {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let code;
+      do { code = "LST-" + chars[Math.floor(Math.random()*chars.length)] + chars[Math.floor(Math.random()*chars.length)]; }
+      while (taken.has(code));
+      taken.add(code);
+      return code;
+    };
+    const demoActions = {
+      newApplicants: () => {
+        const open = events.find(e => e.stage === STAGE.open);
+        if (!open) { showToast("No open event — publish one first"); return; }
+        setEvents(es => es.map(e => {
+          if (e.id !== open.id) return e;
+          const present = new Set(e.guests.map(g => g.applicantId));
+          const fresh = APPLICANTS.filter(a => !present.has(a.id)).slice(0, 6).map(a => makeGuest(a.id, GS.applied));
+          let guests = [...e.guests, ...fresh];
+          let added = fresh.length;
+          if (added < 6) {
+            // pool exhausted — cycle: not-selected applicants re-enter as new applications
+            guests = guests.map(g => (added < 6 && g.state === GS.notSelected) ? (added++, makeGuest(g.applicantId, GS.applied)) : g);
+          }
+          if (!added) return e;
+          return { ...e, guests, appliedTotal: (e.appliedTotal || 0) + added };
+        }));
+        showToast("New applicants · check the deck");
+      },
+      pickDeclines: () => {
+        const pool = events.find(e => e.id === "pool");
+        const victim = pool && pool.guests.find(g => g.state === GS.confirmed && g.code !== "LST-4F");
+        if (!victim) { showToast("No confirmed guest left to decline"); return; }
+        setEvents(es => es.map(e => e.id !== "pool" ? e : {
+          ...e, guests: e.guests.map(g => g === victim ? { ...g, state: GS.declined, code: null } : g),
+        }));
+        const a = APPLICANTS.find(x => x.id === victim.applicantId);
+        showToast((a ? a.name : "A pick") + " declined — pick a replacement");
+      },
+      advanceToTonight: () => {
+        const lounge = events.find(e => e.id === "lounge");
+        if (!lounge || lounge.stage !== STAGE.open) { showToast("Late Lounge already advanced — reset first"); return; }
+        const taken = new Set(events.flatMap(e => e.guests.map(g => g.code)).filter(Boolean));
+        setEvents(es => es.map(e => e.id !== "lounge" ? e : {
+          ...e,
+          stage: STAGE.locked,
+          status: stageToStatus(STAGE.locked),
+          date: TODAY,
+          guests: e.guests.map(g =>
+            g.state === GS.applied ? { ...g, state: GS.waitlist } :
+            g.state === GS.picked  ? { ...g, state: GS.confirmed, code: genDoorCode(taken) } : g),
+        }));
+        setTab("desk");
+        showToast("Late Lounge is tonight's second room");
+      },
+      reset: () => {
+        setEvents(SEED_EVENTS);
+        setTab("desk");
+        showToast("Demo reset");
+      },
+    };
     // open → review deck; locked → review deck (replacement mode) OR guest list (from ScreenDesk)
 
     const openEvent = (e) => {
@@ -3610,7 +3700,7 @@
                                onEditDraft={editDraft} onGuestList={(e) => setGuestListEventId(e.id)}
                                askConfirm={askConfirm} onToast={showToast} onRecap={openRecap}/>}
         {tab === "door"   && <ScreenDoor events={events} setEvents={setEvents} askConfirm={askConfirm} onToast={showToast} onTab={setTab}/>}
-        {tab === "venue"  && <ScreenVenueProfile venue={venue} group={group} onEdit={()=>setStep("onboard-venue")} onLogout={()=>setStep("intro")} onToast={showToast}/>}
+        {tab === "venue"  && <ScreenVenueProfile venue={venue} group={group} onEdit={()=>setStep("onboard-venue")} onLogout={()=>setStep("intro")} onToast={showToast} demo={demoActions}/>}
         <VenueTabBar tab={tab} onTab={setTab}/>
       </>
     );
