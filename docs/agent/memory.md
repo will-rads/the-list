@@ -4,6 +4,33 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-07-03 — Wave 1 shipped (the complete night loop) + pitch-black dark mode
+
+**Branch `wave-1` (local, not pushed).** Resumed the existing plan `docs/superpowers/plans/2026-06-11-v1-feature-complete.md` at T12 (T1–T11 were already built and committed through `6e1a1a8` — plan.md's "writing-plans next" line was stale). Completed T12–T18:
+
+- **T12 Pass + Brief (member):** `ScreenPass` ticket artifact — photo, serif name, event block, huge Cormorant door code, "Show this at the door" / "Checked in ✓" band; `BriefBlock` (arrival/dress/meeting/rules + concierge line) on the Pass and the confirmed card. Entry points: My Events "View pass →", Home pinned-night pill ("Doors 14:00 · View pass"), pass notification.
+- **T13 My Events vocabulary:** picked rows get "Confirm within Xh" chip → takeover; Past renders the story axis — Story due/Rejected = loudest card with solid "Upload your Story →" CTA; Verified pill + score; quiet states greyed; "Event cancelled · no strike".
+- **T14 Story upload:** `StorySheet` (ask restated, FileReader screenshot preview, Submit) → "Under review · we check within a few hours" → 8s → verified {91, "Tag visible, posted in window"}; `forceVerdict` also does needs_review {64} / rejected {32, re-upload path}.
+- **T15 Notifications:** `notifTarget` deep-links every row (picked/expiring → takeover, pass → Pass, story → StorySheet or My Events:Past, drop → detail, cancelled → My Events:Past); closing the sheet marks all read; simulatePick also seeds the "Confirm your seat — 2h left" row.
+- **T16/T17 Switchboards:** hidden "Demo" disclosure — member (Settings): pick now / expire a pick / check me in / story verdict ×3 / reset; venue (Venue tab): new applicants arrive (cycles the 26-face pool) / a pick declines / **advance to tonight** (lounge open→locked, applied→waitlist, picked→confirmed with generated codes, date→TODAY so Desk/Door treat it as tonight's second room) / reset.
+- **T18 Mirror audit:** demo-world table checked line by line across both files — all numbers agree (LST-4F/LST-9Q, 18+1+2, 20/18/2, 8.6, 14+1+3, invoices due/paid). One documented deviation: Late Lounge seeds 24 applied with **no pre-picked guests** (spec table implied 9/15·3/5 mix fill) — deliberate, the swipe demo starts clean; the 26-applicant pool can't honestly support 12 extra picked.
+
+**Pitch-black ruling (Will, 2026-07-03):** dark mode ground is now true black — `--bg`/`--page` `#000000`, all `rgba(18,19,21,…)`/`rgba(13,14,16,…)` scrims → `rgba(0,0,0,…)`, fixed dark literals swapped, both files. Card fills (`#1B1C1F`/`#232428`) keep their lift. Light theme untouched. The v2 spec's token table (`#121315`/`#0D0E10`) is superseded on this point.
+
+Verified: `check-v2.mjs` OK both files (parse gate + tokens); Playwright end-to-end — member apply → pick (10s) → takeover countdown → confirm → Invites → Pass with generated code; story due → upload → review → 8s → Verified; venue advance-to-tonight full stage transition. Commits: `cfa7b27` (black) then one per task through T17, docs in the wave-close commit. **Next: Will eyeballs wave 1 in the browser (the gate) → Wave 2 (T19–T23: billing, insights, invites, tiers, withdraw, rebook).** Stray untracked file `C?UsersuserDocumentsMethe-list__review_diff.txt` (mangled name, old scratch) left untouched at repo root — Will to delete.
+
+---
+
+## 2026-06-12 — Brand kit rebuilt as HTML (`web/brand.html`)
+
+Will: recreate the Kit V.2 PDF (`Brand Kit Proposal/The List - Kit V.2 (Low Res.).pdf`) as HTML, "almost exactly." Built `web/brand.html` — a single scrolling document, one `.sheet` per PDF page (8 sheets: Cover, 00.0 Overview, 01.0 Logo System, 02.3 Accent Scale, 03.0 Typography, 04.0 UI Components, 05.0 Cards, 06.0 Iconography, 06.1 Trend-Forward, 07.0 Imagery). Self-contained: no Tailwind/React/Babel (unlike index.html) — plain CSS + one vanilla `<script>` that inlines 40+ Heroicons-outline SVG paths from a `HICONS` name-map (zero icon CDN, same posture as the app). Cover/venue imagery reuse the app's Unsplash IDs.
+
+**Faithful to the PDF, but corrected to the live app per Will's standing v2 rulings:** body/UI face is **Plus Jakarta Sans, not Inter** (Inter ban holds — the kit's "Inter" labels are replaced); display/headings **Cormorant Garamond 600**; palette is the v2 Warm Cream (dark `#121315`/`#F7F6F3`) + Anthracite (light `#F7F6F3`/`#1E1E1E`, brand `#2A2D31` / CTA `#454B52` / highlight `#6A737D`) scales straight from the v2 spec — no ice blue. Note: the kit's own tracked-caps section labels + cover tagline are reproduced as uppercase here (matching the source document); the app's sentence-case rule governs the product UI, not this reproduction of the kit artifact.
+
+**Verified** via Playwright (preview screenshotter still times out on tall pages per errors.md): all 232 icons resolve (0 fallback boxes), 10 `.sheet` nodes, ~9100px tall; eyeballed Cover, Accent, Typography, Components, Cards, Imagery against the PDF — match. Local only, not committed, not pushed. Not deployed (would serve at `the-list-omega.vercel.app/brand` once pushed, cleanUrls).
+
+---
+
 ## Current state (one line)
 
 **v2 ADOPTED as the product base + feature-complete v1 spec approved (2026-06-11, entry below). Next: Will reviews the spec → writing-plans → 2-wave build in `web/v2/`. DESIGN.md/PRODUCT.md sync to Kit V.2 is now due (docs still describe v1).**

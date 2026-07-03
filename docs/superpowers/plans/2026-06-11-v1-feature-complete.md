@@ -394,71 +394,71 @@ photo large (FramedImage), name + gender + quality score, **reputation block** (
 **Files:**
 - Modify: `web/v2/index.html` (new `ScreenPass`, `ScreenMyEvents` confirmed cards, `ScreenHome` pinned night)
 
-- [ ] **Step 1: Tokens** — `"function ScreenPass"`, `"Show this at the door"`, `"function BriefBlock"`. Checker → FAIL.
+- [x] **Step 1: Tokens** — `"function ScreenPass"`, `"Show this at the door"`, `"function BriefBlock"`. Checker → FAIL.
 
-- [ ] **Step 2: ScreenPass** — full-screen (over tab bar, own back control), the ticket artifact:
+- [x] **Step 2: ScreenPass** — full-screen (over tab bar, own back control), the ticket artifact:
 profile photo (FramedImage circle), name (serif), event title + venue + area, date + "Doors 22:00", the code huge (`LST-4F`, Cormorant display size, letter-spaced), `BriefBlock`, footer line "Show this at the door". If guest state is `checked_in`: a quiet full-width "Checked in ✓ · 22:41" band replaces the footer. Entry points: My Events confirmed card "View pass →", Home pinned-night pill ("Doors 22:00 · View pass →"), pass notification row.
 
-- [ ] **Step 3: BriefBlock** — compact list: Arrival window / Dress code / Meeting point / House rules (only non-empty fields) + concierge line "Plans change? The List handles it." Rendered on the Pass AND inside the confirmed card's expanded detail.
+- [x] **Step 3: BriefBlock** — compact list: Arrival window / Dress code / Meeting point / House rules (only non-empty fields) + concierge line "Plans change? The List handles it." Rendered on the Pass AND inside the confirmed card's expanded detail.
 
-- [ ] **Step 4: Checker + browser + commit** — `git commit -am "feat(member): pass screen + brief block"`
+- [x] **Step 4: Checker + browser + commit** — `git commit -am "feat(member): pass screen + brief block"`
 
 ### Task 13: My Events — the full status vocabulary
 
 **Files:**
 - Modify: `web/v2/index.html` (`ScreenMyEvents`)
 
-- [ ] **Step 1: Tokens** — `"Still under review"`, `"Story due"`, `"No strike"`. Checker → FAIL.
+- [x] **Step 1: Tokens** — `"Still under review"`, `"Story due"`, `"No strike"`. Checker → FAIL.
 
-- [ ] **Step 2: Cards by state** — segments stay Applied / Confirmed / Past; rows derive from `myEvents`:
+- [x] **Step 2: Cards by state** — segments stay Applied / Confirmed / Past; rows derive from `myEvents`:
 Applied segment: `applied` ("Applied · under review"), `waitlist` ("Still under review"), `picked` (countdown chip "Confirm within 14h" + tap → takeover). Confirmed: `confirmed` (pass pill). Past: `checked_in` + story axis — story `due` = the **loudest card** (solid pill "Upload your Story →"), `review`/`needs_review`/`verified` pills, plus the quiet ones: `no_show`, `not_selected`, `expired`, `declined`, `withdrawn`, `cancelled` ("Event cancelled · no strike"). Every pill text from `GS_COPY`/`SS_COPY` — never hand-written strings.
 
-- [ ] **Step 3: Checker + browser** (all seeded states visible across the three segments) **+ commit** — `git commit -am "feat(member): full status vocabulary across my events"`
+- [x] **Step 3: Checker + browser** (all seeded states visible across the three segments) **+ commit** — `git commit -am "feat(member): full status vocabulary across my events"`
 
 ### Task 14: Story upload → AI verdict path (member)
 
 **Files:**
 - Modify: `web/v2/index.html` (new `StorySheet`)
 
-- [ ] **Step 1: Tokens** — `"function StorySheet"`, `"we check within a few hours"`, `"forceVerdict"`. Checker → FAIL.
+- [x] **Step 1: Tokens** — `"function StorySheet"`, `"we check within a few hours"`, `"forceVerdict"`. Checker → FAIL.
 
-- [ ] **Step 2: StorySheet** — from the Story-due card: sheet with (1) the ask restated ("1 Story + venue tag — posted during the event"), (2) screenshot pick (FileReader → full-bleed preview, no crop), (3) "Submit →" → story `review`, line "Under review · we check within a few hours", sheet closes, card pill flips. 8s timer → default verdict **verified**: `verdict:{ score:91, reason:"Tag visible, posted in window" }`, notif "Story verified · Sound Bath", card pill "Verified ✓", toast with the reason. `forceVerdict(eventId, v)` App-level (switchboard): `needs_review` → pill "Needs review" + line "Our team takes a second look"; `rejected` → pill + "Rejected — try another screenshot" + the upload CTA returns.
+- [x] **Step 2: StorySheet** — from the Story-due card: sheet with (1) the ask restated ("1 Story + venue tag — posted during the event"), (2) screenshot pick (FileReader → full-bleed preview, no crop), (3) "Submit →" → story `review`, line "Under review · we check within a few hours", sheet closes, card pill flips. 8s timer → default verdict **verified**: `verdict:{ score:91, reason:"Tag visible, posted in window" }`, notif "Story verified · Sound Bath", card pill "Verified ✓", toast with the reason. `forceVerdict(eventId, v)` App-level (switchboard): `needs_review` → pill "Needs review" + line "Our team takes a second look"; `rejected` → pill + "Rejected — try another screenshot" + the upload CTA returns.
 
-- [ ] **Step 3: Checker + browser** (upload demo on Sound Bath, all three verdicts reachable) **+ commit** — `git commit -am "feat(member): story upload with simulated AI verdict path"`
+- [x] **Step 3: Checker + browser** (upload demo on Sound Bath, all three verdicts reachable) **+ commit** — `git commit -am "feat(member): story upload with simulated AI verdict path"`
 
 ### Task 15: Member notifications — full model + deep links
 
 **Files:**
 - Modify: `web/v2/index.html` (`NotificationsSheet`)
 
-- [ ] **Step 1: Tokens** — `"function notifTarget"`. Checker → FAIL.
+- [x] **Step 1: Tokens** — `"function notifTarget"`. Checker → FAIL.
 
-- [ ] **Step 2: Rows + routing** — `notifs` state renders newest-first; `notifTarget(n)` maps kind → action: `picked`→ takeover, `pass`→ ScreenPass, `story`→ StorySheet (or My Events:Past if verified), `drop`→ Event Detail, `cancelled`→ My Events:Past, `expiring`→ takeover. Unread dot per row, badge = unread count, opening the sheet marks read. Seed additions: one `expiring` row text "Confirm your seat — 2h left · Late Lounge" appears only after a pick exists.
+- [x] **Step 2: Rows + routing** — `notifs` state renders newest-first; `notifTarget(n)` maps kind → action: `picked`→ takeover, `pass`→ ScreenPass, `story`→ StorySheet (or My Events:Past if verified), `drop`→ Event Detail, `cancelled`→ My Events:Past, `expiring`→ takeover. Unread dot per row, badge = unread count, opening the sheet marks read. Seed additions: one `expiring` row text "Confirm your seat — 2h left · Late Lounge" appears only after a pick exists.
 
-- [ ] **Step 3: Checker + browser + commit** — `git commit -am "feat(member): notification model with deep links"`
+- [x] **Step 3: Checker + browser + commit** — `git commit -am "feat(member): notification model with deep links"`
 
 ### Task 16: Member switchboard
 
 **Files:**
 - Modify: `web/v2/index.html` (`SettingsSheet`)
 
-- [ ] **Step 1: Tokens** — `"function DemoPanel"`, `"Reset demo"`. Checker → FAIL.
+- [x] **Step 1: Tokens** — `"function DemoPanel"`, `"Reset demo"`. Checker → FAIL.
 
-- [ ] **Step 2: DemoPanel** — at the very bottom of SettingsSheet, behind a quiet disclosure row "Demo" (chevron, collapsed by default, visually plain — deliberately not product UI). Rows (plain text buttons):
+- [x] **Step 2: DemoPanel** — at the very bottom of SettingsSheet, behind a quiet disclosure row "Demo" (chevron, collapsed by default, visually plain — deliberately not product UI). Rows (plain text buttons):
 "Venue picks you now" → `simulatePick("lounge")` · "Expire a pick" → picked row → `expired` + quiet notif · "Check me in" → pool row → `checked_in` (Pass band flips) · "Story verdict: verified / needs review / rejected" (3 inline chips) → `forceVerdict("bath", …)` · "Reset demo" → restore MY_EVENTS/SEED_NOTIFS/EVENTS seeds (re-`useState` via a `resetKey` on App or explicit setters).
 
-- [ ] **Step 3: Checker + browser + commit** — `git commit -am "feat(member): hidden demo switchboard"`
+- [x] **Step 3: Checker + browser + commit** — `git commit -am "feat(member): hidden demo switchboard"`
 
 ### Task 17: Venue switchboard
 
 **Files:**
 - Modify: `web/v2/venue.html` (`ScreenVenueProfile`)
 
-- [ ] **Step 1: Tokens** — `"function DemoPanel"`, `"Reset demo"`. Checker → FAIL.
+- [x] **Step 1: Tokens** — `"function DemoPanel"`, `"Reset demo"`. Checker → FAIL.
 
-- [ ] **Step 2: DemoPanel** (same tucked-away treatment, bottom of Venue tab): "New applicants arrive" → +6 `applied` guests onto the open event (cycle pool) + toast · "A pick declines" → one confirmed Pool Day guest → `declined` + Needs-attention row appears · "Advance to tonight" → flips Late Lounge `open → locked` (un-swiped → waitlist, any picked → confirmed with generated codes), making it tonight's second room on Desk + Door — the full stage transition, demoable in one tap · "Reset demo" → restore SEED_EVENTS.
+- [x] **Step 2: DemoPanel** (same tucked-away treatment, bottom of Venue tab): "New applicants arrive" → +6 `applied` guests onto the open event (cycle pool) + toast · "A pick declines" → one confirmed Pool Day guest → `declined` + Needs-attention row appears · "Advance to tonight" → flips Late Lounge `open → locked` (un-swiped → waitlist, any picked → confirmed with generated codes), making it tonight's second room on Desk + Door — the full stage transition, demoable in one tap · "Reset demo" → restore SEED_EVENTS.
 
-- [ ] **Step 3: Checker + browser + commit** — `git commit -am "feat(venue): hidden demo switchboard"`
+- [x] **Step 3: Checker + browser + commit** — `git commit -am "feat(venue): hidden demo switchboard"`
 
 ### Task 18: Wave-1 mirror audit + docs
 
@@ -466,11 +466,11 @@ Applied segment: `applied` ("Applied · under review"), `waitlist` ("Still under
 - Modify: `docs/agent/memory.md`, `docs/agent/plan.md`
 - Verify: both v2 files
 
-- [ ] **Step 1: Mirror audit** — check the demo-world table (this plan, top) line by line against BOTH files: ids, stages, counts (137/24, 18+1+2, 20/18/2, 14+1+3), codes (`LST-4F`, `LST-9Q`), bundle prices, brief literals, reach 412,000, invoice statuses. Fix any drift (the table is law).
+- [x] **Step 1: Mirror audit** — check the demo-world table (this plan, top) line by line against BOTH files: ids, stages, counts (137/24, 18+1+2, 20/18/2, 14+1+3), codes (`LST-4F`, `LST-9Q`), bundle prices, brief literals, reach 412,000, invoice statuses. Fix any drift (the table is law).
 
-- [ ] **Step 2: Full checker + browser pass** — `node web/v2/check-v2.mjs` → OK both. Browser: venue demo path end to end (post → review → close applications → door → close night → recap) and member end to end (apply → picked → confirm → pass → story → verified). List anything broken; fix before commit.
+- [x] **Step 2: Full checker + browser pass** — `node web/v2/check-v2.mjs` → OK both. Browser: venue demo path end to end (post → review → close applications → door → close night → recap) and member end to end (apply → picked → confirm → pass → story → verified). List anything broken; fix before commit.
 
-- [ ] **Step 3: Docs** — memory.md new entry "Wave 1 shipped (complete night loop)" with one line per flow + known gaps; plan.md `[doing]` advances to wave 2. Commit: `git commit -am "feat(v2): wave 1 complete — the full night loop, both sides + docs"`
+- [x] **Step 3: Docs** — memory.md new entry "Wave 1 shipped (complete night loop)" with one line per flow + known gaps; plan.md `[doing]` advances to wave 2. Commit: `git commit -am "feat(v2): wave 1 complete — the full night loop, both sides + docs"`
 
 ---
 
