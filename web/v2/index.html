@@ -1574,13 +1574,22 @@ function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPic
           {appliedRows.map(r => {
             const ev = EVENTS.find(e => e.id === r.eventId);
             if (!ev) return null;
+            const isPicked = r.state === GS.picked;
+            // Hours left to confirm — 24h from pickedAt (fallback 24 when a seed has no timestamp)
+            const hoursLeft = isPicked
+              ? Math.max(1, Math.ceil(((r.pickedAt || Date.now()) + 24*3600000 - Date.now()) / 3600000))
+              : null;
             return (
-              <button key={r.eventId} onClick={()=>onPickEvent(ev)} className="press card w-full text-left flex items-center gap-3 p-3 rounded-[14px]">
+              <button key={r.eventId} onClick={()=> isPicked ? onOpenPicked(r.eventId) : onPickEvent(ev)} className="press card w-full text-left flex items-center gap-3 p-3 rounded-[14px]">
                 <img src={ev.img} className="w-14 h-14 rounded-[10px] object-cover" alt=""/>
                 <div className="flex-1 min-w-0">
                   <div className="font-display text-[16px]">{ev.title}</div>
                   <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{ev.venue} · {ev.date}</div>
-                  <div className="mt-1.5"><StatusPill label={GS_COPY[r.state]} tone="outline" dot/></div>
+                  <div className="mt-1.5">
+                    {isPicked
+                      ? <StatusPill label={"Confirm within " + hoursLeft + "h"} tone="ice" dot/>
+                      : <StatusPill label={GS_COPY[r.state]} tone="outline" dot/>}
+                  </div>
                 </div>
                 <Icon name="arrow-right" size={16} stroke={1.4} className="opacity-50"/>
               </button>
@@ -1626,18 +1635,47 @@ function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPic
           {pastRows.map((r, i) => {
             const ev = EVENTS.find(e => e.id === r.eventId);
             if (!ev) return null;
-            const notSelected = r.state === GS.notSelected || r.state === GS.cancelled;
+            // Quiet states — the ones that end the relationship without a night out
+            const quiet = [GS.notSelected, GS.cancelled, GS.expired, GS.declined, GS.withdrawn, GS.noShow].includes(r.state);
+            const storyDue = r.state === GS.checkedIn && (r.story === SS.due || r.story === SS.rejected);
             const score = r.verdict ? (r.verdict.score / 10).toFixed(1) : null;
+
+            // Story due / rejected — the loudest card in Past: upload is the one CTA that matters
+            if (storyDue) return (
+              <div key={r.eventId} className="card rounded-[14px] p-3" style={{"--i":i, border:"1px solid var(--line-2)"}}>
+                <div className="flex items-center gap-3">
+                  <img src={ev.img} className="w-14 h-14 rounded-[10px] object-cover" alt=""/>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-display text-[16px]">{ev.title}</div>
+                    <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{ev.venue} · {ev.date}</div>
+                    <div className="mt-1.5"><StatusPill label={SS_COPY[r.story]} tone={r.story === SS.rejected ? "outline" : "ice"} dot/></div>
+                  </div>
+                </div>
+                {r.story === SS.rejected && r.verdict && (
+                  <div className="text-[11px] mt-2.5" style={{color:"var(--ink-mute)"}}>{r.verdict.reason}</div>
+                )}
+                <button onClick={()=>onOpenStory(r.eventId)} className="press w-full h-11 rounded-full text-[12px] font-semibold mt-3 flex items-center justify-center gap-2" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                  Upload your Story <Icon name="arrow-right" size={14} stroke={1.6}/>
+                </button>
+              </div>
+            );
+
+            // Everything else — one calm row; story axis rides as a second pill
             return (
-              <div key={r.eventId} className="card flex items-center gap-3 p-3 rounded-[14px]" style={{"--i":i, opacity: notSelected ? 0.6 : 1}}>
-                <img src={ev.img} className="w-14 h-14 rounded-[10px] object-cover" style={{filter: notSelected ? "grayscale(1)" : "grayscale(.25)"}} alt=""/>
+              <div key={r.eventId} className="card flex items-center gap-3 p-3 rounded-[14px]" style={{"--i":i, opacity: quiet ? 0.6 : 1}}>
+                <img src={ev.img} className="w-14 h-14 rounded-[10px] object-cover" style={{filter: quiet ? "grayscale(1)" : "grayscale(.25)"}} alt=""/>
                 <div className="flex-1">
                   <div className="font-display text-[16px]">{ev.title}</div>
                   <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{ev.venue} · {ev.date}</div>
+                  {r.state === GS.cancelled && (
+                    <div className="text-[11px] mt-1" style={{color:"var(--ink-mute)"}}>Event cancelled · no strike</div>
+                  )}
                 </div>
                 <div className="text-right">
-                  <StatusPill label={GS_COPY[r.state] || r.state} tone={notSelected ? "outline" : "neutral"}/>
-                  {score && <div className="font-black text-[18px] font-mono mt-1" style={{color:"var(--ice)"}}>{score}</div>}
+                  {r.state === GS.checkedIn && r.story
+                    ? <StatusPill label={SS_COPY[r.story]} tone={r.story === SS.verified ? "ice" : "outline"} dot={r.story === SS.verified}/>
+                    : <StatusPill label={GS_COPY[r.state] || r.state} tone={quiet ? "outline" : "neutral"}/>}
+                  {score && r.story === SS.verified && <div className="font-black text-[18px] font-mono mt-1" style={{color:"var(--ice)"}}>{score}</div>}
                 </div>
               </div>
             );

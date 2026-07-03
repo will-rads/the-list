@@ -19,6 +19,7 @@ const REQUIRED = {
     "List closed", "Closing soon", "The list is closed",
     "function simulatePick", "Confirm within", "Seat released", "Confirm your seat",
     "function ScreenPass", "Show this at the door", "function BriefBlock",
+    "Still under review", "Story due", "no strike",
   ],
   "venue.html": [
     "function ScreenVenueIntro", "function ScreenVenueLogin", "function ScreenOnboardGroup",
