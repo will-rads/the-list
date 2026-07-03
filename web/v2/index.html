@@ -891,9 +891,9 @@ function SettingsSheet({ profile, light, setLight, onClose, onToast }){
 }
 
 /* ========== Notifications sheet — Activity feed, driven by notifs state ========== */
-function NotificationsSheet({ notifs, onClose, onPickEvent, onOpenPicked }){
+function NotificationsSheet({ notifs, onClose, onTarget }){
   // Icon per notification kind
-  const kindIcon = { pass:"check", story:"instagram", drop:"bell", picked:"sparkle" };
+  const kindIcon = { pass:"check", story:"instagram", drop:"bell", picked:"sparkle", expiring:"calendar", cancelled:"x" };
   return (
     <>
       <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
@@ -908,18 +908,9 @@ function NotificationsSheet({ notifs, onClose, onPickEvent, onOpenPicked }){
 
         <div className="space-y-2">
           {notifs.map(n => {
-            const ev = n.eventId ? EVENTS.find(e => e.id === n.eventId) : null;
             const icon = kindIcon[n.kind] || "bell";
             const isRead = n.read;
-            const handleTap = () => {
-              onClose();
-              // picked notifications open the takeover; others open detail
-              if (n.kind === "picked" && n.eventId && onOpenPicked) {
-                onOpenPicked(n.eventId);
-              } else if (ev) {
-                onPickEvent(ev);
-              }
-            };
+            const handleTap = () => onTarget(n); // every row deep-links (routing lives in App.notifTarget)
             return (
               <button key={n.id}
                 onClick={handleTap}
@@ -1544,7 +1535,7 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
 }
 
 /* ========== 04 — MY EVENTS ========== */
-function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPickEvent, onToast, onOpenPass, onOpenPicked, onOpenStory }){
+function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPickEvent, onToast, onOpenPass, onOpenPicked, onOpenStory, initialSeg }){
   // Derive segments from myEvents data layer
   const appliedStates   = new Set([GS.applied, GS.waitlist, GS.picked]);
   const confirmedStates = new Set([GS.confirmed]);
@@ -1562,7 +1553,7 @@ function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPic
   const confirmedEvent = confirmedMyRow ? confirmedMyRow.event : null;
   const conf = confirmedEvent ? parseDate(confirmedEvent.date) : null;
 
-  const [seg, setSeg] = useState(confirmedEvent ? "confirmed" : "applied");
+  const [seg, setSeg] = useState(initialSeg || (confirmedEvent ? "confirmed" : "applied"));
 
   // One source of truth for the counts — the stat tiles and the segmented
   // control both read from here.
@@ -2252,6 +2243,7 @@ function App(){
   const [pickedEventId, setPickedEventId] = useState(null); // which event the picked takeover shows
   const [passEventId, setPassEventId] = useState(null);     // which event's pass is open (null = closed)
   const [storyEventId, setStoryEventId] = useState(null);   // which event's story sheet is open (null = closed)
+  const [mylistSeg, setMylistSeg] = useState(null);          // segment My Events should open on (deep-link hint)
   const [myEvents, setMyEvents] = useState(MY_EVENTS);   // member's event relationships
   const [notifs, setNotifs] = useState(SEED_NOTIFS);     // member's notification feed
   const [light, setLight] = useState(false);
@@ -2287,6 +2279,7 @@ function App(){
     if (id === "mylist")  setScreen("mylist");
     if (id === "profile") setScreen("profile");
     setApplyState("idle");
+    setMylistSeg(null); // deep-link hint is one-shot — normal tab taps get the default segment
   };
 
   const pickEvent = (e) => {
@@ -2310,6 +2303,12 @@ function App(){
       return [...prev, { eventId, state: GS.picked, pickedAt: now }];
     });
     setNotifs(prev => [{
+      id: "expire-" + eventId + "-" + now,
+      kind: "expiring",
+      text: "Confirm your seat — 2h left · " + ev.title,
+      eventId,
+      read: false,
+    }, {
       id: "pick-" + eventId + "-" + now,
       kind: "picked",
       text: "Cyan Beach Club picked you · " + ev.title,
@@ -2391,6 +2390,35 @@ function App(){
     const row = myEvents.find(r => r.eventId === eventId);
     if (!row || (row.state !== GS.confirmed && row.state !== GS.checkedIn)) return;
     setPassEventId(eventId);
+  };
+
+  // notifTarget — every Activity row deep-links somewhere real (T15).
+  // Falls back to Event Detail / My Events when the state has moved on.
+  function notifTarget(n) {
+    closeNotifs();
+    const ev = n.eventId ? eventById(n.eventId) : null;
+    const row = n.eventId ? myEvents.find(r => r.eventId === n.eventId) : null;
+    switch (n.kind) {
+      case "picked":
+      case "expiring":
+        if (row && row.state === GS.picked) { openPickedTakeover(n.eventId); return; }
+        break;
+      case "pass":
+        if (row && (row.state === GS.confirmed || row.state === GS.checkedIn)) { openPass(n.eventId); return; }
+        break;
+      case "story":
+        if (row && (row.story === SS.due || row.story === SS.rejected)) { setStoryEventId(n.eventId); return; }
+        setMylistSeg("past"); setScreen("mylist"); setTab("mylist"); return;
+      case "cancelled":
+        setMylistSeg("past"); setScreen("mylist"); setTab("mylist"); return;
+    }
+    if (ev) pickEvent(ev); // drop + all fallbacks → Event Detail
+  }
+
+  // Closing the Activity sheet marks everything read — the badge never goes stale
+  const closeNotifs = () => {
+    setNotifOpen(false);
+    setNotifs(prev => prev.some(n => !n.read) ? prev.map(n => n.read ? n : { ...n, read: true }) : prev);
   };
 
   // Open the picked takeover for a given eventId
@@ -2488,7 +2516,7 @@ function App(){
           {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} myEvents={myEvents} onBell={()=>setNotifOpen(true)} unreadCount={unreadCount} onOpenPass={openPass}/>}
           {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} onToast={showToast}/>}
           {!onboardActive && screen === "detail"  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply} onShare={()=>setShareEvent(currentEvent)} saved={saved} onToggleSave={toggleSave} onToast={showToast} myEvents={myEvents} onOpenPicked={openPickedTakeover}/>}
-          {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} myEvents={myEvents} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast} onOpenPass={openPass} onOpenPicked={openPickedTakeover} onOpenStory={setStoryEventId}/>}
+          {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} myEvents={myEvents} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast} onOpenPass={openPass} onOpenPicked={openPickedTakeover} onOpenStory={setStoryEventId} initialSeg={mylistSeg}/>}
           {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab} profile={profile} onSettings={()=>setSettingsOpen(true)} onVerify={onVerify}/>}
           {!onboardActive && screen === "picked"  && <ScreenPicked event={currentEvent} pickedAt={pickedAt} onConfirm={onConfirmPick} onDecline={onDeclinePick}/>}
 
@@ -2504,7 +2532,7 @@ function App(){
           {!onboardActive && storyEventId && <StorySheet event={eventById(storyEventId)} onClose={()=>setStoryEventId(null)} onSubmit={()=>submitStory(storyEventId)}/>}
           {!onboardActive && <ShareSheet event={shareEvent} onClose={()=>setShareEvent(null)} onToast={showToast}/>}
           {!onboardActive && settingsOpen && <SettingsSheet profile={profile} light={light} setLight={setLight} onClose={()=>setSettingsOpen(false)} onToast={showToast}/>}
-          {!onboardActive && notifOpen && <NotificationsSheet notifs={notifs} onClose={()=>setNotifOpen(false)} onPickEvent={pickEvent} onOpenPicked={openPickedTakeover}/>}
+          {!onboardActive && notifOpen && <NotificationsSheet notifs={notifs} onClose={closeNotifs} onTarget={notifTarget}/>}
           <Toast msg={toast}/>
         </div>
       </div>

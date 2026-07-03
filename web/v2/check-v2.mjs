@@ -21,6 +21,7 @@ const REQUIRED = {
     "function ScreenPass", "Show this at the door", "function BriefBlock",
     "Still under review", "Story due", "no strike",
     "function StorySheet", "we check within a few hours", "function forceVerdict",
+    "function notifTarget", "Confirm your seat — 2h left",
   ],
   "venue.html": [
     "function ScreenVenueIntro", "function ScreenVenueLogin", "function ScreenOnboardGroup",
