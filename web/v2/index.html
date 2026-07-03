@@ -18,7 +18,7 @@
      Var names kept (--ice etc.) so call sites don't churn; --ice is now the
      monochrome accent: warm cream on dark, brand anthracite on light. */
   :root{
-    --bg:        #121315;
+    --bg:        #000000;
     --bg-elev:   #1B1C1F;
     --bg-elev2:  #232428;
     --ink:       #F7F6F3;
@@ -28,8 +28,8 @@
     --line-2:    rgba(247,246,243,0.18);
     --ice:       #F7F6F3;
     --ice-dim:   #D8D4C7;
-    --ice-ink:   #121315;
-    --page:      #0D0E10;
+    --ice-ink:   #000000;
+    --page:      #000000;
   }
   html.light{
     --bg:        #F7F6F3;
@@ -111,7 +111,7 @@
     position:absolute; left:0; right:0; bottom:0; height: 88px;
     padding: 12px 18px 30px;
     display:grid; grid-template-columns:repeat(4,1fr); gap: 4px;
-    background: linear-gradient(180deg, rgba(18,19,21,0) 0%, rgba(18,19,21,.72) 45%, rgba(18,19,21,.92) 100%);
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.72) 45%, rgba(0,0,0,.92) 100%);
     backdrop-filter: blur(22px) saturate(1.3);
     -webkit-backdrop-filter: blur(22px) saturate(1.3);
     z-index: 30;
@@ -295,7 +295,7 @@
   html.light body::before { background-image: radial-gradient(rgba(42,45,49,.08) 1px, transparent 1px); }
 
   .profile-hero-overlay {
-    background: linear-gradient(180deg, rgba(18,19,21,.3) 0%, rgba(18,19,21,0) 40%, var(--bg) 100%);
+    background: linear-gradient(180deg, rgba(0,0,0,.3) 0%, rgba(0,0,0,0) 40%, var(--bg) 100%);
   }
   html.light .profile-hero-overlay {
     background:
@@ -306,7 +306,7 @@
      header buttons and the Profile hero controls share it, so there is a single
      over-image glass, distinct from .glass (which floats over the app bg). */
   .glass-over-image, .profile-glass {
-    background: rgba(18,19,21,.5);
+    background: rgba(0,0,0,.5);
     border: 1px solid rgba(247,246,243,.18);
     backdrop-filter: blur(12px) saturate(1.25);
     -webkit-backdrop-filter: blur(12px) saturate(1.25);
@@ -727,7 +727,7 @@ function ShareSheet({ event, onClose, onToast }){
   ];
   return (
     <>
-      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(18,19,21,.55)", backdropFilter:"blur(4px)"}}/>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
       <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
         <div className="flex items-center justify-between mb-5">
@@ -772,7 +772,7 @@ function SettingsSheet({ profile, light, setLight, onClose, onToast }){
 
   return (
     <>
-      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(18,19,21,.55)", backdropFilter:"blur(4px)"}}/>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
       <div className="absolute left-0 right-0 bottom-0 z-50 sheet noscroll overflow-y-auto rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)", maxHeight:"88%"}}>
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
         <div className="flex items-center justify-between mb-5">
@@ -837,7 +837,7 @@ function NotificationsSheet({ notifs, onClose, onPickEvent, onOpenPicked }){
   const kindIcon = { pass:"check", story:"instagram", drop:"bell", picked:"sparkle" };
   return (
     <>
-      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(18,19,21,.55)", backdropFilter:"blur(4px)"}}/>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
       <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
         <div className="flex items-center justify-between mb-5">
@@ -1000,7 +1000,7 @@ function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, on
       <div className="px-5">
         <button className="press card w-full text-left rounded-[18px] overflow-hidden relative grain" style={{height:380}} onClick={()=>onPickEvent(featured)}>
           <img src={featured.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
-          <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(18,19,21,.25) 0%, rgba(18,19,21,0) 35%, rgba(18,19,21,.9) 100%)"}}/>
+          <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(0,0,0,.25) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,.9) 100%)"}}/>
           <div className="absolute top-3 left-3"><StatusPill label={(() => { const row = (myEvents||[]).find(r=>r.eventId===featured.id); return row ? (GS_COPY[row.state]||stageBadge(featured)) : stageBadge(featured); })()} tone="ice"/></div>
           <div className="absolute top-3 right-3"><SaveButton saved={saved.includes(featured.id)} onClick={()=>onToggleSave(featured.id)}/></div>
           <div className="absolute bottom-4 left-4 right-4 text-[var(--ink)]" style={{color:"#F7F6F3"}}>
@@ -1063,7 +1063,7 @@ function FilterSheet({ open, onClose, advFilters, setAdvFilters }){
 
   return (
     <>
-      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(18,19,21,.55)", backdropFilter:"blur(4px)"}}/>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
       <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
 
@@ -1129,7 +1129,7 @@ function CalendarSheet({ onClose, activeDay, onPick }){
   const blanks = 3; // May here starts on a Thursday — 3 leading gaps in a Mon-first grid
   return (
     <>
-      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(18,19,21,.55)", backdropFilter:"blur(4px)"}}/>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
       <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
         <div className="flex items-center justify-between mb-5">
@@ -1243,7 +1243,7 @@ function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast }
             <div className="px-5">
               <button onClick={()=>onPickEvent(lead)} className="press card w-full text-left rounded-[18px] overflow-hidden grain relative" style={{height:300}}>
                 <img src={lead.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
-                <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(18,19,21,.3) 0%, rgba(18,19,21,0) 38%, rgba(18,19,21,.92) 100%)"}}/>
+                <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(0,0,0,.3) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,.92) 100%)"}}/>
                 <div className="absolute top-3 left-3 flex gap-1.5">
                   <span className="text-[10px] font-medium px-2 py-1 rounded-full glass-over-image" style={{color:"#F7F6F3"}}>{lead.type}</span>
                   {stageBadge(lead) && <StatusPill label={stageBadge(lead)} tone="ice"/>}
@@ -1311,7 +1311,7 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
             <img key={i} src={src} alt="" className="w-full shrink-0 object-cover" style={{height:"480px", scrollSnapAlign:"center", minWidth:"100%"}}/>
           ))}
         </div>
-        <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(18,19,21,.45) 0%, rgba(18,19,21,0) 25%, rgba(18,19,21,0) 55%, rgba(18,19,21,.95) 100%)", pointerEvents:"none"}}/>
+        <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,0) 25%, rgba(0,0,0,0) 55%, rgba(0,0,0,.95) 100%)", pointerEvents:"none"}}/>
         <div className="absolute inset-0 grain" style={{pointerEvents:"none"}}/>
 
         <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
@@ -1408,7 +1408,7 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
       </div>
 
       {/* Sticky CTA — sibling of the scroll container so it stays anchored */}
-      <div className="absolute left-0 right-0 bottom-0 pt-8 px-5 pb-7 z-30" style={{background:"linear-gradient(180deg, transparent 0%, rgba(18,19,21,.92) 40%, var(--bg) 80%)"}}>
+      <div className="absolute left-0 right-0 bottom-0 pt-8 px-5 pb-7 z-30" style={{background:"linear-gradient(180deg, transparent 0%, rgba(0,0,0,.92) 40%, var(--bg) 80%)"}}>
         {(() => {
           // confirmed row → "View pass →"
           if (myRow && myRow.state === GS.confirmed) {
@@ -1791,7 +1791,7 @@ function ScreenPicked({ event, pickedAt, onConfirm, onDecline }){
   }, [pickedAt]);
 
   return (
-    <div className="absolute inset-0 anim-fade" style={{background:"#121315", color:"#F7F6F3"}}>
+    <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
       <StatusBar/>
 
       <div className="absolute inset-0 opacity-30 pointer-events-none">
@@ -1802,7 +1802,7 @@ function ScreenPicked({ event, pickedAt, onConfirm, onDecline }){
         <div className="stamp wordmark picked-stagger" style={{color:"rgba(247,246,243,.7)", animationDelay:"0ms"}}>The List · invitation</div>
 
         <div className="flex-1 flex flex-col justify-center items-center text-center -mt-6">
-          <div className="w-[180px] h-[180px] rounded-full flex items-center justify-center pulse-ice ring-pop" style={{background:"#F7F6F3", color:"#121315", animationDelay:"120ms"}}>
+          <div className="w-[180px] h-[180px] rounded-full flex items-center justify-center pulse-ice ring-pop" style={{background:"#F7F6F3", color:"#000000", animationDelay:"120ms"}}>
             <div className="font-black text-[48px] leading-none">You're<br/>in</div>
           </div>
           <div className="font-black font-display-l text-[34px] leading-[0.95] mt-10 picked-stagger" style={{animationDelay:"680ms"}}>{e.title}</div>
@@ -1815,7 +1815,7 @@ function ScreenPicked({ event, pickedAt, onConfirm, onDecline }){
         </div>
 
         <div className="flex flex-col gap-3 picked-stagger" style={{animationDelay:"1120ms"}}>
-          <button onClick={onConfirm} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5" style={{background:"#F7F6F3", color:"#121315"}}>
+          <button onClick={onConfirm} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5" style={{background:"#F7F6F3", color:"#000000"}}>
             <span>Confirm my seat</span>
             <Icon name="arrow-right" size={16} stroke={1.6}/>
           </button>
@@ -1852,7 +1852,7 @@ function IntroVideoBG(){
   }, [active]);
 
   return (
-    <div className="absolute inset-0 overflow-hidden" style={{background:"#0D0E10"}}>
+    <div className="absolute inset-0 overflow-hidden" style={{background:"#000000"}}>
       {INTRO_CLIPS.map((c,i)=>(
         <video key={i} ref={el => vids.current[i] = el}
           src={c.src} poster={c.poster}
@@ -1865,7 +1865,7 @@ function IntroVideoBG(){
       {/* vignette */}
       <div className="absolute inset-0 pointer-events-none" style={{boxShadow:"inset 0 0 170px 46px rgba(0,0,0,.82)"}}/>
       {/* top + bottom scrims for status bar / lockup / buttons */}
-      <div className="absolute inset-0 pointer-events-none" style={{background:"linear-gradient(180deg, rgba(13,14,16,.72) 0%, rgba(13,14,16,0) 24%, rgba(13,14,16,0) 46%, rgba(13,14,16,.92) 100%)"}}/>
+      <div className="absolute inset-0 pointer-events-none" style={{background:"linear-gradient(180deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,0) 24%, rgba(0,0,0,0) 46%, rgba(0,0,0,.92) 100%)"}}/>
     </div>
   );
 }
@@ -1876,7 +1876,7 @@ function IntroVideoBG(){
    hardcoded takeover screens so it reads in both themes. Visual only. */
 function Steps({ current, total=3, dark=false, className="" }){
   const accent    = dark ? "#F7F6F3" : "var(--ice)";
-  const accentInk = dark ? "#121315" : "var(--ice-ink)";
+  const accentInk = dark ? "#000000" : "var(--ice-ink)";
   const line      = dark ? "rgba(247,246,243,.22)" : "var(--line-2)";
   const mute      = dark ? "rgba(247,246,243,.55)" : "var(--ink-mute)";
   return (
@@ -1917,7 +1917,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
   };
 
   if (step === 'intro') return (
-    <div className="absolute inset-0 anim-fade" style={{background:"#0D0E10", color:"#F7F6F3"}}>
+    <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
       <IntroVideoBG/>
       <StatusBar/>
       <div className="absolute inset-0 z-10 flex flex-col px-7 pt-[120px] pb-10">
@@ -1930,7 +1930,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
 
         {/* Bottom actions — solid Apply (accent) + ghost invite, TSS pattern */}
         <div className="flex flex-col gap-3 anim-up">
-          <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5" style={{background:"#F7F6F3", color:"#121315"}}>
+          <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5" style={{background:"#F7F6F3", color:"#000000"}}>
             <span>Apply for access</span>
             <Icon name="arrow-right" size={16} stroke={1.6}/>
           </button>
@@ -1991,7 +1991,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
   );
 
   if (step === 'reviewing') return (
-    <div className="absolute inset-0 anim-fade" style={{background:"#121315", color:"#F7F6F3"}}>
+    <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
       <StatusBar/>
       <div className="absolute top-[110px] left-0 right-0 flex justify-center">
         <Steps current={2} dark/>
@@ -2008,7 +2008,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
   );
 
   if (step === 'error') return (
-    <div className="absolute inset-0 anim-fade" style={{background:"#121315", color:"#F7F6F3"}}>
+    <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
       <StatusBar/>
       <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
         <div className="stamp wordmark" style={{color:"rgba(247,246,243,.7)"}}>The List · No. 048</div>
@@ -2019,7 +2019,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
           <div className="font-black font-display-l text-[30px] leading-[.95] mt-10">Couldn't<br/>read that</div>
           <div className="text-[13px] mt-3 opacity-75 max-w-[280px]">We couldn't pull @{handle || "your-handle"} from Instagram. Check the spelling, or try another handle.</div>
         </div>
-        <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px]" style={{background:"#F7F6F3", color:"#121315"}}>
+        <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px]" style={{background:"#F7F6F3", color:"#000000"}}>
           Try another handle
         </button>
       </div>
@@ -2029,7 +2029,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
 
   // tier-reveal
   return (
-    <div className="absolute inset-0 anim-fade" style={{background:"#121315", color:"#F7F6F3"}}>
+    <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
       <StatusBar/>
       <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
         <div className="stamp wordmark picked-stagger" style={{color:"rgba(247,246,243,.7)", animationDelay:"0ms"}}>The List · invitation</div>
@@ -2043,7 +2043,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
           <div className="text-[13px] mt-3 opacity-80 max-w-[280px] picked-stagger" style={{animationDelay:"820ms"}}>Your audience fits the rooms. Tier reviews happen quarterly.</div>
         </div>
 
-        <button onClick={onComplete} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5 picked-stagger" style={{background:"#F7F6F3", color:"#121315", animationDelay:"1100ms"}}>
+        <button onClick={onComplete} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5 picked-stagger" style={{background:"#F7F6F3", color:"#000000", animationDelay:"1100ms"}}>
           <span>Enter The List</span>
           <Icon name="arrow-right" size={16} stroke={1.6}/>
         </button>
