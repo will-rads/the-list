@@ -4,6 +4,19 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-07-04 — v3 GLASS reskin built (`web/v3/`, branch `v3-glass`) — Ultraviolet not convincing
+
+Will's call: Ultraviolet (858813a) stays but doesn't convince. New comparison version — frosted glassmorphism, NO hue (purple dead in v3), over a photo ground he picks later. Concept renders tried first (`research/v3-concepts/`, via new global skill `~/.claude/skills/imagegen-frontend-mobile` + Higgsfield) — rejected, went straight-to-code. Pipeline per Will: Fable planned + QA'd; Opus + Sonnet agents implemented. Spec: `docs/superpowers/specs/2026-07-04-v3-glass-reskin-design.md`.
+
+- **Scope: member only** — `web/v3/index.html` forked from the Ultraviolet member file; venue follows after Will approves. `web/v3/check-v3.mjs` = forked checker (index only; purple pair now BANNED; requires `--bg-photo` + `backdrop-filter`).
+- **Photo ground:** `--bg-photo` var painted by `.iphone-screen::before` (scrim `rgba(0,0,0,.62)` dark / `rgba(247,246,243,.55)` light). Placeholder Unsplash bar shot marked for swap — **Will supplies the final image; swap = one var edit.**
+- **Tokens:** `--bg-elev/2` translucent white; `--ice` pure white (dark) / `#1E1E1E` (light); neutral inks/lines; elevated surfaces carry `backdrop-filter: blur(22px) saturate(1.4)`. Jakarta-only + sentence case hold. Onboarding stays opaque black deliberately.
+- **Overlay-bleed fix:** `.screen-ground` on EventDetail + Pass roots (trap logged in errors.md 2026-07-04).
+- Verified: check-v3 OK, zero purple literals, Playwright dark+light (Home, Explore, EventDetail, Pass). Pre-existing, untouched: validateDOMNesting button-in-button warning after simulatePick.
+- Not pushed. Next: Will eyeballs v3 glass → gives bg image → venue file + scrim tune if his image is bright.
+
+---
+
 ## 2026-07-04 — v3 Ultraviolet reskin BUILT (branch `reskin-ultraviolet`, local)
 
 Executed the same session the direction was picked. Spec: `docs/superpowers/specs/2026-07-04-v3-ultraviolet-reskin-design.md`. Both `web/v2` files: token swap (dark: card `#16131D`/`#1E1A29`, ink `#EEEBF6`/`#B4ACC9`/`#7E7793`, lines purple-tint, accent `#A374FF`/ink-on-accent `#14092B`; light: cream grounds keep, accent `#6A3FD8`), Cormorant link removed + all display classes → Jakarta 700 −0.02em, dotted rules (.hr/.hr-2), floating glass pill dock (.tabbar rebuilt — left/right 16, bottom 12, r999, glass + purple hairline; venue too), glow signatures (display-l text-shadow, chip-ice halo, purple pulse/glow-ice), purple page washes + grain dots, glass re-tint (.glass/.glass-over-image), card fill `#16131D`. JSX: Home identity strip removed (icons justify-end), tabs + mastheads Tonight→Home / Index→Explore (venue tabs untouched), aria "Search the index"→"Search", event-detail When/Doors/Seats editorial rail → **widget card tiles** (Will's mid-session call: "widget style like profile" — StatTile pattern). check-v2.mjs: requires `#A374FF`+`#6A3FD8` both files; bans add `Cormorant`, `Space Grotesk`. Verified: checker OK both; Playwright eyeball dark+light, member Home/Event detail + venue Desk — dock, tiles, glow, no strip, labels all confirmed. Console: only pre-existing noise (SaveButton button-in-button warning predates reskin; python http.server drops big images — use Vercel preview for real review). NOT pushed. `web/brand.html` still documents Kit V.2 — stale until Will ratifies the new look.

@@ -4,6 +4,13 @@ Things that have already gone wrong, or known traps. New entries on top, dated `
 
 ---
 
+## 2026-07-04 — Two traps from the v3 glass reskin
+
+1. **Transparent screen roots bleed on stacked overlays.** Screens mount as stacked `absolute inset-0` layers (EventDetail/Pass render ABOVE the still-mounted Home). If an overlay screen root is `background:transparent` (to show the photo ground through), the underlying screen shows through it. Fix: overlay screen roots get `.screen-ground` (scrim + `var(--bg-photo)` cover — same recipe as `.iphone-screen::before`); only tab-level screens stay transparent.
+2. **`npx http-server` caches (max-age 3600).** Verifying edits through it serves the STALE file — a fix looked broken for a whole round-trip. Cache-bust with `?v=N` or serve with `-c-1`.
+
+---
+
 ## 2026-05-31 — Gemini media model IDs + SDK/TLS (image & video generation)
 
 Model IDs on Will's `GEMINI_API_KEY` (verified via the models list endpoint), for future AI-asset work:
