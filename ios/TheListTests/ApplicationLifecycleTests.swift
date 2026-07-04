@@ -1,5 +1,9 @@
 import Testing
+#if canImport(TheListCore)
+@testable import TheListCore
+#else
 @testable import TheList
+#endif
 
 /// Apply → picked → confirmed/declined, event cancellation (no charge, no
 /// strikes), and the expired-pick → waitlist replacement flow. Uses

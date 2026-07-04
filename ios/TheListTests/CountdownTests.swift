@@ -1,6 +1,10 @@
 import Foundation
 import Testing
+#if canImport(TheListCore)
+@testable import TheListCore
+#else
 @testable import TheList
+#endif
 
 /// The 24h confirm-window math on `MyEventRow` (web `ScreenMyEvents`'s
 /// `hoursLeft` computation): `Math.max(1, Math.ceil(...))`, falling back to

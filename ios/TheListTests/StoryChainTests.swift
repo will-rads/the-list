@@ -1,6 +1,10 @@
 import Foundation
 import Testing
+#if canImport(TheListCore)
+@testable import TheListCore
+#else
 @testable import TheList
+#endif
 
 /// The Story enforcement loop (spec §4): due → reminder at +12h → missed at
 /// 24h → strike, three strikes pause the account. `StoryEscalation` is pure

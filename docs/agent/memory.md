@@ -4,6 +4,40 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-07-04 — SwiftUI app scaffolded end to end (`ios/`, branch `v3-glass`) + v3 web ground finalized
+
+**Web (same day, before the port):** ground = `web/assets/bg-3.jpeg` BOTH themes (pastel CSS mesh
+replaced); profile hero melts via mask (no hard cut); `.dock-fade` theme-aware (light black-band
+bug); light glass alphas cut to stay see-through (.34 cards/.38 dock) + blur 26 sat 1.9. Commits
+`f6228ea`→`8c56323`→`06a5400`.
+
+**iOS port (Will's calls):** scaffold-only — NO Mac yet, nothing compiled; both sides in one go
+(member = web/v3, venue = v2 flows + v3 skin); mock-first (Supabase phase 2, ref in plan); iOS 17
+min. Plan: `docs/superpowers/plans/2026-07-04-swiftui-port-plan.md`. Pipeline: Fable plan+QA,
+Opus W0/W2, Sonnet W1/W3. Commits `e1b25c8` (W0+W1), `c1c34a3` (W2), `c6504a5` (W3), W4 QA on top.
+
+- 125+ Swift files: XcodeGen project, Theme tokens from v3 CSS, 6-layer glass kit (iOS 26 Liquid
+  Glass behind `#if compiler(>=6.2)`), frozen-contract models/services, ONE DemoWorld seeded to
+  both web files, all member + venue screens, switchboards, Swift Testing suite.
+- **TheListCore SPM package** = Models+Services+Tests, pure Swift → `swift test` runs on Windows
+  (Codex gate). No SwiftUI compiler exists off-Mac — Will's "view it in Codex" is impossible for
+  UI; core compile+tests is the honest substitute. Swift toolchain install blocked: msi 1603 in
+  silent mode → Will must run `winget install Swift.Toolchain --skip-dependencies` in an ADMIN
+  terminal once.
+- W4 QA: grep gates clean (0 hex in views, 0 banned fonts, 0 SwiftUI in core, 0 member "Locked");
+  fixed tests' `@testable import` to conditional TheListCore/TheList; `ios/README.md` rewritten
+  with the Mac-day fix-first checklist (7 known uncertainties).
+- Documented deviations: intro = still crossfade not mp4; preset image picker replaces the web
+  cropper; Sara 9.4 (profile) vs 9.1 (applicant record) kept as-is per web.
+- Session ops lesson: PC sleep kills background agents mid-write + a session-limit hit killed one
+  wave — resume pattern: check newest file for truncation, keep sound files, finish the wave.
+
+**Next:** Will runs the admin winget → `swift test` gate; Will eyeballs v3 web (bg-3) →
+venue web reskin still pending his approval; Mac day = xcodegen + fix pass + simulator
+side-by-side vs web; then Supabase phase.
+
+---
+
 ## 2026-07-04 — v3 GLASS reskin built (`web/v3/`, branch `v3-glass`) — Ultraviolet not convincing
 
 Will's call: Ultraviolet (858813a) stays but doesn't convince. New comparison version — frosted glassmorphism, NO hue (purple dead in v3), over a photo ground he picks later. Concept renders tried first (`research/v3-concepts/`, via new global skill `~/.claude/skills/imagegen-frontend-mobile` + Higgsfield) — rejected, went straight-to-code. Pipeline per Will: Fable planned + QA'd; Opus + Sonnet agents implemented. Spec: `docs/superpowers/specs/2026-07-04-v3-glass-reskin-design.md`.

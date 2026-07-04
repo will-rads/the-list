@@ -1,5 +1,9 @@
 import Testing
+#if canImport(TheListCore)
+@testable import TheListCore
+#else
 @testable import TheList
+#endif
 
 /// Locks in the numbers this wave cross-checked between `web/v3/index.html`
 /// (member) and `web/v2/venue.html` (venue) — see the wave's return note for

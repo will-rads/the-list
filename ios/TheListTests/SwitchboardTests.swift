@@ -1,5 +1,9 @@
 import Testing
+#if canImport(TheListCore)
+@testable import TheListCore
+#else
 @testable import TheList
+#endif
 
 /// The 8-action `DemoSwitchboard` contract: `pickNow`, `expirePick`,
 /// `checkMeIn`, `forceVerdict`, `newApplicants`, `declinePick`,
