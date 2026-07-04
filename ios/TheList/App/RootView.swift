@@ -1,8 +1,8 @@
 import SwiftUI
 
 // Root of the app. Before a role is chosen it shows the member/venue chooser;
-// after, it shows a placeholder for that side — W2 (member) and W3 (venue) swap
-// those Text placeholders for their real entry screens. The photo ground and the
+// after, it mounts that side's own tab shell (W2 member / W3 venue), each
+// owning its own DemoWorld / services / router. The photo ground and the
 // in-app theme are applied here, once, for the whole app.
 struct RootView: View {
     @Environment(AppState.self) private var appState
@@ -22,8 +22,8 @@ struct RootView: View {
             // The member tab shell (W2). Owns its own DemoWorld / services / router.
             MemberRootView()
         case .venue?:
-            // Replaced by the venue desk in W3.
-            RolePlaceholder(text: "Venue — arriving in W3")
+            // The venue tab shell (W3). Owns its own DemoWorld / services / router.
+            VenueRootView()
         }
     }
 }
@@ -108,19 +108,6 @@ private struct RoleEntry: View {
             .cardGlass()
         }
         .buttonStyle(PressButtonStyle())
-    }
-}
-
-// MARK: - Placeholder for a not-yet-built side
-
-private struct RolePlaceholder: View {
-    let text: String
-
-    var body: some View {
-        Text(text)
-            .font(Typography.body(15, weight: .medium))
-            .foregroundStyle(Theme.ink2)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
