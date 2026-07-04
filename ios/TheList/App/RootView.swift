@@ -19,8 +19,8 @@ struct RootView: View {
         case nil:
             RoleChooser()
         case .member?:
-            // Replaced by the member tab shell in W2.
-            RolePlaceholder(text: "Member — arriving in W2")
+            // The member tab shell (W2). Owns its own DemoWorld / services / router.
+            MemberRootView()
         case .venue?:
             // Replaced by the venue desk in W3.
             RolePlaceholder(text: "Venue — arriving in W3")
