@@ -46,6 +46,17 @@
     --ice-dim:   #454B52;
     --ice-ink:   #FFFFFF;
     --page:      #F2F0EB;
+    /* Will's light-mode ground (2026-07-04): pastel mesh — yellow top-left,
+       pink left-mid, cyan bottom-right on white. Rebuilt as CSS gradients
+       (no asset). Dark-mode twin pending — dark keeps the photo placeholder. */
+    --bg-photo:
+      radial-gradient(55% 30% at 18% 0%,  rgba(255,213,138,.95), transparent 70%),
+      radial-gradient(50% 28% at 28% 14%, rgba(255,172,122,.55), transparent 70%),
+      radial-gradient(60% 32% at 12% 38%, rgba(248,148,158,.80), transparent 70%),
+      radial-gradient(45% 26% at 48% 56%, rgba(205,190,240,.55), transparent 70%),
+      radial-gradient(60% 42% at 80% 82%, rgba(142,236,255,.90), transparent 72%),
+      radial-gradient(50% 34% at 95% 55%, rgba(168,238,255,.55), transparent 70%),
+      linear-gradient(#FFFFFF, #FFFFFF);
   }
   html, body {
     background: var(--page);
@@ -116,15 +127,16 @@
       var(--bg-photo) center / cover no-repeat;
   }
   html.light .iphone-screen::before {
+    /* pastel ground is already near-white — light scrim just steadies it */
     background:
-      linear-gradient(rgba(247,246,243,.55), rgba(247,246,243,.55)),
+      linear-gradient(rgba(255,255,255,.18), rgba(255,255,255,.18)),
       var(--bg-photo) center / cover no-repeat;
   }
 
   /* full-screen overlay screens (EventDetail, Pass) need to paint their own
      photo ground so the still-mounted screen beneath doesn't bleed through */
   .screen-ground { background: linear-gradient(rgba(0,0,0,.62), rgba(0,0,0,.62)), var(--bg-photo) center / cover no-repeat; }
-  html.light .screen-ground { background: linear-gradient(rgba(247,246,243,.55), rgba(247,246,243,.55)), var(--bg-photo) center / cover no-repeat; }
+  html.light .screen-ground { background: linear-gradient(rgba(255,255,255,.18), rgba(255,255,255,.18)), var(--bg-photo) center / cover no-repeat; }
 
   .island { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:120px; height:34px; background:#000; border-radius:20px; z-index:50; }
 
