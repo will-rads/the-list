@@ -23,6 +23,8 @@ const REQUIRED = {
     "function StorySheet", "we check within a few hours", "function forceVerdict",
     "function notifTarget", "Confirm your seat — 2h left",
     "function DemoPanel", "Reset demo",
+    // v3 Ultraviolet reskin (2026-07-04)
+    "#A374FF", "#6A3FD8",
   ],
   "venue.html": [
     "function ScreenVenueIntro", "function ScreenVenueLogin", "function ScreenOnboardGroup",
@@ -38,6 +40,8 @@ const REQUIRED = {
     "Close the night", "No room tonight",
     "function ScreenRecap", "Verified reach", "Invoice",
     "function DemoPanel", "Reset demo", "New applicants arrive", "Advance to tonight",
+    // v3 Ultraviolet reskin (2026-07-04)
+    "#A374FF", "#6A3FD8",
   ],
 };
 
@@ -61,7 +65,10 @@ for (const [file, tokens] of Object.entries(REQUIRED)) {
   if (roots !== 1) problems.push(`createRoot count ${roots} (want 1)`);
   for (const t of tokens) if (!src.includes(t)) problems.push(`missing token: ${t}`);
   // Curly/smart quotes inside JS source = Babel SyntaxError = blank app (caught live 2026-06-11, T11).
+  // v3 (2026-07-04): Cormorant retired with the Ultraviolet reskin; Space Grotesk
+  // (stock 1c's face) never adopted — Jakarta everywhere per Will's ruling.
   for (const banned of ["#9FD8E8", "Instrument Serif", "font-family: Inter", "'Inter'", '"Inter"',
+                        "Cormorant", "Space Grotesk",
                         "“", "”", "‘", "’"]) {
     if (src.includes(banned)) problems.push(`banned token present: ${JSON.stringify(banned)}`);
   }

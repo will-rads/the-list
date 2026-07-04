@@ -4,6 +4,36 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-07-04 — v3 Ultraviolet reskin BUILT (branch `reskin-ultraviolet`, local)
+
+Executed the same session the direction was picked. Spec: `docs/superpowers/specs/2026-07-04-v3-ultraviolet-reskin-design.md`. Both `web/v2` files: token swap (dark: card `#16131D`/`#1E1A29`, ink `#EEEBF6`/`#B4ACC9`/`#7E7793`, lines purple-tint, accent `#A374FF`/ink-on-accent `#14092B`; light: cream grounds keep, accent `#6A3FD8`), Cormorant link removed + all display classes → Jakarta 700 −0.02em, dotted rules (.hr/.hr-2), floating glass pill dock (.tabbar rebuilt — left/right 16, bottom 12, r999, glass + purple hairline; venue too), glow signatures (display-l text-shadow, chip-ice halo, purple pulse/glow-ice), purple page washes + grain dots, glass re-tint (.glass/.glass-over-image), card fill `#16131D`. JSX: Home identity strip removed (icons justify-end), tabs + mastheads Tonight→Home / Index→Explore (venue tabs untouched), aria "Search the index"→"Search", event-detail When/Doors/Seats editorial rail → **widget card tiles** (Will's mid-session call: "widget style like profile" — StatTile pattern). check-v2.mjs: requires `#A374FF`+`#6A3FD8` both files; bans add `Cormorant`, `Space Grotesk`. Verified: checker OK both; Playwright eyeball dark+light, member Home/Event detail + venue Desk — dock, tiles, glow, no strip, labels all confirmed. Console: only pre-existing noise (SaveButton button-in-button warning predates reskin; python http.server drops big images — use Vercel preview for real review). NOT pushed. `web/brand.html` still documents Kit V.2 — stale until Will ratifies the new look.
+
+---
+
+## 2026-07-04 — Redesign #3 direction PICKED: 1c Ultraviolet, amended
+
+Claude Design run done (project `9e016580-e3bc-4655-aff3-cb9c5c944767`; file pulled via Will's Chrome session to `design-explorations/redesign-directions/redesign-directions.dc.html` — DesignSync tool stayed auth-walled, browser route worked). Three directions produced (1a Carmine/Archivo, 1b Brass/Bodoni, 1c Ultraviolet/Space Grotesk). **Will picked 1c Ultraviolet** — accent `#A374FF` dark / `#6A3FD8` light, card `#16131D`, ink `#EEEBF6`, muted `#7E7793`, glow readouts, dotted rules, floating pill dock, 20–24px radii, purple radial washes over `#000000` (pitch black holds). **Will's amendments:** (1) typeface = **Plus Jakarta Sans everywhere** — no Space Grotesk, and Cormorant Garamond display retires with this reskin (Inter/Instrument Serif bans unchanged); (2) **glass UI throughout** — translucent blurred panels (maps to iOS Liquid Glass in the SwiftUI port); (3) icons: current set disliked, family swap must be cheap → centralize all icons behind one map/component during reskin; (4) tab renames ruled: **Tonight→Home, Index→Explore**, Invites + Profile stay; (5) **Home header text removed** — no greeting/identity block at top of Home ("The List / Sara Capriotti / No. 048" and 1c's "Hi, Sara · No. 048" pill all die). Functional icons (bell, search) stay; screen opens with content, not text. Sequence ruled: reskin `web/v2` now, **skip Wave 2 in HTML** (billing/insights/invites/tiers build native later), then SwiftUI via `prompts/swiftui-goal.md` + Codex audit per wave. check-v2.mjs to extend: allow `#A374FF`/`#6A3FD8`/`#16131D` family, keep old bans.
+
+---
+
+## 2026-07-04 — SwiftUI build prompts written; no SwiftUI skill exists
+
+Two paste-ready prompts committed to `prompts/`: **`swiftui-goal.md`** (build-session bootstrap: preconditions incl. reskin-final + Xcode check, read order, mock-first mission with switchboards, hard-rules table, iOS 17+/@Observable/tokens-first/services-behind-protocols architecture, TDD on state machines, wave gates, ready-check format) and **`codex-swiftui-audit.md`** (Codex audits each wave: build → static → behavioral loop via switchboards → visual diff vs live /v2 at 393×852 → state-machine diff; fixes P0/P1 only, proposes P2/P3, never touches `web/`). Division: Claude builds, Codex audits — Will's call. Checked for remembered SwiftUI skills: **none exist** in `~/.claude/skills`, `~/.codex/skills`, or project — discipline baked into the prompts instead. `ios/README.md` is stale (v1 port plan); goal prompt supersedes it. **Open blocker: toolchain — Will is on Windows; where Xcode/simulator runs is unanswered.**
+
+---
+
+## 2026-07-04 — Supabase live: MCP connected, project created
+
+Will made Supabase account + connected official Supabase MCP (user scope). Production project: **"The List"**, ref `zrbakomzpuesifasuamb`, region `eu-central-1` (Frankfurt, picked for Beirut latency over the dashboard's Tokyo recommendation), Postgres 17, ACTIVE_HEALTHY. Stray first project "will-rads's Project" (`hkimxtoorylsstadvzyw`, Tokyo) — unused, Will should delete to free the 2-project free-tier slot. Backend build = own session (schema, auth, RLS, storage, Gemini edge function — key server-side only). Still needed later: Gemini API key; IG/Meta side blocked on @thelist handle + app review.
+
+---
+
+## 2026-07-03 — Redesign #3 route: Claude Design exploration; push bundle built
+
+Will's call: instead of brainstorming direction in-chat first, push the current identity to **Claude Design** (claude.ai/design) and let it generate directions. Bundle built at `design-explorations/claude-design-sync/`: `context/redesign-brief.md` (what's locked: pitch black, Inter/Instrument Serif bans, sentence case; what's open: everything else), `tokens/colors.html` + `tokens/type.html` + `components/core.html` (dsCard preview cards), `reference/` = brand-kit.html copy (dsCard) + both v2 app files verbatim (context, not cards). **Blocked on authorization:** the DesignSync tool needs `/design-login`, which only runs in an interactive `claude` terminal — this desktop session can't do it. Once Will authorizes, flow = `list_projects` → `create_project "The List"` → `finalize_plan` → `write_files`. Bundle is local-only, not committed.
+
+---
+
 ## 2026-07-03 — Story verification model locked: the @thelist mention spine
 
 Will's calls, same session as the wave-1 ship (spec §4 updated with full detail):

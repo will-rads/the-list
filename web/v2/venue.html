@@ -8,27 +8,26 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
 
 <style>
-  /* Kit V.2 — dark = Warm Cream Scale (primary), light = Anthracite Scale.
-     Var NAMES kept (--ice etc.) so call sites don't churn; --ice is now the
-     kit accent: warm cream on dark, brand anthracite on light. */
+  /* v3 Ultraviolet (2026-07-04 spec) — dark = purple signal on pitch black
+     (primary), light = violet accent on warm cream. Var NAMES kept (--ice etc.)
+     so call sites don't churn; --ice is the hue accent now. */
   :root{
     --bg:        #000000;
-    --bg-elev:   #1B1C1F;
-    --bg-elev2:  #232428;
-    --ink:       #F7F6F3;
-    --ink-2:     #EDECE6;
-    --ink-mute:  #D8D4C7;
-    --line:      rgba(247,246,243,0.10);
-    --line-2:    rgba(247,246,243,0.18);
-    --ice:       #F7F6F3;
-    --ice-dim:   #D8D4C7;
-    --ice-ink:   #000000;
+    --bg-elev:   #16131D;
+    --bg-elev2:  #1E1A29;
+    --ink:       #EEEBF6;
+    --ink-2:     #B4ACC9;
+    --ink-mute:  #7E7793;
+    --line:      rgba(163,116,255,0.16);
+    --line-2:    rgba(163,116,255,0.32);
+    --ice:       #A374FF;
+    --ice-dim:   #C0A7F5;
+    --ice-ink:   #14092B;
     --page:      #000000;
   }
   html.light{
@@ -38,10 +37,10 @@
     --ink:       #1E1E1E;
     --ink-2:     #454B52;
     --ink-mute:  #6A737D;
-    --line:      rgba(30,30,30,0.08);
-    --line-2:    rgba(30,30,30,0.15);
-    --ice:       #2A2D31;
-    --ice-dim:   #454B52;
+    --line:      rgba(106,63,216,0.14);
+    --line-2:    rgba(106,63,216,0.26);
+    --ice:       #6A3FD8;
+    --ice-dim:   #8560D6;
     --ice-ink:   #FFFFFF;
     --page:      #F2F0EB;
   }
@@ -53,22 +52,23 @@
     -webkit-font-smoothing: antialiased;
     margin: 0;
   }
-  /* Two families per Kit V.2: Cormorant Garamond 600 for display moments
-     (screen titles, venue/event names, the wordmark), Plus Jakarta Sans for
-     everything else. No third family. Doubled .font-black.font-black beats
-     Tailwind CDN's own .font-black utility (font-weight:900), which would
-     otherwise fake-bold the serif to 900. */
+  /* ONE family (Will's 2026-07-04 ruling): Plus Jakarta Sans everywhere.
+     Display voice = Jakarta 700, tight -0.02em (1c Ultraviolet). Doubled
+     .font-black.font-black beats Tailwind CDN's own .font-black utility
+     (font-weight:900). */
   .font-black.font-black,
   .font-display {
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
   .font-display-l {
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
+  /* glow readout — dark only; light theme keeps clean type */
+  html:not(.light) .font-display-l { text-shadow: 0 0 34px rgba(163,116,255,.35); }
   /* font-mono = legacy class for numbers/timers. Numbers stay sans per kit:
      Plus Jakarta Sans 600 with tabular figures so timers don't jitter.
      Doubled selector (.font-mono.font-mono) so it beats Tailwind CDN's own .font-mono
@@ -107,20 +107,23 @@
   .statusbar { position:absolute; top:0; left:0; right:0; height:54px; padding: 16px 28px 0; display:flex; justify-content:space-between; align-items:flex-start; z-index:40; font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-variant-numeric: tabular-nums; font-size:14px; color: var(--ink); pointer-events:none; }
   .statusbar svg { width: 16px; height: 16px; }
 
+  /* v3 signature — floating glass pill dock (was full-width gradient bar) */
   .tabbar {
-    position:absolute; left:0; right:0; bottom:0; height: 88px;
-    padding: 12px 18px 30px;
+    position:absolute; left:16px; right:16px; bottom:12px; height: 64px;
+    padding: 8px 10px;
     display:grid; grid-template-columns:repeat(4,1fr); gap: 4px;
-    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.72) 45%, rgba(0,0,0,.92) 100%);
-    backdrop-filter: blur(22px) saturate(1.3);
-    -webkit-backdrop-filter: blur(22px) saturate(1.3);
+    background: rgba(22,19,29,.72);
+    backdrop-filter: blur(22px) saturate(1.4);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
     z-index: 30;
-    border-top: 1px solid var(--line);
-    box-shadow: 0 -12px 34px -24px rgba(0,0,0,.55);
+    border: 1px solid rgba(163,116,255,.25);
+    border-radius: 999px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.7), 0 0 30px rgba(163,116,255,.12);
   }
   html.light .tabbar {
-    background: linear-gradient(180deg, rgba(247,246,243,0) 0%, rgba(247,246,243,.72) 45%, rgba(247,246,243,.92) 100%);
-    box-shadow: 0 -12px 34px -26px rgba(30,30,30,.22);
+    background: rgba(255,255,255,.72);
+    border-color: rgba(106,63,216,.22);
+    box-shadow: 0 12px 34px -18px rgba(30,30,30,.35), 0 0 24px rgba(106,63,216,.08);
   }
   .tabbar button {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -133,8 +136,10 @@
   .tabbar button.active { color: var(--ink); }
   .tabbar button.active svg { color: var(--ice); }
 
-  .hr { height: 1px; background: var(--line); }
-  .hr-2 { height: 1px; background: var(--line-2); }
+  /* v3 signature — dotted rules */
+  .hr { height: 0; border-top: 1px dotted var(--line-2); background: none; }
+  .hr-2 { height: 0; border-top: 1px dotted rgba(163,116,255,.45); background: none; }
+  html.light .hr-2 { border-top-color: rgba(106,63,216,.38); }
 
   /* Sentence case everywhere per Will's ruling — no tracked caps. */
   .stamp { font-family:'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: 0.02em; color: var(--ink-mute); }
@@ -143,7 +148,8 @@
      Used for section dividers; .stamp stays for true value labels (When/Doors/Seats). */
   .section-label { font-family:'Plus Jakarta Sans', ui-sans-serif, system-ui; font-weight: 700; font-size: 14px; letter-spacing: normal; color: var(--ink-2); }
 
-  .chip-ice { background: var(--ice); color: var(--ice-ink); }
+  .chip-ice { background: var(--ice); color: var(--ice-ink); box-shadow: 0 0 18px rgba(163,116,255,.45); }
+  html.light .chip-ice { box-shadow: 0 0 14px rgba(106,63,216,.25); }
   .chip-outline { border: 1px solid var(--line-2); color: var(--ink); }
 
   .press { transition: transform .12s ease, opacity .12s ease, background .2s, border-color .2s, box-shadow .2s; cursor: pointer; }
@@ -160,16 +166,17 @@
     pointer-events: none;
   }
 
+  /* v3 signature — purple radial washes over pitch black */
   .page-bg {
     background:
-      radial-gradient(900px 500px at 10% -10%, rgba(247,246,243,.03), transparent 60%),
-      radial-gradient(900px 600px at 100% 100%, rgba(247,246,243,.02), transparent 60%),
+      radial-gradient(900px 500px at 10% -10%, rgba(163,116,255,.10), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(163,116,255,.06), transparent 60%),
       var(--page);
   }
   html.light .page-bg {
     background:
-      radial-gradient(900px 500px at 10% -10%, rgba(42,45,49,.05), transparent 60%),
-      radial-gradient(900px 600px at 100% 100%, rgba(42,45,49,.03), transparent 60%),
+      radial-gradient(900px 500px at 10% -10%, rgba(106,63,216,.05), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(106,63,216,.03), transparent 60%),
       var(--page);
   }
 
@@ -196,8 +203,8 @@
   .side-link:hover { border-color: var(--ice); color: var(--ice); }
 
   @keyframes pulseIce {
-    0% { box-shadow: 0 0 0 0 rgba(247,246,243,.30); }
-    100% { box-shadow: 0 0 0 28px rgba(247,246,243,0); }
+    0% { box-shadow: 0 0 0 0 rgba(163,116,255,.4); }
+    100% { box-shadow: 0 0 0 28px rgba(163,116,255,0); }
   }
   .pulse-ice { animation: pulseIce 1.8s cubic-bezier(.4,.2,.2,1) infinite; }
 
@@ -258,20 +265,20 @@
   /* ===== polish pass: glass depth + quiet neutral shadows (no neon) ===== */
   /* frosted glass for top controls — tinted to the kit palette */
   .glass {
-    background: rgba(24,25,28,.55) !important;
-    backdrop-filter: blur(16px) saturate(1.3);
-    -webkit-backdrop-filter: blur(16px) saturate(1.3);
-    border: 1px solid rgba(247,246,243,.12) !important;
+    background: rgba(22,19,29,.58) !important;
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(163,116,255,.22) !important;
   }
   html.light .glass {
     background: rgba(255,255,255,.6) !important;
-    border-color: rgba(30,30,30,.1) !important;
+    border-color: rgba(106,63,216,.18) !important;
   }
   /* solid cards per kit: surface fill + hairline + soft shadow */
   .card {
     /* Flat-At-Rest: resting cards are NOT glass. Solid fill + hairline +
        soft shadow only. Blur is reserved for genuinely-floating surfaces. */
-    background: #1B1C1F;
+    background: #16131D;
     border: 1px solid var(--line);
     box-shadow: 0 16px 36px -24px rgba(0,0,0,.8);
     transition: border-color .2s, box-shadow .2s, transform .12s;
@@ -282,20 +289,20 @@
     border-color: var(--line);
     box-shadow: 0 10px 30px -18px rgba(30,30,30,.25);
   }
-  @media (hover:hover){ button.card:hover, .card.press:hover { border-color: rgba(247,246,243,.28); } }
-  @media (hover:hover){ html.light button.card:hover, html.light .card.press:hover { border-color: rgba(42,45,49,.35); } }
-  /* quiet rings + neutral depth — active + pressed states only */
-  .glow-ice { box-shadow: 0 0 0 1px rgba(247,246,243,.18), 0 10px 24px -14px rgba(0,0,0,.6); }
+  @media (hover:hover){ button.card:hover, .card.press:hover { border-color: rgba(163,116,255,.45); } }
+  @media (hover:hover){ html.light button.card:hover, html.light .card.press:hover { border-color: rgba(106,63,216,.4); } }
+  /* purple rings — active + pressed states only */
+  .glow-ice { box-shadow: 0 0 0 1px rgba(163,116,255,.35), 0 0 22px rgba(163,116,255,.18), 0 10px 24px -14px rgba(0,0,0,.6); }
   .press.glow-primary:active { box-shadow: 0 12px 28px -14px rgba(0,0,0,.7); }
   @media (hover:hover){ .glow-primary:hover { box-shadow: 0 10px 26px -14px rgba(0,0,0,.6); } }
   /* light theme: a tighter anthracite ring, neutral shadow — nothing bright. */
-  html.light .glow-ice { box-shadow: 0 0 0 1px rgba(42,45,49,.22), 0 3px 12px -6px rgba(30,30,30,.25); }
+  html.light .glow-ice { box-shadow: 0 0 0 1px rgba(106,63,216,.3), 0 3px 12px -6px rgba(30,30,30,.25); }
   html.light .press.glow-primary:active { box-shadow: 0 8px 18px -10px rgba(30,30,30,.35); }
   @media (hover:hover){ html.light .glow-primary:hover { box-shadow: 0 5px 16px -8px rgba(30,30,30,.30); } }
   /* ornamental texture — only paints outside the (opaque) phone */
   body::before {
     content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
-    background-image: radial-gradient(rgba(247,246,243,.05) 1px, transparent 1px);
+    background-image: radial-gradient(rgba(163,116,255,.07) 1px, transparent 1px);
     background-size: 26px 26px;
     -webkit-mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
     mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
@@ -314,8 +321,8 @@
      header buttons and the Profile hero controls share it, so there is a single
      over-image glass, distinct from .glass (which floats over the app bg). */
   .glass-over-image, .profile-glass {
-    background: rgba(0,0,0,.5);
-    border: 1px solid rgba(247,246,243,.18);
+    background: rgba(10,5,20,.5);
+    border: 1px solid rgba(163,116,255,.3);
     backdrop-filter: blur(12px) saturate(1.25);
     -webkit-backdrop-filter: blur(12px) saturate(1.25);
   }
