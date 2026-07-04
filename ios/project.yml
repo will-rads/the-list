@@ -1,0 +1,61 @@
+# XcodeGen spec for The List (iOS 17, iPhone, portrait).
+# Mac day:  cd ios && brew install xcodegen && xcodegen && open TheList.xcodeproj
+name: TheList
+
+options:
+  bundleIdPrefix: co.thelist
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"        # 1 = iPhone only
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  TheList:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    # The whole folder is globbed on purpose: later waves add Models/, Services/,
+    # Features/ under TheList/ and are picked up on the next `xcodegen` with no
+    # edit to this spec. XcodeGen infers build phases per file (.swift -> compile,
+    # .xcassets/.ttf -> resources) and excludes the generated Info.plist below.
+    sources:
+      - path: TheList
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: co.thelist.app
+    info:
+      path: TheList/Info.plist
+      properties:
+        CFBundleDisplayName: The List
+        CFBundleShortVersionString: "0.1.0"
+        UILaunchScreen: {}
+        # Bundled Plus Jakarta Sans variable TTFs (Resources/Fonts/). One family.
+        UIAppFonts:
+          - PlusJakartaSans-Variable.ttf
+          - PlusJakartaSans-Italic-Variable.ttf
+        # Portrait only. No UIUserInterfaceStyle key: app supports both themes,
+        # dark is the in-app default via preferredColorScheme (not forced here).
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+
+  TheListTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    # Owned by W1 (Sonnet); this target exists so the test bundle wires on Mac day.
+    sources:
+      - path: TheListTests
+    dependencies:
+      - target: TheList
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: co.thelist.app.tests
+        GENERATE_INFOPLIST_FILE: YES
