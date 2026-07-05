@@ -21,9 +21,13 @@
     --bg:        #000000;
     --bg-elev:   rgba(255,255,255,0.07);
     --bg-elev2:  rgba(255,255,255,0.12);
+    /* Will 2026-07-05: no gray text. --ink-2 / --ink-mute collapse to --ink so
+       every label/subline reads full-contrast. --nav-idle keeps ONE functional
+       gray for inactive dock tabs (else the active tab is invisible). */
     --ink:       #F4F4F6;
-    --ink-2:     #C2C3CC;
-    --ink-mute:  #8B8C97;
+    --ink-2:     #F4F4F6;
+    --ink-mute:  #F4F4F6;
+    --nav-idle:  #8B8C97;
     --line:      rgba(255,255,255,0.14);
     --line-2:    rgba(255,255,255,0.28);
     --ice:       #FFFFFF;
@@ -41,8 +45,9 @@
     --bg-elev:   rgba(255,255,255,0.34);
     --bg-elev2:  rgba(255,255,255,0.24);
     --ink:       #1E1E1E;
-    --ink-2:     #454B52;
-    --ink-mute:  #6A737D;
+    --ink-2:     #1E1E1E;
+    --ink-mute:  #1E1E1E;
+    --nav-idle:  #6A737D;
     --line:      rgba(30,30,30,0.12);
     --line-2:    rgba(30,30,30,0.24);
     --ice:       #1E1E1E;
@@ -160,7 +165,7 @@
   }
   .tabbar button {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:5px; color: var(--ink-mute);
+    gap:5px; color: var(--nav-idle);
     font-size: 10px; letter-spacing: 0.01em;
     padding: 4px 0; border-radius: 14px;
     transition: color .15s;
@@ -368,12 +373,13 @@
   /* Profile keeps its own text-color contract on top of the shared glass. */
   .profile-glass { color: #F7F6F3; }
   html.light .profile-glass { color: #1E1E1E; }
+  /* Will 2026-07-05: no gray — hero muted text matches the hero title. */
   .profile-hero-text { color: #F7F6F3; }
-  .profile-hero-muted { color: rgba(247,246,243,.72); }
+  .profile-hero-muted { color: #F7F6F3; }
   html.light .profile-hero-text { color: #1E1E1E; }
-  html.light .profile-hero-muted { color: rgba(30,30,30,.58); }
+  html.light .profile-hero-muted { color: #1E1E1E; }
   html.light .profile-hero-text .stamp,
-  html.light .profile-hero-text .smallcaps { color: rgba(30,30,30,.58) !important; }
+  html.light .profile-hero-text .smallcaps { color: #1E1E1E !important; }
 </style>
 </head>
 <body class="page-bg min-h-screen">
@@ -1864,11 +1870,11 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
         </div>
 
         <div className="profile-hero-text absolute right-3 top-[130px] vt z-10">
-          <span className="stamp" style={{color:"rgba(247,246,243,.7)"}}>Beirut · MMXXVI · No. 048</span>
+          <span className="stamp" style={{color:"#F7F6F3"}}>Beirut · MMXXVI · No. 048</span>
         </div>
 
         <div className="profile-hero-text absolute bottom-5 left-5 right-5 z-10">
-          <div className="smallcaps mb-2" style={{color:"rgba(247,246,243,.7)"}}>Member since '24</div>
+          <div className="smallcaps mb-2" style={{color:"#F7F6F3"}}>Member since '24</div>
           <div className="font-black font-display-l text-[48px] leading-[0.9]">{firstName}{lastName ? <><br/>{lastName}</> : ""}</div>
           <div className="flex items-center gap-2 mt-3">
             <Icon name="instagram" size={13} stroke={1.5} className="opacity-70"/>
@@ -1976,7 +1982,7 @@ function ScreenPicked({ event, pickedAt, onConfirm, onDecline }){
       </div>
 
       <div className="absolute inset-0 z-10 flex flex-col px-7 pt-[100px] pb-10">
-        <div className="stamp wordmark picked-stagger" style={{color:"rgba(247,246,243,.7)", textShadow:"0 1px 8px rgba(0,0,0,.5)", animationDelay:"0ms"}}>The List · invitation</div>
+        <div className="stamp wordmark picked-stagger" style={{color:"#F7F6F3", textShadow:"0 1px 8px rgba(0,0,0,.5)", animationDelay:"0ms"}}>The List · invitation</div>
 
         <div className="flex-1 flex flex-col justify-center items-center text-center -mt-6">
           <div className="w-[180px] h-[180px] rounded-full flex items-center justify-center pulse-ice ring-pop" style={{background:"#F7F6F3", color:"#000000", animationDelay:"120ms"}}>
@@ -1996,7 +2002,7 @@ function ScreenPicked({ event, pickedAt, onConfirm, onDecline }){
             <span>Confirm my seat</span>
             <Icon name="arrow-right" size={16} stroke={1.6}/>
           </button>
-          <button onClick={onDecline} className="press w-full h-[58px] rounded-full font-medium text-[13px]" style={{background:"transparent", color:"rgba(247,246,243,.7)", border:"1px solid rgba(247,246,243,.2)"}}>
+          <button onClick={onDecline} className="press w-full h-[58px] rounded-full font-medium text-[13px]" style={{background:"transparent", color:"#F7F6F3", border:"1px solid rgba(247,246,243,.2)"}}>
             Decline
           </button>
         </div>
@@ -2266,7 +2272,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
     <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
       <StatusBar/>
       <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
-        <div className="stamp wordmark" style={{color:"rgba(247,246,243,.7)", textShadow:"0 1px 8px rgba(0,0,0,.5)"}}>The List · No. 048</div>
+        <div className="stamp wordmark" style={{color:"#F7F6F3", textShadow:"0 1px 8px rgba(0,0,0,.5)"}}>The List · No. 048</div>
         <div className="flex-1 flex flex-col justify-center items-center text-center">
           <div className="w-[120px] h-[120px] rounded-full flex items-center justify-center" style={{border:"2px solid rgba(247,246,243,.25)", color:"rgba(247,246,243,.85)"}}>
             <Icon name="x" size={40} stroke={1.4}/>
@@ -2287,7 +2293,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
     <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
       <StatusBar/>
       <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
-        <div className="stamp wordmark picked-stagger" style={{color:"rgba(247,246,243,.7)", textShadow:"0 1px 8px rgba(0,0,0,.5)", animationDelay:"0ms"}}>The List · invitation</div>
+        <div className="stamp wordmark picked-stagger" style={{color:"#F7F6F3", textShadow:"0 1px 8px rgba(0,0,0,.5)", animationDelay:"0ms"}}>The List · invitation</div>
         <Steps current={3} dark className="mt-4 picked-stagger"/>
 
         <div className="flex-1 flex flex-col justify-center items-center text-center">
