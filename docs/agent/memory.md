@@ -4,6 +4,101 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-07-05 — Standing ruling: NO gray text (Will)
+
+All body/label/subline text reads full-contrast — black in light, white in dark, same as titles.
+Implemented by collapsing `--ink-2`/`--ink-mute` → `--ink` (web `web/v3/index.html`) and
+`Theme.ink2`/`Theme.inkMute` → `Theme.ink` (Swift `Theme.swift`), plus bumping opacity-dimmed
+TEXT to full. Two carve-outs kept dim on purpose: **inactive dock tabs** (new `--nav-idle` /
+`Theme.navIdle` — else the active tab is invisible) and **decorative icons** (exchange checkmark,
+row arrows, IG glyphs) + hairline dividers (`--line`). Don't reintroduce `ink-mute`-as-gray-text.
+Commits: web `f927d60`, ios `1779531` (CI green).
+
+## 2026-07-04 — SwiftUI app scaffolded end to end (`ios/`, branch `v3-glass`) + v3 web ground finalized
+
+**Web (same day, before the port):** ground = `web/assets/bg-3.jpeg` BOTH themes (pastel CSS mesh
+replaced); profile hero melts via mask (no hard cut); `.dock-fade` theme-aware (light black-band
+bug); light glass alphas cut to stay see-through (.34 cards/.38 dock) + blur 26 sat 1.9. Commits
+`f6228ea`→`8c56323`→`06a5400`.
+
+**iOS port (Will's calls):** scaffold-only — NO Mac yet, nothing compiled; both sides in one go
+(member = web/v3, venue = v2 flows + v3 skin); mock-first (Supabase phase 2, ref in plan); iOS 17
+min. Plan: `docs/superpowers/plans/2026-07-04-swiftui-port-plan.md`. Pipeline: Fable plan+QA,
+Opus W0/W2, Sonnet W1/W3. Commits `e1b25c8` (W0+W1), `c1c34a3` (W2), `c6504a5` (W3), W4 QA on top.
+
+- 125+ Swift files: XcodeGen project, Theme tokens from v3 CSS, 6-layer glass kit (iOS 26 Liquid
+  Glass behind `#if compiler(>=6.2)`), frozen-contract models/services, ONE DemoWorld seeded to
+  both web files, all member + venue screens, switchboards, Swift Testing suite.
+- **CI is the compile gate (`.github/workflows/ios.yml`, GREEN 2026-07-05).** macos-14 runner:
+  xcodegen → `swift test` (core) → `xcodebuild build` (whole app incl. all SwiftUI views). This
+  REPLACED the Windows swift-test idea: Swift-on-Windows needs a full MSVC toolchain (~6-8GB) and
+  the dev-box C: drive was down to 1.5GB (Swift 4.5GB + failed VS BuildTools 1603 install ate it).
+  Will's call: drop the Windows gate, use CI (compiles the UI too, strictly better), reclaimed
+  ~6GB by uninstalling Swift + VS BuildTools → back to ~9GB free. Auth for `gh`/CI reads: no
+  `gh auth`; pull the token from Git Credential Manager (`git credential fill` → `GH_TOKEN`).
+  Will also added the VS Code GitHub Actions extension (can watch runs there).
+- **CI caught 2 real errors** the blind write missed: (1) `DemoWorld.today` main-actor-isolated,
+  referenced from nonisolated seed factories → `nonisolated static let` (Swift 6 strict
+  concurrency); (2) missing AppIcon set → `ASSETCATALOG_COMPILER_APPICON_NAME: ""` (real 1024px
+  icon is a TestFlight/launch task). Commits `03a9a3d`, `eb20415`. **Branch v3-glass is PUSHED**
+  to origin (Will OK'd) — first push of this work.
+- W4 QA: grep gates clean (0 hex in views, 0 banned fonts, 0 SwiftUI in core, 0 member "Locked");
+  fixed tests' `@testable import` to conditional TheListCore/TheList; `ios/README.md` rewritten
+  with the Mac-day fix-first checklist (7 known uncertainties).
+- Documented deviations: intro = still crossfade not mp4; preset image picker replaces the web
+  cropper; Sara 9.4 (profile) vs 9.1 (applicant record) kept as-is per web.
+- Session ops lesson: PC sleep kills background agents mid-write + a session-limit hit killed one
+  wave — resume pattern: check newest file for truncation, keep sound files, finish the wave.
+
+**Next:** Will runs the admin winget → `swift test` gate; Will eyeballs v3 web (bg-3) →
+venue web reskin still pending his approval; Mac day = xcodegen + fix pass + simulator
+side-by-side vs web; then Supabase phase.
+
+---
+
+## 2026-07-04 — v3 GLASS reskin built (`web/v3/`, branch `v3-glass`) — Ultraviolet not convincing
+
+Will's call: Ultraviolet (858813a) stays but doesn't convince. New comparison version — frosted glassmorphism, NO hue (purple dead in v3), over a photo ground he picks later. Concept renders tried first (`research/v3-concepts/`, via new global skill `~/.claude/skills/imagegen-frontend-mobile` + Higgsfield) — rejected, went straight-to-code. Pipeline per Will: Fable planned + QA'd; Opus + Sonnet agents implemented. Spec: `docs/superpowers/specs/2026-07-04-v3-glass-reskin-design.md`.
+
+- **Scope: member only** — `web/v3/index.html` forked from the Ultraviolet member file; venue follows after Will approves. `web/v3/check-v3.mjs` = forked checker (index only; purple pair now BANNED; requires `--bg-photo` + `backdrop-filter`).
+- **Photo ground:** `--bg-photo` var painted by `.iphone-screen::before` (scrim `rgba(0,0,0,.62)` dark / `rgba(247,246,243,.55)` light). Placeholder Unsplash bar shot marked for swap — **Will supplies the final image; swap = one var edit.**
+- **Tokens:** `--bg-elev/2` translucent white; `--ice` pure white (dark) / `#1E1E1E` (light); neutral inks/lines; elevated surfaces carry `backdrop-filter: blur(22px) saturate(1.4)`. Jakarta-only + sentence case hold. Onboarding stays opaque black deliberately.
+- **Overlay-bleed fix:** `.screen-ground` on EventDetail + Pass roots (trap logged in errors.md 2026-07-04).
+- Verified: check-v3 OK, zero purple literals, Playwright dark+light (Home, Explore, EventDetail, Pass). Pre-existing, untouched: validateDOMNesting button-in-button warning after simulatePick.
+- Not pushed. Next: Will eyeballs v3 glass → gives bg image → venue file + scrim tune if his image is bright.
+
+---
+
+## 2026-07-04 — v3 Ultraviolet reskin BUILT (branch `reskin-ultraviolet`, local)
+
+Executed the same session the direction was picked. Spec: `docs/superpowers/specs/2026-07-04-v3-ultraviolet-reskin-design.md`. Both `web/v2` files: token swap (dark: card `#16131D`/`#1E1A29`, ink `#EEEBF6`/`#B4ACC9`/`#7E7793`, lines purple-tint, accent `#A374FF`/ink-on-accent `#14092B`; light: cream grounds keep, accent `#6A3FD8`), Cormorant link removed + all display classes → Jakarta 700 −0.02em, dotted rules (.hr/.hr-2), floating glass pill dock (.tabbar rebuilt — left/right 16, bottom 12, r999, glass + purple hairline; venue too), glow signatures (display-l text-shadow, chip-ice halo, purple pulse/glow-ice), purple page washes + grain dots, glass re-tint (.glass/.glass-over-image), card fill `#16131D`. JSX: Home identity strip removed (icons justify-end), tabs + mastheads Tonight→Home / Index→Explore (venue tabs untouched), aria "Search the index"→"Search", event-detail When/Doors/Seats editorial rail → **widget card tiles** (Will's mid-session call: "widget style like profile" — StatTile pattern). check-v2.mjs: requires `#A374FF`+`#6A3FD8` both files; bans add `Cormorant`, `Space Grotesk`. Verified: checker OK both; Playwright eyeball dark+light, member Home/Event detail + venue Desk — dock, tiles, glow, no strip, labels all confirmed. Console: only pre-existing noise (SaveButton button-in-button warning predates reskin; python http.server drops big images — use Vercel preview for real review). NOT pushed. `web/brand.html` still documents Kit V.2 — stale until Will ratifies the new look.
+
+---
+
+## 2026-07-04 — Redesign #3 direction PICKED: 1c Ultraviolet, amended
+
+Claude Design run done (project `9e016580-e3bc-4655-aff3-cb9c5c944767`; file pulled via Will's Chrome session to `design-explorations/redesign-directions/redesign-directions.dc.html` — DesignSync tool stayed auth-walled, browser route worked). Three directions produced (1a Carmine/Archivo, 1b Brass/Bodoni, 1c Ultraviolet/Space Grotesk). **Will picked 1c Ultraviolet** — accent `#A374FF` dark / `#6A3FD8` light, card `#16131D`, ink `#EEEBF6`, muted `#7E7793`, glow readouts, dotted rules, floating pill dock, 20–24px radii, purple radial washes over `#000000` (pitch black holds). **Will's amendments:** (1) typeface = **Plus Jakarta Sans everywhere** — no Space Grotesk, and Cormorant Garamond display retires with this reskin (Inter/Instrument Serif bans unchanged); (2) **glass UI throughout** — translucent blurred panels (maps to iOS Liquid Glass in the SwiftUI port); (3) icons: current set disliked, family swap must be cheap → centralize all icons behind one map/component during reskin; (4) tab renames ruled: **Tonight→Home, Index→Explore**, Invites + Profile stay; (5) **Home header text removed** — no greeting/identity block at top of Home ("The List / Sara Capriotti / No. 048" and 1c's "Hi, Sara · No. 048" pill all die). Functional icons (bell, search) stay; screen opens with content, not text. Sequence ruled: reskin `web/v2` now, **skip Wave 2 in HTML** (billing/insights/invites/tiers build native later), then SwiftUI via `prompts/swiftui-goal.md` + Codex audit per wave. check-v2.mjs to extend: allow `#A374FF`/`#6A3FD8`/`#16131D` family, keep old bans.
+
+---
+
+## 2026-07-04 — SwiftUI build prompts written; no SwiftUI skill exists
+
+Two paste-ready prompts committed to `prompts/`: **`swiftui-goal.md`** (build-session bootstrap: preconditions incl. reskin-final + Xcode check, read order, mock-first mission with switchboards, hard-rules table, iOS 17+/@Observable/tokens-first/services-behind-protocols architecture, TDD on state machines, wave gates, ready-check format) and **`codex-swiftui-audit.md`** (Codex audits each wave: build → static → behavioral loop via switchboards → visual diff vs live /v2 at 393×852 → state-machine diff; fixes P0/P1 only, proposes P2/P3, never touches `web/`). Division: Claude builds, Codex audits — Will's call. Checked for remembered SwiftUI skills: **none exist** in `~/.claude/skills`, `~/.codex/skills`, or project — discipline baked into the prompts instead. `ios/README.md` is stale (v1 port plan); goal prompt supersedes it. **Open blocker: toolchain — Will is on Windows; where Xcode/simulator runs is unanswered.**
+
+---
+
+## 2026-07-04 — Supabase live: MCP connected, project created
+
+Will made Supabase account + connected official Supabase MCP (user scope). Production project: **"The List"**, ref `zrbakomzpuesifasuamb`, region `eu-central-1` (Frankfurt, picked for Beirut latency over the dashboard's Tokyo recommendation), Postgres 17, ACTIVE_HEALTHY. Stray first project "will-rads's Project" (`hkimxtoorylsstadvzyw`, Tokyo) — unused, Will should delete to free the 2-project free-tier slot. Backend build = own session (schema, auth, RLS, storage, Gemini edge function — key server-side only). Still needed later: Gemini API key; IG/Meta side blocked on @thelist handle + app review.
+
+---
+
+## 2026-07-03 — Redesign #3 route: Claude Design exploration; push bundle built
+
+Will's call: instead of brainstorming direction in-chat first, push the current identity to **Claude Design** (claude.ai/design) and let it generate directions. Bundle built at `design-explorations/claude-design-sync/`: `context/redesign-brief.md` (what's locked: pitch black, Inter/Instrument Serif bans, sentence case; what's open: everything else), `tokens/colors.html` + `tokens/type.html` + `components/core.html` (dsCard preview cards), `reference/` = brand-kit.html copy (dsCard) + both v2 app files verbatim (context, not cards). **Blocked on authorization:** the DesignSync tool needs `/design-login`, which only runs in an interactive `claude` terminal — this desktop session can't do it. Once Will authorizes, flow = `list_projects` → `create_project "The List"` → `finalize_plan` → `write_files`. Bundle is local-only, not committed.
+
+---
+
 ## 2026-07-03 — Story verification model locked: the @thelist mention spine
 
 Will's calls, same session as the wave-1 ship (spec §4 updated with full detail):

@@ -1,0 +1,2674 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>The List · Prototype v2</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+
+<style>
+  /* v3 Frosted glass (2026-07-04 spec) — monochrome glassmorphism over one
+     full-bleed photo ground. No hue anywhere: accent is pure white on dark,
+     dark ink on light. Var names kept (--ice etc.) so call sites don't churn;
+     --ice is just white/ink now. Photo is a PLACEHOLDER (var(--bg-photo)). */
+  :root{
+    --bg:        #000000;
+    --bg-elev:   rgba(255,255,255,0.07);
+    --bg-elev2:  rgba(255,255,255,0.12);
+    /* Will 2026-07-05: no gray text. --ink-2 / --ink-mute collapse to --ink so
+       every label/subline reads full-contrast. --nav-idle keeps ONE functional
+       gray for inactive dock tabs (else the active tab is invisible). */
+    --ink:       #F4F4F6;
+    --ink-2:     #F4F4F6;
+    --ink-mute:  #F4F4F6;
+    --nav-idle:  #8B8C97;
+    --line:      rgba(255,255,255,0.14);
+    --line-2:    rgba(255,255,255,0.28);
+    --ice:       #FFFFFF;
+    --ice-dim:   #D8D9DF;
+    --ice-ink:   #000000;
+    --page:      #000000;
+    /* Will's ground (2026-07-04): bg-3 — blue sky > warm horizon > dark navy.
+       ONE image, both themes; scrims differentiate. */
+    --bg-photo:  url("../assets/bg-3.jpeg");
+  }
+  html.light{
+    --bg:        #F7F6F3;
+    /* light glass must stay see-through over the pastel ground — Will's
+       2026-07-04 note: .62 read as plain white paint */
+    --bg-elev:   rgba(255,255,255,0.34);
+    --bg-elev2:  rgba(255,255,255,0.24);
+    --ink:       #1E1E1E;
+    --ink-2:     #1E1E1E;
+    --ink-mute:  #1E1E1E;
+    --nav-idle:  #6A737D;
+    --line:      rgba(30,30,30,0.12);
+    --line-2:    rgba(30,30,30,0.24);
+    --ice:       #1E1E1E;
+    --ice-dim:   #454B52;
+    --ice-ink:   #FFFFFF;
+    --page:      #F2F0EB;
+  }
+  html, body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+  /* ONE family (Will's 2026-07-04 ruling): Plus Jakarta Sans everywhere.
+     Display voice = Jakarta 700, tight -0.02em (1c Ultraviolet). Doubled
+     selector (.font-black.font-black) so it beats Tailwind CDN's own
+     .font-black utility, which otherwise forces font-weight:900. */
+  .font-black.font-black,
+  .font-display {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .font-display-l {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  /* glow readout — dark only; light theme keeps clean type */
+  html:not(.light) .font-display-l { text-shadow: 0 0 34px rgba(255,255,255,.22); }
+  /* font-mono = legacy class for numbers/timers. Numbers set in Plus Jakarta
+     Sans 600 with tabular figures so timers don't jitter. Doubled selector
+     (.font-mono.font-mono) so it beats Tailwind CDN's own .font-mono utility,
+     which otherwise forces a system monospace stack. Declared after .font-black
+     so number tiles that carry both classes stay sans. */
+  .font-mono.font-mono {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+
+  /* hide scrollbars inside phone screens */
+  .noscroll::-webkit-scrollbar { display:none; }
+  .noscroll { scrollbar-width: none; }
+
+  /* iphone bezel */
+  .iphone {
+    width: 393px; height: 852px;
+    border-radius: 54px;
+    padding: 11px;
+    background: linear-gradient(140deg,#2a2722 0%, #0c0a08 45%, #1d1a16 100%);
+    box-shadow:
+      inset 0 0 0 1.5px #3a3631,
+      inset 0 0 0 3px #0a0807,
+      0 60px 80px -40px rgba(0,0,0,.9),
+      0 30px 60px -30px rgba(0,0,0,.6);
+    position: relative;
+  }
+  .iphone-screen {
+    width: 100%; height: 100%; border-radius: 43px;
+    overflow: hidden; position: relative; background: var(--bg);
+    isolation: isolate;
+  }
+  /* Photo ground — one fixed image layer + theme scrim behind every screen.
+     Replaces the old purple radial washes; the photo is the atmosphere.
+     Swap var(--bg-photo) (in :root) for Will's final image — one-line edit. */
+  .iphone-screen::before {
+    content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:
+      linear-gradient(rgba(0,0,0,.62), rgba(0,0,0,.62)),
+      var(--bg-photo) center / cover no-repeat;
+  }
+  html.light .iphone-screen::before {
+    /* same image as dark; white scrim lifts it so dark ink stays readable */
+    background:
+      linear-gradient(rgba(255,255,255,.5), rgba(255,255,255,.5)),
+      var(--bg-photo) center / cover no-repeat;
+  }
+
+  /* full-screen overlay screens (EventDetail, Pass) need to paint their own
+     photo ground so the still-mounted screen beneath doesn't bleed through */
+  .screen-ground { background: linear-gradient(rgba(0,0,0,.62), rgba(0,0,0,.62)), var(--bg-photo) center / cover no-repeat; }
+  html.light .screen-ground { background: linear-gradient(rgba(255,255,255,.5), rgba(255,255,255,.5)), var(--bg-photo) center / cover no-repeat; }
+
+  /* docked-CTA fade (EventDetail "View pass" bar) — theme-aware; the old
+     inline black gradient bled into light mode (Will 2026-07-04) */
+  .dock-fade { background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,.85) 45%, rgba(0,0,0,.96) 85%); }
+  html.light .dock-fade { background: linear-gradient(180deg, transparent 0%, rgba(250,250,250,.88) 45%, rgba(250,250,250,.97) 85%); }
+
+  .island { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:120px; height:34px; background:#000; border-radius:20px; z-index:50; }
+
+  .statusbar { position:absolute; top:0; left:0; right:0; height:54px; padding: 16px 28px 0; display:flex; justify-content:space-between; align-items:flex-start; z-index:40; font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-variant-numeric: tabular-nums; font-size:14px; color: var(--ink); pointer-events:none; }
+  .statusbar svg { width: 16px; height: 16px; }
+
+  /* v3 signature — floating glass pill dock (was full-width gradient bar) */
+  .tabbar {
+    position:absolute; left:16px; right:16px; bottom:12px; height: 64px;
+    padding: 8px 10px;
+    display:grid; grid-template-columns:repeat(4,1fr); gap: 4px;
+    background: rgba(20,20,24,.55);
+    backdrop-filter: blur(22px) saturate(1.4);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    z-index: 30;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 999px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 30px rgba(255,255,255,.06);
+  }
+  html.light .tabbar {
+    background: rgba(255,255,255,.38);
+    border-color: rgba(30,30,30,.14);
+    box-shadow: 0 12px 34px -18px rgba(30,30,30,.35), 0 0 24px rgba(30,30,30,.06);
+  }
+  .tabbar button {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:5px; color: var(--nav-idle);
+    font-size: 10px; letter-spacing: 0.01em;
+    padding: 4px 0; border-radius: 14px;
+    transition: color .15s;
+    background: transparent; border: 0; cursor: pointer;
+  }
+  .tabbar button.active { color: var(--ink); }
+  .tabbar button.active svg { color: var(--ice); }
+
+  /* v3 signature — dotted rules */
+  .hr { height: 0; border-top: 1px dotted var(--line-2); background: none; }
+  .hr-2 { height: 0; border-top: 1px dotted rgba(255,255,255,.35); background: none; }
+  html.light .hr-2 { border-top-color: rgba(30,30,30,.35); }
+
+  .stamp { font-family:'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: 0.01em; color: var(--ink-mute); text-shadow: 0 1px 8px rgba(0,0,0,.5); }
+  html.light .stamp { text-shadow: 0 1px 8px rgba(247,246,243,.6); }
+  .smallcaps { letter-spacing: 0.01em; font-size: 10px; font-weight: 500; }
+  /* Calmer section marker — sentence case, no tracking.
+     Used for section dividers; .stamp stays for true value labels (When/Doors/Seats). */
+  .section-label { font-family:'Plus Jakarta Sans', ui-sans-serif, system-ui; font-weight: 700; font-size: 14px; letter-spacing: normal; color: var(--ink-2); text-shadow: 0 1px 8px rgba(0,0,0,.5); }
+  html.light .section-label { text-shadow: 0 1px 8px rgba(247,246,243,.6); }
+  /* v3 polish: muted labels/pills that sit directly on the photo scrim (no card
+     underneath) get the same readability lift as .stamp/.section-label. */
+  .on-photo { text-shadow: 0 1px 8px rgba(0,0,0,.5); }
+  html.light .on-photo { text-shadow: 0 1px 8px rgba(247,246,243,.6); }
+  /* Brand mark eyebrows ("The List · No. 048", "The List · invitation") sit in
+     the serif so the wordmark reads as a wordmark. Declared after .stamp so
+     "stamp wordmark" call sites resolve to the serif. */
+  .wordmark { font-family:'Plus Jakarta Sans', ui-sans-serif, system-ui; font-weight: 700; font-size: 13px; letter-spacing: -0.01em; }
+
+  .chip-ice { background: var(--ice); color: var(--ice-ink); box-shadow: 0 0 18px rgba(255,255,255,.28); }
+  html.light .chip-ice { box-shadow: 0 0 14px rgba(30,30,30,.18); }
+  .chip-outline { border: 1px solid var(--line-2); color: var(--ink); }
+
+  .press { transition: transform .12s ease, opacity .12s ease, background .2s, border-color .2s, box-shadow .2s; cursor: pointer; }
+  @media (hover:hover){ .press:hover { opacity: .96; } }
+  .press:active { transform: scale(.97); opacity: .85; }
+
+  .vt { writing-mode: vertical-rl; transform: rotate(180deg); }
+
+  /* film grain */
+  .grain::after {
+    content:""; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 3px 3px; mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  /* v3 glass — body sits on the flat page; the photo lives inside the phone. */
+  .page-bg { background: var(--page); }
+
+  .theme-toggle {
+    position: fixed; top: 24px; right: 24px; z-index: 100;
+    display:flex; align-items:center; gap:8px;
+    padding: 8px 14px; border-radius: 999px;
+    background: var(--bg-elev); border: 1px solid var(--line-2);
+    color: var(--ink); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500;
+    font-size: 11px; letter-spacing: 0.01em;
+    cursor: pointer; transition: all .2s;
+  }
+  .theme-toggle:hover { border-color: var(--ice); color: var(--ice); }
+  .theme-toggle .dot { width:6px; height:6px; border-radius:50%; background: var(--ice); }
+
+  @keyframes pulseIce {
+    0% { box-shadow: 0 0 0 0 rgba(255,255,255,.35); }
+    100% { box-shadow: 0 0 0 28px rgba(255,255,255,0); }
+  }
+  .pulse-ice { animation: pulseIce 1.8s cubic-bezier(.4,.2,.2,1) infinite; }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .anim-up { animation: slideUp .5s cubic-bezier(.2,.7,.2,1); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .anim-fade { animation: fadeIn .35s ease; }
+
+  /* Stagger entrance for list children. Each child sets style={{"--i": index}}. */
+  .stagger > * { opacity: 1; }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes staggerUp {
+      from { transform: translateY(12px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    .stagger > * {
+      animation: staggerUp .45s ease-out both;
+      animation-delay: calc(var(--i, 0) * 60ms);
+    }
+  }
+
+  /* Picked screen — ring scale-in + content stagger */
+  @keyframes ringPop {
+    0%   { transform: scale(.3); opacity: 0; }
+    60%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes pickedFadeUp {
+    from { transform: translateY(14px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .ring-pop { animation: ringPop .8s cubic-bezier(.2,.7,.2,1) backwards; }
+  .picked-stagger { animation: pickedFadeUp .55s ease-out backwards; }
+
+  /* Filter sheet — backdrop dim + sheet slide up */
+  @keyframes sheetIn {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  @keyframes dimIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .sheet-backdrop { animation: dimIn .25s ease; }
+  .sheet {
+    animation: sheetIn .35s cubic-bezier(.2,.7,.2,1);
+    background: rgba(20,20,24,.72);
+    backdrop-filter: blur(22px) saturate(1.4);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  }
+  html.light .sheet { background: rgba(250,250,250,.55); }
+  /* light theme: deeper blur + stronger saturation so the pastel colors
+     visibly pull through the frost (glass, not paint) */
+  html.light .card, html.light .tabbar, html.light .glass, html.light .sheet {
+    backdrop-filter: blur(26px) saturate(1.9);
+    -webkit-backdrop-filter: blur(26px) saturate(1.9);
+  }
+
+  /* Submit spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin .9s linear infinite; }
+
+  /* ===== polish pass: glass depth + quiet neutral shadows (no neon) ===== */
+  /* frosted glass for top controls — tinted to the new palette */
+  .glass {
+    background: rgba(20,20,24,.5) !important;
+    backdrop-filter: blur(22px) saturate(1.4);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,.18) !important;
+  }
+  html.light .glass {
+    background: rgba(255,255,255,.35) !important;
+    border-color: rgba(30,30,30,.14) !important;
+  }
+  /* solid cards: 1px hairline border + soft neutral shadow */
+  .card {
+    /* v3 glass: cards are frosted panels floating over the photo ground. */
+    background: var(--bg-elev);
+    backdrop-filter: blur(22px) saturate(1.4);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    border: 1px solid var(--line);
+    box-shadow: 0 16px 36px -24px rgba(0,0,0,.8);
+    transition: border-color .2s, box-shadow .2s, transform .12s;
+  }
+  html.light .card {
+    box-shadow: 0 10px 30px -18px rgba(30,30,30,.25);
+  }
+  @media (hover:hover){ button.card:hover, .card.press:hover { border-color: rgba(255,255,255,.45); } }
+  @media (hover:hover){ html.light button.card:hover, html.light .card.press:hover { border-color: rgba(30,30,30,.3); } }
+  /* selected / active states — white ring on dark, dark-ink ring on light */
+  .glow-ice { box-shadow: 0 0 0 1px rgba(255,255,255,.35), 0 0 22px rgba(255,255,255,.18), 0 10px 24px -18px rgba(0,0,0,.7); }
+  .press.glow-primary:active { box-shadow: 0 14px 28px -14px rgba(0,0,0,.8); }
+  @media (hover:hover){ .glow-primary:hover { box-shadow: 0 12px 26px -14px rgba(0,0,0,.7); } }
+  html.light .glow-ice { box-shadow: 0 0 0 1px rgba(30,30,30,.3), 0 3px 12px -6px rgba(30,30,30,.18); }
+  html.light .press.glow-primary:active { box-shadow: 0 6px 18px -8px rgba(30,30,30,.3); }
+  @media (hover:hover){ html.light .glow-primary:hover { box-shadow: 0 5px 16px -6px rgba(30,30,30,.25); } }
+  /* ornamental texture — only paints outside the (opaque) phone */
+  body::before {
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px);
+    background-size: 26px 26px;
+    -webkit-mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
+    mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
+  }
+  html.light body::before { background-image: radial-gradient(rgba(42,45,49,.08) 1px, transparent 1px); }
+
+  /* Will 2026-07-04: hero must MELT into the ground, no hard cut — the image
+     itself fades out via mask; overlays only scrim the top controls. */
+  .profile-hero-img {
+    -webkit-mask-image: linear-gradient(180deg, #000 58%, transparent 97%);
+    mask-image: linear-gradient(180deg, #000 58%, transparent 97%);
+  }
+  .profile-hero-overlay {
+    background: linear-gradient(180deg, rgba(0,0,0,.3) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0) 100%);
+  }
+  html.light .profile-hero-overlay {
+    background: linear-gradient(180deg, rgba(30,30,30,.08) 0%, rgba(30,30,30,0) 28%);
+  }
+  /* #5 — one canonical "floating control over a photo" recipe. Event Detail
+     header buttons and the Profile hero controls share it, so there is a single
+     over-image glass, distinct from .glass (which floats over the app bg). */
+  .glass-over-image, .profile-glass {
+    background: rgba(10,10,12,.5);
+    border: 1px solid rgba(255,255,255,.28);
+    backdrop-filter: blur(12px) saturate(1.25);
+    -webkit-backdrop-filter: blur(12px) saturate(1.25);
+  }
+  html.light .glass-over-image, html.light .profile-glass {
+    background: rgba(255,255,255,.72);
+    border-color: rgba(30,30,30,.12);
+    box-shadow: 0 12px 28px -22px rgba(30,30,30,.35);
+  }
+  /* Profile keeps its own text-color contract on top of the shared glass. */
+  .profile-glass { color: #F7F6F3; }
+  html.light .profile-glass { color: #1E1E1E; }
+  /* Will 2026-07-05: no gray — hero muted text matches the hero title. */
+  .profile-hero-text { color: #F7F6F3; }
+  .profile-hero-muted { color: #F7F6F3; }
+  html.light .profile-hero-text { color: #1E1E1E; }
+  html.light .profile-hero-muted { color: #1E1E1E; }
+  html.light .profile-hero-text .stamp,
+  html.light .profile-hero-text .smallcaps { color: #1E1E1E !important; }
+</style>
+</head>
+<body class="page-bg min-h-screen">
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useRef, useMemo } = React;
+
+/* ========== curated imagery ========== */
+const IMG = {
+  beachClub:  "../assets/pool-day.jpg",
+  pool:       "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=900&q=80&auto=format&fit=crop",
+  rooftop:    "https://images.unsplash.com/photo-1551918120-9739cb430c6d?w=900&q=80&auto=format&fit=crop",
+  restaurant: "https://images.unsplash.com/photo-1592861956120-e524fc739696?w=900&q=80&auto=format&fit=crop",
+  club:       "https://images.unsplash.com/photo-1545128485-c400e7702796?w=900&q=80&auto=format&fit=crop",
+  clubRed:    "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900&q=80&auto=format&fit=crop",
+  gym:        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&q=80&auto=format&fit=crop",
+  lounge:     "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=900&q=80&auto=format&fit=crop",
+  cocktail:   "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=900&q=80&auto=format&fit=crop",
+  beirut:     "https://images.unsplash.com/photo-1620553967747-50fdadc4b606?w=1200&q=80&auto=format&fit=crop",
+  saraFull:   "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&q=80&auto=format&fit=crop",
+};
+
+/* ========== Creator data — mock response shape ==========
+   Provider TBD (candidates: Phyllo, Modash, Ensembledata). Whichever we
+   pick, the backend will normalize to the response shape below so the
+   client never has to care. Mocked here so the UX is real even before
+   the backend exists.
+========================================================== */
+function mockCreatorDataFetch(handle){
+  // Simulate a 2.4s network call to the creator data provider.
+  // Demo: handles "fail" / "notfound" reject so the error + retry path is reachable.
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const h = (handle || "capriottisara").replace(/^@/, "").toLowerCase();
+      if (h === "fail" || h === "notfound" || h === "error") {
+        reject(new Error("handle_not_found"));
+        return;
+      }
+      // Real version: POST /api/creator-data { handle } → backend hits provider
+      resolve({
+        handle: h,
+        platform: "instagram",
+        data_status: "estimated",        // becomes "verified" after Connect SDK OAuth
+        full_name: "Sara Capriotti",
+        profile_picture_url: IMG.saraFull,
+        bio: "Beirut · model · creator",
+        account_type: "creator",          // personal | creator | business
+        followers_count: 28400,
+        tiktok_followers: 51200,
+        following_count: 712,
+        media_count: 184,
+        engagement_rate: 0.058,            // 5.8%
+        quality_score: 0.91,               // Phyllo's fake-follower check (0-1)
+        audience: {
+          gender_split: { female: 0.62, male: 0.38 },
+          age_split: { "13-17": 0.04, "18-24": 0.41, "25-34": 0.38, "35-44": 0.13, "45+": 0.04 },
+          country_split: [
+            { code: "LB", label: "Lebanon",  pct: 0.71 },
+            { code: "AE", label: "UAE",      pct: 0.14 },
+            { code: "SA", label: "Saudi",    pct: 0.07 },
+            { code: "EU", label: "Other EU", pct: 0.08 },
+          ],
+        },
+        tier_suggestion: 1,                // 1 = Tier 1, etc.
+        fetched_at: new Date().toISOString(),
+      });
+    }, 2400);
+  });
+}
+
+// Event stages
+const STAGE = { draft:"draft", open:"open", locked:"locked", past:"past", cancelled:"cancelled" };
+// Guest attendance states (one axis)
+const GS = { applied:"applied", waitlist:"waitlist", picked:"picked", confirmed:"confirmed",
+  declined:"declined", expired:"expired", withdrawn:"withdrawn", checkedIn:"checked_in",
+  noShow:"no_show", notSelected:"not_selected", cancelled:"cancelled" };
+// Story states (second axis)
+const SS = { due:"due", review:"review", needsReview:"needs_review", rejected:"rejected", missed:"missed", verified:"verified" };
+// Member-facing copy. The member NEVER sees the word "Locked".
+const STAGE_COPY = { open:"Open", locked:"List closed", past:"Past", cancelled:"Cancelled" };
+const GS_COPY = {
+  applied:"Applied · under review", waitlist:"Still under review", picked:"Confirm your seat",
+  confirmed:"Confirmed", declined:"Declined", expired:"Pick expired", withdrawn:"Withdrawn",
+  checked_in:"Checked in", no_show:"No show", not_selected:"Not selected", cancelled:"Event cancelled" };
+const SS_COPY = { due:"Story due", review:"Under review", needs_review:"Needs review",
+  rejected:"Rejected — try another screenshot", missed:"Missed", verified:"Verified" };
+
+const EVENTS = [
+  // 1. Pool Day — locked, the confirmed-seat demo event
+  { id:"pool",    title:"Pool Day",         venue:"Cyan Beach Club",  area:"Jiyeh",
+    date:"Sun · 25 May",  time:"14:00", doors:"14:00", img:IMG.beachClub, type:"Beach",
+    stage:STAGE.locked, seats:20, applied:137, mix:{girls:15,guys:5},
+    closesAt:"Sat · 24 May · 20:00",
+    badge:"List closed",
+    gallery:[IMG.beachClub, IMG.pool, IMG.cocktail, IMG.beirut],
+    brief:{ arrival:"14:00 – 15:00", dress:"Beach chic", meeting:"Host stand — ask for Rami", rules:"1 Story + venue tag during the event" } },
+
+  // 2. Late Lounge — open
+  { id:"lounge",  title:"Late Lounge",      venue:"Cyan Beach Club",  area:"Jiyeh",
+    date:"Fri · 30 May",  time:"22:00", doors:"22:00", img:IMG.lounge, type:"Lounge",
+    stage:STAGE.open, seats:20, applied:137, mix:{girls:15,guys:5},
+    closesAt:"Fri · 30 May · 20:00", closingSoon:false,
+    badge:"Open",
+    gallery:[IMG.lounge, IMG.cocktail, IMG.restaurant],
+    brief:{ arrival:"21:30 – 22:30", dress:"Smart dark", meeting:"Door host", rules:"1 Story + venue tag during the event" } },
+
+  // 3. Sound Bath — past
+  { id:"bath",    title:"Sound Bath",       venue:"Cyan Beach Club",  area:"Jiyeh",
+    date:"Sat · 24 May",  time:"19:00", doors:"19:00", img:IMG.gym, type:"Gym",
+    stage:STAGE.past, seats:20, applied:137, mix:{girls:15,guys:5},
+    badge:"Past",
+    gallery:[IMG.gym, IMG.cocktail] },
+
+  // 4. Vinyl Night — past
+  { id:"vinyl",   title:"Vinyl Night",      venue:"Cyan Beach Club",  area:"Jiyeh",
+    date:"Sun · 11 May",  time:"21:00", doors:"21:00", img:IMG.lounge, type:"Lounge",
+    stage:STAGE.past, seats:12, applied:72, mix:{girls:10,guys:2},
+    badge:"Past",
+    gallery:[IMG.lounge, IMG.cocktail, IMG.restaurant] },
+
+  // 5. Sunset Tasting — past, different venue
+  { id:"tasting", title:"Sunset Tasting",   venue:"Mar Mikhael House",area:"Mar Mikhael",
+    date:"Fri · 23 May",  time:"19:30", doors:"19:30", img:IMG.restaurant, type:"Restaurant",
+    stage:STAGE.past, seats:12, applied:88,
+    badge:"Past",
+    gallery:[IMG.restaurant, IMG.lounge, IMG.cocktail] },
+
+  // 6. Harbor Club Night — cancelled
+  { id:"harbor",  title:"Harbor Club Night",venue:"Harbor Club",      area:"Dbayeh",
+    date:"Thu · 22 May",  time:"22:00", doors:"22:00", img:IMG.club, type:"Club",
+    stage:STAGE.cancelled, seats:20, applied:64,
+    badge:"Cancelled",
+    gallery:[IMG.club, IMG.clubRed] },
+
+  // 7. Sunset Sessions — open, closing-soon badge demo
+  { id:"sunset",  title:"Sunset Sessions",  venue:"North Shore",      area:"Batroun",
+    date:"Sat · 31 May",  time:"17:00", doors:"17:00", img:IMG.pool, type:"Beach",
+    stage:STAGE.open, seats:30, applied:64,
+    closesAt:"Sat · 31 May · 12:00", closingSoon:true,
+    badge:"Closing soon",
+    gallery:[IMG.pool, IMG.rooftop, IMG.beirut, IMG.cocktail],
+    brief:{ arrival:"16:30 – 17:30", dress:"Beach casual", meeting:"Main entrance", rules:"1 Story + venue tag during the event" } },
+
+  // 8. Rooftop Cocktails — locked (T11 seed adjustment: was open; now locked for waitlist demo)
+  { id:"rooftop", title:"Rooftop Cocktails", venue:"Beirut Terrasse", area:"Achrafieh",
+    date:"Sat · 7 Jun",   time:"20:00", doors:"20:00", img:IMG.rooftop, type:"Rooftop",
+    stage:STAGE.locked, seats:18, applied:54,
+    closesAt:"Sat · 7 Jun · 18:00", closingSoon:false,
+    badge:"List closed",
+    gallery:[IMG.rooftop, IMG.cocktail, IMG.beirut],
+    brief:{ arrival:"20:00 – 21:00", dress:"Smart casual", meeting:"Rooftop elevator", rules:"1 Story + venue tag during the event" } },
+];
+
+const eventById = (id) => EVENTS.find(e => e.id === id);
+
+const MY_EVENTS = [
+  { eventId:"pool",    state:GS.confirmed, code:"LST-4F" },
+  { eventId:"lounge",  state:GS.applied },
+  { eventId:"bath",    state:GS.checkedIn, story:SS.due },
+  { eventId:"vinyl",   state:GS.checkedIn, story:SS.verified,
+    verdict:{ score:92, reason:"Tag visible, posted in window" } },
+  { eventId:"tasting", state:GS.notSelected },
+  { eventId:"harbor",  state:GS.cancelled },
+  { eventId:"rooftop", state:GS.waitlist },
+];
+const SEED_NOTIFS = [
+  { id:"n1", kind:"pass",  text:"Tonight · Pool Day — your pass is ready", eventId:"pool", read:false },
+  { id:"n2", kind:"story", text:"Sound Bath — your Story is due", eventId:"bath", read:false },
+  { id:"n3", kind:"drop",  text:"New room Friday — Late Lounge", eventId:"lounge", read:false },
+];
+
+/* Seed profile = the normalized creator-data shape (estimated, pre-verify).
+   Used as the Profile fallback when onboarding is skipped, and as the base the
+   Verify-with-Instagram flow flips to data_status:"verified". Provider that
+   supplies this in production is deliberately not locked (see context.md). */
+const SEED_PROFILE = {
+  full_name: "Sara Capriotti",
+  handle: "capriottisara",
+  profile_picture_url: IMG.saraFull,
+  followers_count: 28400,
+  tiktok_followers: 51200,
+  engagement_rate: 0.058,
+  data_status: "estimated",
+  audience: {
+    gender_split: { female: 0.62, male: 0.38 },
+    country_split: [
+      { label: "Lebanon",  pct: 0.71 },
+      { label: "UAE",      pct: 0.14 },
+      { label: "Saudi",    pct: 0.07 },
+      { label: "Other EU", pct: 0.08 },
+    ],
+  },
+};
+
+/* ========== Intro clips — grainy Beirut nightlife montage ==========
+   3 Veo 3.1 clips (5s each), animated from Nano Banana Pro stills:
+   Raouche dusk / Batroun coast / Beirut rooftop night. Grainy retro grade
+   baked into the stills + reinforced in animation. TSS-style entry montage.
+   Posters are the first frame, shown before the video paints.
+==================================================================== */
+const INTRO_CLIPS = [
+  { src:"../assets/intro-1.mp4", poster:"../assets/intro-1.jpg" },
+  { src:"../assets/intro-2.mp4", poster:"../assets/intro-2.jpg" },
+  { src:"../assets/intro-3.mp4", poster:"../assets/intro-3.jpg" },
+];
+
+/* ========== Icon helper (Heroicons, inline) ==========
+   Heroicons outline, inlined as SVG so there's no icon CDN dependency at all.
+   Closest free stand-in for SF Symbols, which the SwiftUI build will use.
+   Call sites keep their lucide-style names; we map to Heroicon glyphs here.
+   `stroke` drives stroke-width (Heroicons outline is 1.5 by default).
+   instagram has no Heroicon (no brand glyphs) so it's a small custom mark.
+====================================================== */
+const HICONS = {
+  "battery-full": '<path stroke-linecap="round" stroke-linejoin="round" d="M21 10.5h.375c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125H21M4.5 10.5H18V15H4.5v-4.5ZM3.75 18h15A2.25 2.25 0 0 0 21 15.75v-6a2.25 2.25 0 0 0-2.25-2.25h-15A2.25 2.25 0 0 0 1.5 9.75v6A2.25 2.25 0 0 0 3.75 18Z"/>',
+  "sparkle": '<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/>',
+  "compass": '<path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/>',
+  "bookmark": '<path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/>',
+  "bookmark-fill": '<path fill="currentColor" stroke="none" d="M6.32 2.577a49.255 49.255 0 0 1 11.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 0 1-1.085.67L12 18.089l-7.165 3.583A.75.75 0 0 1 3.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93Z"/>',
+  "link": '<path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/>',
+  "paper-plane": '<path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/>',
+  "bell": '<path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/>',
+  "user": '<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>',
+  "search": '<path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>',
+  "arrow-right": '<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>',
+  "arrow-left": '<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/>',
+  "sliders-horizontal": '<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"/>',
+  "x": '<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>',
+  "share": '<path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"/>',
+  "map-pin": '<path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>',
+  "check": '<path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>',
+  "calendar": '<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/>',
+  "settings": '<path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>',
+  "instagram": '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/>',
+  "image": '<path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 19.5h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Z"/>',
+};
+function Icon({ name, size=18, stroke=1.5, className="" }){
+  const inner = HICONS[name] || HICONS["sparkle"];
+  return (
+    <svg className={"inline-block "+className} width={size} height={size}
+         viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke}
+         aria-hidden="true" style={{flexShrink:0}}
+         dangerouslySetInnerHTML={{__html: inner}}/>
+  );
+}
+
+/* ========== Countdown — one rule for timers ==========
+   #10 — ICE-AS-TEXT vs ICE-AS-FILL:
+   • Ice FILL = the one action / affirmative state (primary buttons, chip-ice,
+     selected day + filter, the "You're in" ring).
+   • Ice TEXT = the one *value* number worth reading (seats left, reputation,
+     venue score, this countdown). Ordinals and plain labels are never ice.
+   Colons render tighter + dimmed so the tabular digits carry the weight.
+====================================================== */
+function Countdown({ value, className="", style={} }){
+  const parts = String(value).split(":");
+  return (
+    <span className={"font-mono "+className} style={style}>
+      {parts.map((p,i)=>(
+        <React.Fragment key={i}>
+          {i>0 && <span style={{opacity:.4, margin:"0 .06em"}}>:</span>}
+          {p}
+        </React.Fragment>
+      ))}
+    </span>
+  );
+}
+
+/* ========== Small UI atoms — TSS UX patterns in our skin ==========
+   Date-block chips, status pills, a pill-track segmented control, an iOS
+   toggle, a save control, a finished section header, and a transient toast.
+   Structure borrowed from The Secret Society's app; colour/voice stays
+   Carbon + Ice. These replace the thin "label + floating hairline" dividers
+   and give every minor control a visible response.
+==================================================================== */
+
+// Save / bookmark control. Ice-filled when saved, glass when not.
+function SaveButton({ saved, onClick, size=36 }){
+  return (
+    <button
+      onClick={(e)=>{ e.stopPropagation(); onClick(); }}
+      aria-label={saved ? "Saved · tap to remove" : "Save event"}
+      aria-pressed={saved}
+      className={"press rounded-full flex items-center justify-center "+(saved ? "" : "glass-over-image")}
+      style={{ width:size, height:size, ...(saved ? {background:"var(--ice)", color:"var(--ice-ink)"} : {}) }}>
+      <Icon name={saved ? "bookmark-fill" : "bookmark"} size={Math.round(size*0.42)} stroke={1.6}/>
+    </button>
+  );
+}
+
+// iOS-style switch. Ice when on.
+function Toggle({ on, onChange }){
+  return (
+    <button onClick={()=>onChange(!on)} role="switch" aria-checked={on} className="press shrink-0"
+      style={{ width:46, height:28, borderRadius:999, position:"relative",
+        background: on ? "var(--ice)" : "var(--bg-elev2)", border:"1px solid var(--line-2)", transition:"background .2s" }}>
+      <span style={{ position:"absolute", top:2, left: on ? 20 : 2, width:22, height:22, borderRadius:"50%",
+        background: on ? "var(--ice-ink)" : "var(--ink)", transition:"left .2s" }}/>
+    </button>
+  );
+}
+
+// Rounded status badge. tone: ice (affirmative/open) | neutral (muted) | outline.
+// Kit badge style: leading dot + sentence-case label ("• Popular").
+function StatusPill({ label, tone="neutral", dot=true }){
+  const style = tone==="ice" ? {background:"var(--ice)", color:"var(--ice-ink)"}
+    : tone==="outline" ? {border:"1px solid var(--line-2)", color:"var(--ink)"}
+    : {background:"var(--bg-elev2)", color:"var(--ink)"};
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium" style={style}>
+      {dot && <span className="w-1.5 h-1.5 rounded-full" style={{background: tone==="ice" ? "var(--ice-ink)" : "var(--ice)"}}/>}
+      {label}
+    </span>
+  );
+}
+
+// "Sun · 25 May" -> { weekday:"Sun", day:"25", month:"May" }
+function parseDate(str){
+  const [wd, rest] = String(str).split("·").map(s=>s.trim());
+  const m = (rest||"").split(" ");
+  return { weekday: wd||"", day: m[0]||"", month: m.slice(1).join(" ")||"" };
+}
+// TSS-style rounded date block. tone: ice | neutral.
+function DateChip({ day, sub, tone="neutral" }){
+  const style = tone==="ice" ? {background:"var(--ice)", color:"var(--ice-ink)"} : {background:"var(--bg-elev2)", color:"var(--ink)"};
+  return (
+    <div className="rounded-[12px] flex flex-col items-center justify-center shrink-0" style={{ width:48, height:54, ...style }}>
+      <div className="font-black font-mono text-[20px] leading-none">{day}</div>
+      <div className="text-[9px] font-medium mt-0.5" style={{opacity:.8}}>{sub}</div>
+    </div>
+  );
+}
+
+// TSS-style widget stat tile: big number top, small label under.
+function StatTile({ n, label, ice=false, onClick }){
+  const Tag = onClick ? "button" : "div";
+  return (
+    <Tag onClick={onClick} className={"card rounded-[16px] p-4 text-left "+(onClick?"press":"")}>
+      <div className="font-black font-mono text-[26px] leading-none" style={ice?{color:"var(--ice)"}:undefined}>{n}</div>
+      <div className="stamp mt-1.5">{label}</div>
+    </Tag>
+  );
+}
+
+// Finished section header — short ice tick + label, optional right meta pill.
+// Replaces the old "label + thin trailing hairline" treatment everywhere.
+function SectionHead({ label, right, className="" }){
+  return (
+    <div className={"px-5 flex items-center justify-between "+className}>
+      <div className="flex items-center gap-2.5">
+        <span className="rounded-full" style={{ width:3, height:15, background:"var(--ice)" }}/>
+        <span className="section-label">{label}</span>
+      </div>
+      {right != null && (
+        <span className="text-[10px] font-medium px-2.5 py-1 rounded-full on-photo" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>{right}</span>
+      )}
+    </div>
+  );
+}
+
+// Pill-track segmented control (TSS toggle pattern). items: [{id,label,count}].
+function Segmented({ items, value, onChange }){
+  return (
+    <div className="flex gap-1 p-1 rounded-full" style={{ background:"var(--bg-elev)", border:"1px solid var(--line)", backdropFilter:"blur(22px) saturate(1.4)", WebkitBackdropFilter:"blur(22px) saturate(1.4)" }}>
+      {items.map(it=>{
+        const on = it.id===value;
+        return (
+          <button key={it.id} onClick={()=>onChange(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[11px] font-medium"
+            style={on ? {background:"var(--ink)", color:"var(--bg)"} : {color:"var(--ink-mute)"}}>
+            <span>{it.label}</span>
+            {it.count != null && <span style={{opacity:.65}}>{it.count}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// Transient toast inside the phone frame — gives minor controls a visible reply.
+function Toast({ msg }){
+  if(!msg) return null;
+  return (
+    <div className="absolute left-0 right-0 flex justify-center z-[60] pointer-events-none" style={{bottom:104}}>
+      <div key={msg} className="anim-up px-4 py-2.5 rounded-full glass-over-image text-[12px] flex items-center gap-2" style={{maxWidth:"82%"}}>
+        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:"var(--ice)"}}/>
+        <span className="truncate">{msg}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ========== Share sheet — what's shared + the actions ========== */
+function ShareSheet({ event, onClose, onToast }){
+  if(!event) return null;
+  const actions = [
+    { id:"copy",  label:"Copy link",       icon:"link",        toast:"Link copied" },
+    { id:"story", label:"To Story",        icon:"instagram",   toast:"Opening Instagram" },
+    { id:"dm",    label:"Message",         icon:"paper-plane", toast:"Opening Messages" },
+    { id:"more",  label:"More",            icon:"share",       toast:"More share options" },
+  ];
+  return (
+    <>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
+      <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{borderTop:"1px solid var(--line-2)"}}>
+        <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
+        <div className="flex items-center justify-between mb-5">
+          <div className="font-black text-[22px] leading-none">Share</div>
+          <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+            <Icon name="x" size={14} stroke={1.5}/>
+          </button>
+        </div>
+
+        {/* Preview of what is being shared */}
+        <div className="card flex items-center gap-3 p-3 rounded-[14px] mb-5">
+          <img src={event.img} className="w-14 h-16 rounded-[10px] object-cover" alt=""/>
+          <div className="flex-1 min-w-0">
+            <div className="stamp">{event.type}</div>
+            <div className="font-display text-[17px] mt-0.5 truncate">{event.title}</div>
+            <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{event.venue} · {event.date}</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-2">
+          {actions.map(a=>(
+            <button key={a.id} onClick={()=>{ onToast(a.toast); onClose(); }} className="press flex flex-col items-center gap-2 py-3 rounded-[14px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
+              <Icon name={a.icon} size={20} stroke={1.5}/>
+              <span className="text-[10px]" style={{color:"var(--ink)"}}>{a.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ========== Settings sheet — profile fields + notifications + account ========== */
+/* ========== Demo switchboard (T16) ==========
+   Hidden panel at the bottom of Settings — drives the simulated world for
+   pitches without waiting on timers. Deliberately plain: this is rig, not
+   product UI. Venue side has its own equivalent (venue.html). ========== */
+function DemoPanel({ demo }){
+  const [open, setOpen] = useState(false);
+  const Row = ({ label, onTap }) => (
+    <button onClick={onTap} className="press w-full text-left py-2.5 text-[12px]" style={{color:"var(--ink-2)", borderTop:"1px solid var(--line)"}}>{label}</button>
+  );
+  return (
+    <div className="mt-5">
+      <button onClick={()=>setOpen(o=>!o)} className="press w-full flex items-center justify-between py-2 text-[11px]" style={{color:"var(--ink-mute)"}}>
+        <span>Demo</span>
+        <Icon name="arrow-right" size={12} stroke={1.5} className={open ? "rotate-90" : ""}/>
+      </button>
+      {open && (
+        <div>
+          <Row label="Venue picks you now" onTap={()=>demo.pickNow()}/>
+          <Row label="Expire a pick" onTap={()=>demo.expirePick()}/>
+          <Row label="Check me in" onTap={()=>demo.checkIn()}/>
+          <div className="py-2.5" style={{borderTop:"1px solid var(--line)"}}>
+            <div className="text-[12px] mb-2" style={{color:"var(--ink-2)"}}>Story verdict</div>
+            <div className="flex gap-2">
+              <button onClick={()=>demo.verdict(SS.verified)} className="press px-3 h-8 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Verified</button>
+              <button onClick={()=>demo.verdict(SS.needsReview)} className="press px-3 h-8 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Needs review</button>
+              <button onClick={()=>demo.verdict(SS.rejected)} className="press px-3 h-8 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Rejected</button>
+            </div>
+          </div>
+          <Row label="Reset demo" onTap={()=>demo.reset()}/>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ========== Story upload sheet (T14) ==========
+   The exchange, honored: 1 Story + venue tag. Screenshot in, simulated
+   AI first-pass verdict out (production: Supabase Storage + Edge Function
+   + Gemini rubric — see spec §4; founders always able to override). ========== */
+function StorySheet({ event, onClose, onSubmit }){
+  const [shot, setShot] = useState(null); // dataURL preview
+  const fileRef = useRef(null);
+  const pick = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => setShot(reader.result);
+    reader.readAsDataURL(f);
+  };
+  return (
+    <>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
+      <div className="absolute left-0 right-0 bottom-0 z-50 sheet noscroll overflow-y-auto rounded-t-[24px] px-5 pt-4 pb-7" style={{borderTop:"1px solid var(--line-2)", maxHeight:"88%"}}>
+        <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
+        <div className="flex items-center justify-between mb-2">
+          <div className="font-black text-[22px] leading-none">Your Story</div>
+          <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+            <Icon name="x" size={14} stroke={1.5}/>
+          </button>
+        </div>
+        <div className="text-[12px] mb-5" style={{color:"var(--ink-mute)"}}>{event.title} · {event.venue}</div>
+
+        <div className="card rounded-[14px] px-4 py-3.5 mb-5 flex items-start gap-3">
+          <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{border:"1px solid var(--line-2)"}}>
+            <Icon name="instagram" size={14} stroke={1.5}/>
+          </span>
+          <div className="text-[12px]" style={{color:"var(--ink-2)"}}>The exchange: <span style={{color:"var(--ink)"}}>1 Story + venue tag</span>, posted during the event. Upload a screenshot of it here.</div>
+        </div>
+
+        <input ref={fileRef} type="file" accept="image/*" onChange={pick} className="hidden" aria-label="Pick your Story screenshot"/>
+        {shot ? (
+          <button onClick={()=>fileRef.current && fileRef.current.click()} className="press w-full rounded-[14px] overflow-hidden mb-5" style={{border:"1px solid var(--line-2)"}}>
+            <img src={shot} className="w-full max-h-[300px] object-cover" alt="Story screenshot preview"/>
+            <div className="text-[11px] py-2" style={{color:"var(--ink-mute)"}}>Tap to swap the screenshot</div>
+          </button>
+        ) : (
+          <button onClick={()=>fileRef.current && fileRef.current.click()} className="press w-full h-[160px] rounded-[14px] mb-5 flex flex-col items-center justify-center gap-2" style={{border:"1px dashed var(--line-2)", color:"var(--ink-mute)"}}>
+            <Icon name="image" size={22} stroke={1.4}/>
+            <span className="text-[12px]">Pick the screenshot</span>
+          </button>
+        )}
+
+        <button onClick={()=>{ if (shot) onSubmit(); }} disabled={!shot}
+                className="press glow-primary w-full h-12 rounded-full text-[13px] font-semibold flex items-center justify-center gap-2"
+                style={shot ? {background:"var(--ice)", color:"var(--ice-ink)"} : {background:"var(--bg-elev2)", color:"var(--ink-mute)"}}>
+          Submit <Icon name="arrow-right" size={14} stroke={1.6}/>
+        </button>
+        <div className="text-[11px] text-center mt-3" style={{color:"var(--ink-mute)"}}>Under review · we check within a few hours</div>
+      </div>
+    </>
+  );
+}
+
+function SettingsSheet({ profile, light, setLight, onClose, onToast, demo }){
+  const seed = profile || SEED_PROFILE;
+  const [name, setName] = useState(seed.full_name);
+  const [handle, setHandle] = useState(seed.handle);
+  const [phone, setPhone] = useState("+961 71 000 000");
+  const [notifPicks, setNotifPicks] = useState(true);
+  const [notifDrops, setNotifDrops] = useState(true);
+  const verified = seed.data_status === "verified";
+
+  return (
+    <>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
+      <div className="absolute left-0 right-0 bottom-0 z-50 sheet noscroll overflow-y-auto rounded-t-[24px] px-5 pt-4 pb-7" style={{borderTop:"1px solid var(--line-2)", maxHeight:"88%"}}>
+        <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
+        <div className="flex items-center justify-between mb-5">
+          <div className="font-black text-[22px] leading-none">Settings</div>
+          <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+            <Icon name="x" size={14} stroke={1.5}/>
+          </button>
+        </div>
+
+        <div className="stamp mb-2">Display name</div>
+        <input value={name} onChange={e=>setName(e.target.value)} aria-label="Display name" className="w-full h-12 px-3 rounded-[12px] text-[15px] mb-4" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+
+        <div className="stamp mb-2">Instagram handle</div>
+        <div className="flex h-12 rounded-[12px] overflow-hidden mb-4 items-center" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)"}}>
+          <div className="px-3 flex items-center text-[15px]" style={{color:"var(--ink-mute)"}}>@</div>
+          <input value={handle} onChange={e=>setHandle(e.target.value)} aria-label="Instagram handle" className="flex-1 bg-transparent text-[15px] focus:outline-none" style={{color:"var(--ink)"}}/>
+          {verified && <span className="pr-2"><StatusPill label="Verified" tone="ice"/></span>}
+        </div>
+
+        <div className="stamp mb-2">Phone</div>
+        <input value={phone} onChange={e=>setPhone(e.target.value)} aria-label="Phone" className="w-full h-12 px-3 rounded-[12px] text-[15px] mb-5" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+
+        <div className="stamp mb-2">Notifications</div>
+        <div className="card rounded-[14px] px-4 mb-5">
+          <div className="flex items-center justify-between py-3.5">
+            <div className="pr-3"><div className="text-[14px]">When a venue picks you</div><div className="text-[11px]" style={{color:"var(--ink-mute)"}}>The moment that matters</div></div>
+            <Toggle on={notifPicks} onChange={setNotifPicks}/>
+          </div>
+          <div className="flex items-center justify-between py-3.5" style={{borderTop:"1px solid var(--line)"}}>
+            <div className="pr-3"><div className="text-[14px]">New drops in Beirut</div><div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Tonight's rooms as they open</div></div>
+            <Toggle on={notifDrops} onChange={setNotifDrops}/>
+          </div>
+        </div>
+
+        <div className="stamp mb-2">Appearance</div>
+        <div className="card rounded-[14px] px-4 mb-5">
+          <div className="flex items-center justify-between py-3.5">
+            <div className="text-[14px]">Light theme</div>
+            <Toggle on={light} onChange={setLight}/>
+          </div>
+        </div>
+
+        <div className="rounded-[12px] px-3 py-3 mb-5 text-[11px]" style={{background:"var(--bg-elev)", color:"var(--ink-mute)", border:"1px solid var(--line)"}}>
+          Your reach and audience data are read from Instagram through a licensed provider. The List never sees your password and never posts on your behalf.
+        </div>
+
+        <button onClick={()=>{ onToast("Settings saved"); onClose(); }} className="press glow-primary w-full h-12 rounded-full text-[13px] font-semibold mb-3" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+          Save changes
+        </button>
+        <div className="flex gap-2">
+          <button onClick={()=>onToast("Logged out (prototype)")} className="press flex-1 h-11 rounded-full text-[12px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Log out</button>
+          <button onClick={()=>onToast("Account deletion requested (prototype)")} className="press flex-1 h-11 rounded-full text-[12px]" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>Delete account</button>
+        </div>
+
+        {demo && <DemoPanel demo={demo}/>}
+      </div>
+    </>
+  );
+}
+
+/* ========== Notifications sheet — Activity feed, driven by notifs state ========== */
+function NotificationsSheet({ notifs, onClose, onTarget }){
+  // Icon per notification kind
+  const kindIcon = { pass:"check", story:"instagram", drop:"bell", picked:"sparkle", expiring:"calendar", cancelled:"x" };
+  return (
+    <>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
+      <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{borderTop:"1px solid var(--line-2)"}}>
+        <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
+        <div className="flex items-center justify-between mb-5">
+          <div className="font-black text-[22px] leading-none">Activity</div>
+          <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+            <Icon name="x" size={14} stroke={1.5}/>
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {notifs.map(n => {
+            const icon = kindIcon[n.kind] || "bell";
+            const isRead = n.read;
+            const handleTap = () => onTarget(n); // every row deep-links (routing lives in App.notifTarget)
+            return (
+              <button key={n.id}
+                onClick={handleTap}
+                className="press card w-full text-left rounded-[14px] p-3 flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{border:"1px solid var(--line-2)", opacity: isRead ? 0.55 : 1}}>
+                  {n.kind === "pass"
+                    ? <span className="w-2 h-2 rounded-full" style={{background:"var(--ice)"}}/>
+                    : <Icon name={icon} size={14} stroke={1.5}/>}
+                </span>
+                <span className="flex-1 min-w-0 text-[13px]" style={{color:"var(--ink)", opacity: isRead ? 0.65 : 1}}>{n.text}</span>
+                {!isRead && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:"var(--ice)"}}/>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ========== status bar / island / home indicator ========== */
+function StatusBar(){
+  return (
+    <>
+      <div className="island"/>
+      <div className="statusbar">
+        <span>9:41</span>
+        <span className="flex items-center gap-1.5">
+          <span style={{fontSize:11}}>●●●●</span>
+          <span style={{fontSize:11}}>5G</span>
+          <Icon name="battery-full" size={16} stroke={1.5}/>
+        </span>
+      </div>
+    </>
+  );
+}
+function HomeIndicator(){
+  return (
+    <div className="absolute bottom-2 left-0 right-0 flex justify-center z-50 pointer-events-none">
+      <div className="w-32 h-1 rounded-full" style={{background:"var(--ink)", opacity:.7}}/>
+    </div>
+  );
+}
+
+/* ========== PhoneScreen wrapper: status bar + scrolling content + sticky tab bar ========== */
+function PhoneScreen({ children, tab, onTab, fullBleed=false }){
+  return (
+    <div className="absolute inset-0 anim-fade" style={{background:"transparent"}}>
+      <StatusBar/>
+      <div className="absolute inset-0 noscroll overflow-y-auto" style={{paddingBottom: tab ? 88 : 0}}>
+        {children}
+      </div>
+      {tab && <TabBar active={tab} onChange={onTab}/>}
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+/* ========== tab bar ========== */
+function TabBar({ active, onChange }){
+  const items = [
+    { id:"home",    label:"Home",    icon:"sparkle" },
+    { id:"explore", label:"Explore", icon:"compass" },
+    { id:"mylist",  label:"Invites", icon:"bookmark" },
+    { id:"profile", label:"Profile", icon:"user"   },
+  ];
+  return (
+    <div className="tabbar">
+      {items.map(it=>(
+        <button key={it.id} onClick={()=>onChange(it.id)} className={"press "+(active===it.id?"active":"")}>
+          <Icon name={it.icon} size={18} stroke={1.4}/>
+          <span>{it.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ========== stage badge helper — single source of truth for browse surfaces ========== */
+function stageBadge(event){
+  if (event.stage === STAGE.open) return event.closingSoon ? "Closing soon" : STAGE_COPY.open;
+  if (event.stage === STAGE.locked) return STAGE_COPY.locked;
+  if (event.stage === STAGE.past) return STAGE_COPY.past;
+  if (event.stage === STAGE.cancelled) return STAGE_COPY.cancelled;
+  return "";
+}
+
+/* ========== 01 — HOME ========== */
+function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, onBell, unreadCount, onOpenPass }){
+  const featured = EVENTS.find(e => e.id === "pool");
+  // Pinned next room — derive from myEvents confirmed row, else Late Lounge as default
+  const confirmedRow = (myEvents || []).find(r => r.state === GS.confirmed);
+  const confirmedEvent = confirmedRow ? EVENTS.find(e => e.id === confirmedRow.eventId) : null;
+  const nextEvent = confirmedEvent || EVENTS.find(e => e.id === "lounge");
+  // Tonight: open events only (no cancelled, no past), minus whatever is already featured or pinned
+  const tonight  = EVENTS.filter(e => e.stage === STAGE.open && e.id !== featured.id && e.id !== nextEvent.id);
+  const nextDate  = parseDate(nextEvent.date);
+  return (
+    <PhoneScreen tab={tab} onTab={onTab}>
+      {/* v3 ruling (2026-07-04): no identity strip on Home — icons only,
+          screen opens with content. One-word masthead below. */}
+      <div className="px-5 pt-[60px] pb-3">
+        <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={onBell} aria-label="Activity" className="press glass w-10 h-10 rounded-full flex items-center justify-center relative">
+              <Icon name="bell" size={16} stroke={1.4}/>
+              {unreadCount > 0 && <span className="absolute rounded-full flex items-center justify-center font-mono" style={{top:-2, right:-2, width:16, height:16, fontSize:10, background:"var(--ice)", color:"var(--ice-ink)"}}>{unreadCount}</span>}
+            </button>
+            <button onClick={()=>onTab("explore")} aria-label="Search" className="press glass w-10 h-10 rounded-full flex items-center justify-center">
+              <Icon name="search" size={16} stroke={1.4}/>
+            </button>
+          </div>
+        </div>
+        <div className="flex items-end justify-between mt-3">
+          <div className="font-black font-display-l text-[40px] leading-none">Home</div>
+          <div className="font-medium text-[14px] pb-1" style={{color:"var(--ink-2)"}}>Sunday · 25.05</div>
+        </div>
+      </div>
+
+      <div className="hr-2 mx-5 mb-5"/>
+
+      {/* Pinned — your next room, one calm row. Tap lands on Invites. */}
+      <SectionHead label="Your night" className="pb-3"/>
+      <div className="px-5 pb-5">
+        <button onClick={()=> confirmedEvent ? onOpenPass(confirmedEvent.id) : onTab("mylist")} className="press card w-full text-left rounded-[14px] p-3 flex items-center gap-3">
+          <DateChip day={nextDate.day} sub={nextDate.month} tone="ice"/>
+          <div className="flex-1 min-w-0">
+            <div className="font-display text-[17px] truncate">{nextEvent.title}</div>
+            <div className="text-[11px] mt-0.5" style={{color:"var(--ink)"}}>
+              {confirmedEvent ? "Doors " + (nextEvent.doors || nextEvent.time) + " · View pass" : "Confirmed · " + nextEvent.time}
+            </div>
+          </div>
+          <Icon name="arrow-right" size={16} stroke={1.4} className="opacity-50"/>
+        </button>
+      </div>
+
+      {/* Featured */}
+      <div className="px-5">
+        <button className="press card w-full text-left rounded-[18px] overflow-hidden relative grain" style={{height:380}} onClick={()=>onPickEvent(featured)}>
+          <img src={featured.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+          <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(0,0,0,.25) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,.9) 100%)"}}/>
+          <div className="absolute top-3 left-3"><StatusPill label={(() => { const row = (myEvents||[]).find(r=>r.eventId===featured.id); return row ? (GS_COPY[row.state]||stageBadge(featured)) : stageBadge(featured); })()} tone="ice"/></div>
+          <div className="absolute top-3 right-3"><SaveButton saved={saved.includes(featured.id)} onClick={()=>onToggleSave(featured.id)}/></div>
+          <div className="absolute bottom-4 left-4 right-4 text-[var(--ink)]" style={{color:"#F7F6F3"}}>
+            <div className="font-black font-display-l text-[40px] leading-[0.92]">{featured.title}</div>
+            <div className="flex items-center gap-2 mt-3">
+              <span className="text-[12px]">{featured.venue}</span>
+              <span style={{color:"var(--ink)"}}>·</span>
+              <span className="text-[12px] font-mono">{featured.date}</span>
+            </div>
+            <div className="flex items-center justify-between mt-4">
+              <div>
+                <span className="font-mono text-[18px]" style={{color:"var(--ice)"}}>{featured.seats}</span>
+                <span className="text-[11px] ml-1" style={{color:"var(--ink)"}}>seats · {featured.applied} applied</span>
+              </div>
+              <div className="px-3 py-1.5 rounded-full chip-ice text-[10px] font-medium">Tap to view</div>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* Also tonight */}
+      <SectionHead label="Also tonight" right={tonight.length + " open"} className="pt-7 pb-3"/>
+      <div className="px-5 space-y-3 stagger">
+        {tonight.map((e,i)=>(
+          <button key={e.id} onClick={()=>onPickEvent(e)} style={{"--i":i}} className="press card w-full flex gap-3 items-center text-left p-3 rounded-[14px]">
+            <img src={e.img} className="w-16 h-20 rounded-[10px] object-cover" alt=""/>
+            <div className="flex-1 min-w-0">
+              <div className="stamp">{e.type}</div>
+              <div className="font-display text-[17px] mt-0.5 truncate">{e.title}</div>
+              <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{e.venue} · {e.area}</div>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="font-mono text-[11px]" style={{color:"var(--ice)"}}>{e.seats} seats</span>
+                <span style={{color:"var(--ink-mute)"}}>·</span>
+                <span className="font-mono text-[11px]" style={{color:"var(--ink-mute)"}}>{e.applied} applied</span>
+              </div>
+            </div>
+            <Icon name="arrow-right" size={16} stroke={1.4} className="opacity-50"/>
+          </button>
+        ))}
+      </div>
+
+      <div className="h-8"/>
+    </PhoneScreen>
+  );
+}
+
+/* ========== Filter sheet (Explore overlay) ========== */
+function FilterSheet({ open, onClose, advFilters, setAdvFilters }){
+  if(!open) return null;
+  const verticals = ["Beach","Club","Restaurant","Lounge","Gym","Rooftop"];
+  const distances = ["< 5 km","5 – 15 km","15 – 30 km","Beirut + Mount"];
+  const timings = ["Tonight","This week","Anytime"];
+
+  const toggleVert = (v) => setAdvFilters({
+    ...advFilters,
+    verticals: advFilters.verticals.includes(v)
+      ? advFilters.verticals.filter(x=>x!==v)
+      : [...advFilters.verticals, v]
+  });
+
+  return (
+    <>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
+      <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{borderTop:"1px solid var(--line-2)"}}>
+        <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
+
+        <div className="flex items-center justify-between mb-5">
+          <div className="font-black text-[22px] leading-none">Filters</div>
+          <button onClick={onClose} className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+            <Icon name="x" size={14} stroke={1.5}/>
+          </button>
+        </div>
+
+        <div className="stamp mb-2">Vertical</div>
+        <div className="flex flex-wrap gap-1.5 mb-5">
+          {verticals.map(v=>{
+            const on = advFilters.verticals.includes(v);
+            return (
+              <button key={v} onClick={()=>toggleVert(v)} className={"press px-3 h-8 rounded-full text-[12px] "+(on?"glow-ice":"")} style={on ? {background:"var(--ink)", color:"var(--bg)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+                {v}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="stamp mb-2">Distance</div>
+        <div className="flex flex-wrap gap-1.5 mb-5">
+          {distances.map(d=>{
+            const on = advFilters.distance === d;
+            return (
+              <button key={d} onClick={()=>setAdvFilters({...advFilters, distance: on ? null : d})} className={"press px-3 h-8 rounded-full text-[12px] "+(on?"glow-ice":"")} style={on ? {background:"var(--ice)", color:"var(--ice-ink)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+                {d}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="stamp mb-2">When</div>
+        <div className="flex gap-1.5 mb-6">
+          {timings.map(t=>{
+            const on = advFilters.timing === t;
+            return (
+              <button key={t} onClick={()=>setAdvFilters({...advFilters, timing: t})} className={"press flex-1 h-10 rounded-[12px] text-[12px] "+(on?"glow-ice":"")} style={on ? {background:"var(--ink)", color:"var(--bg)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+                {t}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-2">
+          <button onClick={()=>setAdvFilters({ verticals:[], distance:null, timing:"Tonight" })} className="press flex-1 h-12 rounded-full text-[12px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+            Reset
+          </button>
+          <button onClick={onClose} className="press glow-primary flex-[2] h-12 rounded-full text-[13px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+            Show rooms
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ========== Calendar sheet (Explore overlay) — full month, May ========== */
+function CalendarSheet({ onClose, activeDay, onPick }){
+  const eventDays = [24, 25, 30, 31];
+  const blanks = 3; // May here starts on a Thursday — 3 leading gaps in a Mon-first grid
+  return (
+    <>
+      <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
+      <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{borderTop:"1px solid var(--line-2)"}}>
+        <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
+        <div className="flex items-center justify-between mb-5">
+          <div className="font-black text-[22px] leading-none">May</div>
+          <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+            <Icon name="x" size={14} stroke={1.5}/>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-7 mb-2">
+          {["M","T","W","T","F","S","S"].map((w,i)=>(
+            <div key={i} className="stamp text-center">{w}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-y-2 justify-items-center">
+          {Array.from({length:blanks}).map((_,i)=>(
+            <div key={"b"+i} style={{width:36, height:36}}/>
+          ))}
+          {Array.from({length:31}, (_,i)=>i+1).map(d=>{
+            const has = eventDays.includes(d);
+            const sel = d === activeDay;
+            const Tag = has ? "button" : "div";
+            return (
+              <Tag key={d} onClick={has ? ()=>onPick(d) : undefined}
+                className={"rounded-full flex flex-col items-center justify-center "+(has?"press":"")}
+                style={{width:36, height:36, background: sel ? "var(--ice)" : "transparent", color: sel ? "var(--ice-ink)" : "var(--ink)"}}>
+                <span className="font-mono text-[13px] leading-none">{d}</span>
+                {has && <span className="rounded-full mt-1" style={{width:4, height:4, background: sel ? "var(--ice-ink)" : "var(--ice)"}}/>}
+              </Tag>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ========== 02 — EXPLORE ========== */
+function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast }){
+  const [filter, setFilter] = useState("all");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [calOpen, setCalOpen] = useState(false);
+  const [activeDay, setActiveDay] = useState(25);
+  const [advFilters, setAdvFilters] = useState({ verticals:[], distance:null, timing:"Tonight" });
+  const days = [
+    { d:"23", w:"Fri" }, { d:"24", w:"Sat" }, { d:"25", w:"Sun" }, { d:"26", w:"Mon" }, { d:"27", w:"Tue" }, { d:"28", w:"Wed" }
+  ];
+  // May here starts Thursday — weekday lookup for the day-pick toast.
+  const weekdayOf = (d) => ["Thu","Fri","Sat","Sun","Mon","Tue","Wed"][(d-1)%7];
+  const pickDay = (d) => {
+    setActiveDay(d);
+    setCalOpen(false);
+    if (onToast) onToast("Showing " + weekdayOf(d) + " · " + d + " May");
+  };
+  const filters = ["all","beach","club","restaurant","lounge"];
+  // Browse shows only open+locked events; cancelled and past are never shown in browse
+  const browseable = EVENTS.filter(e => e.stage !== STAGE.cancelled && e.stage !== STAGE.past);
+  const list = browseable.filter(e => filter==="all" ? true : e.type.toLowerCase()===filter);
+  const activeAdvCount = advFilters.verticals.length + (advFilters.distance ? 1 : 0) + (advFilters.timing !== "Tonight" ? 1 : 0);
+
+  return (
+    <PhoneScreen tab={tab} onTab={onTab}>
+      <div className="px-5 pt-[60px] pb-3 flex items-end justify-between">
+        <div className="font-black font-display-l text-[40px] leading-none">Explore</div>
+        <div className="flex items-center gap-2">
+          <button onClick={()=>setCalOpen(true)} aria-label="Open calendar" className="press glass w-9 h-9 rounded-full flex items-center justify-center">
+            <Icon name="calendar" size={15} stroke={1.5}/>
+          </button>
+          <button onClick={()=>setSheetOpen(true)} className="press glass flex items-center gap-1.5 px-3 h-9 rounded-full">
+            <Icon name="sliders-horizontal" size={13} stroke={1.5}/>
+            <span className="text-[11px] font-medium">Filters</span>
+            {activeAdvCount > 0 && <span className="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-mono" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>{activeAdvCount}</span>}
+          </button>
+        </div>
+      </div>
+      <FilterSheet open={sheetOpen} onClose={()=>setSheetOpen(false)} advFilters={advFilters} setAdvFilters={setAdvFilters}/>
+      {calOpen && <CalendarSheet onClose={()=>setCalOpen(false)} activeDay={activeDay} onPick={pickDay}/>}
+
+      <div className="px-5 pt-4 flex gap-2 overflow-x-auto noscroll">
+        {days.map(d=>{
+          const on = Number(d.d) === activeDay;
+          return (
+            <div key={d.d} className={"flex-shrink-0 w-[58px] h-[68px] rounded-[12px] flex flex-col items-center justify-center "+(on?"glow-ice":"border")} style={{background: on ? "var(--ice)" : "transparent", borderColor:"var(--line-2)", color: on ? "var(--ice-ink)" : "var(--ink)"}}>
+              <div className="font-mono text-[20px] leading-none">{d.d}</div>
+              <div className="text-[9px] font-medium mt-1 opacity-75">{d.w}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="px-5 pt-4 flex gap-2 overflow-x-auto noscroll">
+        {filters.map(f=>(
+          <button key={f} onClick={()=>setFilter(f)} className={"press flex-shrink-0 px-3 h-8 rounded-full text-[11px] font-medium "+(filter===f?"glow-ice":"chip-outline")} style={filter===f ? {background:"var(--ink)", color:"var(--bg)"} : {}}>
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      <SectionHead label={list.length + " rooms"} right="Closes soonest" className="pt-6 pb-3"/>
+
+      {list.length === 0 ? (
+        <div className="px-5 py-20 text-center">
+          <div className="section-label" style={{color:"var(--ink-mute)"}}>No rooms match</div>
+          <div className="text-[13px] mt-2 on-photo" style={{color:"var(--ink-mute)"}}>Loosen a filter or widen the date.</div>
+        </div>
+      ) : (() => {
+        const [lead, ...rest] = list;
+        return (
+          <>
+            {/* Lead — first room gets full editorial weight */}
+            <div className="px-5">
+              <button onClick={()=>onPickEvent(lead)} className="press card w-full text-left rounded-[18px] overflow-hidden grain relative" style={{height:300}}>
+                <img src={lead.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+                <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(0,0,0,.3) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,.92) 100%)"}}/>
+                <div className="absolute top-3 left-3 flex gap-1.5">
+                  <span className="text-[10px] font-medium px-2 py-1 rounded-full glass-over-image" style={{color:"#F7F6F3"}}>{lead.type}</span>
+                  {stageBadge(lead) && <StatusPill label={stageBadge(lead)} tone="ice"/>}
+                </div>
+                <div className="absolute top-3 right-3"><SaveButton saved={saved.includes(lead.id)} onClick={()=>onToggleSave(lead.id)}/></div>
+                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between" style={{color:"#F7F6F3"}}>
+                  <div className="min-w-0">
+                    <div className="font-black font-display-l text-[34px] leading-[0.95]">{lead.title}</div>
+                    <div className="text-[12px] mt-1.5 opacity-80 truncate">{lead.venue} · {lead.area}</div>
+                  </div>
+                  <div className="text-right shrink-0 ml-3">
+                    <div className="font-mono text-[11px]" style={{color:"var(--ice)"}}>{lead.date.split('·')[0].trim()}</div>
+                    <div className="font-mono text-[11px]">{lead.time}</div>
+                    <div className="font-mono text-[12px] mt-1"><span style={{color:"var(--ice)"}}>{lead.seats}</span><span> seats</span></div>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Index — the rest, denser rows */}
+            {rest.length > 0 && (
+              <div className="px-5 pt-6 space-y-2 stagger">
+                {rest.map((e,i)=>(
+                  <button key={e.id} onClick={()=>onPickEvent(e)} style={{"--i":i}} className="press card w-full flex gap-3 items-center text-left p-2.5 rounded-[14px]">
+                    <img src={e.img} className="w-14 h-16 rounded-[10px] object-cover shrink-0" alt=""/>
+                    <div className="flex-1 min-w-0">
+                      <div className="stamp">{e.type}</div>
+                      <div className="font-display text-[17px] mt-0.5 truncate">{e.title}</div>
+                      <div className="text-[11px] truncate" style={{color:"var(--ink-mute)"}}>{e.venue} · {e.area}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-mono text-[12px]"><span style={{color:"var(--ice)"}}>{e.seats}</span><span style={{color:"var(--ink-mute)"}}> seats</span></div>
+                      <div className="font-mono text-[11px] mt-0.5" style={{color:"var(--ink-mute)"}}>{e.time}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        );
+      })()}
+
+      <div className="h-8"/>
+    </PhoneScreen>
+  );
+}
+
+/* ========== 03 — EVENT DETAIL ========== */
+function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved, onToggleSave, onToast, myEvents, onOpenPicked }){
+  const [heroIdx, setHeroIdx] = useState(0);
+  const e = event || EVENTS[0];
+  const gallery = e.gallery || [e.img];
+  // Derive member's relationship to this event
+  const myRow = (myEvents||[]).find(r => r.eventId === e.id);
+  return (
+    <div className="absolute inset-0 anim-fade screen-ground">
+      <StatusBar/>
+      <div className="absolute inset-0 noscroll overflow-y-auto" style={{paddingBottom:120}}>
+
+      {/* Hero */}
+      <div className="relative h-[480px]">
+        <div className="flex overflow-x-auto snap-x snap-mandatory noscroll h-full" style={{scrollSnapType:"x mandatory"}}
+             onScroll={(ev)=>{ const w=ev.target.clientWidth; setHeroIdx(Math.round(ev.target.scrollLeft/w)); }}>
+          {gallery.map((src,i)=>(
+            <img key={i} src={src} alt="" className="w-full shrink-0 object-cover" style={{height:"480px", scrollSnapAlign:"center", minWidth:"100%"}}/>
+          ))}
+        </div>
+        <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,0) 25%, rgba(0,0,0,0) 55%, rgba(0,0,0,.95) 100%)", pointerEvents:"none"}}/>
+        <div className="absolute inset-0 grain" style={{pointerEvents:"none"}}/>
+
+        <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
+          <button onClick={onBack} className="press glass-over-image w-10 h-10 rounded-full flex items-center justify-center">
+            <Icon name="arrow-left" size={18} stroke={1.4}/>
+          </button>
+          <div className="flex gap-2">
+            <SaveButton size={40} saved={saved.includes(e.id)} onClick={()=>onToggleSave(e.id)}/>
+            <button onClick={onShare} aria-label="Share" className="press glass-over-image w-10 h-10 rounded-full flex items-center justify-center">
+              <Icon name="share" size={16} stroke={1.4}/>
+            </button>
+          </div>
+        </div>
+
+        <div className="absolute bottom-0 left-5 right-5 pb-6 z-10" style={{color:"#F7F6F3"}}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] font-medium px-2 py-1 rounded-full chip-ice">{e.type}</span>
+            <span className="text-[10px] font-medium">{e.venue}</span>
+          </div>
+          <div className="font-black font-display-l text-[52px] leading-[0.92]">{e.title}</div>
+          <div className="text-[12px] mt-3 max-w-[280px] opacity-80">Resident DJ Karim Sahli from 16:00. Mediterranean menu at sunset. Dress: swimwear and an attitude.</div>
+          {gallery.length > 1 && (
+            <div className="flex justify-center gap-1.5 mt-4">
+              {gallery.map((_,i)=>(
+                <div key={i} className="h-1.5 rounded-full transition-all"
+                     style={{width: i===heroIdx ? 16 : 6, background: i===heroIdx ? "var(--ice)" : "var(--line-2)"}}/>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Meta tiles — v3: widget tiles like the Profile stat strip (1c), not the
+          old editorial bordered rail. */}
+      <div className="px-5 pt-5">
+        <div className="grid grid-cols-3 gap-2">
+          <div className="card rounded-[18px] p-3.5">
+            <div className="stamp">When</div>
+            <div className="font-black text-[20px] leading-none mt-1.5">{e.date.split('·')[0].trim()}</div>
+            <div className="text-[11px] mt-1" style={{color:"var(--ink-mute)"}}>{e.date.split('·')[1]?.trim()}</div>
+          </div>
+          <div className="card rounded-[18px] p-3.5">
+            <div className="stamp">Doors</div>
+            <div className="font-black text-[20px] leading-none mt-1.5 font-mono">{e.time}</div>
+            <div className="text-[11px] mt-1" style={{color:"var(--ink-mute)"}}>til 21:00</div>
+          </div>
+          <div className="card rounded-[18px] p-3.5">
+            <div className="stamp">Seats</div>
+            <div className="font-black text-[20px] leading-none mt-1.5 font-mono"><span style={{color:"var(--ice)"}}>{e.seats}</span><span style={{color:"var(--ink-mute)"}}> / {e.seats}</span></div>
+            <div className="text-[11px] mt-1" style={{color:"var(--ink-mute)"}}>{e.applied} applied</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Location */}
+      <div className="px-5 pt-5">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{border:"1px solid var(--line-2)"}}>
+            <Icon name="map-pin" size={14} stroke={1.5}/>
+          </div>
+          <div className="flex-1">
+            <div className="font-display text-[16px]">{e.venue}</div>
+            <div className="text-[12px] on-photo" style={{color:"var(--ink-mute)"}}>{e.area} · 22 km south of city</div>
+          </div>
+          <button onClick={()=>onToast("Opening in Maps")} className="press text-[11px] px-3 h-8 rounded-full" style={{border:"1px solid var(--line-2)"}}>Map</button>
+        </div>
+      </div>
+
+      {/* Applications close line — open events only */}
+      {e.stage === STAGE.open && e.closesAt && (
+        <div className="px-5 pt-4">
+          <div className="text-[11px] on-photo" style={{color:"var(--ink-mute)"}}>Applications close · {e.closesAt}</div>
+        </div>
+      )}
+
+      {/* Exchange */}
+      <SectionHead label="The exchange" className="pt-8 pb-3"/>
+      <div className="px-5 space-y-4">
+        {[
+          { n:"01", t:"One Story, on the day", s:"Posted between 14:00 - 21:00" },
+          { n:"02", t:"Tag @cyanbeachclub", s:"And the venue handle in caption" },
+        ].map((r,i)=>(
+          <div key={i} className="flex items-center gap-4 py-3" style={{borderBottom:"1px solid var(--line)"}}>
+            <span className="font-mono text-[11px] on-photo" style={{color:"var(--ink-mute)"}}>{r.n}</span>
+            <div className="flex-1">
+              <div className="text-[14px]">{r.t}</div>
+              <div className="text-[11px] on-photo" style={{color:"var(--ink-mute)"}}>{r.s}</div>
+            </div>
+            <Icon name="check" size={14} stroke={1.5} className="opacity-30"/>
+          </div>
+        ))}
+      </div>
+
+      <div className="h-8"/>
+      </div>
+
+      {/* Sticky CTA — sibling of the scroll container so it stays anchored */}
+      <div className="dock-fade absolute left-0 right-0 bottom-0 pt-8 px-5 pb-7 z-30">
+        {(() => {
+          // confirmed row → "View pass →"
+          if (myRow && myRow.state === GS.confirmed) {
+            return (
+              <button onClick={()=>onToast("Pass — next build step")} className="press glow-primary w-full h-[56px] rounded-full flex items-center justify-center gap-3" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                <span className="font-semibold text-[15px]">View pass</span>
+                <Icon name="arrow-right" size={16} stroke={1.6}/>
+              </button>
+            );
+          }
+          // applied row → status pill, no button
+          if (myRow && myRow.state === GS.applied) {
+            return (
+              <div className="flex items-center justify-center py-2">
+                <StatusPill label={GS_COPY.applied} tone="neutral" dot/>
+              </div>
+            );
+          }
+          // picked row → live solid pill "Confirm your seat →" opens takeover
+          if (myRow && myRow.state === GS.picked) {
+            return (
+              <button onClick={()=>onOpenPicked && onOpenPicked(e.id)} className="press glow-primary w-full h-[56px] rounded-full flex items-center justify-center gap-3" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                <span className="font-semibold text-[15px]">Confirm your seat</span>
+                <Icon name="arrow-right" size={16} stroke={1.6}/>
+              </button>
+            );
+          }
+          // other row states (waitlist, declined, not_selected, etc.) → quiet disabled pill
+          if (myRow) {
+            return (
+              <div className="flex items-center justify-center py-2">
+                <StatusPill label={GS_COPY[myRow.state] || myRow.state} tone="outline" dot={false}/>
+              </div>
+            );
+          }
+          // no row + locked → disabled CTA
+          if (e.stage === STAGE.locked) {
+            return (
+              <button disabled className="w-full h-[56px] rounded-full flex items-center justify-center" style={{background:"var(--bg-elev2)", color:"var(--ink-mute)"}}>
+                <span className="font-semibold text-[15px]">The list is closed</span>
+              </button>
+            );
+          }
+          // no row + open → Apply with spinner states
+          return (
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <div className="stamp" style={{color:"var(--ink-mute)"}}>Closes in</div>
+                <div className="font-black text-[22px] leading-none mt-0.5" style={{color:"var(--ice)"}}><Countdown value="04:56:12"/></div>
+              </div>
+              <button onClick={onApply} disabled={applyState !== 'idle'} className={"press flex items-center gap-3 h-[56px] px-6 rounded-full "+(applyState==='idle'?"glow-primary":"")} style={{background: applyState === 'idle' ? "var(--ice)" : "var(--bg-elev2)", color: applyState === 'idle' ? "var(--ice-ink)" : "var(--ink)", minWidth: 168, justifyContent:'center'}}>
+                {applyState === 'idle' && (<>
+                  <span className="font-semibold text-[15px]">Apply · free</span>
+                  <Icon name="arrow-right" size={16} stroke={1.6}/>
+                </>)}
+                {applyState === 'submitting' && (<>
+                  <span className="font-semibold text-[15px]">Reviewing</span>
+                  <span className="spin inline-block w-4 h-4 rounded-full" style={{border:"2px solid currentColor", borderTopColor:"transparent"}}/>
+                </>)}
+                {applyState === 'submitted' && (<>
+                  <span className="font-semibold text-[15px]">Applied</span>
+                  <Icon name="check" size={16} stroke={1.8}/>
+                </>)}
+              </button>
+            </div>
+          );
+        })()}
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+/* ========== 04 — MY EVENTS ========== */
+function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPickEvent, onToast, onOpenPass, onOpenPicked, onOpenStory, initialSeg }){
+  // Derive segments from myEvents data layer
+  const appliedStates   = new Set([GS.applied, GS.waitlist, GS.picked]);
+  const confirmedStates = new Set([GS.confirmed]);
+  const pastStates      = new Set([GS.checkedIn, GS.noShow, GS.notSelected, GS.cancelled, GS.expired, GS.declined, GS.withdrawn]);
+
+  const appliedRows   = myEvents.filter(r => appliedStates.has(r.state));
+  const confirmedRows = myEvents.filter(r => confirmedStates.has(r.state));
+  const pastRows      = myEvents.filter(r => pastStates.has(r.state));
+
+  // Join eventId → EVENTS for display
+  const joinEvent = (r) => ({ ...r, event: EVENTS.find(e => e.id === r.eventId) });
+
+  // The confirmed event for the confirmed-seat UI (first confirmed row)
+  const confirmedMyRow = confirmedRows[0] ? joinEvent(confirmedRows[0]) : null;
+  const confirmedEvent = confirmedMyRow ? confirmedMyRow.event : null;
+  const conf = confirmedEvent ? parseDate(confirmedEvent.date) : null;
+
+  const [seg, setSeg] = useState(initialSeg || (confirmedEvent ? "confirmed" : "applied"));
+
+  // One source of truth for the counts — the stat tiles and the segmented
+  // control both read from here.
+  const counts = {
+    applied:   appliedRows.length,
+    confirmed: confirmedRows.length,
+    saved:     savedEvents.length,
+    past:      pastRows.length,
+  };
+  const segs = [
+    { id:"applied",   label:"Applied",   count: counts.applied },
+    { id:"confirmed", label:"Confirmed", count: counts.confirmed },
+    { id:"saved",     label:"Saved",     count: counts.saved },
+    { id:"past",      label:"Past",      count: counts.past },
+  ];
+
+  return (
+    <PhoneScreen tab={tab} onTab={onTab}>
+      <div className="px-5 pt-[60px] pb-4 flex items-center justify-between">
+        <div className="font-black font-display-l text-[36px] leading-none">Invites</div>
+        <button onClick={()=>onToast("Calendar sync coming in the build")} aria-label="Calendar" className="press glass w-10 h-10 rounded-full flex items-center justify-center">
+          <Icon name="calendar" size={16} stroke={1.4}/>
+        </button>
+      </div>
+
+      {/* Status at a glance — tap a tile to jump to that segment */}
+      <div className="px-5 pb-4 grid grid-cols-3 gap-2">
+        <StatTile n={counts.applied} label="Applied" onClick={()=>setSeg("applied")}/>
+        <StatTile n={counts.confirmed} label="Confirmed" ice onClick={()=>setSeg("confirmed")}/>
+        <StatTile n={counts.past} label="Past" onClick={()=>setSeg("past")}/>
+      </div>
+
+      <div className="px-5 pb-4">
+        <Segmented items={segs} value={seg} onChange={setSeg}/>
+      </div>
+
+      {/* CONFIRMED */}
+      {seg==="confirmed" && (confirmedEvent ? (
+        <div className="px-5 pt-1 space-y-4 anim-up">
+          <div className="card rounded-[18px] overflow-hidden">
+            <div className="relative h-[160px]">
+              <img src={confirmedEvent.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
+              <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(27,28,31,0) 30%, rgba(27,28,31,.95) 100%)"}}/>
+              <div className="absolute top-3 left-3"><StatusPill label={GS_COPY[GS.confirmed]} tone="ice" dot/></div>
+              <div className="absolute bottom-3 left-3 right-3" style={{color:"#F7F6F3"}}>
+                <div className="font-black text-[22px] leading-none">{confirmedEvent.title}</div>
+                <div className="text-[11px] mt-1 opacity-80">{confirmedEvent.venue} · {confirmedEvent.date}</div>
+              </div>
+            </div>
+            <div className="px-4 py-3 flex items-center gap-3">
+              <DateChip day={conf.day} sub={conf.month} tone="ice"/>
+              <div className="flex-1">
+                <div className="stamp">Check-in</div>
+                <div className="text-[13px] font-medium mt-0.5 font-mono">{confirmedEvent.time}</div>
+              </div>
+              <button onClick={()=>onOpenPass(confirmedEvent.id)} className="press px-3 h-9 rounded-full text-[11px] font-medium flex items-center gap-1.5" style={{background:"var(--ink)", color:"var(--bg)"}}>View pass <Icon name="arrow-right" size={12} stroke={1.6}/></button>
+            </div>
+          </div>
+          <BriefBlock brief={confirmedEvent.brief}/>
+        </div>
+      ) : (
+        <div className="px-5 pt-6 text-[13px] on-photo" style={{color:"var(--ink-mute)"}}>No confirmed seats yet. Apply to a room, then watch for the pick.</div>
+      ))}
+
+      {/* APPLIED — applications still under review */}
+      {seg==="applied" && (appliedRows.length > 0 ? (
+        <div className="px-5 pt-1 space-y-4 anim-up">
+          {appliedRows.map(r => {
+            const ev = EVENTS.find(e => e.id === r.eventId);
+            if (!ev) return null;
+            const isPicked = r.state === GS.picked;
+            // Hours left to confirm — 24h from pickedAt (fallback 24 when a seed has no timestamp)
+            const hoursLeft = isPicked
+              ? Math.max(1, Math.ceil(((r.pickedAt || Date.now()) + 24*3600000 - Date.now()) / 3600000))
+              : null;
+            return (
+              <button key={r.eventId} onClick={()=> isPicked ? onOpenPicked(r.eventId) : onPickEvent(ev)} className="press card w-full text-left flex items-center gap-3 p-3 rounded-[14px]">
+                <img src={ev.img} className="w-14 h-14 rounded-[10px] object-cover" alt=""/>
+                <div className="flex-1 min-w-0">
+                  <div className="font-display text-[16px]">{ev.title}</div>
+                  <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{ev.venue} · {ev.date}</div>
+                  <div className="mt-1.5">
+                    {isPicked
+                      ? <StatusPill label={"Confirm within " + hoursLeft + "h"} tone="ice" dot/>
+                      : <StatusPill label={GS_COPY[r.state]} tone="outline" dot/>}
+                  </div>
+                </div>
+                <Icon name="arrow-right" size={16} stroke={1.4} className="opacity-50"/>
+              </button>
+            );
+          })}
+          <div className="text-[12px] on-photo" style={{color:"var(--ink-mute)"}}>Venues pick applicants up to doors. We notify you if you're in. Not every application is picked.</div>
+        </div>
+      ) : (
+        <div className="px-5 pt-6 text-[13px] on-photo" style={{color:"var(--ink-mute)"}}>Nothing under review.</div>
+      ))}
+
+      {/* SAVED — events you bookmarked. Save/unsave from any card lands here. */}
+      {seg==="saved" && (savedEvents.length > 0 ? (
+        <div className="px-5 pt-1 space-y-3 stagger">
+          {savedEvents.map((e,i)=>(
+            <div key={e.id} style={{"--i":i}} className="card flex items-center gap-3 p-3 rounded-[14px]">
+              <button onClick={()=>onPickEvent(e)} className="press flex items-center gap-3 flex-1 min-w-0 text-left">
+                <img src={e.img} className="w-14 h-16 rounded-[10px] object-cover shrink-0" alt=""/>
+                <div className="flex-1 min-w-0">
+                  <div className="stamp">{e.type}</div>
+                  <div className="font-display text-[17px] mt-0.5 truncate">{e.title}</div>
+                  <div className="text-[11px] truncate" style={{color:"var(--ink-mute)"}}>{e.venue} · {e.area}</div>
+                  <div className="mt-1.5"><span className="font-mono text-[11px]" style={{color:"var(--ice)"}}>{e.seats} seats</span><span className="font-mono text-[11px]" style={{color:"var(--ink-mute)"}}> · {e.date}</span></div>
+                </div>
+              </button>
+              <SaveButton saved={true} onClick={()=>onToggleSave(e.id)}/>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="px-5 py-16 text-center">
+          <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center" style={{border:"1px solid var(--line-2)"}}>
+            <Icon name="bookmark" size={18} stroke={1.4}/>
+          </div>
+          <div className="section-label mt-4">Nothing saved yet</div>
+          <div className="text-[13px] mt-2 on-photo" style={{color:"var(--ink-mute)"}}>Tap the bookmark on any room to keep it here.</div>
+        </div>
+      ))}
+
+      {/* PAST */}
+      {seg==="past" && (
+        <div className="px-5 pt-1 space-y-3 stagger">
+          {pastRows.map((r, i) => {
+            const ev = EVENTS.find(e => e.id === r.eventId);
+            if (!ev) return null;
+            // Quiet states — the ones that end the relationship without a night out
+            const quiet = [GS.notSelected, GS.cancelled, GS.expired, GS.declined, GS.withdrawn, GS.noShow].includes(r.state);
+            const storyDue = r.state === GS.checkedIn && (r.story === SS.due || r.story === SS.rejected);
+            const score = r.verdict ? (r.verdict.score / 10).toFixed(1) : null;
+
+            // Story due / rejected — the loudest card in Past: upload is the one CTA that matters
+            if (storyDue) return (
+              <div key={r.eventId} className="card rounded-[14px] p-3" style={{"--i":i, border:"1px solid var(--line-2)"}}>
+                <div className="flex items-center gap-3">
+                  <img src={ev.img} className="w-14 h-14 rounded-[10px] object-cover" alt=""/>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-display text-[16px]">{ev.title}</div>
+                    <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{ev.venue} · {ev.date}</div>
+                    <div className="mt-1.5"><StatusPill label={SS_COPY[r.story]} tone={r.story === SS.rejected ? "outline" : "ice"} dot/></div>
+                  </div>
+                </div>
+                {r.story === SS.rejected && r.verdict && (
+                  <div className="text-[11px] mt-2.5" style={{color:"var(--ink-mute)"}}>{r.verdict.reason}</div>
+                )}
+                <button onClick={()=>onOpenStory(r.eventId)} className="press w-full h-11 rounded-full text-[12px] font-semibold mt-3 flex items-center justify-center gap-2" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                  Upload your Story <Icon name="arrow-right" size={14} stroke={1.6}/>
+                </button>
+              </div>
+            );
+
+            // Everything else — one calm row; story axis rides as a second pill
+            return (
+              <div key={r.eventId} className="card flex items-center gap-3 p-3 rounded-[14px]" style={{"--i":i, opacity: quiet ? 0.6 : 1}}>
+                <img src={ev.img} className="w-14 h-14 rounded-[10px] object-cover" style={{filter: quiet ? "grayscale(1)" : "grayscale(.25)"}} alt=""/>
+                <div className="flex-1">
+                  <div className="font-display text-[16px]">{ev.title}</div>
+                  <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{ev.venue} · {ev.date}</div>
+                  {r.state === GS.cancelled && (
+                    <div className="text-[11px] mt-1" style={{color:"var(--ink-mute)"}}>Event cancelled · no strike</div>
+                  )}
+                </div>
+                <div className="text-right">
+                  {r.state === GS.checkedIn && r.story
+                    ? <StatusPill label={SS_COPY[r.story]} tone={r.story === SS.verified ? "ice" : "outline"} dot={r.story === SS.verified}/>
+                    : <StatusPill label={GS_COPY[r.state] || r.state} tone={quiet ? "outline" : "neutral"}/>}
+                  {score && r.story === SS.verified && <div className="font-black text-[18px] font-mono mt-1" style={{color:"var(--ice)"}}>{score}</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="h-8"/>
+    </PhoneScreen>
+  );
+}
+
+/* ========== 05 — PROFILE (gallery-style hero with fade) ========== */
+function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
+  // `profile` is the creator-data provider's normalized response (vendor-neutral;
+  // provider not yet locked). Null when onboarding was skipped → fall back to the
+  // shared SEED_PROFILE so the demo always renders.
+  const p = profile || SEED_PROFILE;
+  const verified = p.data_status === "verified";
+  const followersK = p.followers_count >= 1000
+    ? (p.followers_count / 1000).toFixed(p.followers_count >= 10000 ? 0 : 1)
+    : p.followers_count;
+  const followersUnit = p.followers_count >= 1000 ? "k" : "";
+  const tiktokRaw = p.tiktok_followers || SEED_PROFILE.tiktok_followers;
+  const tiktokK = tiktokRaw >= 1000
+    ? (tiktokRaw / 1000).toFixed(tiktokRaw >= 10000 ? 0 : 1)
+    : tiktokRaw;
+  const tiktokUnit = tiktokRaw >= 1000 ? "k" : "";
+  const engagementPct = (p.engagement_rate * 100).toFixed(1);
+  const female = Math.round(p.audience.gender_split.female * 100);
+  const male = Math.round(p.audience.gender_split.male * 100);
+  const firstName = p.full_name.split(" ")[0];
+  const lastName = p.full_name.split(" ").slice(1).join(" ");
+
+  return (
+    <PhoneScreen tab={tab} onTab={onTab}>
+      {/* Editorial hero — full-bleed photo with gradient fade to bg */}
+      <div className="relative h-[460px]">
+        <img src={p.profile_picture_url || IMG.saraFull} className="profile-hero-img absolute inset-0 w-full h-full object-cover" alt=""/>
+        <div className="profile-hero-overlay absolute inset-0"/>
+
+        <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
+          <div className="profile-glass flex items-center gap-2 px-2.5 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--ice)"}}/>
+            <span className="stamp" style={{color:"inherit"}}>{verified ? "Verified" : "Self-reported"} · Tier 1</span>
+          </div>
+          <button onClick={onSettings} aria-label="Settings" className="profile-glass press w-9 h-9 rounded-full flex items-center justify-center">
+            <Icon name="settings" size={15} stroke={1.4}/>
+          </button>
+        </div>
+
+        <div className="profile-hero-text absolute right-3 top-[130px] vt z-10">
+          <span className="stamp" style={{color:"#F7F6F3"}}>Beirut · MMXXVI · No. 048</span>
+        </div>
+
+        <div className="profile-hero-text absolute bottom-5 left-5 right-5 z-10">
+          <div className="smallcaps mb-2" style={{color:"#F7F6F3"}}>Member since '24</div>
+          <div className="font-black font-display-l text-[48px] leading-[0.9]">{firstName}{lastName ? <><br/>{lastName}</> : ""}</div>
+          <div className="flex items-center gap-2 mt-3">
+            <Icon name="instagram" size={13} stroke={1.5} className="opacity-70"/>
+            <span className="text-[13px] opacity-80">@{p.handle}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stat strip — TSS widget tiles: reputation / followers / engagement */}
+      <div className="px-5 py-5 grid grid-cols-3 gap-2" style={{borderBottom:"1px solid var(--line-2)"}}>
+        <StatTile n="9.4" label="Reputation" ice/>
+        <StatTile n={followersK + followersUnit} label="Followers"/>
+        <StatTile n={engagementPct + "%"} label="Engagement"/>
+      </div>
+
+      {/* Verify-with-Instagram upgrade strip (only if data is still estimated) */}
+      {!verified && (
+        <div className="card mx-5 mt-4 px-3 py-2.5 rounded-[12px] flex items-center gap-3">
+          <Icon name="instagram" size={16} stroke={1.5} className="opacity-70"/>
+          <div className="flex-1">
+            <div className="text-[12px] font-medium">Verify with Instagram</div>
+            <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Numbers below are estimated. Connect for real data + tier upgrade.</div>
+          </div>
+          <button onClick={onVerify} className="press px-3 h-7 rounded-full text-[11px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+            Connect
+          </button>
+        </div>
+      )}
+
+      {/* Audience */}
+      <SectionHead label="Audience" right={verified ? "Live" : "Estimated"} className="pt-7 pb-3"/>
+
+      <div className="px-5 space-y-3">
+        <div>
+          <div className="flex justify-between text-[11px]" style={{color:"var(--ink-2)"}}>
+            <span>Female · {female}%</span>
+            <span>Male · {male}%</span>
+          </div>
+          <div className="mt-1.5 h-[6px] rounded-full overflow-hidden flex" style={{background:"var(--bg-elev2)"}}>
+            <div style={{width:female+"%", background:"var(--ice)"}}/>
+            <div style={{width:male+"%", background:"var(--ink-mute)"}}/>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          {p.audience.country_split.map((r,i)=>(
+            <div key={i} className="card p-3 rounded-[12px]">
+              <div className="stamp">{r.label}</div>
+              <div className="font-mono text-[18px] mt-1">{Math.round(r.pct * 100)}%</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent */}
+      <SectionHead label="Recent" className="pt-9 pb-3"/>
+      <div className="px-5 space-y-3 pb-4">
+        {[
+          { t:"Pool Day vol. II", v:"Cyan",     date:"08 Apr", score:"9.5", img:IMG.beachClub },
+          { t:"Late Lounge",      v:"Centrale", date:"22 Apr", score:"9.2", img:IMG.lounge   },
+        ].map((e,i)=>(
+          <div key={i} className="flex items-center gap-3">
+            <img src={e.img} className="w-12 h-14 rounded-[10px] object-cover" alt=""/>
+            <div className="flex-1">
+              <div className="font-display text-[16px]">{e.t}</div>
+              <div className="text-[11px] on-photo" style={{color:"var(--ink-mute)"}}>{e.v} · {e.date}</div>
+            </div>
+            <div className="font-mono text-[16px]" style={{color:"var(--ice)"}}>{e.score}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="h-8"/>
+    </PhoneScreen>
+  );
+}
+
+/* ========== 06 — PICKED (full-screen takeover) ========== */
+function ScreenPicked({ event, pickedAt, onConfirm, onDecline }){
+  const e = event || EVENTS[0];
+
+  // Live countdown — 24h from pickedAt, ticking every second
+  const computeRemaining = () => {
+    if (!pickedAt) return "23:59:59";
+    const deadline = pickedAt + 24 * 60 * 60 * 1000;
+    const diff = Math.max(0, deadline - Date.now());
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    return String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+  };
+  const [remaining, setRemaining] = useState(computeRemaining);
+  const countdownRef = useRef(null);
+  useEffect(() => {
+    if (!pickedAt) return;
+    countdownRef.current = setInterval(() => setRemaining(computeRemaining()), 1000);
+    return () => clearInterval(countdownRef.current);
+  }, [pickedAt]);
+
+  return (
+    <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
+      <StatusBar/>
+
+      <div className="absolute inset-0 opacity-30 pointer-events-none">
+        <img src={e.img} className="absolute inset-0 w-full h-full object-cover" alt="" style={{filter:"blur(40px) brightness(.4)"}}/>
+      </div>
+
+      <div className="absolute inset-0 z-10 flex flex-col px-7 pt-[100px] pb-10">
+        <div className="stamp wordmark picked-stagger" style={{color:"#F7F6F3", textShadow:"0 1px 8px rgba(0,0,0,.5)", animationDelay:"0ms"}}>The List · invitation</div>
+
+        <div className="flex-1 flex flex-col justify-center items-center text-center -mt-6">
+          <div className="w-[180px] h-[180px] rounded-full flex items-center justify-center pulse-ice ring-pop" style={{background:"#F7F6F3", color:"#000000", animationDelay:"120ms"}}>
+            <div className="font-black text-[48px] leading-none">You're<br/>in</div>
+          </div>
+          <div className="font-black font-display-l text-[34px] leading-[0.95] mt-10 picked-stagger" style={{animationDelay:"680ms"}}>{e.title}</div>
+          <div className="text-[13px] mt-2 opacity-75 picked-stagger" style={{animationDelay:"820ms"}}>{e.venue} · {e.date} · {e.time}</div>
+
+          <div className="mt-8 px-4 py-3 rounded-[12px] picked-stagger" style={{background:"rgba(247,246,243,.08)", border:"1px solid rgba(247,246,243,.15)", animationDelay:"960ms"}}>
+            <div className="stamp" style={{color:"rgba(247,246,243,.65)", textShadow:"0 1px 8px rgba(0,0,0,.5)"}}>Confirm within</div>
+            <div className="font-black text-[28px] mt-0.5" style={{color:"#F7F6F3"}}><Countdown value={remaining}/></div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 picked-stagger" style={{animationDelay:"1120ms"}}>
+          <button onClick={onConfirm} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5" style={{background:"#F7F6F3", color:"#000000"}}>
+            <span>Confirm my seat</span>
+            <Icon name="arrow-right" size={16} stroke={1.6}/>
+          </button>
+          <button onClick={onDecline} className="press w-full h-[58px] rounded-full font-medium text-[13px]" style={{background:"transparent", color:"#F7F6F3", border:"1px solid rgba(247,246,243,.2)"}}>
+            Decline
+          </button>
+        </div>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+/* ========== Pass — the ticket artifact (T12) ==========
+   Full-screen over the tab bar. What she shows at the door: photo, name,
+   the big short code, the Brief. Door staff eyeballs the code against the
+   venue's Door list (same codes, venue.html). No QR, no camera — v1 spec. ========== */
+function BriefBlock({ brief, className="" }){
+  if (!brief) return null;
+  const rows = [
+    ["Arrival window", brief.arrival],
+    ["Dress code",     brief.dress],
+    ["Meeting point",  brief.meeting],
+    ["House rules",    brief.rules],
+  ].filter(r => r[1]);
+  if (!rows.length) return null;
+  return (
+    <div className={className}>
+      <div className="stamp mb-2">The brief</div>
+      <div className="card rounded-[14px] px-4">
+        {rows.map(([label, val], i) => (
+          <div key={label} className="flex items-start justify-between gap-4 py-3" style={i > 0 ? {borderTop:"1px solid var(--line)"} : null}>
+            <div className="text-[11px] shrink-0 pt-0.5" style={{color:"var(--ink-mute)"}}>{label}</div>
+            <div className="text-[13px] text-right">{val}</div>
+          </div>
+        ))}
+      </div>
+      <div className="text-[11px] mt-2.5" style={{color:"var(--ink-mute)"}}>Plans change? The List handles it.</div>
+    </div>
+  );
+}
+
+function ScreenPass({ event, row, profile, onBack }){
+  const e = event || EVENTS[0];
+  const p = profile || SEED_PROFILE;
+  const checkedIn = row && row.state === GS.checkedIn;
+  return (
+    <div className="absolute inset-0 anim-fade noscroll overflow-y-auto screen-ground">
+      <StatusBar/>
+      <div className="px-5 pt-[60px] pb-8">
+        <div className="flex items-center justify-between">
+          <button onClick={onBack} aria-label="Back" className="press glass w-10 h-10 rounded-full flex items-center justify-center">
+            <Icon name="arrow-left" size={16} stroke={1.4}/>
+          </button>
+          <div className="stamp wordmark">The List · pass</div>
+          <div className="w-10"/>
+        </div>
+
+        {/* The ticket */}
+        <div className="card rounded-[18px] mt-6 overflow-hidden">
+          <div className="px-6 pt-7 pb-6 text-center">
+            <img src={p.profile_picture_url} className="w-[76px] h-[76px] rounded-full object-cover mx-auto" style={{border:"1px solid var(--line-2)"}} alt=""/>
+            <div className="font-black font-display text-[26px] leading-none mt-4">{p.full_name}</div>
+            <div className="text-[11px] mt-1.5" style={{color:"var(--ink-mute)"}}>@{p.handle}</div>
+          </div>
+          <div className="mx-5" style={{borderTop:"1px dashed var(--line-2)"}}/>
+          <div className="px-6 py-5 text-center">
+            <div className="font-display text-[19px]">{e.title}</div>
+            <div className="text-[12px] mt-1" style={{color:"var(--ink-mute)"}}>{e.venue} · {e.area}</div>
+            <div className="text-[12px] mt-0.5 font-mono">{e.date} · Doors {e.doors || e.time}</div>
+            <div className="stamp mt-5">Door code</div>
+            <div className="font-black font-display-l leading-none mt-1" style={{fontSize:56, letterSpacing:".08em"}}>{(row && row.code) || "LST-4F"}</div>
+          </div>
+          {checkedIn ? (
+            <div className="px-6 py-3.5 text-center text-[13px] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+              Checked in ✓{row.inAt ? " · " + row.inAt : ""}
+            </div>
+          ) : (
+            <div className="px-6 py-3.5 text-center text-[12px]" style={{background:"var(--bg-elev)", color:"var(--ink-mute)", borderTop:"1px solid var(--line)"}}>
+              Show this at the door
+            </div>
+          )}
+        </div>
+
+        <BriefBlock brief={e.brief} className="mt-6"/>
+        <div className="h-6"/>
+      </div>
+    </div>
+  );
+}
+
+/* ========== Intro video background — crossfading 5s clips ==========
+   TSS-style: full-bleed grainy montage that cross-dissolves between clips,
+   each held ~5s, looping. Muted + autoplay + playsInline so it runs as a
+   silent hero background. Grain/vignette/scrims layered on top for legibility.
+==================================================================== */
+function IntroVideoBG(){
+  const [active, setActive] = useState(0);
+  const vids = useRef([]);
+  const reduce = typeof window !== "undefined" && window.matchMedia
+    && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  useEffect(() => {
+    if (reduce) return;                       // hold first frame if reduced-motion
+    const id = setInterval(() => setActive(a => (a + 1) % INTRO_CLIPS.length), 5000);
+    return () => clearInterval(id);
+  }, [reduce]);
+
+  useEffect(() => {
+    const v = vids.current[active];
+    if (v) { try { v.currentTime = 0; const p = v.play(); if (p && p.catch) p.catch(()=>{}); } catch(e){} }
+  }, [active]);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden" style={{background:"#000000"}}>
+      {INTRO_CLIPS.map((c,i)=>(
+        <video key={i} ref={el => vids.current[i] = el}
+          src={c.src} poster={c.poster}
+          muted loop playsInline autoPlay preload="auto"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{opacity: i===active ? 1 : 0, transition:"opacity 1.1s ease", filter:"contrast(1.08) saturate(.82)"}}/>
+      ))}
+      {/* baked grain reinforced */}
+      <div className="absolute inset-0 grain" style={{opacity:.55}}/>
+      {/* vignette */}
+      <div className="absolute inset-0 pointer-events-none" style={{boxShadow:"inset 0 0 170px 46px rgba(0,0,0,.82)"}}/>
+      {/* top + bottom scrims for status bar / lockup / buttons */}
+      <div className="absolute inset-0 pointer-events-none" style={{background:"linear-gradient(180deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,0) 24%, rgba(0,0,0,0) 46%, rgba(0,0,0,.92) 100%)"}}/>
+    </div>
+  );
+}
+
+/* ========== 00 — ONBOARDING ========== */
+/* Step indicator — numbered circles joined by a hairline, current = accent fill
+   (kit 05 progress pattern). `dark` forces the cream-on-dark palette on the
+   hardcoded takeover screens so it reads in both themes. Visual only. */
+function Steps({ current, total=3, dark=false, className="" }){
+  const accent    = dark ? "#F7F6F3" : "var(--ice)";
+  const accentInk = dark ? "#000000" : "var(--ice-ink)";
+  const line      = dark ? "rgba(247,246,243,.22)" : "var(--line-2)";
+  const mute      = dark ? "rgba(247,246,243,.55)" : "var(--ink-mute)";
+  return (
+    <div className={"flex items-center "+className} aria-hidden="true">
+      {Array.from({length: total}, (_,i)=>i+1).map(n=>(
+        <React.Fragment key={n}>
+          {n>1 && <span style={{width:24, height:1, background:line}}/>}
+          <span className="rounded-full flex items-center justify-center font-mono text-[11px]"
+            style={n===current
+              ? {width:24, height:24, background:accent, color:accentInk}
+              : {width:24, height:24, border:"1px solid "+line, color:mute}}>
+            {n}
+          </span>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
+  const [phone, setPhone] = useState("");
+  const [handle, setHandle] = useState("");
+  const canSubmit = phone.length >= 6 && handle.length >= 2;
+
+  const submit = async () => {
+    setStep('reviewing');
+    // Real prod: POST /api/onboard → backend hits whichever creator-data
+    // provider we settle on. Prototype mocks client-side using the agreed
+    // normalized shape so the provider can swap later without UI changes.
+    try {
+      const profile = await mockCreatorDataFetch(handle);
+      onProfileFetched(profile);
+      setStep('tier-reveal');
+    } catch (err) {
+      // handle not found / provider error → recoverable, send them back to retry
+      setStep('error');
+    }
+  };
+
+  if (step === 'intro') return (
+    <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
+      <IntroVideoBG/>
+      <StatusBar/>
+      <div className="absolute inset-0 z-10 flex flex-col px-7 pt-[120px] pb-10">
+        {/* Centered wordmark lockup — serif wordmark, sentence-case copy */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center -mt-6">
+          <div className="anim-fade" style={{fontSize:11, fontWeight:500, letterSpacing:".02em", color:"rgba(247,246,243,.78)"}}>Est. MMXXVI · Beirut</div>
+          <div className="font-black font-display-l anim-up" style={{fontSize:66, lineHeight:.88, marginTop:14, textShadow:"0 2px 40px rgba(0,0,0,.6)"}}>The<br/>List</div>
+          <div className="anim-up" style={{marginTop:18, fontSize:13, letterSpacing:".01em", color:"rgba(247,246,243,.82)"}}>By invitation only</div>
+        </div>
+
+        {/* Bottom actions — solid Apply (accent) + ghost invite, TSS pattern */}
+        <div className="flex flex-col gap-3 anim-up">
+          <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5" style={{background:"#F7F6F3", color:"#000000"}}>
+            <span>Apply for access</span>
+            <Icon name="arrow-right" size={16} stroke={1.6}/>
+          </button>
+          <button onClick={()=>setStep('phone')} className="press w-full h-[58px] rounded-full font-medium text-[13px]" style={{background:"transparent", color:"#F7F6F3", border:"1px solid rgba(247,246,243,.32)"}}>
+            I have an invite
+          </button>
+        </div>
+
+        {/* Business door — venues sign in on the other side */}
+        <div className="flex items-center gap-3 mt-4 anim-up" style={{opacity:.9}}>
+          <div className="flex-1 h-px" style={{background:"rgba(247,246,243,.16)"}}/>
+          <div className="stamp" style={{color:"rgba(247,246,243,.6)", textShadow:"0 1px 8px rgba(0,0,0,.5)"}}>or</div>
+          <div className="flex-1 h-px" style={{background:"rgba(247,246,243,.16)"}}/>
+        </div>
+        <button onClick={()=>{ window.location.href = "./venue.html"; }}
+          className="press w-full h-[52px] rounded-full font-medium text-[12px] anim-up mt-3"
+          style={{background:"transparent", color:"#F7F6F3", border:"1px solid rgba(247,246,243,.32)"}}>
+          List your venue · Business
+        </button>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+
+  if (step === 'phone') return (
+    <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
+      <StatusBar/>
+      <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
+        <div className="stamp wordmark">The List · No. 048</div>
+        <Steps current={1} className="mt-4"/>
+        <div className="font-black font-display-l text-[44px] leading-[.95] mt-3">Apply</div>
+        <div className="text-[13px] mt-3 max-w-[280px]" style={{color:"var(--ink-2)"}}>By invitation only. We review every profile manually. Approval typically takes 24 hours.</div>
+
+        <div className="mt-10 space-y-5">
+          <div>
+            <div className="stamp mb-2">Phone</div>
+            <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+961 71 000 000" className="w-full h-12 px-3 rounded-[12px] text-[15px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+          </div>
+          <div>
+            <div className="stamp mb-2">Instagram handle</div>
+            <div className="flex h-12 rounded-[12px] overflow-hidden" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)"}}>
+              <div className="px-3 flex items-center text-[15px]" style={{color:"var(--ink-mute)"}}>@</div>
+              <input value={handle} onChange={e=>setHandle(e.target.value)} placeholder="capriottisara" className="flex-1 bg-transparent text-[15px] pr-3 focus:outline-none" style={{color:"var(--ink)"}}/>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1"/>
+
+        <button onClick={submit} disabled={!canSubmit} className={"press w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5 "+(canSubmit?"glow-primary":"")} style={{background: canSubmit ? "var(--ice)" : "var(--bg-elev2)", color: canSubmit ? "var(--ice-ink)" : "var(--ink-mute)"}}>
+          <span>Apply for access</span>
+          <Icon name="arrow-right" size={16} stroke={1.6}/>
+        </button>
+        <div className="text-center text-[11px] mt-3" style={{color:"var(--ink-mute)"}}>No password. We verify through your Instagram.</div>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+
+  if (step === 'reviewing') return (
+    <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
+      <StatusBar/>
+      <div className="absolute top-[110px] left-0 right-0 flex justify-center">
+        <Steps current={2} dark/>
+      </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-7">
+        <div className="w-[160px] h-[160px] rounded-full border-2 flex items-center justify-center" style={{borderColor:"rgba(247,246,243,.2)"}}>
+          <div className="w-[120px] h-[120px] rounded-full border-2 spin" style={{borderColor:"rgba(247,246,243,.3)", borderTopColor:"#F7F6F3"}}/>
+        </div>
+        <div className="font-black font-display-l text-[28px] mt-10">Reading</div>
+        <div className="text-[13px] mt-3 max-w-[260px]">Pulling @{handle || "your-handle"}'s reach, demographics, and engagement.</div>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+
+  if (step === 'error') return (
+    <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
+      <StatusBar/>
+      <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
+        <div className="stamp wordmark" style={{color:"#F7F6F3", textShadow:"0 1px 8px rgba(0,0,0,.5)"}}>The List · No. 048</div>
+        <div className="flex-1 flex flex-col justify-center items-center text-center">
+          <div className="w-[120px] h-[120px] rounded-full flex items-center justify-center" style={{border:"2px solid rgba(247,246,243,.25)", color:"rgba(247,246,243,.85)"}}>
+            <Icon name="x" size={40} stroke={1.4}/>
+          </div>
+          <div className="font-black font-display-l text-[30px] leading-[.95] mt-10">Couldn't<br/>read that</div>
+          <div className="text-[13px] mt-3 opacity-75 max-w-[280px]">We couldn't pull @{handle || "your-handle"} from Instagram. Check the spelling, or try another handle.</div>
+        </div>
+        <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px]" style={{background:"#F7F6F3", color:"#000000"}}>
+          Try another handle
+        </button>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+
+  // tier-reveal
+  return (
+    <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
+      <StatusBar/>
+      <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
+        <div className="stamp wordmark picked-stagger" style={{color:"#F7F6F3", textShadow:"0 1px 8px rgba(0,0,0,.5)", animationDelay:"0ms"}}>The List · invitation</div>
+        <Steps current={3} dark className="mt-4 picked-stagger"/>
+
+        <div className="flex-1 flex flex-col justify-center items-center text-center">
+          <div className="ring-pop w-[180px] h-[180px] rounded-full flex items-center justify-center" style={{border:"2px solid #F7F6F3", color:"#F7F6F3", animationDelay:"120ms", boxShadow:"inset 0 0 0 7px rgba(247,246,243,.12)"}}>
+            <div className="font-black text-[36px] leading-none">Tier<br/>One</div>
+          </div>
+          <div className="font-black font-display-l text-[34px] leading-[.95] mt-10 picked-stagger" style={{animationDelay:"680ms"}}>Listed</div>
+          <div className="text-[13px] mt-3 opacity-80 max-w-[280px] picked-stagger" style={{animationDelay:"820ms"}}>Your audience fits the rooms. Tier reviews happen quarterly.</div>
+        </div>
+
+        <button onClick={onComplete} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5 picked-stagger" style={{background:"#F7F6F3", color:"#000000", animationDelay:"1100ms"}}>
+          <span>Enter The List</span>
+          <Icon name="arrow-right" size={16} stroke={1.6}/>
+        </button>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+}
+
+/* ========== genCode — LST-XX where XX = 2 uppercase alphanum, no collision ========== */
+function genCode(existing){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/1/0 lookalikes
+  const used = new Set((existing || []).map(r => r.code).filter(Boolean));
+  let code;
+  do {
+    code = "LST-" + chars[Math.floor(Math.random()*chars.length)] + chars[Math.floor(Math.random()*chars.length)];
+  } while (used.has(code));
+  return code;
+}
+
+/* ========== APP — navigation state ========== */
+function App(){
+  const [onboardStep, setOnboardStep] = useState("intro"); // intro | phone | reviewing | tier-reveal | error | done
+  const [screen, setScreen] = useState("home");           // home | explore | detail | mylist | profile | picked
+  const [tab, setTab] = useState("home");
+  const [currentEvent, setCurrentEvent] = useState(null);
+  const [applyState, setApplyState] = useState("idle");   // idle | submitting | submitted
+  const [pickedEventId, setPickedEventId] = useState(null); // which event the picked takeover shows
+  const [passEventId, setPassEventId] = useState(null);     // which event's pass is open (null = closed)
+  const [storyEventId, setStoryEventId] = useState(null);   // which event's story sheet is open (null = closed)
+  const [mylistSeg, setMylistSeg] = useState(null);          // segment My Events should open on (deep-link hint)
+  const [myEvents, setMyEvents] = useState(MY_EVENTS);   // member's event relationships
+  const [notifs, setNotifs] = useState(SEED_NOTIFS);     // member's notification feed
+  const [light, setLight] = useState(false);
+  const [profile, setProfile] = useState(null);       // creator-data provider response (vendor-neutral)
+  const [saved, setSaved] = useState([]);             // saved / bookmarked event ids
+  const [shareEvent, setShareEvent] = useState(null); // event being shared (null = sheet closed)
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);  // Activity sheet (bell on Home)
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+  // Timer refs — apply delay + per-event pick timers + story verdict timers (maps: eventId → timeoutId)
+  const applyTimerRef = useRef(null);
+  const pickTimersRef = useRef({});
+  const verdictTimersRef = useRef({});
+
+  // Cleanup all pending timers on unmount
+  useEffect(() => {
+    return () => {
+      if (applyTimerRef.current) clearTimeout(applyTimerRef.current);
+      Object.values(pickTimersRef.current).forEach(id => clearTimeout(id));
+      Object.values(verdictTimersRef.current).forEach(id => clearTimeout(id));
+    };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', light);
+  }, [light]);
+
+  const goTab = (id) => {
+    setTab(id);
+    if (id === "home")    setScreen("home");
+    if (id === "explore") setScreen("explore");
+    if (id === "mylist")  setScreen("mylist");
+    if (id === "profile") setScreen("profile");
+    setApplyState("idle");
+    setMylistSeg(null); // deep-link hint is one-shot — normal tab taps get the default segment
+  };
+
+  const pickEvent = (e) => {
+    setCurrentEvent(e);
+    setApplyState("idle");
+    setScreen("detail");
+  };
+
+  // simulatePick — flip a myEvents row to picked + prepend a picked notif
+  // Available to T16 switchboard via prop drilling or window.simulatePick
+  function simulatePick(eventId) {
+    const ev = eventById(eventId);
+    if (!ev) return;
+    const now = Date.now();
+    setMyEvents(prev => {
+      const exists = prev.find(r => r.eventId === eventId);
+      if (exists && exists.state !== GS.applied) return prev; // only an applied row can be picked — never resurrect declined/confirmed
+      if (exists) {
+        return prev.map(r => r.eventId === eventId ? { ...r, state: GS.picked, pickedAt: now } : r);
+      }
+      return [...prev, { eventId, state: GS.picked, pickedAt: now }];
+    });
+    setNotifs(prev => [{
+      id: "expire-" + eventId + "-" + now,
+      kind: "expiring",
+      text: "Confirm your seat — 2h left · " + ev.title,
+      eventId,
+      read: false,
+    }, {
+      id: "pick-" + eventId + "-" + now,
+      kind: "picked",
+      text: "Cyan Beach Club picked you · " + ev.title,
+      eventId,
+      read: false,
+    }, ...prev]);
+  }
+
+  const onApply = () => {
+    if (!currentEvent) return;
+    const eventId = currentEvent.id;
+    // Clear any existing apply timer
+    if (applyTimerRef.current) clearTimeout(applyTimerRef.current);
+    // Clear any existing pick timer for this event
+    if (pickTimersRef.current[eventId]) {
+      clearTimeout(pickTimersRef.current[eventId]);
+      delete pickTimersRef.current[eventId];
+    }
+    setApplyState("submitting");
+    applyTimerRef.current = setTimeout(() => {
+      applyTimerRef.current = null;
+      // Upsert the applied row — no duplicates
+      setMyEvents(prev => {
+        const exists = prev.find(r => r.eventId === eventId);
+        if (exists) {
+          return prev.map(r => r.eventId === eventId ? { ...r, state: GS.applied } : r);
+        }
+        return [...prev, { eventId, state: GS.applied }];
+      });
+      setApplyState("submitted");
+      showToast("Application sent");
+      // Auto-arm: 10s after apply, simulatePick fires
+      pickTimersRef.current[eventId] = setTimeout(() => {
+        delete pickTimersRef.current[eventId];
+        simulatePick(eventId);
+      }, 10000);
+    }, 1400);
+  };
+
+  // forceVerdict — settle a story review. Default path is verified; the
+  // switchboard (T16) can force needs_review / rejected. Mirrors the rubric
+  // shape the backend will return: { verdict, score, reason }.
+  function forceVerdict(eventId, v) {
+    const ev = eventById(eventId);
+    if (!ev) return;
+    const outcomes = {
+      [SS.verified]:    { score: 91, reason: "Tag visible, posted in window" },
+      [SS.needsReview]: { score: 64, reason: "Our team takes a second look" },
+      [SS.rejected]:    { score: 32, reason: "Tag not visible — try another screenshot" },
+    };
+    const verdict = outcomes[v];
+    if (!verdict) return;
+    setMyEvents(prev => prev.map(r => r.eventId === eventId ? { ...r, story: v, verdict } : r));
+    if (v === SS.verified) {
+      setNotifs(prev => [{ id: "story-" + eventId + "-" + Date.now(), kind: "story",
+        text: "Story verified · " + ev.title, eventId, read: false }, ...prev]);
+      showToast("Verified ✓ · " + verdict.reason);
+    } else if (v === SS.needsReview) {
+      showToast("Needs review · " + verdict.reason);
+    } else {
+      showToast(SS_COPY[SS.rejected]);
+    }
+  }
+
+  // submitStory — screenshot in → review state → simulated verdict 8s later
+  const submitStory = (eventId) => {
+    setMyEvents(prev => prev.map(r => r.eventId === eventId ? { ...r, story: SS.review, verdict: undefined } : r));
+    setStoryEventId(null);
+    showToast("Under review · we check within a few hours");
+    if (verdictTimersRef.current[eventId]) clearTimeout(verdictTimersRef.current[eventId]);
+    verdictTimersRef.current[eventId] = setTimeout(() => {
+      delete verdictTimersRef.current[eventId];
+      forceVerdict(eventId, SS.verified);
+    }, 8000);
+  };
+
+  // Open the pass (ticket) for a confirmed/checked-in event
+  const openPass = (eventId) => {
+    const row = myEvents.find(r => r.eventId === eventId);
+    if (!row || (row.state !== GS.confirmed && row.state !== GS.checkedIn)) return;
+    setPassEventId(eventId);
+  };
+
+  // ---- Demo switchboard actions (T16) — the rig behind Settings › Demo ----
+  const demoActions = {
+    pickNow: () => { simulatePick("lounge"); showToast("Picked · check the bell"); },
+    expirePick: () => {
+      const row = myEvents.find(r => r.state === GS.picked);
+      if (!row) { showToast("No pick to expire — apply first"); return; }
+      setMyEvents(prev => prev.map(r => r.eventId === row.eventId ? { ...r, state: GS.expired, pickedAt: undefined } : r));
+      const ev = eventById(row.eventId);
+      setNotifs(prev => [{ id: "expired-" + row.eventId + "-" + Date.now(), kind: "expiring",
+        text: "Pick expired · " + (ev ? ev.title : ""), eventId: row.eventId, read: false }, ...prev]);
+    },
+    checkIn: () => {
+      setMyEvents(prev => prev.map(r => r.eventId === "pool" && r.state === GS.confirmed ? { ...r, state: GS.checkedIn, inAt: "22:41" } : r));
+      showToast("Checked in · Pool Day");
+    },
+    verdict: (v) => forceVerdict("bath", v),
+    reset: () => {
+      Object.values(pickTimersRef.current).forEach(id => clearTimeout(id));
+      Object.values(verdictTimersRef.current).forEach(id => clearTimeout(id));
+      pickTimersRef.current = {}; verdictTimersRef.current = {};
+      setMyEvents(MY_EVENTS); setNotifs(SEED_NOTIFS); setSaved([]);
+      setApplyState("idle"); setPassEventId(null); setStoryEventId(null); setPickedEventId(null);
+      setSettingsOpen(false);
+      showToast("Demo reset");
+    },
+  };
+
+  // notifTarget — every Activity row deep-links somewhere real (T15).
+  // Falls back to Event Detail / My Events when the state has moved on.
+  function notifTarget(n) {
+    closeNotifs();
+    const ev = n.eventId ? eventById(n.eventId) : null;
+    const row = n.eventId ? myEvents.find(r => r.eventId === n.eventId) : null;
+    switch (n.kind) {
+      case "picked":
+      case "expiring":
+        if (row && row.state === GS.picked) { openPickedTakeover(n.eventId); return; }
+        break;
+      case "pass":
+        if (row && (row.state === GS.confirmed || row.state === GS.checkedIn)) { openPass(n.eventId); return; }
+        break;
+      case "story":
+        if (row && (row.story === SS.due || row.story === SS.rejected)) { setStoryEventId(n.eventId); return; }
+        setMylistSeg("past"); setScreen("mylist"); setTab("mylist"); return;
+      case "cancelled":
+        setMylistSeg("past"); setScreen("mylist"); setTab("mylist"); return;
+    }
+    if (ev) pickEvent(ev); // drop + all fallbacks → Event Detail
+  }
+
+  // Closing the Activity sheet marks everything read — the badge never goes stale
+  const closeNotifs = () => {
+    setNotifOpen(false);
+    setNotifs(prev => prev.some(n => !n.read) ? prev.map(n => n.read ? n : { ...n, read: true }) : prev);
+  };
+
+  // Open the picked takeover for a given eventId
+  const openPickedTakeover = (eventId) => {
+    const ev = eventById(eventId);
+    if (!ev) return;
+    setCurrentEvent(ev);
+    setPickedEventId(eventId);
+    setScreen("picked");
+  };
+
+  const onConfirmPick = () => {
+    if (!pickedEventId) return;
+    setMyEvents(prev => {
+      const code = genCode(prev);
+      const exists = prev.find(r => r.eventId === pickedEventId);
+      if (exists) {
+        return prev.map(r => r.eventId === pickedEventId ? { ...r, state: GS.confirmed, code, pickedAt: undefined } : r);
+      }
+      return [...prev, { eventId: pickedEventId, state: GS.confirmed, code }];
+    });
+    showToast("You're in — pass ready");
+    setPickedEventId(null);
+    setScreen("mylist");
+    setTab("mylist");
+  };
+
+  const onDeclinePick = () => {
+    if (!pickedEventId) return;
+    setMyEvents(prev => {
+      const exists = prev.find(r => r.eventId === pickedEventId);
+      if (exists) {
+        return prev.map(r => r.eventId === pickedEventId ? { ...r, state: GS.declined, pickedAt: undefined } : r);
+      }
+      return [...prev, { eventId: pickedEventId, state: GS.declined }];
+    });
+    showToast("Seat released");
+    const prevScreen = tab === "explore" ? "explore" : "home";
+    setPickedEventId(null);
+    setScreen(prevScreen);
+  };
+
+  const showToast = (msg) => {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 2200);
+  };
+
+  const toggleSave = (id) => {
+    const wasSaved = saved.includes(id);
+    setSaved(s => wasSaved ? s.filter(x => x !== id) : [...s, id]);
+    showToast(wasSaved ? "Removed from saved" : "Saved to your list");
+  };
+
+  // Verify-with-Instagram: flips the (vendor-neutral) creator data to verified.
+  const onVerify = () => {
+    setProfile(p => ({ ...(p || SEED_PROFILE), data_status: "verified" }));
+    setSettingsOpen(false);
+    showToast("Instagram connected · verified");
+  };
+
+  const savedEvents = useMemo(() => EVENTS.filter(e => saved.includes(e.id)), [saved]);
+
+  const skipOnboarding = () => setOnboardStep("done");
+  const onboardActive = onboardStep !== "done";
+
+  // Derive pickedAt for the currently-shown picked event
+  const pickedRow = pickedEventId ? myEvents.find(r => r.eventId === pickedEventId) : null;
+  const pickedAt = pickedRow ? pickedRow.pickedAt : null;
+
+  // Unread notif count for badge
+  const unreadCount = notifs.filter(n => !n.read).length;
+
+  return (
+    <div className="min-h-screen w-full flex flex-col items-center pt-20 pb-24">
+      <button className="theme-toggle" onClick={() => setLight(l => !l)}>
+        <span className="dot"></span>
+        {light ? 'Light' : 'Dark'} · switch
+      </button>
+      {onboardActive && (
+        <button className="theme-toggle" style={{right:140}} onClick={skipOnboarding}>
+          Skip onboarding
+        </button>
+      )}
+
+      <div className="mb-8 text-center">
+        <div className="stamp" style={{color:"var(--ink-mute)"}}>The List · Influencer side · Prototype v0.3</div>
+        <div className="font-black text-[28px] leading-none mt-2">Tap through Sara's flow</div>
+        <div className="text-[12px] mt-2" style={{color:"var(--ink-mute)"}}>{onboardActive ? "Grainy entry splash → apply → review → tier reveal." : "Tap an event → Apply → 10s later venue picks you → Activity bell → confirm."}</div>
+      </div>
+
+      <div className="iphone">
+        <div className="iphone-screen">
+          {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={skipOnboarding} onProfileFetched={setProfile}/>}
+          {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} myEvents={myEvents} onBell={()=>setNotifOpen(true)} unreadCount={unreadCount} onOpenPass={openPass}/>}
+          {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} onToast={showToast}/>}
+          {!onboardActive && screen === "detail"  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply} onShare={()=>setShareEvent(currentEvent)} saved={saved} onToggleSave={toggleSave} onToast={showToast} myEvents={myEvents} onOpenPicked={openPickedTakeover}/>}
+          {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} myEvents={myEvents} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast} onOpenPass={openPass} onOpenPicked={openPickedTakeover} onOpenStory={setStoryEventId} initialSeg={mylistSeg}/>}
+          {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab} profile={profile} onSettings={()=>setSettingsOpen(true)} onVerify={onVerify}/>}
+          {!onboardActive && screen === "picked"  && <ScreenPicked event={currentEvent} pickedAt={pickedAt} onConfirm={onConfirmPick} onDecline={onDeclinePick}/>}
+
+          {/* Pass — full-screen overlay above screens, below sheets */}
+          {!onboardActive && passEventId && (
+            <ScreenPass event={eventById(passEventId)}
+                        row={myEvents.find(r => r.eventId === passEventId)}
+                        profile={profile}
+                        onBack={()=>setPassEventId(null)}/>
+          )}
+
+          {/* Overlays — scoped to the phone frame */}
+          {!onboardActive && storyEventId && <StorySheet event={eventById(storyEventId)} onClose={()=>setStoryEventId(null)} onSubmit={()=>submitStory(storyEventId)}/>}
+          {!onboardActive && <ShareSheet event={shareEvent} onClose={()=>setShareEvent(null)} onToast={showToast}/>}
+          {!onboardActive && settingsOpen && <SettingsSheet profile={profile} light={light} setLight={setLight} onClose={()=>setSettingsOpen(false)} onToast={showToast} demo={demoActions}/>}
+          {!onboardActive && notifOpen && <NotificationsSheet notifs={notifs} onClose={closeNotifs} onTarget={notifTarget}/>}
+          <Toast msg={toast}/>
+        </div>
+      </div>
+
+      <div className="mt-8 text-center max-w-[420px]">
+        <div className="stamp mb-2" style={{color:"var(--ink-mute)"}}>How to use</div>
+        <div className="text-[12px]" style={{color:"var(--ink-2)"}}>
+          {onboardActive
+            ? "Entry splash plays the grainy Beirut montage. Tap Apply for access, type anything in the two fields, watch the review animation, tap Enter The List on the tier reveal."
+            : "Tap Sunset Sessions → Apply → 10 seconds later the Activity bell gets a badge → tap it → tap the pick notification → confirm or decline."}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
