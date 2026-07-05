@@ -31,6 +31,10 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: co.thelist.app
+        # No app icon designed yet — don't require one. A real 1024px AppIcon
+        # set is a launch-day task (TestFlight makes it mandatory). Empty name
+        # stops actool erroring on the missing set. (CI-caught 2026-07-05.)
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
     info:
       path: TheList/Info.plist
       properties:
