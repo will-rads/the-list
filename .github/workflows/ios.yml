@@ -1,0 +1,48 @@
+name: iOS build & test
+
+# Compiles the WHOLE app (UI included) on a macOS runner and runs the unit
+# tests. This is the real compile gate — the Windows dev box has no Apple
+# toolchain. Triggers on pushes touching ios/ and manual dispatch.
+on:
+  push:
+    branches: [main, v3-glass]
+    paths: ["ios/**", ".github/workflows/ios.yml"]
+  pull_request:
+    paths: ["ios/**", ".github/workflows/ios.yml"]
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest Xcode 16
+        run: |
+          XC=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$XC" ]; then sudo xcode-select -switch "$XC"; fi
+          xcodebuild -version
+          swift --version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        working-directory: ios
+        run: xcodegen generate
+
+      # Pure-Swift core (Models + Services + tests) — fast, no simulator.
+      - name: Test core package (SPM)
+        working-directory: ios
+        run: swift test
+
+      # Whole app incl. all SwiftUI views — catches every UI compile error.
+      - name: Build app for simulator
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project TheList.xcodeproj \
+            -scheme TheList \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO
