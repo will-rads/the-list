@@ -19,11 +19,19 @@ Opus W0/W2, Sonnet W1/W3. Commits `e1b25c8` (W0+W1), `c1c34a3` (W2), `c6504a5` (
 - 125+ Swift files: XcodeGen project, Theme tokens from v3 CSS, 6-layer glass kit (iOS 26 Liquid
   Glass behind `#if compiler(>=6.2)`), frozen-contract models/services, ONE DemoWorld seeded to
   both web files, all member + venue screens, switchboards, Swift Testing suite.
-- **TheListCore SPM package** = Models+Services+Tests, pure Swift → `swift test` runs on Windows
-  (Codex gate). No SwiftUI compiler exists off-Mac — Will's "view it in Codex" is impossible for
-  UI; core compile+tests is the honest substitute. Swift toolchain install blocked: msi 1603 in
-  silent mode → Will must run `winget install Swift.Toolchain --skip-dependencies` in an ADMIN
-  terminal once.
+- **CI is the compile gate (`.github/workflows/ios.yml`, GREEN 2026-07-05).** macos-14 runner:
+  xcodegen → `swift test` (core) → `xcodebuild build` (whole app incl. all SwiftUI views). This
+  REPLACED the Windows swift-test idea: Swift-on-Windows needs a full MSVC toolchain (~6-8GB) and
+  the dev-box C: drive was down to 1.5GB (Swift 4.5GB + failed VS BuildTools 1603 install ate it).
+  Will's call: drop the Windows gate, use CI (compiles the UI too, strictly better), reclaimed
+  ~6GB by uninstalling Swift + VS BuildTools → back to ~9GB free. Auth for `gh`/CI reads: no
+  `gh auth`; pull the token from Git Credential Manager (`git credential fill` → `GH_TOKEN`).
+  Will also added the VS Code GitHub Actions extension (can watch runs there).
+- **CI caught 2 real errors** the blind write missed: (1) `DemoWorld.today` main-actor-isolated,
+  referenced from nonisolated seed factories → `nonisolated static let` (Swift 6 strict
+  concurrency); (2) missing AppIcon set → `ASSETCATALOG_COMPILER_APPICON_NAME: ""` (real 1024px
+  icon is a TestFlight/launch task). Commits `03a9a3d`, `eb20415`. **Branch v3-glass is PUSHED**
+  to origin (Will OK'd) — first push of this work.
 - W4 QA: grep gates clean (0 hex in views, 0 banned fonts, 0 SwiftUI in core, 0 member "Locked");
   fixed tests' `@testable import` to conditional TheListCore/TheList; `ios/README.md` rewritten
   with the Mac-day fix-first checklist (7 known uncertainties).
