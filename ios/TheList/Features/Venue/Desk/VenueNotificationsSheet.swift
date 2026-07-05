@@ -45,7 +45,7 @@ struct VenueNotificationsSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 AppIcon.arrowRight.symbol
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Theme.ink.opacity(0.5))
+                    .foregroundStyle(Theme.ink)
             }
             .padding(Theme.Space.m)
             .frame(maxWidth: .infinity, alignment: .leading)

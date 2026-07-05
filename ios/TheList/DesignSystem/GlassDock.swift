@@ -45,10 +45,10 @@ struct GlassDock<Tab: Hashable>: View {
             VStack(spacing: 5) {
                 item.icon.symbol
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(active ? Theme.ice : Theme.inkMute)
+                    .foregroundStyle(active ? Theme.ice : Theme.navIdle)
                 Text(item.label)
                     .font(Typography.body(10, weight: .medium))
-                    .foregroundStyle(active ? Theme.ink : Theme.inkMute)
+                    .foregroundStyle(active ? Theme.ink : Theme.navIdle)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, Theme.Space.xs)

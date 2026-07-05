@@ -12,9 +12,13 @@ enum Theme {
     static let bg      = dyn(dark: rgb(0x000000),               light: rgb(0xF7F6F3))
     static let elev    = dyn(dark: white(0.07),                 light: white(0.34))
     static let elev2   = dyn(dark: white(0.12),                 light: white(0.24))
+    // Will 2026-07-05: no gray text — ink2 / inkMute collapse to ink so every
+    // label/subline reads full-contrast. navIdle keeps ONE functional gray for
+    // inactive dock tabs (else the active tab is invisible). Mirrors web/v3.
     static let ink     = dyn(dark: rgb(0xF4F4F6),               light: rgb(0x1E1E1E))
-    static let ink2    = dyn(dark: rgb(0xC2C3CC),               light: rgb(0x454B52))
-    static let inkMute = dyn(dark: rgb(0x8B8C97),               light: rgb(0x6A737D))
+    static let ink2    = dyn(dark: rgb(0xF4F4F6),               light: rgb(0x1E1E1E))
+    static let inkMute = dyn(dark: rgb(0xF4F4F6),               light: rgb(0x1E1E1E))
+    static let navIdle = dyn(dark: rgb(0x8B8C97),               light: rgb(0x6A737D))
     static let line    = dyn(dark: white(0.14),                 light: rgb(0x1E1E1E, 0.12))
     static let line2   = dyn(dark: white(0.28),                 light: rgb(0x1E1E1E, 0.24))
     static let page    = dyn(dark: rgb(0x000000),               light: rgb(0xF2F0EB))

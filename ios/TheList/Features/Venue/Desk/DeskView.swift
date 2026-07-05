@@ -100,7 +100,7 @@ struct DeskView: View {
             HStack {
                 Text("The List · Venues")
                     .font(Typography.body(14, weight: .bold))
-                    .foregroundStyle(Theme.ink.opacity(0.75))
+                    .foregroundStyle(Theme.ink)
                 Spacer()
                 GlassIconButton(icon: .bell, badge: world.venueNotifications().count) {
                     router.present(.notifications)
@@ -115,14 +115,14 @@ struct DeskView: View {
                 Spacer()
                 Text("Sun · 25.05")
                     .font(Typography.number(12))
-                    .foregroundStyle(Theme.ink.opacity(0.75))
+                    .foregroundStyle(Theme.ink)
             }
             .padding(.top, 2)
             HStack(spacing: 6) {
                 AppIcon.mapPin.symbol.font(.system(size: 12, weight: .medium))
                 Text("\(venue.name) · \(venue.area)").font(Typography.body(12, weight: .regular))
             }
-            .foregroundStyle(Theme.ink.opacity(0.75))
+            .foregroundStyle(Theme.ink)
             .padding(.top, Theme.Space.xs)
         }
         .padding(.horizontal, MemberLayout.hInset)
@@ -224,7 +224,7 @@ struct DeskView: View {
         if drafts.isEmpty {
             Text("Nothing scheduled. Post a room.")
                 .font(Typography.body(13, weight: .regular))
-                .foregroundStyle(Theme.ink.opacity(0.7))
+                .foregroundStyle(Theme.ink)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Theme.Space.xl)
                 .cardGlass(radius: Theme.Radius.control)
@@ -248,7 +248,7 @@ struct DeskView: View {
                         .lineLimit(1)
                     Text("\(event.time) · \(event.seats) seats")
                         .font(Typography.body(11, weight: .regular))
-                        .foregroundStyle(Theme.ink.opacity(0.7))
+                        .foregroundStyle(Theme.ink)
                 }
                 Spacer(minLength: Theme.Space.s)
                 StatusPill(label: "Draft", tone: .outline, showDot: false)
@@ -275,7 +275,7 @@ struct DeskView: View {
                         .lineLimit(1)
                     Text("\(recap?.showed ?? 0) of \(recap?.confirmed ?? 0) showed · \(verifiedCount) stories verified")
                         .font(Typography.body(12, weight: .regular))
-                        .foregroundStyle(Theme.ink.opacity(0.75))
+                        .foregroundStyle(Theme.ink)
                 }
                 Spacer(minLength: Theme.Space.s)
                 HStack(spacing: 4) {

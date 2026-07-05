@@ -77,7 +77,7 @@ struct DoorView: View {
                     .foregroundStyle(Theme.ink)
                 Text("\(event.title) · \(event.date)")
                     .font(Typography.body(12, weight: .regular))
-                    .foregroundStyle(Theme.ink.opacity(0.75))
+                    .foregroundStyle(Theme.ink)
             }
             .padding(.horizontal, MemberLayout.hInset)
             .padding(.top, 60)
@@ -97,7 +97,7 @@ struct DoorView: View {
                 if list.isEmpty {
                     Text(emptyListText)
                         .font(Typography.body(13, weight: .regular))
-                        .foregroundStyle(Theme.ink.opacity(0.7))
+                        .foregroundStyle(Theme.ink)
                         .frame(maxWidth: .infinity)
                         .padding(.top, Theme.Space.xxl)
                 } else {
@@ -180,7 +180,7 @@ struct DoorView: View {
                 Button { markNoShow(guest) } label: {
                     Text("No show")
                         .font(Typography.body(10, weight: .medium))
-                        .foregroundStyle(Theme.ink.opacity(0.7))
+                        .foregroundStyle(Theme.ink)
                         .padding(.horizontal, Theme.Space.m)
                         .frame(height: 32)
                         .overlay(Capsule().strokeBorder(Theme.line2, lineWidth: 1))
@@ -230,7 +230,7 @@ struct DoorView: View {
                     .foregroundStyle(Theme.ink)
                 Text("\(doneCount + 1) of \(ratingQueueTotal)")
                     .font(Typography.body(12, weight: .regular))
-                    .foregroundStyle(Theme.ink.opacity(0.75))
+                    .foregroundStyle(Theme.ink)
             }
             .padding(.horizontal, MemberLayout.hInset)
             .padding(.top, 60)

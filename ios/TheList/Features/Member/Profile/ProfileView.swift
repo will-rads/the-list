@@ -59,7 +59,7 @@ struct ProfileView: View {
                     AppIcon.instagram.symbol
                         .font(.system(size: 13, weight: .medium)).foregroundStyle(Theme.ink.opacity(0.7))
                     Text("@\(profile.handle)")
-                        .font(Typography.body(13, weight: .regular)).foregroundStyle(Theme.ink.opacity(0.8))
+                        .font(Typography.body(13, weight: .regular)).foregroundStyle(Theme.ink)
                 }
                 .padding(.top, Theme.Space.m)
             }
