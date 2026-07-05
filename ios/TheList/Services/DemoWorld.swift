@@ -11,8 +11,11 @@ import Observation
 @Observable
 public final class DemoWorld {
     /// Canonical demo "today" — both web files agree: Sunday 25 May. Time
-    /// never advances in the demo world.
-    public static let today = "Sun · 25 May"
+    /// never advances in the demo world. `nonisolated`: it's an immutable
+    /// Sendable String, so the nonisolated seed factories (DemoWorldSeed+*)
+    /// can read it without hopping to the main actor (Swift 6 strict
+    /// concurrency — caught by CI 2026-07-05).
+    public nonisolated static let today = "Sun · 25 May"
 
     // `internal(set)` (not `private(set)`): Swift access control is
     // file-scoped, and the mutations below live in `DemoWorld+*` extensions
