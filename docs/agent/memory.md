@@ -4,6 +4,16 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-07-05 — Standing ruling: NO gray text (Will)
+
+All body/label/subline text reads full-contrast — black in light, white in dark, same as titles.
+Implemented by collapsing `--ink-2`/`--ink-mute` → `--ink` (web `web/v3/index.html`) and
+`Theme.ink2`/`Theme.inkMute` → `Theme.ink` (Swift `Theme.swift`), plus bumping opacity-dimmed
+TEXT to full. Two carve-outs kept dim on purpose: **inactive dock tabs** (new `--nav-idle` /
+`Theme.navIdle` — else the active tab is invisible) and **decorative icons** (exchange checkmark,
+row arrows, IG glyphs) + hairline dividers (`--line`). Don't reintroduce `ink-mute`-as-gray-text.
+Commits: web `f927d60`, ios `1779531` (CI green).
+
 ## 2026-07-04 — SwiftUI app scaffolded end to end (`ios/`, branch `v3-glass`) + v3 web ground finalized
 
 **Web (same day, before the port):** ground = `web/assets/bg-3.jpeg` BOTH themes (pastel CSS mesh
