@@ -34,13 +34,10 @@
   <p id="status" role="status"></p>
 
   <div class="auth" id="auth">
-    <form id="email-form">
+    <form id="login-form">
       <label>Email<input id="email" type="email" autocomplete="email" required></label>
-      <button>Send code</button>
-    </form>
-    <form id="otp-form" hidden>
-      <label>Six-digit code<input id="otp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required></label>
-      <button>Verify</button>
+      <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+      <button>Sign in</button>
     </form>
   </div>
 
@@ -91,7 +88,6 @@ const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp
 const date = value => value ? new Date(value).toLocaleString('en-LB') : '—';
 const money = value => value == null ? '—' : `$${Number(value).toFixed(2)}`;
 const empty = (rows, columns) => rows || `<tr><td colspan="${columns}">None</td></tr>`;
-let loginEmail = '';
 
 function message(text, error = false) {
   $('#status').textContent = text;
@@ -142,22 +138,13 @@ async function enter(user) {
   await refresh();
 }
 
-$('#email-form').addEventListener('submit', async event => {
-  event.preventDefault();
-  loginEmail = $('#email').value.trim();
-  try {
-    const { error } = await supabaseClient.auth.signInWithOtp({ email: loginEmail, options: { shouldCreateUser: false } });
-    if (error) throw error;
-    $('#email-form').hidden = true;
-    $('#otp-form').hidden = false;
-    message('Code sent');
-  } catch (error) { message(error.message, true); }
-});
-
-$('#otp-form').addEventListener('submit', async event => {
+$('#login-form').addEventListener('submit', async event => {
   event.preventDefault();
   try {
-    const { data, error } = await supabaseClient.auth.verifyOtp({ email: loginEmail, token: $('#otp').value, type: 'email' });
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email: $('#email').value.trim(),
+      password: $('#password').value,
+    });
     if (error) throw error;
     await enter(data.user);
   } catch (error) { message(error.message, true); }
