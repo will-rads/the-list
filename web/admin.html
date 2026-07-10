@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The List · Founder ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.2/dist/umd/supabase.min.js" integrity="sha384-sgcvElP/LlNRtORGYFLO/9K/bENcpJK19HgvqslWXog6d8f/Va4TpltGiBlGntCM" crossorigin="anonymous"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; color: #f5f1ea; background: #0a0a0a; font: 14px/1.5 'Plus Jakarta Sans', sans-serif; }
+  main { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 36px 0 72px; }
+  h1 { margin: 0 0 8px; font-size: 30px; } h2 { margin: 0 0 16px; font-size: 18px; }
+  section, .auth { margin-top: 24px; padding: 20px; border: 1px solid #343434; border-radius: 12px; background: #141414; }
+  form { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+  label { display: grid; gap: 6px; min-width: 220px; flex: 1; font-weight: 600; }
+  input, button { min-height: 42px; border: 1px solid #555; border-radius: 8px; font: inherit; }
+  input { width: 100%; padding: 0 12px; color: #f5f1ea; background: #0a0a0a; }
+  button { padding: 0 14px; color: #0a0a0a; background: #f5f1ea; font-weight: 800; cursor: pointer; }
+  button.secondary { color: #f5f1ea; background: transparent; } button:disabled { opacity: .5; cursor: wait; }
+  button:focus-visible, input:focus-visible { outline: 3px solid #f5f1ea; outline-offset: 2px; }
+  .table-wrap { overflow-x: auto; } table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #343434; text-align: left; vertical-align: top; }
+  th { font-size: 12px; } td.actions { display: flex; gap: 8px; }
+  .note { margin: 10px 0 0; font-size: 12px; } #status { min-height: 21px; margin: 8px 0 0; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Founder ops</h1>
+  <p id="status" role="status"></p>
+
+  <div class="auth" id="auth">
+    <form id="email-form">
+      <label>Email<input id="email" type="email" autocomplete="email" required></label>
+      <button>Send code</button>
+    </form>
+    <form id="otp-form" hidden>
+      <label>Six-digit code<input id="otp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required></label>
+      <button>Verify</button>
+    </form>
+  </div>
+
+  <div id="founders-only" class="auth" hidden>Founders only</div>
+
+  <div id="ops" hidden>
+    <section>
+      <h2>Applications queue</h2>
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Instagram</th><th>Phone</th><th>Created</th><th>Actions</th></tr></thead><tbody id="applications"></tbody></table></div>
+    </section>
+
+    <section>
+      <h2>Invite codes</h2>
+      <button data-rpc="generate">Generate 10</button>
+      <div class="table-wrap"><table><thead><tr><th>Code</th><th>Used by</th><th>Used at</th></tr></thead><tbody id="invites"></tbody></table></div>
+    </section>
+
+    <section>
+      <h2>Create venue</h2>
+      <form id="venue-form">
+        <label>Owner user UUID<input id="owner" required></label>
+        <label>Name<input id="venue-name" required></label>
+        <label>Area<input id="area" required></label>
+        <button>Create venue</button>
+      </form>
+      <p class="note">owner must have logged in once (profiles row exists)</p>
+    </section>
+
+    <section>
+      <h2>Stories</h2>
+      <div class="table-wrap"><table><thead><tr><th>Member</th><th>Event</th><th>Verdict</th><th>Score</th><th>Due</th><th>Actions</th></tr></thead><tbody id="stories"></tbody></table></div>
+    </section>
+
+    <section>
+      <h2>Bookings</h2>
+      <div class="table-wrap"><table><thead><tr><th>Event</th><th>Bundle price</th><th>Cut amount</th><th>Invoice status</th></tr></thead><tbody id="bookings"></tbody></table></div>
+      <p class="note">invoice status: edit in Supabase for now</p>
+    </section>
+  </div>
+</main>
+<script>
+const supabaseClient = window.supabase.createClient(
+  "https://zrbakomzpuesifasuamb.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyYmFrb216cHVlc2lmYXN1YW1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMTYzNzIsImV4cCI6MjA5ODY5MjM3Mn0.3ntox_XSnie3EIEflgZb7hxbsC0CFlwF-M1J2wVfCGA"
+);
+const $ = selector => document.querySelector(selector);
+const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+const date = value => value ? new Date(value).toLocaleString('en-LB') : '—';
+const money = value => value == null ? '—' : `$${Number(value).toFixed(2)}`;
+const empty = (rows, columns) => rows || `<tr><td colspan="${columns}">None</td></tr>`;
+let loginEmail = '';
+
+function message(text, error = false) {
+  $('#status').textContent = text;
+  $('#status').style.color = error ? '#f5f1ea' : '';
+}
+
+async function rpc(name, args) {
+  document.querySelectorAll('button').forEach(button => button.disabled = true);
+  const { error } = await supabaseClient.rpc(name, args);
+  document.querySelectorAll('button').forEach(button => button.disabled = false);
+  if (error) throw error;
+  message('Saved');
+  await refresh();
+}
+
+async function refresh() {
+  message('Refreshing…');
+  const [profiles, invites, stories, bookings] = await Promise.all([
+    supabaseClient.from('profiles').select('id,full_name,ig_handle,phone,created_at').eq('status', 'pending').order('created_at'),
+    supabaseClient.from('invite_codes').select('code,used_by,used_at').order('code'),
+    supabaseClient.from('stories').select('id,verdict,score,due_at,applications(member_id,profiles(full_name,ig_handle),events(title))').order('due_at'),
+    supabaseClient.from('bookings').select('bundle_price,cut_amount,invoice_status,events(title)').order('created_at', { ascending: false })
+  ]);
+  const failed = [profiles, invites, stories, bookings].find(result => result.error);
+  if (failed) throw failed.error;
+
+  $('#applications').innerHTML = empty(profiles.data.map(row => `<tr><td>${esc(row.full_name)}</td><td>${esc(row.ig_handle)}</td><td>${esc(row.phone)}</td><td>${date(row.created_at)}</td><td class="actions"><button data-member="${esc(row.id)}" data-decision="approve">Approve</button><button class="secondary" data-member="${esc(row.id)}" data-decision="reject">Reject</button></td></tr>`).join(''), 5);
+  $('#invites').innerHTML = empty(invites.data.map(row => `<tr><td>${esc(row.code)}</td><td>${esc(row.used_by) || '—'}</td><td>${date(row.used_at)}</td></tr>`).join(''), 3);
+  $('#stories').innerHTML = empty(stories.data.map(row => {
+    const application = row.applications || {}, member = application.profiles || {}, event = application.events || {};
+    return `<tr><td>${esc(member.full_name || member.ig_handle || application.member_id)}</td><td>${esc(event.title)}</td><td>${esc(row.verdict)}</td><td>${esc(row.score ?? '—')}</td><td>${date(row.due_at)}</td><td class="actions"><button data-story="${esc(row.id)}" data-verdict="verified">Verify</button><button class="secondary" data-story="${esc(row.id)}" data-verdict="rejected">Reject</button></td></tr>`;
+  }).join(''), 6);
+  $('#bookings').innerHTML = empty(bookings.data.map(row => `<tr><td>${esc(row.events?.title)}</td><td>${money(row.bundle_price)}</td><td>${money(row.cut_amount)}</td><td>${esc(row.invoice_status)}</td></tr>`).join(''), 4);
+  message('Up to date');
+}
+
+async function enter(user) {
+  if (!user) return;
+  const { data, error } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
+  if (error) throw error;
+  $('#auth').hidden = true;
+  if (data.role !== 'founder') {
+    $('#founders-only').hidden = false;
+    message('');
+    return;
+  }
+  $('#ops').hidden = false;
+  await refresh();
+}
+
+$('#email-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  loginEmail = $('#email').value.trim();
+  try {
+    const { error } = await supabaseClient.auth.signInWithOtp({ email: loginEmail, options: { shouldCreateUser: false } });
+    if (error) throw error;
+    $('#email-form').hidden = true;
+    $('#otp-form').hidden = false;
+    message('Code sent');
+  } catch (error) { message(error.message, true); }
+});
+
+$('#otp-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  try {
+    const { data, error } = await supabaseClient.auth.verifyOtp({ email: loginEmail, token: $('#otp').value, type: 'email' });
+    if (error) throw error;
+    await enter(data.user);
+  } catch (error) { message(error.message, true); }
+});
+
+$('#venue-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  try {
+    await rpc('create_venue', { p_owner: $('#owner').value.trim(), p_name: $('#venue-name').value.trim(), p_area: $('#area').value.trim() });
+    event.target.reset();
+  } catch (error) { message(error.message, true); }
+});
+
+document.addEventListener('click', async event => {
+  const button = event.target.closest('button[data-rpc], button[data-member], button[data-story]');
+  if (!button) return;
+  try {
+    if (button.dataset.rpc === 'generate') await rpc('create_invite_codes', { p_count: 10 });
+    if (button.dataset.member) {
+      const memberRpc = button.dataset.decision === 'approve' ? 'approve_member' : 'reject_member';
+      await rpc(memberRpc, { p_member: button.dataset.member });
+    }
+    if (button.dataset.story) {
+      const reason = prompt('Reason for override');
+      if (reason === null) return;
+      await rpc('override_story', { p_story: button.dataset.story, p_verdict: button.dataset.verdict, p_reason: reason });
+    }
+  } catch (error) { message(error.message, true); }
+});
+
+supabaseClient.auth.getSession().then(({ data }) => enter(data.session?.user)).catch(error => message(error.message, true));
+</script>
+</body>
+</html>

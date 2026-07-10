@@ -11,6 +11,7 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.2/dist/umd/supabase.min.js" integrity="sha384-sgcvElP/LlNRtORGYFLO/9K/bENcpJK19HgvqslWXog6d8f/Va4TpltGiBlGntCM" crossorigin="anonymous"></script>
 
 <style>
   /* v3 Frosted glass (2026-07-04 spec) — monochrome glassmorphism over one
@@ -387,6 +388,10 @@
 
 <script type="text/babel" data-presets="env,react">
 const { useState, useEffect, useRef, useMemo } = React;
+const supabaseClient = window.supabase.createClient(
+  "https://zrbakomzpuesifasuamb.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyYmFrb216cHVlc2lmYXN1YW1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMTYzNzIsImV4cCI6MjA5ODY5MjM3Mn0.3ntox_XSnie3EIEflgZb7hxbsC0CFlwF-M1J2wVfCGA"
+);
 
 /* ========== curated imagery ========== */
 const IMG = {
@@ -468,7 +473,7 @@ const GS_COPY = {
 const SS_COPY = { due:"Story due", review:"Under review", needs_review:"Needs review",
   rejected:"Rejected — try another screenshot", missed:"Missed", verified:"Verified" };
 
-const EVENTS = [
+const SEED_EVENTS = [
   // 1. Pool Day — locked, the confirmed-seat demo event
   { id:"pool",    title:"Pool Day",         venue:"Cyan Beach Club",  area:"Jiyeh",
     date:"Sun · 25 May",  time:"14:00", doors:"14:00", img:IMG.beachClub, type:"Beach",
@@ -534,7 +539,7 @@ const EVENTS = [
     brief:{ arrival:"20:00 – 21:00", dress:"Smart casual", meeting:"Rooftop elevator", rules:"1 Story + venue tag during the event" } },
 ];
 
-const eventById = (id) => EVENTS.find(e => e.id === id);
+const eventById = (id, events=SEED_EVENTS) => events.find(e => e.id === id);
 
 const MY_EVENTS = [
   { eventId:"pool",    state:GS.confirmed, code:"LST-4F" },
@@ -574,6 +579,82 @@ const SEED_PROFILE = {
     ],
   },
 };
+
+const APPLICATION_STATE = {
+  applied:GS.applied, waitlist:GS.waitlist, picked:GS.picked, confirmed:GS.confirmed,
+  declined:GS.declined, expired:GS.expired, not_selected:GS.notSelected,
+  checked_in:GS.checkedIn, no_show:GS.noShow, cancelled:GS.cancelled,
+};
+
+function normalizeEvent(row){
+  const starts = row.starts_at ? new Date(row.starts_at) : null;
+  const closes = row.closes_at ? new Date(row.closes_at) : null;
+  const venue = Array.isArray(row.venues) ? row.venues[0] : row.venues;
+  const stage = row.status === "cancelled" ? STAGE.cancelled
+    : ["completed", "past"].includes(row.status) ? STAGE.past
+    : ["closed", "locked"].includes(row.status) ? STAGE.locked
+    : row.status === "draft" ? STAGE.draft : STAGE.open;
+  return {
+    ...row,
+    id:row.id,
+    title:row.title || row.name || "Untitled room",
+    venue:venue?.name || row.venue_name || "The List",
+    area:venue?.area || row.area || "Beirut",
+    date:starts && !Number.isNaN(starts.valueOf())
+      ? starts.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}).replace(/,/, " ·")
+      : "Date TBA",
+    time:starts && !Number.isNaN(starts.valueOf())
+      ? starts.toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit", hour12:false})
+      : (row.time || "TBA"),
+    doors:row.doors || row.doors_at || row.time || "TBA",
+    img:row.image_url || row.cover_url || IMG.lounge,
+    type:row.type || row.category || "Night",
+    stage,
+    seats:row.seats || row.capacity || 0,
+    applied:row.application_count ?? row.applied ?? 0,
+    closesAt:closes && !Number.isNaN(closes.valueOf())
+      ? closes.toLocaleString("en-GB", {weekday:"short", day:"numeric", month:"short", hour:"2-digit", minute:"2-digit", hour12:false}).replace(/,/, " ·")
+      : row.closes_at,
+    gallery:Array.isArray(row.gallery) && row.gallery.length ? row.gallery : [row.image_url || row.cover_url || IMG.lounge],
+    brief:row.brief,
+  };
+}
+
+function notificationKind(kind){
+  if (kind === "picked") return "picked";
+  if (["confirm_reminder", "pick_expired"].includes(kind)) return "expiring";
+  if (kind === "pass_ready") return "pass";
+  if (kind?.startsWith("story_")) return "story";
+  if (kind === "event_changed") return "cancelled";
+  return "drop";
+}
+
+function mapNotification(row){
+  return { id:row.id, kind:notificationKind(row.kind), text:[row.title, row.body].filter(Boolean).join(" · "), eventId:row.event_id, read:row.read };
+}
+
+function mapApplication(row, story){
+  let storyState;
+  let verdict;
+  if (story?.verdict === "verified") {
+    storyState = SS.verified;
+    verdict = { score:story.score, reason:story.breakdown?.reason || story.reason || "Story verified" };
+  } else if (story?.verdict === "rejected") {
+    storyState = SS.rejected;
+    verdict = { score:story.score, reason:story.breakdown?.reason || story.reason || "Story did not pass review" };
+  } else if (story?.verdict === "pending") {
+    storyState = story.due_at ? SS.due : SS.review;
+  }
+  return {
+    applicationId:row.id,
+    eventId:row.event_id,
+    state:APPLICATION_STATE[row.status] || row.status,
+    code:row.pass_code,
+    pickedAt:row.pick_expires_at ? new Date(row.pick_expires_at).getTime() - 24*3600000 : undefined,
+    story:storyState,
+    verdict,
+  };
+}
 
 /* ========== Intro clips — grainy Beirut nightlife montage ==========
    3 Veo 3.1 clips (5s each), animated from Nano Banana Pro stills:
@@ -615,6 +696,7 @@ const HICONS = {
   "calendar": '<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/>',
   "settings": '<path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>',
   "instagram": '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/>',
+  "whatsapp": '<path stroke-linecap="round" stroke-linejoin="round" d="M20.5 11.7a8.3 8.3 0 0 1-12.3 7.2L3 20.5l1.7-5A8.3 8.3 0 1 1 20.5 11.7Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M8.2 7.7c.2-.5.4-.5.8-.5h.4c.2 0 .4 0 .5.4l.8 2c.1.3 0 .5-.2.7l-.6.7c-.2.2-.1.4 0 .6.8 1.4 1.9 2.4 3.4 3 .3.1.5.1.7-.1l.9-1.1c.2-.2.4-.3.7-.2l1.9.9c.3.1.5.3.5.5 0 .2-.1 1.3-.8 1.9-.7.7-1.6.8-2.2.8-.6 0-3.8-.8-6.4-3.4-2-2-2.8-4.4-2.8-5.1 0-.7.2-1.3.5-1.7Z"/>',
   "image": '<path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 19.5h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Z"/>',
 };
 function Icon({ name, size=18, stroke=1.5, className="" }){
@@ -775,12 +857,19 @@ function Toast({ msg }){
 /* ========== Share sheet — what's shared + the actions ========== */
 function ShareSheet({ event, onClose, onToast }){
   if(!event) return null;
+  const link = "https://the-list-omega.vercel.app/v3/e?id=" + event.id;
   const actions = [
     { id:"copy",  label:"Copy link",       icon:"link",        toast:"Link copied" },
     { id:"story", label:"To Story",        icon:"instagram",   toast:"Opening Instagram" },
-    { id:"dm",    label:"Message",         icon:"paper-plane", toast:"Opening Messages" },
+    { id:"dm",    label:"WhatsApp",        icon:"whatsapp",    toast:"Opening WhatsApp" },
     { id:"more",  label:"More",            icon:"share",       toast:"More share options" },
   ];
+  const act = async (action) => {
+    if (action.id === "copy") await navigator.clipboard.writeText(link);
+    if (action.id === "dm") window.open("https://wa.me/?text=" + encodeURIComponent(link), "_blank", "noopener,noreferrer");
+    onToast(action.toast);
+    onClose();
+  };
   return (
     <>
       <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
@@ -805,7 +894,7 @@ function ShareSheet({ event, onClose, onToast }){
 
         <div className="grid grid-cols-4 gap-2">
           {actions.map(a=>(
-            <button key={a.id} onClick={()=>{ onToast(a.toast); onClose(); }} className="press flex flex-col items-center gap-2 py-3 rounded-[14px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
+            <button key={a.id} onClick={()=>act(a)} className="press flex flex-col items-center gap-2 py-3 rounded-[14px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
               <Icon name={a.icon} size={20} stroke={1.5}/>
               <span className="text-[10px]" style={{color:"var(--ink)"}}>{a.label}</span>
             </button>
@@ -1091,14 +1180,17 @@ function stageBadge(event){
 }
 
 /* ========== 01 — HOME ========== */
-function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, onBell, unreadCount, onOpenPass }){
-  const featured = EVENTS.find(e => e.id === "pool");
-  // Pinned next room — derive from myEvents confirmed row, else Late Lounge as default
-  const confirmedRow = (myEvents || []).find(r => r.state === GS.confirmed);
-  const confirmedEvent = confirmedRow ? EVENTS.find(e => e.id === confirmedRow.eventId) : null;
-  const nextEvent = confirmedEvent || EVENTS.find(e => e.id === "lounge");
+function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, onBell, unreadCount, onOpenPass, events }){
+  const featured = events.find(e => e.id === "pool") || events[0] || SEED_EVENTS[0];
+  // Pinned next room — the member's most advanced active application, else next open room
+  const activeRow = [GS.confirmed, GS.picked, GS.checkedIn, GS.applied, GS.waitlist]
+    .map(s => (myEvents || []).find(r => r.state === s)).find(Boolean);
+  const activeEvent = activeRow ? events.find(e => e.id === activeRow.eventId) : null;
+  const confirmedRow = activeRow?.state === GS.confirmed ? activeRow : null;
+  const confirmedEvent = confirmedRow ? activeEvent : null;
+  const nextEvent = activeEvent || events.find(e => e.id === "lounge") || events.find(e => e.stage === STAGE.open) || featured;
   // Tonight: open events only (no cancelled, no past), minus whatever is already featured or pinned
-  const tonight  = EVENTS.filter(e => e.stage === STAGE.open && e.id !== featured.id && e.id !== nextEvent.id);
+  const tonight  = events.filter(e => e.stage === STAGE.open && e.id !== featured.id && e.id !== nextEvent.id);
   const nextDate  = parseDate(nextEvent.date);
   return (
     <PhoneScreen tab={tab} onTab={onTab}>
@@ -1118,7 +1210,7 @@ function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, on
         </div>
         <div className="flex items-end justify-between mt-3">
           <div className="font-black font-display-l text-[40px] leading-none">Home</div>
-          <div className="font-medium text-[14px] pb-1" style={{color:"var(--ink-2)"}}>Sunday · 25.05</div>
+          <div className="font-medium text-[14px] pb-1" style={{color:"var(--ink-2)"}}>{new Date().toLocaleDateString("en-GB",{weekday:"long"})} · {String(new Date().getDate()).padStart(2,"0")}.{String(new Date().getMonth()+1).padStart(2,"0")}</div>
         </div>
       </div>
 
@@ -1132,7 +1224,9 @@ function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, on
           <div className="flex-1 min-w-0">
             <div className="font-display text-[17px] truncate">{nextEvent.title}</div>
             <div className="text-[11px] mt-0.5" style={{color:"var(--ink)"}}>
-              {confirmedEvent ? "Doors " + (nextEvent.doors || nextEvent.time) + " · View pass" : "Confirmed · " + nextEvent.time}
+              {confirmedEvent ? "Doors " + (nextEvent.doors || nextEvent.time) + " · View pass"
+                : activeRow ? (GS_COPY[activeRow.state] || "Applied") + " · " + nextEvent.time
+                : "Open · " + nextEvent.time}
             </div>
           </div>
           <Icon name="arrow-right" size={16} stroke={1.4} className="opacity-50"/>
@@ -1311,7 +1405,7 @@ function CalendarSheet({ onClose, activeDay, onPick }){
 }
 
 /* ========== 02 — EXPLORE ========== */
-function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast }){
+function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast, events }){
   const [filter, setFilter] = useState("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [calOpen, setCalOpen] = useState(false);
@@ -1329,7 +1423,7 @@ function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast }
   };
   const filters = ["all","beach","club","restaurant","lounge"];
   // Browse shows only open+locked events; cancelled and past are never shown in browse
-  const browseable = EVENTS.filter(e => e.stage !== STAGE.cancelled && e.stage !== STAGE.past);
+  const browseable = events.filter(e => e.stage !== STAGE.cancelled && e.stage !== STAGE.past);
   const list = browseable.filter(e => filter==="all" ? true : e.type.toLowerCase()===filter);
   const activeAdvCount = advFilters.verticals.length + (advFilters.distance ? 1 : 0) + (advFilters.timing !== "Tonight" ? 1 : 0);
 
@@ -1435,9 +1529,9 @@ function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast }
 }
 
 /* ========== 03 — EVENT DETAIL ========== */
-function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved, onToggleSave, onToast, myEvents, onOpenPicked }){
+function ScreenEventDetail({ event, onBack, onApply, onCancel, applyState, onShare, saved, onToggleSave, onToast, myEvents, onOpenPicked }){
   const [heroIdx, setHeroIdx] = useState(0);
-  const e = event || EVENTS[0];
+  const e = event || SEED_EVENTS[0];
   const gallery = e.gallery || [e.img];
   // Derive member's relationship to this event
   const myRow = (myEvents||[]).find(r => r.eventId === e.id);
@@ -1563,12 +1657,13 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
               </button>
             );
           }
-          // applied row → status pill, no button
-          if (myRow && myRow.state === GS.applied) {
+          // applied / waitlist row → status + cancellation RPC
+          if (myRow && [GS.applied, GS.waitlist].includes(myRow.state)) {
             return (
-              <div className="flex items-center justify-center py-2">
-                <StatusPill label={GS_COPY.applied} tone="neutral" dot/>
-              </div>
+              <button onClick={()=>onCancel(myRow)} className="press w-full h-[56px] rounded-full flex items-center justify-center gap-3" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+                <StatusPill label={GS_COPY[myRow.state]} tone="neutral" dot/>
+                <span className="text-[11px]">Cancel application</span>
+              </button>
             );
           }
           // picked row → live solid pill "Confirm your seat →" opens takeover
@@ -1627,7 +1722,7 @@ function ScreenEventDetail({ event, onBack, onApply, applyState, onShare, saved,
 }
 
 /* ========== 04 — MY EVENTS ========== */
-function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPickEvent, onToast, onOpenPass, onOpenPicked, onOpenStory, initialSeg }){
+function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPickEvent, onToast, onOpenPass, onOpenPicked, onOpenStory, initialSeg, events }){
   // Derive segments from myEvents data layer
   const appliedStates   = new Set([GS.applied, GS.waitlist, GS.picked]);
   const confirmedStates = new Set([GS.confirmed]);
@@ -1638,7 +1733,7 @@ function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPic
   const pastRows      = myEvents.filter(r => pastStates.has(r.state));
 
   // Join eventId → EVENTS for display
-  const joinEvent = (r) => ({ ...r, event: EVENTS.find(e => e.id === r.eventId) });
+  const joinEvent = (r) => ({ ...r, event: events.find(e => e.id === r.eventId) });
 
   // The confirmed event for the confirmed-seat UI (first confirmed row)
   const confirmedMyRow = confirmedRows[0] ? joinEvent(confirmedRows[0]) : null;
@@ -1714,7 +1809,7 @@ function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPic
       {seg==="applied" && (appliedRows.length > 0 ? (
         <div className="px-5 pt-1 space-y-4 anim-up">
           {appliedRows.map(r => {
-            const ev = EVENTS.find(e => e.id === r.eventId);
+            const ev = events.find(e => e.id === r.eventId);
             if (!ev) return null;
             const isPicked = r.state === GS.picked;
             // Hours left to confirm — 24h from pickedAt (fallback 24 when a seed has no timestamp)
@@ -1775,7 +1870,7 @@ function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPic
       {seg==="past" && (
         <div className="px-5 pt-1 space-y-3 stagger">
           {pastRows.map((r, i) => {
-            const ev = EVENTS.find(e => e.id === r.eventId);
+            const ev = events.find(e => e.id === r.eventId);
             if (!ev) return null;
             // Quiet states — the ones that end the relationship without a night out
             const quiet = [GS.notSelected, GS.cancelled, GS.expired, GS.declined, GS.withdrawn, GS.noShow].includes(r.state);
@@ -1953,7 +2048,7 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
 
 /* ========== 06 — PICKED (full-screen takeover) ========== */
 function ScreenPicked({ event, pickedAt, onConfirm, onDecline }){
-  const e = event || EVENTS[0];
+  const e = event || SEED_EVENTS[0];
 
   // Live countdown — 24h from pickedAt, ticking every second
   const computeRemaining = () => {
@@ -2042,7 +2137,7 @@ function BriefBlock({ brief, className="" }){
 }
 
 function ScreenPass({ event, row, profile, onBack }){
-  const e = event || EVENTS[0];
+  const e = event || SEED_EVENTS[0];
   const p = profile || SEED_PROFILE;
   const checkedIn = row && row.state === GS.checkedIn;
   return (
@@ -2157,24 +2252,98 @@ function Steps({ current, total=3, dark=false, className="" }){
   );
 }
 
-function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
-  const [phone, setPhone] = useState("");
+function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenticated }){
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
   const [handle, setHandle] = useState("");
-  const canSubmit = phone.length >= 6 && handle.length >= 2;
+  const [otp, setOtp] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [inviteMode, setInviteMode] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [errorText, setErrorText] = useState("");
+  const canSubmit = email.includes("@") && fullName.trim().length >= 2 && handle.trim().length >= 2 && (!inviteMode || inviteCode.trim().length >= 2);
 
   const submit = async () => {
-    setStep('reviewing');
-    // Real prod: POST /api/onboard → backend hits whichever creator-data
-    // provider we settle on. Prototype mocks client-side using the agreed
-    // normalized shape so the provider can swap later without UI changes.
-    try {
-      const profile = await mockCreatorDataFetch(handle);
-      onProfileFetched(profile);
-      setStep('tier-reveal');
-    } catch (err) {
-      // handle not found / provider error → recoverable, send them back to retry
+    setBusy(true);
+    setErrorText("");
+    const normalizedHandle = handle.trim().replace(/^@/, "");
+    const { error } = await supabaseClient.auth.signInWithOtp({
+      email:email.trim(),
+      options:{data:{full_name:fullName.trim(), ig_handle:normalizedHandle}},
+    });
+    setBusy(false);
+    if (error) {
+      setErrorText(error.message);
       setStep('error');
+      return;
     }
+    setStep('otp');
+  };
+
+  const verify = async () => {
+    if (otp.length !== 6) return;
+    setBusy(true);
+    setErrorText("");
+    const { data, error } = await supabaseClient.auth.verifyOtp({email:email.trim(), token:otp, type:"email"});
+    if (error || !data.session) {
+      setBusy(false);
+      setErrorText(error?.message || "That code did not work");
+      setStep('error');
+      return;
+    }
+    setStep('reviewing');
+    if (inviteMode) {
+      const { error:inviteError } = await supabaseClient.rpc("redeem_invite", {p_code:inviteCode.trim()});
+      if (inviteError) {
+        setBusy(false);
+        setErrorText(inviteError.message);
+        setStep('error');
+        return;
+      }
+    }
+    const { data:profileRow, error:profileError } = await supabaseClient.from("profiles").select("*").eq("id", data.user.id).single();
+    if (profileError) {
+      setBusy(false);
+      setErrorText(profileError.message);
+      setStep('error');
+      return;
+    }
+    let creatorData = profileRow.creator_data;
+    if (!creatorData) {
+      const creator = await supabaseClient.functions.invoke("creator-data", {body:{handle:handle.trim().replace(/^@/, "")}});
+      if (creator.error) {
+        setBusy(false);
+        setErrorText(creator.error.message || "Could not read that profile");
+        setStep('error');
+        return;
+      }
+      creatorData = creator.data?.profile || creator.data;
+      if (!creatorData) {
+        setBusy(false);
+        setErrorText("Could not read that profile");
+        setStep('error');
+        return;
+      }
+      const {error:updateError} = await supabaseClient.from("profiles").update({creator_data:creatorData}).eq("id", data.user.id);
+      if (updateError) {
+        setBusy(false);
+        setErrorText(updateError.message);
+        setStep('error');
+        return;
+      }
+    }
+    const mergedProfile = {...profileRow, ...(creatorData || {}), handle:creatorData?.handle || profileRow.ig_handle};
+    onProfileFetched(mergedProfile);
+    try {
+      await onAuthenticated(data.session, mergedProfile);
+    } catch (authError) {
+      setBusy(false);
+      setErrorText(authError.message || "Could not load your account");
+      setStep('error');
+      return;
+    }
+    setBusy(false);
+    setStep(profileRow.status === "approved" ? 'tier-reveal' : 'queue');
   };
 
   if (step === 'intro') return (
@@ -2191,11 +2360,11 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
 
         {/* Bottom actions — solid Apply (accent) + ghost invite, TSS pattern */}
         <div className="flex flex-col gap-3 anim-up">
-          <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5" style={{background:"#F7F6F3", color:"#000000"}}>
+          <button onClick={()=>{ setInviteMode(false); setStep('phone'); }} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5" style={{background:"#F7F6F3", color:"#000000"}}>
             <span>Apply for access</span>
             <Icon name="arrow-right" size={16} stroke={1.6}/>
           </button>
-          <button onClick={()=>setStep('phone')} className="press w-full h-[58px] rounded-full font-medium text-[13px]" style={{background:"transparent", color:"#F7F6F3", border:"1px solid rgba(247,246,243,.32)"}}>
+          <button onClick={()=>{ setInviteMode(true); setStep('phone'); }} className="press w-full h-[58px] rounded-full font-medium text-[13px]" style={{background:"transparent", color:"#F7F6F3", border:"1px solid rgba(247,246,243,.32)"}}>
             I have an invite
           </button>
         </div>
@@ -2227,9 +2396,17 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
 
         <div className="mt-10 space-y-5">
           <div>
-            <div className="stamp mb-2">Phone</div>
-            <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+961 71 000 000" className="w-full h-12 px-3 rounded-[12px] text-[15px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+            <div className="stamp mb-2">Email</div>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" className="w-full h-12 px-3 rounded-[12px] text-[15px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
           </div>
+          <div>
+            <div className="stamp mb-2">Full name</div>
+            <input value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Sara Capriotti" className="w-full h-12 px-3 rounded-[12px] text-[15px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+          </div>
+          {inviteMode && <div>
+            <div className="stamp mb-2">Invite code</div>
+            <input value={inviteCode} onChange={e=>setInviteCode(e.target.value)} placeholder="LST-XX" className="w-full h-12 px-3 rounded-[12px] text-[15px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+          </div>}
           <div>
             <div className="stamp mb-2">Instagram handle</div>
             <div className="flex h-12 rounded-[12px] overflow-hidden" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)"}}>
@@ -2241,11 +2418,29 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
 
         <div className="flex-1"/>
 
-        <button onClick={submit} disabled={!canSubmit} className={"press w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5 "+(canSubmit?"glow-primary":"")} style={{background: canSubmit ? "var(--ice)" : "var(--bg-elev2)", color: canSubmit ? "var(--ice-ink)" : "var(--ink-mute)"}}>
-          <span>Apply for access</span>
+        <button onClick={submit} disabled={!canSubmit || busy} className={"press w-full h-[58px] rounded-full font-semibold text-[15px] flex items-center justify-center gap-2.5 "+(canSubmit?"glow-primary":"")} style={{background: canSubmit ? "var(--ice)" : "var(--bg-elev2)", color: canSubmit ? "var(--ice-ink)" : "var(--ink-mute)"}}>
+          <span>{busy ? "Sending code" : "Apply for access"}</span>
           <Icon name="arrow-right" size={16} stroke={1.6}/>
         </button>
-        <div className="text-center text-[11px] mt-3" style={{color:"var(--ink-mute)"}}>No password. We verify through your Instagram.</div>
+        <div className="text-center text-[11px] mt-3" style={{color:"var(--ink-mute)"}}>No password. We send a six-digit email code.</div>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+
+  if (step === 'otp') return (
+    <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
+      <StatusBar/>
+      <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
+        <div className="stamp wordmark">The List · verification</div>
+        <Steps current={2} className="mt-4"/>
+        <div className="font-black font-display-l text-[44px] leading-[.95] mt-3">Check<br/>your email</div>
+        <div className="text-[13px] mt-3 max-w-[280px]" style={{color:"var(--ink-2)"}}>Enter the six-digit code sent to {email}.</div>
+        <input inputMode="numeric" maxLength="6" value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g, ""))} placeholder="000000" className="w-full h-14 px-4 rounded-[12px] text-[24px] tracking-[.3em] mt-10" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+        <div className="flex-1"/>
+        <button onClick={verify} disabled={otp.length !== 6 || busy} className={"press w-full h-[58px] rounded-full font-semibold text-[15px] "+(otp.length === 6 ? "glow-primary" : "")} style={{background:otp.length === 6 ? "var(--ice)" : "var(--bg-elev2)", color:otp.length === 6 ? "var(--ice-ink)" : "var(--ink)"}}>
+          {busy ? "Reading profile" : "Verify code"}
+        </button>
       </div>
       <HomeIndicator/>
     </div>
@@ -2268,6 +2463,17 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
     </div>
   );
 
+  if (step === 'queue') return (
+    <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
+      <StatusBar/>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-7">
+        <div className="font-black font-display-l text-[38px] leading-[.95]">You're on<br/>the queue</div>
+        <div className="text-[13px] mt-4 max-w-[280px]">We review every application. You'll get access as soon as your profile is approved.</div>
+      </div>
+      <HomeIndicator/>
+    </div>
+  );
+
   if (step === 'error') return (
     <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
       <StatusBar/>
@@ -2278,7 +2484,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched }){
             <Icon name="x" size={40} stroke={1.4}/>
           </div>
           <div className="font-black font-display-l text-[30px] leading-[.95] mt-10">Couldn't<br/>read that</div>
-          <div className="text-[13px] mt-3 opacity-75 max-w-[280px]">We couldn't pull @{handle || "your-handle"} from Instagram. Check the spelling, or try another handle.</div>
+          <div className="text-[13px] mt-3 opacity-75 max-w-[280px]">{errorText || "Check your details and try again."}</div>
         </div>
         <button onClick={()=>setStep('phone')} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[15px]" style={{background:"#F7F6F3", color:"#000000"}}>
           Try another handle
@@ -2327,7 +2533,9 @@ function genCode(existing){
 
 /* ========== APP — navigation state ========== */
 function App(){
-  const [onboardStep, setOnboardStep] = useState("intro"); // intro | phone | reviewing | tier-reveal | error | done
+  const [onboardStep, setOnboardStep] = useState("intro"); // intro | phone | otp | reviewing | queue | tier-reveal | error | done
+  const [session, setSession] = useState(null);
+  const [events, setEvents] = useState(SEED_EVENTS);
   const [screen, setScreen] = useState("home");           // home | explore | detail | mylist | profile | picked
   const [tab, setTab] = useState("home");
   const [currentEvent, setCurrentEvent] = useState(null);
@@ -2351,6 +2559,55 @@ function App(){
   const pickTimersRef = useRef({});
   const verdictTimersRef = useRef({});
 
+  const hydrateMember = async (uid, gate=false) => {
+    const [profileResult, eventResult, applicationResult, saveResult, notificationResult] = await Promise.all([
+      supabaseClient.from("profiles").select("*").eq("id", uid).single(),
+      supabaseClient.from("events").select("*, venues(name,area)").eq("status", "published"),
+      supabaseClient.from("applications").select("*, events(*)").eq("member_id", uid),
+      supabaseClient.from("saves").select("*"),
+      supabaseClient.from("notifications").select("*").order("created_at", {ascending:false}),
+    ]);
+    const firstError = [profileResult, eventResult, applicationResult, saveResult, notificationResult].find(result => result.error)?.error;
+    if (firstError) throw firstError;
+
+    const applications = applicationResult.data || [];
+    const appIds = applications.map(row => row.id);
+    let stories = [];
+    if (appIds.length) {
+      const storyResult = await supabaseClient.from("stories").select("*").in("application_id", appIds);
+      if (storyResult.error) throw storyResult.error;
+      stories = storyResult.data || [];
+    }
+    const storyByApplication = new Map(stories.map(story => [story.application_id, story]));
+    const liveEvents = (eventResult.data || []).map(row => normalizeEvent(row));
+    const knownIds = new Set(liveEvents.map(event => event.id));
+    applications.forEach(application => {
+      if (application.events && !knownIds.has(application.events.id)) {
+        liveEvents.push(normalizeEvent(application.events));
+        knownIds.add(application.events.id);
+      }
+    });
+    const profileRow = profileResult.data;
+    const creatorData = profileRow.creator_data || {};
+    setProfile({...profileRow, ...creatorData, handle:creatorData.handle || profileRow.ig_handle});
+    setEvents(liveEvents);
+    setMyEvents(applications.map(row => mapApplication(row, storyByApplication.get(row.id))));
+    setSaved((saveResult.data || []).map(row => row.event_id));
+    setNotifs((notificationResult.data || []).map(mapNotification));
+    if (gate) setOnboardStep(profileRow.status === "approved" ? "done" : "queue");
+    return profileRow;
+  };
+
+  const completeAuth = async (nextSession) => {
+    setSession(nextSession);
+    try {
+      await hydrateMember(nextSession.user.id);
+    } catch (error) {
+      showToast(error.message || "Could not load your account");
+      throw error;
+    }
+  };
+
   // Cleanup all pending timers on unmount
   useEffect(() => {
     return () => {
@@ -2359,6 +2616,30 @@ function App(){
       Object.values(verdictTimersRef.current).forEach(id => clearTimeout(id));
     };
   }, []);
+
+  useEffect(() => {
+    supabaseClient.auth.getSession().then(async ({data}) => {
+      if (!data.session) return;
+      setSession(data.session);
+      try { await hydrateMember(data.session.user.id, true); }
+      catch (error) {
+        setOnboardStep("error");
+        showToast(error.message || "Could not load your account");
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    const channel = supabaseClient.channel("member-notifications-" + session.user.id)
+      .on("postgres_changes", {event:"INSERT", schema:"public", table:"notifications", filter:"user_id=eq." + session.user.id}, payload => {
+        setNotifs(current => [mapNotification(payload.new), ...current]);
+        // a notification always means server state moved — refresh so statuses stay truthful
+        hydrateMember(session.user.id).catch(() => {});
+      })
+      .subscribe();
+    return () => { supabaseClient.removeChannel(channel); };
+  }, [session?.user?.id]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', light);
@@ -2383,7 +2664,7 @@ function App(){
   // simulatePick — flip a myEvents row to picked + prepend a picked notif
   // Available to T16 switchboard via prop drilling or window.simulatePick
   function simulatePick(eventId) {
-    const ev = eventById(eventId);
+    const ev = eventById(eventId, events);
     if (!ev) return;
     const now = Date.now();
     setMyEvents(prev => {
@@ -2409,9 +2690,22 @@ function App(){
     }, ...prev]);
   }
 
-  const onApply = () => {
+  const onApply = async () => {
     if (!currentEvent) return;
     const eventId = currentEvent.id;
+    if (session) {
+      setApplyState("submitting");
+      const {data, error} = await supabaseClient.rpc("apply_to_event", {p_event:eventId});
+      if (error) {
+        setApplyState("idle");
+        showToast(error.message);
+        return;
+      }
+      await hydrateMember(session.user.id);
+      setApplyState("submitted");
+      showToast(data === "waitlist" ? "Still under review" : "Application sent");
+      return;
+    }
     // Clear any existing apply timer
     if (applyTimerRef.current) clearTimeout(applyTimerRef.current);
     // Clear any existing pick timer for this event
@@ -2440,11 +2734,26 @@ function App(){
     }, 1400);
   };
 
+  const onCancelApplication = async (row) => {
+    if (!session) {
+      setMyEvents(current => current.filter(item => item.eventId !== row?.eventId));
+      setApplyState("idle");
+      showToast("Application cancelled");
+      return;
+    }
+    if (!row?.applicationId) return;
+    const {error} = await supabaseClient.rpc("cancel_application", {p_app:row.applicationId});
+    if (error) { showToast(error.message); return; }
+    await hydrateMember(session.user.id);
+    setApplyState("idle");
+    showToast("Application cancelled");
+  };
+
   // forceVerdict — settle a story review. Default path is verified; the
   // switchboard (T16) can force needs_review / rejected. Mirrors the rubric
   // shape the backend will return: { verdict, score, reason }.
   function forceVerdict(eventId, v) {
-    const ev = eventById(eventId);
+    const ev = eventById(eventId, events);
     if (!ev) return;
     const outcomes = {
       [SS.verified]:    { score: 91, reason: "Tag visible, posted in window" },
@@ -2491,7 +2800,7 @@ function App(){
       const row = myEvents.find(r => r.state === GS.picked);
       if (!row) { showToast("No pick to expire — apply first"); return; }
       setMyEvents(prev => prev.map(r => r.eventId === row.eventId ? { ...r, state: GS.expired, pickedAt: undefined } : r));
-      const ev = eventById(row.eventId);
+      const ev = eventById(row.eventId, events);
       setNotifs(prev => [{ id: "expired-" + row.eventId + "-" + Date.now(), kind: "expiring",
         text: "Pick expired · " + (ev ? ev.title : ""), eventId: row.eventId, read: false }, ...prev]);
     },
@@ -2515,7 +2824,7 @@ function App(){
   // Falls back to Event Detail / My Events when the state has moved on.
   function notifTarget(n) {
     closeNotifs();
-    const ev = n.eventId ? eventById(n.eventId) : null;
+    const ev = n.eventId ? eventById(n.eventId, events) : null;
     const row = n.eventId ? myEvents.find(r => r.eventId === n.eventId) : null;
     switch (n.kind) {
       case "picked":
@@ -2535,22 +2844,35 @@ function App(){
   }
 
   // Closing the Activity sheet marks everything read — the badge never goes stale
-  const closeNotifs = () => {
+  const closeNotifs = async () => {
+    const unreadIds = notifs.filter(n => !n.read).map(n => n.id);
     setNotifOpen(false);
     setNotifs(prev => prev.some(n => !n.read) ? prev.map(n => n.read ? n : { ...n, read: true }) : prev);
+    if (session && unreadIds.length) {
+      await supabaseClient.from("notifications").update({read:true}).in("id", unreadIds).eq("user_id", session.user.id);
+    }
   };
 
   // Open the picked takeover for a given eventId
   const openPickedTakeover = (eventId) => {
-    const ev = eventById(eventId);
+    const ev = eventById(eventId, events);
     if (!ev) return;
     setCurrentEvent(ev);
     setPickedEventId(eventId);
     setScreen("picked");
   };
 
-  const onConfirmPick = () => {
+  const onConfirmPick = async () => {
     if (!pickedEventId) return;
+    if (session) {
+      const row = myEvents.find(item => item.eventId === pickedEventId);
+      const {error} = await supabaseClient.rpc("confirm_pick", {p_app:row?.applicationId});
+      if (error) { showToast(error.message); return; }
+      await hydrateMember(session.user.id);
+      showToast("You're in — pass ready");
+      setPickedEventId(null); setScreen("mylist"); setTab("mylist");
+      return;
+    }
     setMyEvents(prev => {
       const code = genCode(prev);
       const exists = prev.find(r => r.eventId === pickedEventId);
@@ -2565,8 +2887,17 @@ function App(){
     setTab("mylist");
   };
 
-  const onDeclinePick = () => {
+  const onDeclinePick = async () => {
     if (!pickedEventId) return;
+    if (session) {
+      const row = myEvents.find(item => item.eventId === pickedEventId);
+      const {error} = await supabaseClient.rpc("decline_pick", {p_app:row?.applicationId});
+      if (error) { showToast(error.message); return; }
+      await hydrateMember(session.user.id);
+      showToast("Seat released");
+      setPickedEventId(null); setScreen(tab === "explore" ? "explore" : "home");
+      return;
+    }
     setMyEvents(prev => {
       const exists = prev.find(r => r.eventId === pickedEventId);
       if (exists) {
@@ -2586,8 +2917,15 @@ function App(){
     toastTimer.current = setTimeout(() => setToast(null), 2200);
   };
 
-  const toggleSave = (id) => {
+  const toggleSave = async (id) => {
     const wasSaved = saved.includes(id);
+    if (session) {
+      const {error} = await supabaseClient.rpc("toggle_save", {p_event:id});
+      if (error) { showToast(error.message); return; }
+      setSaved(current => wasSaved ? current.filter(eventId => eventId !== id) : [...current, id]);
+      showToast(wasSaved ? "Removed from saved" : "Saved to your list");
+      return;
+    }
     setSaved(s => wasSaved ? s.filter(x => x !== id) : [...s, id]);
     showToast(wasSaved ? "Removed from saved" : "Saved to your list");
   };
@@ -2599,7 +2937,7 @@ function App(){
     showToast("Instagram connected · verified");
   };
 
-  const savedEvents = useMemo(() => EVENTS.filter(e => saved.includes(e.id)), [saved]);
+  const savedEvents = useMemo(() => events.filter(e => saved.includes(e.id)), [events, saved]);
 
   const skipOnboarding = () => setOnboardStep("done");
   const onboardActive = onboardStep !== "done";
@@ -2617,7 +2955,7 @@ function App(){
         <span className="dot"></span>
         {light ? 'Light' : 'Dark'} · switch
       </button>
-      {onboardActive && (
+      {onboardActive && !session && (
         <button className="theme-toggle" style={{right:140}} onClick={skipOnboarding}>
           Skip onboarding
         </button>
@@ -2631,26 +2969,26 @@ function App(){
 
       <div className="iphone">
         <div className="iphone-screen">
-          {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={skipOnboarding} onProfileFetched={setProfile}/>}
-          {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} myEvents={myEvents} onBell={()=>setNotifOpen(true)} unreadCount={unreadCount} onOpenPass={openPass}/>}
-          {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} onToast={showToast}/>}
-          {!onboardActive && screen === "detail"  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply} onShare={()=>setShareEvent(currentEvent)} saved={saved} onToggleSave={toggleSave} onToast={showToast} myEvents={myEvents} onOpenPicked={openPickedTakeover}/>}
-          {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} myEvents={myEvents} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast} onOpenPass={openPass} onOpenPicked={openPickedTakeover} onOpenStory={setStoryEventId} initialSeg={mylistSeg}/>}
+          {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={skipOnboarding} onProfileFetched={setProfile} onAuthenticated={completeAuth}/>}
+          {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} myEvents={myEvents} onBell={()=>setNotifOpen(true)} unreadCount={unreadCount} onOpenPass={openPass} events={events}/>}
+          {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} onToast={showToast} events={events}/>}
+          {!onboardActive && screen === "detail"  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply} onCancel={onCancelApplication} onShare={()=>setShareEvent(currentEvent)} saved={saved} onToggleSave={toggleSave} onToast={showToast} myEvents={myEvents} onOpenPicked={openPickedTakeover}/>}
+          {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} myEvents={myEvents} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast} onOpenPass={openPass} onOpenPicked={openPickedTakeover} onOpenStory={setStoryEventId} initialSeg={mylistSeg} events={events}/>}
           {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab} profile={profile} onSettings={()=>setSettingsOpen(true)} onVerify={onVerify}/>}
           {!onboardActive && screen === "picked"  && <ScreenPicked event={currentEvent} pickedAt={pickedAt} onConfirm={onConfirmPick} onDecline={onDeclinePick}/>}
 
           {/* Pass — full-screen overlay above screens, below sheets */}
           {!onboardActive && passEventId && (
-            <ScreenPass event={eventById(passEventId)}
+            <ScreenPass event={eventById(passEventId, events)}
                         row={myEvents.find(r => r.eventId === passEventId)}
                         profile={profile}
                         onBack={()=>setPassEventId(null)}/>
           )}
 
           {/* Overlays — scoped to the phone frame */}
-          {!onboardActive && storyEventId && <StorySheet event={eventById(storyEventId)} onClose={()=>setStoryEventId(null)} onSubmit={()=>submitStory(storyEventId)}/>}
+          {!onboardActive && storyEventId && <StorySheet event={eventById(storyEventId, events)} onClose={()=>setStoryEventId(null)} onSubmit={()=>submitStory(storyEventId)}/>}
           {!onboardActive && <ShareSheet event={shareEvent} onClose={()=>setShareEvent(null)} onToast={showToast}/>}
-          {!onboardActive && settingsOpen && <SettingsSheet profile={profile} light={light} setLight={setLight} onClose={()=>setSettingsOpen(false)} onToast={showToast} demo={demoActions}/>}
+          {!onboardActive && settingsOpen && <SettingsSheet profile={profile} light={light} setLight={setLight} onClose={()=>setSettingsOpen(false)} onToast={showToast} demo={session ? null : demoActions}/>}
           {!onboardActive && notifOpen && <NotificationsSheet notifs={notifs} onClose={closeNotifs} onTarget={notifTarget}/>}
           <Toast msg={toast}/>
         </div>

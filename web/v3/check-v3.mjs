@@ -1,5 +1,5 @@
 // web/v3/check-v3.mjs — structure + required-token checker for the v3 glass reskin.
-// v3 scope: index.html only (venue follows after Will approves the member pass).
+// v3 scope: member + venue glass clients.
 // Usage: node web/v3/check-v3.mjs
 import { readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
@@ -25,6 +25,15 @@ const REQUIRED = {
     "function DemoPanel", "Reset demo",
     // v3 Frosted glass reskin (2026-07-04): photo ground + real glass surfaces.
     "--bg-photo", "backdrop-filter",
+  ],
+  "venue.html": [
+    "function ScreenVenueIntro", "function ScreenVenueLogin", "function ScreenDesk",
+    "function ScreenEvents", "function ScreenDoor", "function ScreenReview",
+    "function ScreenPostEvent", "function ScreenRecap", "function ScreenVenueProfile",
+    "signInWithOtp", "verifyOtp", "type: \"email\"", "shouldCreateUser: false",
+    "from(\"venues\").select(\"*\")", "from(\"events\").select(\"*\")",
+    "pick_applicant", "skip_applicant", "check_in", "close_event", "post_event",
+    "venue-notifications-", "--bg-photo", "backdrop-filter",
   ],
 };
 
@@ -63,9 +72,10 @@ for (const [file, tokens] of Object.entries(REQUIRED)) {
   if (!scriptMatch) problems.push("no text/babel script block found");
   else {
     try {
-      execSync("npx -y esbuild --loader=jsx --log-level=error", {
+      execSync(`${process.platform === "win32" ? "npx.cmd" : "npx"} -y esbuild --loader=jsx --log-level=error`, {
         input: scriptMatch[1], stdio: ["pipe", "ignore", "pipe"],
         env: { ...process.env, NODE_OPTIONS: "--use-system-ca" },
+        timeout: 15000,
       });
     } catch (err) {
       const msg = (err.stderr || "").toString();

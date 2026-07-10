@@ -4,6 +4,58 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-07-10 — BACKEND v1 LIVE end to end (W0–W4) + venue web v3 + teaser + admin
+
+Full grill session with Will locked every product ruling (see
+`docs/superpowers/plans/2026-07-10-backend-v1-plan.md` — auth, member gate, venue gate, 18
+notifications, share/teaser, Gemini-only story pipeline + rubric, admin, billing ledger). Pipeline:
+Fable planned + QA'd, Codex (gpt-5.6-sol medium) implemented W1–W3. Supabase project
+`zrbakomzpuesifasuamb` (name "The List", eu-central-1).
+
+- **W0 (Fable):** 9 tables + RLS + ~20 security-definer RPCs (whole state machine, notifications
+  inserted inside), pg_cron `tick()` every 10 min for time-based notifs, realtime on
+  `notifications`, dark edge stubs `creator-data` + `score-story` (keys empty, rubric in-function).
+  SQL smoke test of the entire loop passed first try.
+- **W1/W2/W3 (Codex):** member wire + venue v3 glass fork (`web/v3/venue.html`) + teaser
+  (`web/v3/e.html`) + founder admin (`web/admin.html`). Checker covers both v3 files.
+- **QA defects found & fixed (Fable):** Codex hallucinated the middle of the anon-key JWT (W1);
+  "Your night" strip lied via seed-era fallback (now uses the member's real next application);
+  realtime notifs now re-hydrate state (stale-status bug); venue.html arrived mojibake'd
+  (cp1252/smart-quote round-trip, 190+ sequences — repaired byte-wise, and esbuild is now installed
+  globally so check-v3's parse gate actually runs, it would have caught this).
+- **Browser-proven loops:** member apply → venue pick (realtime push, no reload) → confirm →
+  DB confirmed; venue desk/deck (picked Maya from the deck UI) → 6-step post wizard → Publish →
+  `new_drop` fan-out ×2. Admin: approvals table, invite codes (Generate 10 wrote 10), stories
+  override, bookings with computed 20% cut. Teaser renders events anonymously.
+- **Auth note:** email OTP for now (Supabase default, no config); phone OTP is a one-line swap once
+  an SMS provider (Twilio) is added. Demo logins (password `TestList123!`, test-only):
+  founder/venue/member@demo.thelist + member2.
+- **Known gaps (deliberate):** no update-event RPC (venue can't edit drafts); gender mix +
+  custom close time not persisted (post_event has no params); stories pipeline dark until
+  GEMINI_API_KEY + Meta review; bookings invoice status read-only in admin.
+
+## 2026-07-10 - Web v3 venue flow wired to live Supabase (W2)
+
+`web/v3/venue.html` forks every v2 venue screen into the v3 photo-ground glass system and keeps
+logged-out demo data intact. Founder-created venue users sign in by email OTP; role and owned venue
+are gated from `profiles`/`venues`. Live events hydrate their applicant profiles, stories, booking,
+and venue notifications. The post wizard calls `post_event`; review calls `pick_applicant` or
+`skip_applicant`; Door calls `check_in`; closing the night calls `close_event`. Realtime venue
+notification inserts rehydrate the full venue world. `web/v3/check-v3.mjs` now checks both member
+and venue files and passes; its optional esbuild parse gate was skipped locally because npx could
+not fetch esbuild. No commit or push.
+
+## 2026-07-10 — Web v3 member flow wired to live Supabase (W1)
+
+`web/v3/index.html` now uses the pinned Supabase JS client and email OTP onboarding. New users
+submit full name + IG handle metadata, verify a six-digit email code, optionally redeem an invite,
+then land on the approval queue or enter the app based on `profiles.status`. Approved sessions load
+published events, own applications/stories/saves/profile, ordered notifications, and realtime
+notification inserts. Apply, cancel, confirm, decline, and save actions use the locked SECURITY
+DEFINER RPCs; closing Activity marks unread rows read. Profile `creator_data` comes from the edge
+stub on first login. Share now copies the public `/v3/e?id=` teaser link or opens WhatsApp.
+Logged-out prototype mode still uses `SEED_*`. `node web/v3/check-v3.mjs` passes. No commit or push.
+
 ## 2026-07-05 — Standing ruling: NO gray text (Will)
 
 All body/label/subline text reads full-contrast — black in light, white in dark, same as titles.
