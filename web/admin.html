@@ -38,10 +38,13 @@
   .secret { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 50;
     padding: 7px 16px; border-radius: 999px; background: #141414; border: 1px solid #2a2a2a;
     font-size: 12px; font-weight: 600; letter-spacing: .01em; white-space: nowrap; }
-  .secret::before { content: ""; position: absolute; inset: -2px; border-radius: inherit; z-index: -1;
-    background: conic-gradient(from 0deg, #ff004c, #ff8a00, #ffe600, #00e07a, #00b3ff, #7a5cff, #ff004c);
-    filter: blur(7px); opacity: .55; animation: halo 6s linear infinite; }
-  @keyframes halo { to { transform: rotate(360deg); } }
+  @property --halo { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+  .secret::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.6px;
+    background: conic-gradient(from var(--halo), #ff004c, #ff8a00, #ffe600, #00e07a, #00b3ff, #7a5cff, #ff004c);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    opacity: .9; animation: halo 5s linear infinite; }
+  @keyframes halo { to { --halo: 360deg; } }
   @media (prefers-reduced-motion: reduce) { .secret::before { animation: none; } }
 </style>
 </head>
