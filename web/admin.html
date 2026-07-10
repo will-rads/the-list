@@ -26,6 +26,23 @@
   th { font-size: 12px; } td.actions { display: flex; gap: 8px; }
   .note { margin: 10px 0 0; font-size: 12px; } #status { min-height: 21px; margin: 8px 0 0; }
   [hidden] { display: none !important; }
+  /* centered login card, fields stacked */
+  #auth:not([hidden]) { position: fixed; inset: 0; margin: auto; height: max-content;
+    width: min(340px, calc(100% - 32px)); }
+  #login-form { flex-direction: column; align-items: stretch; }
+  #login-form label { min-width: 0; }
+  td .ig { color: #f5f1ea; text-decoration: underline; }
+  td select { min-height: 42px; border: 1px solid #555; border-radius: 8px; font: inherit;
+    color: #f5f1ea; background: #0a0a0a; padding: 0 8px; }
+  /* secret pill — rainbow glow halo, bottom center, modest */
+  .secret { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 50;
+    padding: 7px 16px; border-radius: 999px; background: #141414; border: 1px solid #2a2a2a;
+    font-size: 12px; font-weight: 600; letter-spacing: .01em; white-space: nowrap; }
+  .secret::before { content: ""; position: absolute; inset: -2px; border-radius: inherit; z-index: -1;
+    background: conic-gradient(from 0deg, #ff004c, #ff8a00, #ffe600, #00e07a, #00b3ff, #7a5cff, #ff004c);
+    filter: blur(7px); opacity: .55; animation: halo 6s linear infinite; }
+  @keyframes halo { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .secret::before { animation: none; } }
 </style>
 </head>
 <body>
@@ -78,6 +95,7 @@
     </section>
   </div>
 </main>
+<div class="secret">shhhhh... founders only 🤫</div>
 <script>
 const supabaseClient = window.supabase.createClient(
   "https://zrbakomzpuesifasuamb.supabase.co",
@@ -114,7 +132,13 @@ async function refresh() {
   const failed = [profiles, invites, stories, bookings].find(result => result.error);
   if (failed) throw failed.error;
 
-  $('#applications').innerHTML = empty(profiles.data.map(row => `<tr><td>${esc(row.full_name)}</td><td>${esc(row.ig_handle)}</td><td>${esc(row.phone)}</td><td>${date(row.created_at)}</td><td class="actions"><button data-member="${esc(row.id)}" data-decision="approve">Approve</button><button class="secondary" data-member="${esc(row.id)}" data-decision="reject">Reject</button></td></tr>`).join(''), 5);
+  $('#applications').innerHTML = empty(profiles.data.map(row => {
+    const handle = (row.ig_handle || '').replace(/^@/, '');
+    const ig = handle ? `<a class="ig" href="https://instagram.com/${encodeURIComponent(handle)}" target="_blank" rel="noopener">@${esc(handle)}</a>` : '—';
+    const reasons = ['Not enough reach', 'Low engagement', 'Not the right fit', 'Account looks fake', 'Incomplete profile'];
+    const reasonSelect = `<select data-reason-for="${esc(row.id)}" aria-label="Rejection reason">${reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select>`;
+    return `<tr><td>${esc(row.full_name)}</td><td>${ig}</td><td>${esc(row.phone)}</td><td>${date(row.created_at)}</td><td class="actions"><button data-member="${esc(row.id)}" data-decision="approve">Approve</button>${reasonSelect}<button class="secondary" data-member="${esc(row.id)}" data-decision="reject">Reject</button></td></tr>`;
+  }).join(''), 5);
   $('#invites').innerHTML = empty(invites.data.map(row => `<tr><td>${esc(row.code)}</td><td>${esc(row.used_by) || '—'}</td><td>${date(row.used_at)}</td></tr>`).join(''), 3);
   $('#stories').innerHTML = empty(stories.data.map(row => {
     const application = row.applications || {}, member = application.profiles || {}, event = application.events || {};
@@ -164,8 +188,12 @@ document.addEventListener('click', async event => {
   try {
     if (button.dataset.rpc === 'generate') await rpc('create_invite_codes', { p_count: 10 });
     if (button.dataset.member) {
-      const memberRpc = button.dataset.decision === 'approve' ? 'approve_member' : 'reject_member';
-      await rpc(memberRpc, { p_member: button.dataset.member });
+      if (button.dataset.decision === 'approve') {
+        await rpc('approve_member', { p_member: button.dataset.member });
+      } else {
+        const reason = $(`select[data-reason-for="${button.dataset.member}"]`)?.value || null;
+        await rpc('reject_member', { p_member: button.dataset.member, p_reason: reason });
+      }
     }
     if (button.dataset.story) {
       const reason = prompt('Reason for override');
