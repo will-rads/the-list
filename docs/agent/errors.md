@@ -4,6 +4,22 @@ Things that have already gone wrong, or known traps. New entries on top, dated `
 
 ---
 
+## 2026-07-10 — Never retype or reconstruct secrets and keys
+
+Codex reconstructed the Supabase anon-key JWT instead of copying it and hallucinated the middle segment. Runtime result: `Invalid API key`.
+
+Rule: copy keys byte-for-byte from an existing file. QA must diff the literal value before accepting the change. Never retype, decode/rebuild, or “correct” a key from memory.
+
+---
+
+## 2026-07-10 — File writes can arrive mojibake'd
+
+A UTF-8 → cp1252/smart-quote round trip corrupted 190+ sequences in `web/v3/venue.html` (`·` → `Ã‚Â·`, `–` → `Ã¢â‚¬"`, `→` → `Ã¢â€ '`) and broke Babel parsing. The repair required a byte-wise reverse map.
+
+Prevention: esbuild is installed globally, so `web/v3/check-v3.mjs` must run its parse gate. Never accept a green checker that prints a parse-gate-skipped note.
+
+---
+
 ## 2026-07-04 — Two traps from the v3 glass reskin
 
 1. **Transparent screen roots bleed on stacked overlays.** Screens mount as stacked `absolute inset-0` layers (EventDetail/Pass render ABOVE the still-mounted Home). If an overlay screen root is `background:transparent` (to show the photo ground through), the underlying screen shows through it. Fix: overlay screen roots get `.screen-ground` (scrim + `var(--bg-photo)` cover — same recipe as `.iphone-screen::before`); only tab-level screens stay transparent.

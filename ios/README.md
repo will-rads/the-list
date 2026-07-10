@@ -1,5 +1,7 @@
 # The List — iOS (SwiftUI)
 
+Backend v1 is live (see `docs/superpowers/plans/2026-07-10-backend-v1-plan.md`); Swift services stay mock until the Mac-day Supabase binding wave.
+
 Native port of the v3 glass prototype. Member side = `web/v3/index.html`, venue side =
 `web/v2/venue.html` flows wearing the v3 glass skin. Mock-first: the whole night loop runs
 offline from a seeded demo world (same numbers as the web files) with hidden demo switchboards

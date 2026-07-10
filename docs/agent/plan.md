@@ -2,7 +2,7 @@
 
 ## Where we are right now
 
-**Phase: WAVE 1 BUILT (the complete night loop, 2026-07-03, branch `wave-1` local) — next: Will eyeballs wave 1 in the browser → Wave 2 (money + meta).** Plan being executed: `docs/superpowers/plans/2026-06-11-v1-feature-complete.md` (T1–T18 done, T19–T23 = wave 2). Dark mode is now **pitch black** (`#000000` ground, Will's 2026-07-03 ruling — supersedes the kit's `#121315` for the app). `main` == `venue-side` == `7aad801`, deployed to `the-list-omega.vercel.app` (root dir `web/`, cleanUrls): `/` = v1 member (v0.4 + grainy intro + 2026-06-10 fullness pass: bell/Activity, greeting + pinned night, widget stat tiles, month calendar), `/venue` = v1 venue (demo path, Desk dashboard, Door check-in, applicant swipe), **`/v2` + `/v2/venue` = Kit V.2 reskin** (files at `web/v2/`): anthracite/cream monochrome (ice blue dead in v2), Cormorant Garamond + Plus Jakarta Sans (Inter rejected), kit greys approved, sentence case everywhere, arrows on CTAs. Spec: `docs/superpowers/specs/2026-06-11-v2-brand-kit-reskin-design.md`; kit PDF in `Brand Kit Proposal/`. **DESIGN.md/PRODUCT.md still describe v1 — sync only if Will adopts v2.** Caveat: the 2026-06-10 fullness pass shipped without browser verification — check live `/` + `/venue` for regressions. Next: Will reviews the spec → implementation plan → wave builds → docs sync to Kit V.2 → SwiftUI port.
+**Phase: backend v1 LIVE on Supabase (2026-07-10) — next: Will click-tests the production backend.** Project `zrbakomzpuesifasuamb` powers the production app at `the-list-omega.vercel.app`: `/v3` = wired member app, `/v3/venue` = wired venue app, `/v3/e?id=` = public teaser, and `/admin` = founder ops. `/` and `/v2` are frozen archives. The SwiftUI app is scaffolded with mock services and CI green; Supabase binding is the Mac-day wave. v3 glass is the adopted look. After the production click-test: choose the SMS provider; add `GEMINI_API_KEY` + complete Meta App Review to light up Stories; trial Phyllo or another creator-data provider.
 
 ```text
 [done]      Voice notes transcribed + plan synthesized
@@ -24,12 +24,15 @@
 [done]      v2 reviewed → ADOPTED as product base (2026-06-11); v1 frozen as archive
 [done]      Feature-complete v1 brainstorm → spec approved (docs/superpowers/specs/2026-06-11-v1-feature-complete-design.md)
 [done]      Wave 1 built (2026-07-03, branch wave-1): lifecycle both sides, wizard, deck + undo + waitlist, desk, door + codes, recap, honest apply → picked flow, Pass + Brief, story upload → AI verdict, notification deep links, both demo switchboards, mirror audit. Dark mode → pitch black.
-[doing]     Will eyeballs wave 1 in the browser (the gate) → then wave 2 (T19–T23: billing, insights, invites, tiers, withdraw, rebook)  ◄── HERE
-[next]      Sync DESIGN.md/PRODUCT.md to Kit V.2 (docs still describe v1; add the pitch-black ruling)
-[next]      Backend session: Supabase architecture (uploads, events, confirmations) — deliberately parked
+[done]      v3 glass reskin adopted (2026-07-04): member web moved to the Jakarta-only, no-grey, bg-3 glass system
+[done]      SwiftUI scaffold + CI (2026-07-04/05): member + venue mock services compile and test; Supabase binding waits for Mac day
+[done]      Backend v1 + venue web + teaser + admin deployed (2026-07-10): live Supabase loop wired through production
+[doing]     Will click-tests production backend  ◄── HERE
+[next]      Choose SMS provider; switch auth from email OTP to phone OTP
+[next]      Add GEMINI_API_KEY + complete Meta App Review; then light up Story scoring
+[next]      Trial Phyllo or another creator-data provider behind the existing normalized API
 [next]      Lock working name (test with Dima's top 30)
 [next]      Venue anchor contracts (5-10 Beirut venues)
-[next]      Supabase backend scaffold
 [next]      TestFlight with Dima's top 30 contacts
 [next]      Public launch — Radwan DJ set at anchor venue, top 50 invited
 ```
@@ -58,31 +61,31 @@ Lock the v1 spec. See `context.md` in this folder for the table of defaults.
 | Name | "The List" → test with 30 | All 3 |
 | Operating entity | TBD (offshore likely) | Will |
 
-### Phase 2 — Two parallel tracks (weeks 2-6)
+### Phase 2 — Two parallel tracks (build shipped; sales ongoing)
 
 ```text
 Track A — Build (Will)                Track B — Sell (Radwan + Dima)
 ──────────────────────                ─────────────────────────────
-web/index.html reference               target list: 5-10 anchor venues
-SwiftUI scaffold                      Kee Beirut + 2 clubs
-Phyllo Identity wired                 2-3 restaurants
-Phyllo Connect for verify             1-2 beach clubs
-Browse drops + Apply                  1 wellness anchor
-Notifications via APNs                pitch deck (5 slides)
-Manual venue side via Notion          6-12mo soft exclusivity
+v3 member + venue web live            target list: 5-10 anchor venues
+SwiftUI scaffold + CI green           Kee Beirut + 2 clubs
+Provider trial pending                2-3 restaurants
+Graph API + Gemini dark               1-2 beach clubs
+Browse drops + Apply live             1 wellness anchor
+Realtime web notifications live       pitch deck (5 slides)
+Venue v3 web live                     6-12mo soft exclusivity
                                       0% fee for first 90 days
 ```
 
 The two tracks **must run in parallel.** You can't fix a product without users on it.
 
-### Phase 3 — Manual dress rehearsal (weeks 5-7)
+### Phase 3 — Dress rehearsal (weeks 5-7)
 
 Run 20-30 real bookings **before the app is in App Store**.
 
 - Dima WhatsApps the drop.
 - Google Form claim.
 - Notion as venue dashboard.
-- Story proof = screenshot to Radwan.
+- Story proof = Graph API + Gemini once keys + Meta review land; no manual upload path.
 - We pay venue via Whish / cash. Keep our 20%.
 - Log every friction point.
 
@@ -110,7 +113,7 @@ Rule: **every flow we build into the app should be a flow we've already done 5 t
 - **Android.** Phase 2, after iOS revenue.
 - **Multi-city.** Beirut only.
 - **Multi-language UI.** English first, Arabic v2.
-- **Auto Story verification.** Manual screenshot DM v1.
+- **Superseded:** manual screenshot Story proof. Current ruling (2026-07-10) is Graph API + Gemini only; it stays dark until keys + Meta review.
 - **Auto payments.** Whish / OMT / cash v1.
 
 ## Risks to actively manage
@@ -118,7 +121,7 @@ Rule: **every flow we build into the app should be a flow we've already done 5 t
 | Risk | Mitigation |
 | --- | --- |
 | TSS launches Beirut while we build | Lock anchor venue exclusivity in weeks 2-6 |
-| Story gaming (claim, post nothing) | 3-strikes ban, manual review v1 |
+| Story gaming (claim, post nothing) | Gemini rubric + founder override in `/admin` |
 | Dima's contacts don't convert | Test on top 30 before building anything heavy |
 | Two-sided cold start | Pre-load Side A (database) before pitching Side B |
 | Lebanese FX / payments | Whish + OMT + USD cash. No Stripe v1. |

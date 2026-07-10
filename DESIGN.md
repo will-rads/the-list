@@ -105,6 +105,8 @@ components:
 
 # Design System: The List
 
+> **Legacy v1 reference.** Current look = v3 glass (`docs/superpowers/specs/2026-07-04-v3-glass-reskin-design.md`) plus standing rulings in `docs/agent/memory.md`: no grey text, Jakarta-only, sentence case, bg-3 ground. Full sync is deliberately deferred.
+
 ## 1. Overview
 
 **Creative North Star: "The Midnight Editorial"**

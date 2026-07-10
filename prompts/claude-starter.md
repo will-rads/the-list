@@ -17,7 +17,7 @@ Repo is local at `C:\Users\user\Documents\Me\the-list\` and remote at `https://g
 5. `docs/agent/memory.md` — running decision log, newest on top
 6. `docs/agent/errors.md` — known pitfalls (don't repeat them)
 7. `PRODUCT.md` — design register, brand personality, principles (read before any UI work)
-8. `DESIGN.md` — visual system for **v1** (carbon black + ice blue, Plus Jakarta Sans, named rules). Heads up: a **v2 reskin** (Brand Kit V.2: anthracite/cream, Cormorant Garamond + Plus Jakarta Sans, sentence case, no all-caps) is live at `/v2` and NOT yet reflected in DESIGN.md — `docs/agent/memory.md` + `docs/superpowers/specs/2026-06-11-v2-brand-kit-reskin-design.md` have the v2 truth.
+8. `DESIGN.md` — legacy v1 visual system. Heads up: **v3 glass is the adopted look** (`web/v3/`; spec: `docs/superpowers/specs/2026-07-04-v3-glass-reskin-design.md`). `/v2` is frozen. Backend v1 is live; the top entry in `docs/agent/memory.md` has current state.
 
 ## After reading, reply with exactly this 3-line ready check
 

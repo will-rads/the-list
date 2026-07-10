@@ -2,7 +2,7 @@
 
 A Lebanese clone of *The Secret Society* (Dubai). An invite-only nightlife marketplace where models / influencers / DJs apply to time-boxed events at clubs, restaurants, beach clubs and gyms. Venues swipe through applicants and pick who they want. Limited spots. Heavily discounted or free access in exchange for posting Instagram Stories.
 
-iPhone-first. SwiftUI eventually. Static HTML prototype now.
+iPhone-first. The live member + venue web app runs on Supabase; the SwiftUI app is scaffolded and CI-compiled, with Supabase binding queued for Mac day.
 
 ## How to use this folder
 
@@ -19,8 +19,8 @@ iPhone-first. SwiftUI eventually. Static HTML prototype now.
 
 ## Subfolders
 
-- [`web/`](web/) — HTML/React prototype. Visual + interactive flow before SwiftUI.
-- [`ios/`](ios/) — SwiftUI build. Empty for now, scaffolded when prototype is locked.
+- [`web/`](web/) — Live HTML/React app: member + venue in `v3/`, plus founder ops in `admin.html`.
+- [`ios/`](ios/) — SwiftUI app (mock-first, CI green; Supabase binding pending Mac day).
 - [`docs/agent/`](docs/agent/) — agent working context: product context, plan, memory, and errors.
 - [`docs/`](docs/) — research and source material (TSS research, transcripts of Radwan's voice notes, plan-breakdown).
 - [`research/`](research/) — raw inputs (TSS app screenshots, voice notes, reference images).

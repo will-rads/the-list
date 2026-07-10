@@ -79,7 +79,57 @@ Their structure works. We **copy structure, throw away visual language**.
 - Purple-pink gradients, cheesy visual language → we go editorial dark / bone light
 - English only → we do bilingual (English + Arabizi-friendly)
 
-## Architecture (where things will live)
+## Architecture (live 2026-07-10)
+
+```text
+Production          → the-list-omega.vercel.app
+  /v3               → live member web app
+  /v3/venue         → live venue web app
+  /v3/e?id=         → anonymous event teaser
+  /admin            → founder approvals, invites, story overrides, bookings
+  / and /v2         → frozen archives
+
+Backend             → Supabase project zrbakomzpuesifasuamb
+  data + security   → 9 tables, RLS, ~20 security-definer RPCs
+  lifecycle         → RPC state machine + pg_cron tick every 10 minutes
+  notifications     → 18 kinds, stored + realtime
+  edge stubs        → creator-data + score-story (dark until keys/provider)
+
+Creator data        → vendor-neutral normalized API; provider trial still open
+Story verification  → Graph API fetch + Gemini rubric; binary score ≥70
+Founder override    → /admin
+Payments            → booking ledger + computed 20% cut; no processing yet
+SwiftUI             → mock-first scaffold, CI green; Supabase binding on Mac day
+```
+
+The creator-data vendor remains swappable: Phyllo, Modash, Ensembledata, or another licensed provider can sit behind the same Edge Function and normalized response. Web and SwiftUI clients never see vendor-specific fields.
+
+### Onboarding data flow
+
+```text
+User taps "Apply for access"
+  ↓
+Email OTP today (phone OTP when an SMS provider lands)
+  ↓
+IG handle saved to a real profiles row
+  ↓
+Valid invite code → approved immediately
+No invite code → pending approval queue in /admin
+  ↓
+creator-data Edge Function returns the normalized mock shape until a provider is chosen
+```
+
+Founders approve or reject access in `/admin`. Venue accounts are founder-created. Invite codes skip the member approval queue.
+
+### Story verification ruling
+
+**Current (2026-07-10):** Graph API fetch + Gemini rubric scoring only. A score of 70 or higher verifies the Story; lower rejects it. Founders can override in `/admin`. The pipeline stays dark until `GEMINI_API_KEY` and Meta App Review are complete.
+
+**Superseded:** manual screenshot upload/review and the 2026-07-03 `@thelist` mention spine as the verification mechanism. Tag requirements remain inside the Gemini scoring rubric.
+
+### Superseded architecture and onboarding notes
+
+The block below describes the pre-backend prototype. It remains only as history; it is not current runtime behavior.
 
 ```text
 Today (prototype phase)
@@ -108,7 +158,7 @@ Story proof        → manual review v1, auto v2
 Payments           → Whish / OMT / USD cash v1, Stripe later
 ```
 
-### Onboarding data flow (UX locked, vendor not yet)
+#### Superseded onboarding data flow (pre-backend)
 
 ```text
 User taps "Apply for access"
@@ -134,21 +184,21 @@ Webhook updates row: data_status: "verified", numbers may shift slightly
 Badge flips to "Verified · Tier 1"
 ```
 
-No manual review in the happy path. Founders only touch borderline / suspicious accounts. **Vendor is swappable** because all providers feed the same normalized response shape — the client (SwiftUI / web) never sees vendor specifics.
+**Superseded behavior:** this was the intended prototype happy path before the live approval queue. The vendor-swappable contract remains current.
 
 ### Profile data sourcing (vendor-neutral — provider still open)
 
-Everything on the Profile screen is **mocked** in the prototype via `mockCreatorDataFetch()` and the shared `SEED_PROFILE`, shaped exactly like the normalized response a provider will return. Nothing is scraped from Instagram (see `errors.md`). The provider is **deliberately not locked** — candidates Phyllo / Modash / Ensembledata, chosen after a trial.
+Profile rows are live in Supabase. Creator metrics still use the `creator-data` Edge Function's normalized mock shape until a licensed provider is chosen. Nothing is scraped from Instagram (see `errors.md`).
 
-| Profile field | Mocked now (prototype) | Provider supplies (production) |
+| Profile field | Current live behavior | Provider supplies later |
 | --- | --- | --- |
 | Profile photo | `SEED_PROFILE.profile_picture_url` (Unsplash stand-in) | `profile_picture_url` from the handle lookup |
 | Followers | Hardcoded 28.4k | `followers_count` |
 | Engagement | Hardcoded 5.8% | `engagement_rate` |
 | Audience split | Hardcoded gender + country | `audience.gender_split` / `audience.country_split` |
-| Verification badge | `data_status` flips `estimated → verified` on the in-app Connect tap (local state only) | `data_status` flips via the OAuth / Connect SDK webhook |
+| Verification badge | `data_status` remains estimated while the provider stub is dark | `data_status` updates after licensed provider / Meta verification |
 
-The client never sees vendor specifics, so swapping providers is one backend Edge-function change. Badge reads "Self-reported · Tier 1" until OAuth, then "Verified · Tier 1".
+The client never sees vendor specifics, so swapping providers is one backend Edge Function change.
 
 ## The core screens (influencer side)
 
@@ -162,7 +212,7 @@ The client never sees vendor specifics, so swapping providers is one backend Edg
 | 05 | Profile | Photo, IG handle, audience donut, history, reputation |
 | 06 | Picked | Full-screen takeover when venue picks you, 24h countdown |
 
-Venue side is a separate dual UX. Out of v1 scope until influencer side ships.
+**Superseded:** venue side was once out of v1 scope. The v3 venue web app shipped 2026-07-10 at `/v3/venue`.
 
 ## Voice & brand direction
 
@@ -174,7 +224,7 @@ Venue side is a separate dual UX. Out of v1 scope until influencer side ships.
 ## Open questions still on the table
 
 - Working name — "The List" is the working title. Test with Dima's first 30 contacts before locking.
-- Story verification mechanic — manual screenshot upload v1; Phyllo Connect's media-history API v2 once we have enough verified users to compare against.
+- **Superseded:** manual screenshot upload / Phyllo media-history verification. The 2026-07-10 ruling is Graph API + Gemini only; remaining work is keys + Meta review.
 - Venue exclusivity contracts — 6-month? 12-month? What's enforceable in Lebanon?
 - Operating entity — Lebanese LLC vs offshore (Delaware / Estonia e-Residency)?
 - Whish vs OMT vs USD cash payouts to venues
