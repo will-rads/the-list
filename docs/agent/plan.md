@@ -32,6 +32,7 @@ Release tracker: [App Store launch checklist](../app-store-launch-checklist.md).
 [done]      SwiftUI scaffold + CI (2026-07-04/05): member + venue mock services compile and test; Supabase binding waits for Mac day
 [done]      Backend v1 + venue web + teaser + admin deployed (2026-07-10): live Supabase loop wired through production
 [done]      Web v3 Profile analytics redesign (2026-07-11): member + venue four-tab dashboards, truthful data modes, charts, lazy content
+[done]      Deterministic Sara preview (2026-07-11): /v3?demo=1 bypasses saved login and opens the complete seeded dashboard
 [doing]     Will click-tests production backend  ◄── HERE
 [next]      Will visually approves the deployed HTML Profile analytics; then port it to SwiftUI
 [next]      Choose SMS provider; switch auth from email OTP to phone OTP

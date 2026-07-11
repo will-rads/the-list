@@ -17,6 +17,7 @@ HTML-first redesign implemented in `web/v3/index.html` and `web/v3/venue.html`. 
 - Venue swipe cards stay fast: followers, engagement, Lebanon audience, reliability, connection status. Tapping opens the same four-tab analytics structure; Pick/Pass remains pinned.
 - Venue analytics are available only because the member applied. No contact details, DMs, earnings, follower lists, or raw provider data are exposed.
 - Missing live provider fields render **Not available**, never fake zero. Rich data in the logged-out prototype is explicitly demo-seeded.
+- Deterministic member preview: `/v3?demo=1` ignores any saved Supabase session and opens Sara's complete seeded Profile analytics directly. Use this link for visual review until real Phyllo data exists.
 - Will's correction: analytics tab rails use translucent glass with active glass bubbles, never an opaque black slab.
 - Verification: v3 checker and JSX parse pass; browser QA passed member tabs, Estimated -> Verified transition, venue swipe summary, applicant tabs, lazy thumbnails, and pinned decision footer. Existing Home nested-button warning remains unrelated.
 

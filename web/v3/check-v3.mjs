@@ -28,6 +28,7 @@ const REQUIRED = {
     // Profile analytics dashboard (2026-07-11): four tabs, truthful data modes, charts, lazy media.
     "profile-tabs", "Average Story reach", "Lebanon audience", "Top content",
     "Reliability score", "7 days", "90 days", "loading=\"lazy\"", "Not available",
+    "DEMO_PREVIEW", "new URLSearchParams(window.location.search)",
   ],
   "venue.html": [
     "function ScreenVenueIntro", "function ScreenVenueLogin", "function ScreenDesk",
