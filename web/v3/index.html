@@ -381,6 +381,77 @@
   html.light .profile-hero-muted { color: #1E1E1E; }
   html.light .profile-hero-text .stamp,
   html.light .profile-hero-text .smallcaps { color: #1E1E1E !important; }
+
+  /* Profile analytics: compact, sticky controls over the existing bg-3 ground. */
+  .profile-tabs-shell {
+    position: sticky; top: 54px; z-index: 24;
+    padding: 8px 16px;
+    background: transparent;
+    pointer-events: none;
+  }
+  .profile-tabs {
+    display: grid; grid-template-columns: repeat(4,minmax(0,1fr));
+    height: 44px; padding: 4px; gap: 3px;
+    border-radius: 999px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line-2);
+    box-shadow: 0 12px 30px -20px rgba(0,0,0,.8);
+    backdrop-filter: blur(22px) saturate(1.4);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    pointer-events: auto;
+  }
+  .profile-tabs button {
+    min-width: 0; padding: 0 3px;
+    border: 1px solid transparent; border-radius: 999px;
+    background: transparent; color: var(--ink);
+    font: 600 10px/1.1 'Plus Jakarta Sans', sans-serif;
+    white-space: nowrap;
+  }
+  .profile-tabs button.active {
+    background: var(--bg-elev2);
+    border-color: var(--line-2);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 4px 14px -10px rgba(0,0,0,.8);
+  }
+  .profile-tabs button:focus-visible {
+    outline: 2px solid var(--ice);
+    outline-offset: 1px;
+  }
+  html.light .profile-tabs {
+    background: rgba(255,255,255,.4);
+    box-shadow: 0 10px 24px -18px rgba(30,30,30,.35);
+  }
+  html.light .profile-tabs button.active {
+    background: rgba(255,255,255,.62);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 4px 14px -10px rgba(30,30,30,.3);
+  }
+  .analytics-bar-track {
+    height: 7px; overflow: hidden; border-radius: 999px;
+    background: var(--bg-elev2); border: 1px solid var(--line);
+  }
+  .analytics-bar-fill { height: 100%; border-radius: inherit; background: var(--ice); }
+  .analytics-donut {
+    position: relative; width: 116px; height: 116px; border-radius: 50%;
+    flex: 0 0 auto;
+  }
+  .analytics-donut::after {
+    content: ""; position: absolute; inset: 15px; border-radius: 50%;
+    background: rgba(12,12,15,.88); border: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+  }
+  html.light .analytics-donut::after { background: rgba(247,246,243,.9); }
+  .analytics-donut-value {
+    position: absolute; inset: 0; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  .profile-chart-grid { stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 2 5; }
+  .profile-chart-line { fill: none; stroke: var(--ice); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .profile-chart-line.secondary { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 5 5; opacity: .62; }
+  .profile-thumb-fallback {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%; background: var(--bg-elev2); color: var(--ink);
+    font-size: 11px; text-align: center; padding: 12px;
+  }
 </style>
 </head>
 <body class="page-bg min-h-screen">
@@ -406,6 +477,100 @@ const IMG = {
   cocktail:   "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=900&q=80&auto=format&fit=crop",
   beirut:     "https://images.unsplash.com/photo-1620553967747-50fdadc4b606?w=1200&q=80&auto=format&fit=crop",
   saraFull:   "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&q=80&auto=format&fit=crop",
+};
+
+/* Explicit prototype analytics. Only SEED_PROFILE and the mock provider opt in;
+   live profiles never inherit these values when their own fields are missing. */
+const DEMO_PROFILE_ANALYTICS = {
+  follower_growth_30d: 0.043,
+  audience_credibility: 0.91,
+  periods: {
+    "7": {
+      average_story_reach: 7900,
+      average_reels_views: 19800,
+      trend: [
+        {label:"Mon", reach:6800, engagement:0.049},
+        {label:"Tue", reach:7400, engagement:0.052},
+        {label:"Wed", reach:7100, engagement:0.051},
+        {label:"Thu", reach:8200, engagement:0.057},
+        {label:"Fri", reach:9100, engagement:0.061},
+        {label:"Sat", reach:8600, engagement:0.059},
+        {label:"Sun", reach:7900, engagement:0.055},
+      ],
+    },
+    "30": {
+      average_story_reach: 8600,
+      average_reels_views: 21400,
+      trend: [
+        {label:"1 Jun", reach:7200, engagement:0.051},
+        {label:"7 Jun", reach:7800, engagement:0.054},
+        {label:"13 Jun", reach:7500, engagement:0.052},
+        {label:"19 Jun", reach:9000, engagement:0.060},
+        {label:"25 Jun", reach:9400, engagement:0.063},
+        {label:"30 Jun", reach:8600, engagement:0.058},
+      ],
+    },
+    "90": {
+      average_story_reach: 8300,
+      average_reels_views: 20700,
+      trend: [
+        {label:"Apr", reach:6900, engagement:0.049},
+        {label:"Late Apr", reach:7300, engagement:0.051},
+        {label:"May", reach:7900, engagement:0.055},
+        {label:"Late May", reach:7600, engagement:0.053},
+        {label:"Jun", reach:8800, engagement:0.059},
+        {label:"Late Jun", reach:9200, engagement:0.062},
+      ],
+    },
+  },
+  audience: {
+    lebanon_pct: 0.71,
+    top_cities: [
+      {label:"Beirut", pct:0.39},
+      {label:"Jounieh", pct:0.14},
+      {label:"Tripoli", pct:0.09},
+      {label:"Dubai", pct:0.08},
+    ],
+    age_groups: [
+      {label:"13-17", pct:0.04},
+      {label:"18-24", pct:0.41},
+      {label:"25-34", pct:0.38},
+      {label:"35-44", pct:0.13},
+      {label:"45+", pct:0.04},
+    ],
+    gender: {female:0.62, male:0.38},
+    languages: ["Arabic", "English", "French"],
+    strongest_active_hours: "8 pm-11 pm",
+  },
+  content: {
+    top_content: [
+      {type:"Reel", label:"Pool day", image_url:IMG.pool, views:41800},
+      {type:"Story", label:"Beirut rooftop", image_url:IMG.rooftop, views:11200},
+      {type:"Post", label:"Dinner edit", image_url:IMG.restaurant, views:18900},
+      {type:"Reel", label:"Night out", image_url:IMG.clubRed, views:36700},
+    ],
+    type_performance: [
+      {label:"Stories", score:0.88},
+      {label:"Reels", score:0.96},
+      {label:"Posts", score:0.64},
+    ],
+    periods: {
+      "7": {averages:{views:19800, likes:1620, comments:76, saves:202, shares:131}, posts_per_week:5.0, sponsored_pct:0.14},
+      "30": {averages:{views:21400, likes:1760, comments:84, saves:219, shares:146}, posts_per_week:4.6, sponsored_pct:0.18},
+      "90": {averages:{views:20700, likes:1690, comments:81, saves:211, shares:139}, posts_per_week:4.3, sponsored_pct:0.21},
+    },
+  },
+  the_list: {
+    reliability_score: 9.4,
+    show_up_rate: 0.94,
+    story_completion: 0.92,
+    average_venue_rating: 4.7,
+    events_attended: 18,
+    total_verified_reach: 154800,
+    no_shows: 1,
+    active_strikes: 0,
+    last_six: [8.8, 9.1, 9.3, 9.0, 9.5, 9.7],
+  },
 };
 
 /* ========== Creator data — mock response shape ==========
@@ -439,6 +604,8 @@ function mockCreatorDataFetch(handle){
         media_count: 184,
         engagement_rate: 0.058,            // 5.8%
         quality_score: 0.91,               // Phyllo's fake-follower check (0-1)
+        analytics: DEMO_PROFILE_ANALYTICS,
+        demo_profile: true,
         audience: {
           gender_split: { female: 0.62, male: 0.38 },
           age_split: { "13-17": 0.04, "18-24": 0.41, "25-34": 0.38, "35-44": 0.13, "45+": 0.04 },
@@ -569,6 +736,10 @@ const SEED_PROFILE = {
   tiktok_followers: 51200,
   engagement_rate: 0.058,
   data_status: "estimated",
+  tier_suggestion: 1,
+  analytics: DEMO_PROFILE_ANALYTICS,
+  demo_profile: true,
+  fetched_at: "2026-07-11T09:30:00.000Z",
   audience: {
     gender_split: { female: 0.62, male: 0.38 },
     country_split: [
@@ -1925,121 +2096,477 @@ function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPic
   );
 }
 
-/* ========== 05 — PROFILE (gallery-style hero with fade) ========== */
+/* ========== 05 - PROFILE ANALYTICS ========== */
+function hasProfileMetric(value){
+  return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value));
+}
+
+function formatProfileNumber(value, options={}){
+  if (!hasProfileMetric(value)) return "Not available";
+  const number = Number(value);
+  const decimals = options.decimals ?? 0;
+  if (options.compact && Math.abs(number) >= 1000000) {
+    return (number / 1000000).toFixed(Math.abs(number) >= 10000000 ? 0 : 1).replace(/\.0$/, "") + "m";
+  }
+  if (options.compact && Math.abs(number) >= 1000) {
+    return (number / 1000).toFixed(Math.abs(number) >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k";
+  }
+  return number.toLocaleString("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }) + (options.suffix || "");
+}
+
+function formatProfilePercent(value, options={}){
+  if (!hasProfileMetric(value)) return "Not available";
+  const raw = Number(value);
+  const percent = Math.abs(raw) <= 1 ? raw * 100 : raw;
+  const prefix = options.signed && percent > 0 ? "+" : "";
+  return prefix + percent.toFixed(options.decimals ?? 0).replace(/\.0$/, "") + "%";
+}
+
+function formatProfileUpdated(value){
+  if (!value) return "Not available";
+  const date = new Date(value);
+  if (Number.isNaN(date.valueOf())) return "Not available";
+  return date.toLocaleString("en-GB", {
+    day:"numeric", month:"short", hour:"2-digit", minute:"2-digit", hour12:false,
+  });
+}
+
+function profileLebanonShare(profile, analytics){
+  if (hasProfileMetric(analytics?.audience?.lebanon_pct)) return Number(analytics.audience.lebanon_pct);
+  const countries = Array.isArray(profile?.audience?.country_split) ? profile.audience.country_split : [];
+  const lebanon = countries.find(row => row.code === "LB" || String(row.label).toLowerCase() === "lebanon");
+  return hasProfileMetric(lebanon?.pct) ? Number(lebanon.pct) : null;
+}
+
+function ProfileMetricBox({ value, label, className="" }){
+  const unavailable = value === "Not available";
+  return (
+    <div className={"card rounded-[12px] p-3 min-h-[82px] flex flex-col justify-between "+className}>
+      <div className={"font-mono font-black leading-tight break-words "+(unavailable ? "text-[13px]" : "text-[20px]")}>{value}</div>
+      <div className="text-[10px] leading-tight mt-2" style={{color:"var(--ink)"}}>{label}</div>
+    </div>
+  );
+}
+
+function ProfileBars({ rows }){
+  const safeRows = Array.isArray(rows) ? rows : [];
+  if (!safeRows.length) {
+    return <div className="text-[12px] py-6" style={{color:"var(--ink)"}}>Not available</div>;
+  }
+  return (
+    <div className="space-y-3">
+      {safeRows.map((row, index) => {
+        const value = hasProfileMetric(row.pct) ? Math.max(0, Math.min(1, Number(row.pct))) : null;
+        return (
+          <div key={(row.label || "row")+"-"+index}>
+            <div className="flex items-center justify-between gap-3 text-[11px] mb-1.5" style={{color:"var(--ink)"}}>
+              <span>{row.label || "Not available"}</span>
+              <span className="font-mono shrink-0">{formatProfilePercent(value)}</span>
+            </div>
+            <div className="analytics-bar-track">
+              {value !== null && <div className="analytics-bar-fill" style={{width:(value * 100)+"%"}}/>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ProfileDonut({ value, label, sublabel, size=116 }){
+  const available = hasProfileMetric(value);
+  const pct = available ? Math.max(0, Math.min(100, Number(value) * 100)) : 0;
+  const background = available
+    ? "conic-gradient(var(--ice) 0 "+pct+"%, var(--bg-elev2) "+pct+"% 100%)"
+    : "var(--bg-elev2)";
+  return (
+    <div className="analytics-donut" style={{width:size, height:size, background}}>
+      <div className="analytics-donut-value">
+        <div className={available ? "font-black font-mono text-[22px]" : "text-[9px] text-center px-4"}>{available ? Math.round(pct)+"%" : "Not available"}</div>
+        {available && <div className="text-[9px] mt-0.5">{label}</div>}
+        {available && sublabel && <div className="text-[8px]">{sublabel}</div>}
+      </div>
+    </div>
+  );
+}
+
+function ProfileTrendChart({ rows }){
+  const data = Array.isArray(rows) ? rows : [];
+  const pointsFor = (key) => {
+    const values = data.map(row => hasProfileMetric(row[key]) ? Number(row[key]) : null).filter(value => value !== null);
+    if (values.length < 2) return "";
+    const min = Math.min(...values);
+    const spread = Math.max(...values) - min || 1;
+    return data.map((row, index) => {
+      if (!hasProfileMetric(row[key])) return null;
+      const x = 12 + index * (296 / Math.max(1, data.length - 1));
+      const y = 132 - ((Number(row[key]) - min) / spread) * 104;
+      return x.toFixed(1)+","+y.toFixed(1);
+    }).filter(Boolean).join(" ");
+  };
+  const reachPoints = pointsFor("reach");
+  const engagementPoints = pointsFor("engagement");
+  const last = data[data.length - 1] || {};
+
+  return (
+    <div>
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <div className="text-[10px] flex items-center gap-2"><span className="w-5 h-[2px]" style={{background:"var(--ice)"}}/>Reach</div>
+          <div className="font-mono text-[14px] mt-1">{formatProfileNumber(last.reach, {compact:true})}</div>
+        </div>
+        <div className="text-right">
+          <div className="text-[10px] flex items-center justify-end gap-2"><span className="w-5" style={{borderTop:"2px dashed var(--ink)"}}/>Engagement</div>
+          <div className="font-mono text-[14px] mt-1">{formatProfilePercent(last.engagement, {decimals:1})}</div>
+        </div>
+      </div>
+      {(reachPoints || engagementPoints) ? (
+        <>
+          <svg viewBox="0 0 320 144" className="w-full h-[144px]" role="img" aria-label="Reach and engagement trend">
+            {[28,62,96,130].map(y => <line key={y} x1="10" x2="310" y1={y} y2={y} className="profile-chart-grid"/>)}
+            {reachPoints && <polyline points={reachPoints} className="profile-chart-line"/>}
+            {engagementPoints && <polyline points={engagementPoints} className="profile-chart-line secondary"/>}
+          </svg>
+          <div className="flex justify-between text-[9px]" style={{color:"var(--ink)"}}>
+            <span>{data[0]?.label || ""}</span>
+            <span>{last.label || ""}</span>
+          </div>
+        </>
+      ) : (
+        <div className="h-[144px] flex items-center justify-center text-[12px]" style={{color:"var(--ink)"}}>Not available</div>
+      )}
+    </div>
+  );
+}
+
+function ProfileSparkline({ values }){
+  const safe = Array.isArray(values) ? values.filter(hasProfileMetric).map(Number) : [];
+  if (safe.length < 2) return <div className="h-[112px] flex items-center justify-center text-[12px]">Not available</div>;
+  const min = Math.min(...safe);
+  const spread = Math.max(...safe) - min || 1;
+  const pointRows = safe.map((value, index) => {
+    const x = 12 + index * (296 / Math.max(1, safe.length - 1));
+    const y = 96 - ((value - min) / spread) * 70;
+    return {x:x.toFixed(1), y:y.toFixed(1)};
+  });
+  return (
+    <svg viewBox="0 0 320 112" className="w-full h-[112px]" role="img" aria-label="Last six event performance">
+      {[26,61,96].map(y => <line key={y} x1="10" x2="310" y1={y} y2={y} className="profile-chart-grid"/>)}
+      <polyline points={pointRows.map(point => point.x+","+point.y).join(" ")} className="profile-chart-line"/>
+      {pointRows.map((point, index) => <circle key={index} cx={point.x} cy={point.y} r="3.5" fill="var(--ice)"/>)}
+    </svg>
+  );
+}
+
+function ProfileContentThumb({ item, index }){
+  const [failed, setFailed] = useState(false);
+  const available = item && item.image_url && !failed;
+  return (
+    <div className="card rounded-[12px] overflow-hidden min-w-0">
+      <div className="aspect-[4/5]">
+        {available ? (
+          <img
+            src={item.image_url}
+            loading="lazy"
+            decoding="async"
+            onError={()=>setFailed(true)}
+            className="w-full h-full object-cover"
+            alt={item.label || "Top content "+(index+1)}
+          />
+        ) : (
+          <div className="profile-thumb-fallback">Thumbnail not available</div>
+        )}
+      </div>
+      <div className="p-2.5">
+        <div className="text-[10px] font-semibold truncate">{item?.type || "Not available"}</div>
+        <div className="text-[9px] mt-1 truncate">{item?.label || "Not available"}</div>
+        <div className="font-mono text-[11px] mt-1">{formatProfileNumber(item?.views, {compact:true})}</div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileOverview({ profile, analytics, period, verified }){
+  const periodData = analytics?.periods?.[period] || null;
+  const lebanon = profileLebanonShare(profile, analytics);
+  const mainValue = verified
+    ? formatProfileNumber(periodData?.average_story_reach, {compact:true})
+    : formatProfilePercent(profile.engagement_rate, {decimals:1});
+  const mainLabel = verified ? "Average Story reach" : "Engagement rate";
+
+  return (
+    <div className="px-5 pt-5 pb-5 space-y-6 anim-fade">
+      <div className="card rounded-[14px] p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-[11px] font-semibold">{mainLabel}</div>
+          <StatusPill label={verified ? "Verified" : "Estimated"} tone={verified ? "ice" : "outline"}/>
+        </div>
+        <div className={"font-black font-display-l mt-5 break-words "+(mainValue === "Not available" ? "text-[18px]" : "text-[44px] leading-none")}>{mainValue}</div>
+        <div className="mt-4 inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[9px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+          <Icon name="check" size={11} stroke={1.6}/>
+          <span>Audience credibility</span>
+          <span className="font-mono">{formatProfilePercent(analytics?.audience_credibility)}</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <ProfileMetricBox value={formatProfileNumber(profile.followers_count, {compact:true})} label="Followers"/>
+        <ProfileMetricBox value={formatProfilePercent(analytics?.follower_growth_30d, {signed:true, decimals:1})} label="30-day follower growth"/>
+        <ProfileMetricBox value={formatProfilePercent(lebanon)} label="Lebanon audience"/>
+        <ProfileMetricBox value={formatProfileNumber(periodData?.average_reels_views, {compact:true})} label="Average Reels views"/>
+      </div>
+
+      <div>
+        <SectionHead label="Reach and engagement" right={period+" days"} className="!px-0 pb-3"/>
+        <div className="card rounded-[14px] p-4">
+          <ProfileTrendChart rows={periodData?.trend}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileAudience({ profile, analytics }){
+  const audience = analytics?.audience || {};
+  const lebanon = profileLebanonShare(profile, analytics);
+  const international = hasProfileMetric(lebanon) ? Math.max(0, 1 - Number(lebanon)) : null;
+  const gender = audience.gender || profile?.audience?.gender_split || {};
+  const rawAge = audience.age_groups || profile?.audience?.age_split;
+  const ageRows = Array.isArray(rawAge)
+    ? rawAge.map(row => ({label:row.label, pct:row.pct}))
+    : rawAge && typeof rawAge === "object"
+      ? Object.entries(rawAge).map(([label,pct]) => ({label,pct}))
+      : [];
+  const languages = Array.isArray(audience.languages) && audience.languages.length
+    ? audience.languages.join(", ")
+    : "Not available";
+
+  return (
+    <div className="px-5 pt-5 pb-5 space-y-7 anim-fade">
+      <div>
+        <SectionHead label="Audience location" className="!px-0 pb-3"/>
+        <div className="card rounded-[14px] p-4 flex items-center gap-5">
+          <ProfileDonut value={lebanon} label="Lebanon"/>
+          <div className="min-w-0 flex-1 space-y-3">
+            <div><div className="text-[10px]">Lebanon</div><div className="font-mono text-[18px]">{formatProfilePercent(lebanon)}</div></div>
+            <div className="hr"/>
+            <div><div className="text-[10px]">International</div><div className="font-mono text-[18px]">{formatProfilePercent(international)}</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div><SectionHead label="Top cities" className="!px-0 pb-3"/><ProfileBars rows={audience.top_cities}/></div>
+      <div><SectionHead label="Age groups" className="!px-0 pb-3"/><ProfileBars rows={ageRows}/></div>
+
+      <div>
+        <SectionHead label="Gender" className="!px-0 pb-3"/>
+        <div className="card rounded-[14px] p-4 flex items-center gap-5">
+          <ProfileDonut value={gender.female} label="Female" size={100}/>
+          <div className="min-w-0 flex-1 space-y-3">
+            <div className="flex items-center justify-between text-[11px]"><span>Female</span><span className="font-mono">{formatProfilePercent(gender.female)}</span></div>
+            <div className="hr"/>
+            <div className="flex items-center justify-between text-[11px]"><span>Male</span><span className="font-mono">{formatProfilePercent(gender.male)}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <ProfileMetricBox value={formatProfilePercent(analytics?.audience_credibility)} label="Audience credibility"/>
+        <ProfileMetricBox value={languages} label="Languages"/>
+        <ProfileMetricBox value={audience.strongest_active_hours || "Not available"} label="Strongest active hours" className="col-span-2"/>
+      </div>
+    </div>
+  );
+}
+
+function ProfileContent({ analytics, period }){
+  const content = analytics?.content || {};
+  const periodContent = content.periods?.[period] || content;
+  const topContent = Array.isArray(content.top_content) ? content.top_content.slice(0,4) : [];
+  const thumbs = Array.from({length:4}, (_,index) => topContent[index] || null);
+  const averages = periodContent.averages || {};
+  const typeRows = Array.isArray(content.type_performance)
+    ? content.type_performance.map(row => ({label:row.label, pct:row.score}))
+    : [];
+
+  return (
+    <div className="px-5 pt-5 pb-5 space-y-7 anim-fade">
+      <div>
+        <SectionHead label="Top content" right={period+" days"} className="!px-0 pb-3"/>
+        <div className="grid grid-cols-2 gap-2">
+          {thumbs.map((item,index) => <ProfileContentThumb key={(item?.image_url || "missing")+"-"+index} item={item} index={index}/>)}
+        </div>
+      </div>
+
+      <div><SectionHead label="Content-type performance" className="!px-0 pb-3"/><ProfileBars rows={typeRows}/></div>
+
+      <div>
+        <SectionHead label="Average performance" className="!px-0 pb-3"/>
+        <div className="grid grid-cols-2 gap-2">
+          <ProfileMetricBox value={formatProfileNumber(averages.views, {compact:true})} label="Average views"/>
+          <ProfileMetricBox value={formatProfileNumber(averages.likes, {compact:true})} label="Average likes"/>
+          <ProfileMetricBox value={formatProfileNumber(averages.comments, {compact:true})} label="Average comments"/>
+          <ProfileMetricBox value={formatProfileNumber(averages.saves, {compact:true})} label="Average saves"/>
+          <ProfileMetricBox value={formatProfileNumber(averages.shares, {compact:true})} label="Average shares" className="col-span-2"/>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <ProfileMetricBox value={hasProfileMetric(periodContent.posts_per_week) ? formatProfileNumber(periodContent.posts_per_week, {decimals:1})+" / week" : "Not available"} label="Posting frequency"/>
+        <ProfileMetricBox value={formatProfilePercent(periodContent.sponsored_pct)} label="Sponsored content"/>
+      </div>
+    </div>
+  );
+}
+
+function ProfileListRecord({ analytics }){
+  const record = analytics?.the_list || {};
+  const reliability = hasProfileMetric(record.reliability_score)
+    ? formatProfileNumber(record.reliability_score, {decimals:1})+" / 10"
+    : "Not available";
+  const venueRating = hasProfileMetric(record.average_venue_rating)
+    ? formatProfileNumber(record.average_venue_rating, {decimals:1})+" / 5"
+    : "Not available";
+
+  return (
+    <div className="px-5 pt-5 pb-5 space-y-7 anim-fade">
+      <div className="card rounded-[14px] p-5">
+        <div className="text-[11px] font-semibold">Reliability score</div>
+        <div className={"font-black font-display-l mt-5 break-words "+(reliability === "Not available" ? "text-[18px]" : "text-[42px] leading-none")}>{reliability}</div>
+        <div className="text-[10px] mt-3">All-time member record</div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <ProfileMetricBox value={formatProfilePercent(record.show_up_rate)} label="Show-up rate"/>
+        <ProfileMetricBox value={formatProfilePercent(record.story_completion)} label="Story completion"/>
+        <ProfileMetricBox value={venueRating} label="Average venue rating"/>
+        <ProfileMetricBox value={formatProfileNumber(record.events_attended)} label="Events attended"/>
+        <ProfileMetricBox value={formatProfileNumber(record.total_verified_reach, {compact:true})} label="Total verified reach"/>
+        <ProfileMetricBox value={formatProfileNumber(record.no_shows)} label="Exact no-shows"/>
+        <ProfileMetricBox value={formatProfileNumber(record.active_strikes)} label="Active strikes" className="col-span-2"/>
+      </div>
+
+      <div>
+        <SectionHead label="Last six events" right="Performance" className="!px-0 pb-3"/>
+        <div className="card rounded-[14px] p-4">
+          <ProfileSparkline values={record.last_six}/>
+          {Array.isArray(record.last_six) && record.last_six.length >= 2 && (
+            <div className="flex justify-between text-[9px] mt-1"><span>Six events ago</span><span>Latest event</span></div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
-  // `profile` is the creator-data provider's normalized response (vendor-neutral;
-  // provider not yet locked). Null when onboarding was skipped → fall back to the
-  // shared SEED_PROFILE so the demo always renders.
   const p = profile || SEED_PROFILE;
+  const analytics = p.analytics || null;
   const verified = p.data_status === "verified";
-  const followersK = p.followers_count >= 1000
-    ? (p.followers_count / 1000).toFixed(p.followers_count >= 10000 ? 0 : 1)
-    : p.followers_count;
-  const followersUnit = p.followers_count >= 1000 ? "k" : "";
-  const tiktokRaw = p.tiktok_followers || SEED_PROFILE.tiktok_followers;
-  const tiktokK = tiktokRaw >= 1000
-    ? (tiktokRaw / 1000).toFixed(tiktokRaw >= 10000 ? 0 : 1)
-    : tiktokRaw;
-  const tiktokUnit = tiktokRaw >= 1000 ? "k" : "";
-  const engagementPct = (p.engagement_rate * 100).toFixed(1);
-  const female = Math.round(p.audience.gender_split.female * 100);
-  const male = Math.round(p.audience.gender_split.male * 100);
-  const firstName = p.full_name.split(" ")[0];
-  const lastName = p.full_name.split(" ").slice(1).join(" ");
+  const [profileTab, setProfileTab] = useState("overview");
+  const [period, setPeriod] = useState("30");
+  const fullName = p.full_name || "Member profile";
+  const nameParts = fullName.trim().split(/\s+/);
+  const firstName = nameParts[0] || "Member";
+  const lastName = nameParts.slice(1).join(" ");
+  const handle = p.handle || p.ig_handle;
+  const tier = hasProfileMetric(p.tier_suggestion) ? "Tier "+p.tier_suggestion : (p.demo_profile ? "Tier 1" : "Tier not available");
+  const memberSince = p.member_since || (p.demo_profile ? "2024" : null);
+  const profileTabs = [
+    {id:"overview", label:"Overview"},
+    {id:"audience", label:"Audience"},
+    {id:"content", label:"Content"},
+    {id:"list", label:"The List"},
+  ];
+  const changeProfileTab = (event, nextTab) => {
+    setProfileTab(nextTab);
+    const scroller = event.currentTarget.closest(".noscroll.overflow-y-auto");
+    if (scroller && scroller.scrollTop > 300) scroller.scrollTo({top:246, behavior:"smooth"});
+  };
 
   return (
     <PhoneScreen tab={tab} onTab={onTab}>
-      {/* Editorial hero — full-bleed photo with gradient fade to bg */}
-      <div className="relative h-[460px]">
-        <img src={p.profile_picture_url || IMG.saraFull} className="profile-hero-img absolute inset-0 w-full h-full object-cover" alt=""/>
+      <div className="relative h-[300px]">
+        {p.profile_picture_url ? (
+          <img src={p.profile_picture_url} className="profile-hero-img absolute inset-0 w-full h-full object-cover" alt={fullName}/>
+        ) : (
+          <div className="profile-hero-img absolute inset-0 flex items-center justify-center" style={{background:"var(--bg-elev2)"}}>
+            <Icon name="user" size={44} stroke={1.2}/>
+          </div>
+        )}
         <div className="profile-hero-overlay absolute inset-0"/>
 
         <div className="absolute top-[60px] left-5 right-5 flex items-center justify-between z-10">
-          <div className="profile-glass flex items-center gap-2 px-2.5 py-1 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full" style={{background:"var(--ice)"}}/>
-            <span className="stamp" style={{color:"inherit"}}>{verified ? "Verified" : "Self-reported"} · Tier 1</span>
+          <div className="profile-glass flex items-center gap-2 px-2.5 py-1 rounded-full min-w-0">
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:"var(--ice)"}}/>
+            <span className="text-[9px] font-semibold truncate">{verified ? "Verified" : "Estimated"} &middot; {tier}</span>
           </div>
-          <button onClick={onSettings} aria-label="Settings" className="profile-glass press w-9 h-9 rounded-full flex items-center justify-center">
+          <button onClick={onSettings} aria-label="Settings" className="profile-glass press w-9 h-9 rounded-full flex items-center justify-center shrink-0">
             <Icon name="settings" size={15} stroke={1.4}/>
           </button>
         </div>
 
-        <div className="profile-hero-text absolute right-3 top-[130px] vt z-10">
-          <span className="stamp" style={{color:"#F7F6F3"}}>Beirut · MMXXVI · No. 048</span>
+        <div className="profile-hero-text absolute right-3 top-[112px] vt z-10">
+          <span className="text-[9px] font-semibold">Beirut &middot; No. 048</span>
         </div>
 
-        <div className="profile-hero-text absolute bottom-5 left-5 right-5 z-10">
-          <div className="smallcaps mb-2" style={{color:"#F7F6F3"}}>Member since '24</div>
-          <div className="font-black font-display-l text-[48px] leading-[0.9]">{firstName}{lastName ? <><br/>{lastName}</> : ""}</div>
-          <div className="flex items-center gap-2 mt-3">
-            <Icon name="instagram" size={13} stroke={1.5} className="opacity-70"/>
-            <span className="text-[13px] opacity-80">@{p.handle}</span>
+        <div className="profile-hero-text absolute bottom-4 left-5 right-12 z-10">
+          <div className="text-[9px] font-semibold mb-2">{memberSince ? "Member since "+memberSince : "Member"}</div>
+          <div className="font-black font-display-l text-[36px] leading-[0.92] break-words">{firstName}{lastName ? <><br/>{lastName}</> : ""}</div>
+          <div className="flex items-center gap-2 mt-2.5 min-w-0">
+            <Icon name="instagram" size={12} stroke={1.5}/>
+            <span className="text-[11px] truncate">{handle ? "@"+handle : "Handle not available"}</span>
           </div>
         </div>
       </div>
 
-      {/* Stat strip — TSS widget tiles: reputation / followers / engagement */}
-      <div className="px-5 py-5 grid grid-cols-3 gap-2" style={{borderBottom:"1px solid var(--line-2)"}}>
-        <StatTile n="9.4" label="Reputation" ice/>
-        <StatTile n={followersK + followersUnit} label="Followers"/>
-        <StatTile n={engagementPct + "%"} label="Engagement"/>
+      <div className="profile-tabs-shell">
+        <div className="profile-tabs" role="tablist" aria-label="Profile analytics">
+          {profileTabs.map(item => (
+            <button key={item.id} role="tab" aria-selected={profileTab === item.id} onClick={(event)=>changeProfileTab(event, item.id)} className={"press "+(profileTab === item.id ? "active" : "")}>
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Verify-with-Instagram upgrade strip (only if data is still estimated) */}
+      <div className="px-5 pt-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div>
+            <div className="text-[12px] font-semibold">{verified ? "Connected insights" : "Handle-only insights"}</div>
+            <div className="text-[9px] mt-1" style={{color:"var(--ink)"}}>
+              {verified ? "Last updated "+formatProfileUpdated(p.fetched_at || p.verified_at) : "Estimated from public profile signals"}
+            </div>
+          </div>
+          <StatusPill label={verified ? "Verified" : "Estimated"} tone={verified ? "ice" : "outline"}/>
+        </div>
+        <Segmented value={period} onChange={setPeriod} items={[
+          {id:"7", label:"7 days"},
+          {id:"30", label:"30 days"},
+          {id:"90", label:"90 days"},
+        ]}/>
+      </div>
+
       {!verified && (
-        <div className="card mx-5 mt-4 px-3 py-2.5 rounded-[12px] flex items-center gap-3">
-          <Icon name="instagram" size={16} stroke={1.5} className="opacity-70"/>
-          <div className="flex-1">
-            <div className="text-[12px] font-medium">Verify with Instagram</div>
-            <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Numbers below are estimated. Connect for real data + tier upgrade.</div>
+        <div className="card mx-5 mt-4 px-3 py-3 rounded-[12px] flex items-center gap-3">
+          <Icon name="instagram" size={16} stroke={1.5}/>
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] font-semibold">Verify with Instagram</div>
+            <div className="text-[9px] mt-1 leading-relaxed">Connect for verified reach, reporting timestamps, and private account insights.</div>
           </div>
-          <button onClick={onVerify} className="press px-3 h-7 rounded-full text-[11px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+          <button onClick={onVerify} className="press px-3 h-8 rounded-full text-[10px] font-semibold shrink-0" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
             Connect
           </button>
         </div>
       )}
 
-      {/* Audience */}
-      <SectionHead label="Audience" right={verified ? "Live" : "Estimated"} className="pt-7 pb-3"/>
-
-      <div className="px-5 space-y-3">
-        <div>
-          <div className="flex justify-between text-[11px]" style={{color:"var(--ink-2)"}}>
-            <span>Female · {female}%</span>
-            <span>Male · {male}%</span>
-          </div>
-          <div className="mt-1.5 h-[6px] rounded-full overflow-hidden flex" style={{background:"var(--bg-elev2)"}}>
-            <div style={{width:female+"%", background:"var(--ice)"}}/>
-            <div style={{width:male+"%", background:"var(--ink-mute)"}}/>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3 mt-4">
-          {p.audience.country_split.map((r,i)=>(
-            <div key={i} className="card p-3 rounded-[12px]">
-              <div className="stamp">{r.label}</div>
-              <div className="font-mono text-[18px] mt-1">{Math.round(r.pct * 100)}%</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent */}
-      <SectionHead label="Recent" className="pt-9 pb-3"/>
-      <div className="px-5 space-y-3 pb-4">
-        {[
-          { t:"Pool Day vol. II", v:"Cyan",     date:"08 Apr", score:"9.5", img:IMG.beachClub },
-          { t:"Late Lounge",      v:"Centrale", date:"22 Apr", score:"9.2", img:IMG.lounge   },
-        ].map((e,i)=>(
-          <div key={i} className="flex items-center gap-3">
-            <img src={e.img} className="w-12 h-14 rounded-[10px] object-cover" alt=""/>
-            <div className="flex-1">
-              <div className="font-display text-[16px]">{e.t}</div>
-              <div className="text-[11px] on-photo" style={{color:"var(--ink-mute)"}}>{e.v} · {e.date}</div>
-            </div>
-            <div className="font-mono text-[16px]" style={{color:"var(--ice)"}}>{e.score}</div>
-          </div>
-        ))}
-      </div>
+      {profileTab === "overview" && <ProfileOverview profile={p} analytics={analytics} period={period} verified={verified}/>}
+      {profileTab === "audience" && <ProfileAudience profile={p} analytics={analytics}/>}
+      {profileTab === "content" && <ProfileContent analytics={analytics} period={period}/>}
+      {profileTab === "list" && <ProfileListRecord analytics={analytics}/>}
 
       <div className="h-8"/>
     </PhoneScreen>
@@ -2932,7 +3459,11 @@ function App(){
 
   // Verify-with-Instagram: flips the (vendor-neutral) creator data to verified.
   const onVerify = () => {
-    setProfile(p => ({ ...(p || SEED_PROFILE), data_status: "verified" }));
+    setProfile(p => ({
+      ...(p || SEED_PROFILE),
+      data_status: "verified",
+      fetched_at: new Date().toISOString(),
+    }));
     setSettingsOpen(false);
     showToast("Instagram connected · verified");
   };

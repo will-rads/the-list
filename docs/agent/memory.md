@@ -4,6 +4,38 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-07-11 — Profile analytics dashboard redesigned in web v3
+
+HTML-first redesign implemented in `web/v3/index.html` and `web/v3/venue.html`. SwiftUI remains unchanged until Will approves the deployed HTML.
+
+- Member Profile hero shortened to about 300px; analytics now use sticky glass tabs: **Overview / Audience / Content / The List**.
+- Handle-only mode is clearly **Estimated**. Connecting Instagram upgrades the hero KPI from engagement rate to verified average Story reach and adds freshness copy.
+- Overview: engagement or Story reach hero, followers, 30-day growth, Lebanon audience, average Reels views, audience credibility, reach/engagement trend, 7/30/90-day controls.
+- Audience: Lebanon-vs-international donut, top-city and age bars, gender donut, credibility, languages, strongest active hours.
+- Content: four lazy-loaded top-content thumbnails, format-performance bars, views/likes/comments/saves/shares, frequency, sponsored share. No video autoplay or preload.
+- The List: reliability, show-up rate, Story completion, venue rating, events, verified reach, exact no-shows/strikes, recent performance trend.
+- Venue swipe cards stay fast: followers, engagement, Lebanon audience, reliability, connection status. Tapping opens the same four-tab analytics structure; Pick/Pass remains pinned.
+- Venue analytics are available only because the member applied. No contact details, DMs, earnings, follower lists, or raw provider data are exposed.
+- Missing live provider fields render **Not available**, never fake zero. Rich data in the logged-out prototype is explicitly demo-seeded.
+- Will's correction: analytics tab rails use translucent glass with active glass bubbles, never an opaque black slab.
+- Verification: v3 checker and JSX parse pass; browser QA passed member tabs, Estimated -> Verified transition, venue swipe summary, applicant tabs, lazy thumbnails, and pinned decision footer. Existing Home nested-button warning remains unrelated.
+
+**Next:** deploy/push HTML for Will's visual approval. Only after approval, port the dashboard to SwiftUI and expand the normalized Phyllo/Supabase creator-data schema.
+
+## 2026-07-11 — Phyllo feasibility researched + Instagram connection flow locked
+
+Full report: `docs/phyllo-feasibility.md`. Launch tracker: `docs/app-store-launch-checklist.md`.
+
+- Phyllo is the preferred first sandbox trial, not yet the contracted production provider.
+- The List account login stays on Supabase email/phone OTP. Instagram OAuth is a separate data connection and must not be presented as signing in to The List.
+- Onboarding first calls handle-only public analytics with no Instagram login. Results are estimates (`public_estimate`) and do not prove ownership.
+- Profile later offers **Connect Instagram** with two routes: Instagram Direct for lower friction and the professional-account + linked Facebook Page route for richer reach, impressions, Stories, and audience data.
+- Flow: The List login -> Profile -> Connect Instagram -> choose route -> Meta-hosted OAuth -> Phyllo sync -> normalized data stored in Supabase.
+- The Meta credential screen remains visibly Instagram/Facebook. Phyllo says Connect is customizable, but full white-label removal and required attribution still need written confirmation.
+- Sandbox credentials are required for testing. Production public lookups and connected accounts are quote-only; ask Phyllo to price them separately and confirm Lebanese profile support, exact fields, IG Direct enablement, rate limits, retention, and deletion terms.
+- Phyllo credentials stay server-side in Supabase. SwiftUI receives only short-lived SDK tokens and normalized creator data.
+- This does not replace the separate Meta App Review work needed for The List's Story-verification pipeline.
+
 ## 2026-07-10 — BACKEND v1 LIVE end to end (W0–W4) + venue web v3 + teaser + admin
 
 Full grill session with Will locked every product ruling (see

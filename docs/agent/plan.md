@@ -2,6 +2,10 @@
 
 ## Where we are right now
 
+Release tracker: [App Store launch checklist](../app-store-launch-checklist.md). Provider research: [Phyllo feasibility report](../phyllo-feasibility.md).
+
+**Phyllo direction (2026-07-11):** preferred provider for the first sandbox trial. Onboarding uses handle-only public estimates with no Instagram login. Members can later use **Connect Instagram** from Profile through either Instagram Direct or the richer professional-account + Facebook Page route. This connection verifies Instagram data; it does not replace Supabase login. Production price, exact fields, IG Direct enablement, and full white-label terms still need written confirmation from Phyllo.
+
 **Phase: backend v1 LIVE on Supabase (2026-07-10) — next: Will click-tests the production backend.** Project `zrbakomzpuesifasuamb` powers the production app at `the-list-omega.vercel.app`: `/v3` = wired member app, `/v3/venue` = wired venue app, `/v3/e?id=` = public teaser, and `/admin` = founder ops. `/` and `/v2` are frozen archives. The SwiftUI app is scaffolded with mock services and CI green; Supabase binding is the Mac-day wave. v3 glass is the adopted look. After the production click-test: choose the SMS provider; add `GEMINI_API_KEY` + complete Meta App Review to light up Stories; trial Phyllo or another creator-data provider.
 
 ```text
@@ -27,10 +31,12 @@
 [done]      v3 glass reskin adopted (2026-07-04): member web moved to the Jakarta-only, no-grey, bg-3 glass system
 [done]      SwiftUI scaffold + CI (2026-07-04/05): member + venue mock services compile and test; Supabase binding waits for Mac day
 [done]      Backend v1 + venue web + teaser + admin deployed (2026-07-10): live Supabase loop wired through production
+[done]      Web v3 Profile analytics redesign (2026-07-11): member + venue four-tab dashboards, truthful data modes, charts, lazy content
 [doing]     Will click-tests production backend  ◄── HERE
+[next]      Will visually approves the deployed HTML Profile analytics; then port it to SwiftUI
 [next]      Choose SMS provider; switch auth from email OTP to phone OTP
 [next]      Add GEMINI_API_KEY + complete Meta App Review; then light up Story scoring
-[next]      Trial Phyllo or another creator-data provider behind the existing normalized API
+[next]      Open Phyllo sandbox; test Lebanese handles; request written pricing, field matrix, IG Direct, and white-label terms
 [next]      Lock working name (test with Dima's top 30)
 [next]      Venue anchor contracts (5-10 Beirut venues)
 [next]      TestFlight with Dima's top 30 contacts
@@ -56,7 +62,7 @@ Lock the v1 spec. See `context.md` in this folder for the table of defaults.
 | Spot mechanic | Apply + venue swipes (limited spots) | Confirmed |
 | Story requirement | 1 Story + tag | Radwan |
 | Vetting | **Auto-fetch creator data on submit** (provider TBD) → 3 founders eyeball borderline cases | Dima + Will |
-| Creator data provider | TBD — candidates: Phyllo, Modash, Ensembledata. Pick after trialing. | Will |
+| Creator data provider | Phyllo is the preferred sandbox trial; final production choice waits on data coverage and written pricing. | Will |
 | Equity | 33/33/33, 24-month vest | Will |
 | Name | "The List" → test with 30 | All 3 |
 | Operating entity | TBD (offshore likely) | Will |

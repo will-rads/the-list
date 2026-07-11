@@ -389,7 +389,52 @@
     color: var(--ink); font-size: 11px; letter-spacing: 0.01em;
     font-weight:500; text-decoration:none; transition: all .2s;
   }
-  .side-link:hover { border-color: var(--ice); color: var(--ice); }</style>
+  .side-link:hover { border-color: var(--ice); color: var(--ice); }
+
+  /* Creator analytics stays dense and legible inside the fixed-height review sheet. */
+  .applicant-tabs {
+    display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:3px;
+    padding:4px; border:1px solid rgba(255,255,255,.18); border-radius:999px;
+    background:rgba(255,255,255,.07);
+    backdrop-filter:blur(18px) saturate(1.35);
+    -webkit-backdrop-filter:blur(18px) saturate(1.35);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .applicant-tabs button {
+    min-width:0; height:34px; padding:0 3px; border:1px solid transparent; border-radius:999px;
+    background:transparent; color:var(--ink); font-size:10px; font-weight:600;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .applicant-tabs button.active {
+    background:rgba(255,255,255,.16); color:var(--ink);
+    border-color:rgba(255,255,255,.28);
+    backdrop-filter:blur(14px) saturate(1.45);
+    -webkit-backdrop-filter:blur(14px) saturate(1.45);
+    box-shadow:0 5px 14px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.15);
+  }
+  .applicant-tabs button:focus-visible {
+    outline:2px solid var(--ice);
+    outline-offset:1px;
+  }
+  html.light .applicant-tabs {
+    background:rgba(255,255,255,.28); border-color:rgba(30,30,30,.14);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.55);
+  }
+  html.light .applicant-tabs button.active {
+    background:rgba(255,255,255,.56); color:var(--ink);
+    border-color:rgba(30,30,30,.16);
+    box-shadow:0 5px 14px rgba(30,30,30,.1), inset 0 1px 0 rgba(255,255,255,.72);
+  }
+  .insight-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .insight-metric {
+    min-width:0; padding:11px; border:1px solid var(--line); border-radius:12px;
+    background:var(--bg-elev);
+  }
+  .insight-bar { height:7px; overflow:hidden; border-radius:999px; background:var(--bg-elev2); }
+  .insight-bar > span { display:block; height:100%; border-radius:inherit; background:var(--ice); }
+  .analytics-thumb { aspect-ratio:1/1; overflow:hidden; border-radius:12px; position:relative; background:var(--bg-elev); }
+  .analytics-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+</style>
 </head>
 <body class="page-bg min-h-screen">
 <div id="root"></div>
@@ -637,6 +682,109 @@
              rating: opts.rating || null, inAt: opts.inAt || null };
   }
 
+  const SARA_INSIGHTS = {
+    dataStatus: "estimated",
+    freshness: "Refreshed 2 days ago",
+    engagementRate: 0.058,
+    overview: {
+      localFollowers: 20400,
+      trend: [23800, 24600, 25100, 26300, 27200, 28400],
+      trendLabel: "+19% followers in 90 days",
+    },
+    audience: {
+      lebanon: 0.72,
+      cities: [["Beirut",0.46],["Jounieh",0.14],["Tripoli",0.07],["Byblos",0.05]],
+      ages: [["13-17",0.04],["18-24",0.41],["25-34",0.38],["35-44",0.13],["45+",0.04]],
+      female: 0.68,
+      male: 0.32,
+      credibility: 0.91,
+      languages: ["Arabic","English","French"],
+      activeHours: ["6-9 PM","Friday","Sunday"],
+    },
+    content: {
+      performance: [["Reels",1.42],["Carousels",1.16],["Stories",0.94]],
+      topContent: [
+        { thumbnail:IMG.pool, label:"Reel", reach:48200 },
+        { thumbnail:IMG.rooftop, label:"Reel", reach:41600 },
+        { thumbnail:IMG.restaurant, label:"Carousel", reach:33700 },
+        { thumbnail:IMG.cocktail, label:"Story", reach:28900 },
+      ],
+      averageLikes: 1650,
+      averageComments: 74,
+      averageViews: 14600,
+      averageReelsViews: 32400,
+      postingFrequency: "4.2 posts / week",
+      sponsoredShare: 0.12,
+    },
+    theList: {
+      reliability: 0.94,
+      showUpRate: 17/18,
+      storyCompletion: 0.94,
+      venueRating: 4.8,
+      events: 18,
+      verifiedReach: 342000,
+      noShows: 1,
+      strikes: 0,
+      trend: [0.82,0.90,0.88,0.96,1],
+    },
+  };
+
+  function makeCompactDemoInsights(applicant, index){
+    const lebanon = (applicant.audience?.countries || []).find(([name]) => name === "Lebanon")?.[1] ?? null;
+    const reliability = applicant.reputation?.nights > 0
+      ? applicant.reputation.shows / applicant.reputation.nights
+      : null;
+    const followers = applicant.instagram_followers;
+    const engagementRate = [0.041,0.052,0.048,0.039,0.063,0.046][index % 6];
+    const female = applicant.audience?.female ?? null;
+    return {
+      dataStatus: index % 4 === 1 ? "connected" : "estimated",
+      freshness: index % 4 === 1 ? "Synced today" : "Refreshed 3 days ago",
+      engagementRate,
+      overview: {
+        localFollowers: followers != null && lebanon != null ? Math.round(followers * lebanon) : null,
+        trend: followers == null ? null : [0.82,0.87,0.91,0.95,0.98,1].map(x => Math.round(followers * x)),
+        trendLabel: "+8% followers in 90 days",
+      },
+      audience: {
+        lebanon,
+        cities: lebanon == null ? null : [["Beirut",lebanon*.62],["Jounieh",lebanon*.18],["Byblos",lebanon*.09]],
+        ages: [["18-24",0.44],["25-34",0.36],["35-44",0.14],["45+",0.06]],
+        female,
+        male: female == null ? null : 1-female,
+        credibility: applicant.quality_score,
+        languages: ["Arabic","English"],
+        activeHours: ["7-10 PM","Thursday","Saturday"],
+      },
+      content: {
+        performance: [["Reels",1.18],["Carousels",1.02],["Stories",0.88]],
+        topContent: [
+          { thumbnail:IMG.rooftop, label:"Reel", reach:followers == null ? null : Math.round(followers*1.34) },
+          { thumbnail:IMG.pool, label:"Story", reach:followers == null ? null : Math.round(followers*.92) },
+          { thumbnail:IMG.cocktail, label:"Reel", reach:followers == null ? null : Math.round(followers*.81) },
+          { thumbnail:IMG.restaurant, label:"Carousel", reach:followers == null ? null : Math.round(followers*.68) },
+        ],
+        averageLikes: followers == null ? null : Math.round(followers*engagementRate*.86),
+        averageComments: followers == null ? null : Math.round(followers*engagementRate*.04),
+        averageViews: followers == null ? null : Math.round(followers*.54),
+        averageReelsViews: followers == null ? null : Math.round(followers*.88),
+        postingFrequency: `${3 + (index % 3)} posts / week`,
+        sponsoredShare: [0.08,0.12,0.16][index % 3],
+      },
+      theList: {
+        reliability,
+        showUpRate: reliability,
+        storyCompletion: reliability == null ? null : Math.max(0, reliability-.03),
+        venueRating: 4.4 + (index % 5)*.1,
+        events: applicant.reputation?.nights ?? null,
+        verifiedReach: followers == null || reliability == null ? null : Math.round(followers*reliability*2.8),
+        noShows: applicant.reputation?.noShows ?? null,
+        strikes: applicant.reputation?.strikes ?? null,
+        trend: [0.72,0.84,0.80,0.92,reliability].filter(v => v != null),
+      },
+    };
+  }
+
   // Applicants for the swipe deck (vendor-neutral; mirrors a normalized provider row).
   const APPLICANTS = [
     // ---- original 8 (kept exactly, with added reputation + audience) ----
@@ -644,7 +792,8 @@
       instagram_followers:28400, tiktok_followers:51200,
       socials:{ instagram:"https://instagram.com/capriottisara", tiktok:"https://tiktok.com/@capriottisara", other:null },
       reputation:{ score:9.1, nights:18, shows:17, noShows:1, strikes:0, withYou:3 },
-      audience:{ female:0.68, countries:[["Lebanon",0.72],["UAE",0.12],["France",0.08]] } },
+      audience:{ female:0.68, countries:[["Lebanon",0.72],["UAE",0.12],["France",0.08]] },
+      insights:SARA_INSIGHTS },
     { id:"a2", name:"Karim Haddad", gender:"male", quality_score:0.88, photo:FACE.karim,
       instagram_followers:14200, tiktok_followers:9800,
       socials:{ instagram:"https://instagram.com/karim", tiktok:"https://tiktok.com/@karim", other:null },
@@ -771,7 +920,10 @@
       socials:{ instagram:"https://instagram.com/elietannous", tiktok:null, other:null },
       reputation:{ score:8.0, nights:3, shows:3, noShows:0, strikes:0, withYou:0 },
       audience:{ female:0.38, countries:[["Lebanon",0.79],["Cyprus",0.09],["UAE",0.06]] } },
-  ];
+  ].map((applicant, index) => ({
+    ...applicant,
+    insights: applicant.insights || makeCompactDemoInsights(applicant, index),
+  }));
 
   const applicantById = Object.fromEntries(APPLICANTS.map(a => [a.id, a]));
 
@@ -975,8 +1127,11 @@
     })(),
   ];
 
-  const fmtK = (n) => n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+"k" : ""+n;
-  const quality10 = (q) => (q*10).toFixed(1);   // 0.94 -> "9.4"
+  const isNumber = (value) => typeof value === "number" && Number.isFinite(value);
+  const fmtK = (n) => !isNumber(n) ? "Not available" : n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+"k" : ""+n;
+  const fmtPct = (n, digits=0) => !isNumber(n) ? "Not available" : (n*100).toFixed(digits)+"%";
+  const fmtCount = (n) => !isNumber(n) ? "Not available" : n.toLocaleString("en-US");
+  const quality10 = (q) => !isNumber(q) ? "Not available" : (q*10).toFixed(1);   // 0.94 -> "9.4"
 
   /* Demo seed – lets Will (or a venue in a pitch) see the whole desk with zero
      typing. Entered via "Preview the desk" on the intro screen. */
@@ -2048,7 +2203,7 @@
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-[14px] truncate">{ap.name || "–"}</div>
                     <div className="text-[11px]" style={{opacity:.7}}>
-                      <span className="font-mono">{quality10(ap.quality_score || 0)}</span> rep
+                      <span className="font-mono">{quality10(ap.quality_score)}</span> rep
                       {seg==="in" && g.inAt ? " · in " + g.inAt : ""}
                     </div>
                   </div>
@@ -2446,9 +2601,105 @@
   // px reserved at card bottom for the social pill row (p-4 + h-9 + mt-3) – keep in sync with SwipeCard's footer
   const CARD_LINK_ZONE = 80;
 
-  /* ========== SwipeCard – one applicant card ========== */
-  // One applicant card. Shows photo, name, quality 0-10, IG + TikTok, tappable socials.
+  function connectionLabel(status){
+    if (status === "connected") return "Connected";
+    if (status === "estimated") return "Estimated";
+    return "Not available";
+  }
+
+  function applicantLebanon(applicant){
+    const direct = applicant.insights?.audience?.lebanon;
+    if (isNumber(direct)) return direct;
+    const row = (applicant.audience?.countries || []).find(([name]) => name === "Lebanon");
+    return row && isNumber(row[1]) ? row[1] : null;
+  }
+
+  function InsightMetric({ label, value, detail=null }){
+    return (
+      <div className="insight-metric">
+        <div className="text-[10px] font-medium leading-tight mb-1" style={{color:"var(--ink-2)"}}>{label}</div>
+        <div className="font-mono text-[17px] leading-tight break-words">{value}</div>
+        {detail && <div className="text-[10px] leading-snug mt-1" style={{color:"var(--ink-2)"}}>{detail}</div>}
+      </div>
+    );
+  }
+
+  function SheetSection({ title, children }){
+    return (
+      <section className="mb-5">
+        <div className="section-label text-[13px] mb-2">{title}</div>
+        {children}
+      </section>
+    );
+  }
+
+  function MiniTrend({ values, label }){
+    const clean = Array.isArray(values) ? values.filter(isNumber) : [];
+    if (!clean.length) return <div className="text-[12px] py-5" style={{color:"var(--ink-2)"}}>Not available</div>;
+    const min = Math.min(...clean);
+    const max = Math.max(...clean);
+    const range = max-min;
+    return (
+      <div>
+        <div className="h-[78px] flex items-end gap-2 px-1 pt-2" aria-label={label || "Recent trend"}>
+          {clean.map((value, index) => {
+            const height = range === 0 ? 54 : 22 + ((value-min)/range)*50;
+            return <span key={index} className="flex-1 rounded-t-[5px]" style={{height, background:"var(--ice)", opacity:.45 + index/clean.length*.5}}/>;
+          })}
+        </div>
+        {label && <div className="text-[11px] mt-2" style={{color:"var(--ink-2)"}}>{label}</div>}
+      </div>
+    );
+  }
+
+  function BarList({ rows, max=1 }){
+    const clean = Array.isArray(rows) ? rows.filter(row => row && isNumber(row[1])) : [];
+    if (!clean.length) return <div className="text-[12px] py-3" style={{color:"var(--ink-2)"}}>Not available</div>;
+    return (
+      <div className="flex flex-col gap-3">
+        {clean.map(([label,value]) => (
+          <div key={label}>
+            <div className="flex items-center justify-between gap-3 text-[11px] mb-1.5">
+              <span className="truncate">{label}</span>
+              <span className="font-mono shrink-0">{max === 1 ? fmtPct(value) : value.toFixed(2)+"x"}</span>
+            </div>
+            <div className="insight-bar"><span style={{width:`${Math.max(0,Math.min(100,value/max*100))}%`}}/></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  function Donut({ value, label, secondaryLabel }){
+    if (!isNumber(value)) return <div className="text-[12px] py-5" style={{color:"var(--ink-2)"}}>Not available</div>;
+    const pct = Math.max(0,Math.min(100,value*100));
+    return (
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="relative w-[74px] h-[74px] rounded-full shrink-0" role="img" aria-label={`${label} ${Math.round(pct)}%`}
+             style={{background:`conic-gradient(var(--ice) ${pct}%, var(--bg-elev2) 0)`}}>
+          <div className="absolute inset-[9px] rounded-full flex items-center justify-center font-mono text-[13px]" style={{background:"var(--bg)"}}>{Math.round(pct)}%</div>
+        </div>
+        <div className="min-w-0 text-[10px] leading-relaxed">
+          <div className="font-semibold truncate">{label}</div>
+          <div className="truncate" style={{color:"var(--ink-2)"}}>{secondaryLabel} {Math.round(100-pct)}%</div>
+        </div>
+      </div>
+    );
+  }
+
+  function TagList({ values }){
+    if (!Array.isArray(values) || !values.length) return <div className="text-[12px]" style={{color:"var(--ink-2)"}}>Not available</div>;
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {values.map(value => <span key={value} className="px-2.5 py-1 rounded-full text-[10px]" style={{background:"var(--bg-elev2)", border:"1px solid var(--line)"}}>{value}</span>)}
+      </div>
+    );
+  }
+
+  /* ========== SwipeCard - one applicant card ========== */
   function SwipeCard({ a }){
+    const insights = a.insights || {};
+    const reliability = insights.theList?.reliability;
     const Social = ({label, href, icon}) => href ? (
       <a href={href} target="_blank" rel="noreferrer"
          className="press flex items-center gap-1.5 px-3 h-9 rounded-full text-[12px]"
@@ -2456,25 +2707,35 @@
         <Icon name={icon} size={14}/>{label}
       </a>
     ) : null;
+    const metrics = [
+      ["Followers",fmtK(a.instagram_followers)],
+      ["Engagement",fmtPct(insights.engagementRate,1)],
+      ["Lebanon",fmtPct(applicantLebanon(a))],
+      ["Reliability",fmtPct(reliability)],
+    ];
     return (
       <div className="relative w-full rounded-[18px] overflow-hidden" style={{aspectRatio:"4/5", background:"var(--bg-elev)"}}>
         <FramedImage value={{src:a.photo, scale:1, x:0, y:0}} ratio="4/5" className="absolute inset-0"/>
-        <div className="absolute inset-x-0 bottom-0 p-4"
-             style={{background:"linear-gradient(to top, rgba(0,0,0,.92), rgba(0,0,0,.0))", color:"#F7F6F3"}}>
-          <div className="flex items-end justify-between">
-            <div className="font-black font-display-l text-[28px] leading-none">{a.name}</div>
-            <div className="flex items-center gap-1 font-mono text-[20px]" style={{color:"#F7F6F3"}}>
-              {quality10(a.quality_score)}<Icon name="sparkles" size={14}/>
-            </div>
+        <div className="absolute inset-x-0 bottom-0 p-4 pt-24"
+             style={{background:"linear-gradient(to top, rgba(0,0,0,.94) 0%, rgba(0,0,0,.76) 58%, rgba(0,0,0,0) 100%)", color:"#F7F6F3"}}>
+          <div className="flex items-end justify-between gap-3">
+            <div className="font-black font-display-l text-[24px] leading-[1.02] min-w-0">{a.name}</div>
+            <span className="shrink-0 px-2 py-1 rounded-full text-[9px] font-semibold" style={{border:"1px solid rgba(247,246,243,.36)"}}>
+              {connectionLabel(insights.dataStatus)}
+            </span>
           </div>
-          <div className="flex items-center gap-4 mt-3 text-[13px]">
-            <span><span className="font-mono">{fmtK(a.instagram_followers)}</span> IG</span>
-            <span><span className="font-mono">{fmtK(a.tiktok_followers)}</span> TikTok</span>
+          <div className="grid grid-cols-4 mt-3 py-2.5" style={{borderTop:"1px solid rgba(247,246,243,.22)", borderBottom:"1px solid rgba(247,246,243,.22)"}}>
+            {metrics.map(([label,value], index) => (
+              <div key={label} className="min-w-0 px-2 first:pl-0 last:pr-0" style={index ? {borderLeft:"1px solid rgba(247,246,243,.18)"} : {}}>
+                <div className="font-mono text-[12px] leading-tight truncate">{value}</div>
+                <div className="text-[8px] leading-tight mt-1 truncate">{label}</div>
+              </div>
+            ))}
           </div>
           <div className="flex items-center gap-2 mt-3">
-            <Social label="Instagram" href={a.socials.instagram} icon="instagram"/>
-            <Social label="TikTok" href={a.socials.tiktok} icon="tiktok"/>
-            <Social label="Link" href={a.socials.other} icon="link"/>
+            <Social label="Instagram" href={a.socials?.instagram} icon="instagram"/>
+            <Social label="TikTok" href={a.socials?.tiktok} icon="tiktok"/>
+            <Social label="Link" href={a.socials?.other} icon="link"/>
           </div>
         </div>
       </div>
@@ -2525,107 +2786,165 @@
     );
   }
 
-  /* ========== ApplicantSheet – detailed applicant bottom sheet ========== */
+  /* ========== ApplicantSheet - venue-only analytics for applied members ========== */
   function ApplicantSheet({ applicant, guest, onDecide, onClose }){
+    const [tab, setTab] = useState("Overview");
+    const scrollRef = useRef(null);
+    useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0; }, [tab]);
     if (!applicant) return null;
-    const rep = applicant.reputation || {};
-    const aud = applicant.audience || {};
-    const femalePct = Math.round((aud.female || 0) * 100);
-    const malePct = 100 - femalePct;
-    const countries = aud.countries || [];
+    const insights = applicant.insights || {};
+    const audience = insights.audience || {};
+    const content = insights.content || {};
+    const list = insights.theList || {};
+    const status = connectionLabel(insights.dataStatus);
+    const localFollowers = insights.overview?.localFollowers;
+    const tabs = ["Overview","Audience","Content","The List"];
+
+    const Overview = () => (
+      <div>
+        <div className="card rounded-[14px] p-4 mb-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>{status}</span>
+            <span className="text-[10px] text-right" style={{color:"var(--ink-2)"}}>{insights.freshness || "Freshness not available"}</span>
+          </div>
+          <div className="text-[11px] font-medium" style={{color:"var(--ink-2)"}}>Estimated local followers</div>
+          <div className="font-black font-display-l text-[42px] leading-none mt-1">{fmtK(localFollowers)}</div>
+          <div className="text-[11px] leading-relaxed mt-2" style={{color:"var(--ink-2)"}}>A quick view of the reachable Lebanon audience before you pick.</div>
+        </div>
+        <SheetSection title="Decision metrics">
+          <div className="insight-grid">
+            <InsightMetric label="Followers" value={fmtK(applicant.instagram_followers)}/>
+            <InsightMetric label="Engagement" value={fmtPct(insights.engagementRate,1)}/>
+            <InsightMetric label="Lebanon audience" value={fmtPct(applicantLebanon(applicant))}/>
+            <InsightMetric label="Reliability" value={fmtPct(list.reliability)}/>
+          </div>
+        </SheetSection>
+        <SheetSection title="Follower trend">
+          <div className="card rounded-[14px] px-3 py-2">
+            <MiniTrend values={insights.overview?.trend} label={insights.overview?.trendLabel}/>
+          </div>
+        </SheetSection>
+      </div>
+    );
+
+    const Audience = () => (
+      <div>
+        <SheetSection title="Audience location">
+          <div className="insight-grid">
+            <div className="insight-metric"><Donut value={audience.lebanon} label="Lebanon" secondaryLabel="International"/></div>
+            <div className="insight-metric"><Donut value={audience.female} label="Female" secondaryLabel="Male"/></div>
+          </div>
+        </SheetSection>
+        <SheetSection title="Top cities"><BarList rows={audience.cities}/></SheetSection>
+        <SheetSection title="Age"><BarList rows={audience.ages}/></SheetSection>
+        <SheetSection title="Audience quality">
+          <div className="insight-grid mb-3">
+            <InsightMetric label="Credibility" value={fmtPct(audience.credibility)}/>
+            <InsightMetric label="Lebanon share" value={fmtPct(audience.lebanon)}/>
+          </div>
+          <div className="text-[11px] font-semibold mb-2">Languages</div>
+          <TagList values={audience.languages}/>
+          <div className="text-[11px] font-semibold mt-4 mb-2">Most active</div>
+          <TagList values={audience.activeHours}/>
+        </SheetSection>
+      </div>
+    );
+
+    const Content = () => (
+      <div>
+        <SheetSection title="Format performance"><BarList rows={content.performance} max={1.5}/></SheetSection>
+        <SheetSection title="Top content">
+          {Array.isArray(content.topContent) && content.topContent.length ? (
+            <div className="grid grid-cols-2 gap-2">
+              {content.topContent.slice(0,4).map((item,index) => (
+                <div key={index} className="analytics-thumb">
+                  <img src={item.thumbnail} alt="" loading="lazy" decoding="async"/>
+                  <div className="absolute inset-x-0 bottom-0 px-2.5 py-2 text-[9px] flex justify-between gap-2" style={{background:"linear-gradient(transparent,rgba(0,0,0,.9))", color:"#F7F6F3"}}>
+                    <span>{item.label || "Post"}</span><span className="font-mono">{fmtK(item.reach)} reach</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : <div className="text-[12px]" style={{color:"var(--ink-2)"}}>Not available</div>}
+        </SheetSection>
+        <SheetSection title="Content metrics">
+          <div className="insight-grid">
+            <InsightMetric label="Average likes" value={fmtCount(content.averageLikes)}/>
+            <InsightMetric label="Average comments" value={fmtCount(content.averageComments)}/>
+            <InsightMetric label="Average views" value={fmtK(content.averageViews)}/>
+            <InsightMetric label="Average Reel views" value={fmtK(content.averageReelsViews)}/>
+            <InsightMetric label="Posting frequency" value={content.postingFrequency || "Not available"}/>
+            <InsightMetric label="Sponsored share" value={fmtPct(content.sponsoredShare)}/>
+          </div>
+        </SheetSection>
+      </div>
+    );
+
+    const TheList = () => (
+      <div>
+        <SheetSection title="Reliability">
+          <div className="insight-grid">
+            <InsightMetric label="Reliability" value={fmtPct(list.reliability)}/>
+            <InsightMetric label="Show-up rate" value={fmtPct(list.showUpRate)}/>
+            <InsightMetric label="Story completion" value={fmtPct(list.storyCompletion)}/>
+            <InsightMetric label="Venue rating" value={isNumber(list.venueRating) ? list.venueRating.toFixed(1)+" / 5" : "Not available"}/>
+            <InsightMetric label="Events" value={fmtCount(list.events)}/>
+            <InsightMetric label="Verified reach" value={fmtK(list.verifiedReach)}/>
+          </div>
+        </SheetSection>
+        <SheetSection title="Accountability">
+          <div className="insight-grid">
+            <InsightMetric label="No-shows" value={fmtCount(list.noShows)} detail="Exact recorded count"/>
+            <InsightMetric label="Strikes" value={fmtCount(list.strikes)} detail="Exact active count"/>
+          </div>
+        </SheetSection>
+        <SheetSection title="Recent event trend">
+          <div className="card rounded-[14px] px-3 py-2">
+            <MiniTrend values={list.trend} label="Completion across the last five events"/>
+          </div>
+        </SheetSection>
+      </div>
+    );
 
     return (
       <>
         <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.62)", backdropFilter:"blur(4px)"}}/>
-        <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-8"
-             style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)", maxHeight:"85%", display:"flex", flexDirection:"column"}}>
-          <div className="w-10 h-1 rounded-full mx-auto mb-4 shrink-0" style={{background:"var(--ink)", opacity:.4}}/>
+        <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-4 pt-3 pb-7"
+             style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)", height:"calc(100% - 62px)", maxHeight:"calc(100% - 62px)", display:"flex", flexDirection:"column"}}>
+          <div className="w-10 h-1 rounded-full mx-auto mb-3 shrink-0" style={{background:"var(--ink)", opacity:.4}}/>
 
-          {/* Photo + name header */}
-          <div className="flex-1 overflow-y-auto noscroll">
-            <div className="relative w-full rounded-[16px] overflow-hidden mb-4" style={{aspectRatio:"4/5"}}>
-              <FramedImage value={{src:applicant.photo, scale:1, x:0, y:0}} ratio="4/5" className="absolute inset-0 w-full h-full"/>
-              <div className="absolute inset-x-0 bottom-0 p-4"
-                   style={{background:"linear-gradient(to top, rgba(0,0,0,.92), transparent)", color:"#F7F6F3"}}>
-                <div className="font-black font-display-l text-[28px] leading-none">{applicant.name}</div>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="font-mono text-[18px]">{quality10(applicant.quality_score)}</span>
-                  <Icon name="sparkles" size={14} className="opacity-80"/>
-                </div>
+          <div className="shrink-0 flex items-center gap-3 mb-3">
+            <div className="w-14 h-14 rounded-[14px] overflow-hidden shrink-0" style={{background:"var(--bg-elev)"}}>
+              <img src={applicant.photo} alt="" className="w-full h-full object-cover"/>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-black font-display text-[19px] leading-tight truncate">{applicant.name}</div>
+              <div className="text-[10px] mt-1 flex items-center gap-2 min-w-0" style={{color:"var(--ink-2)"}}>
+                <span className="truncate">Applied to this event</span>
+                <span aria-hidden="true">/</span>
+                <span className="font-mono shrink-0">{status}</span>
               </div>
             </div>
+            <button onClick={onClose} className="press w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{border:"1px solid var(--line-2)"}} aria-label="Close applicant details">
+              <Icon name="x" size={17}/>
+            </button>
+          </div>
 
-            {/* Reputation block */}
-            <div className="mb-4 px-1">
-              <div className="stamp mb-2">Reputation</div>
-              <div className="flex items-baseline gap-1.5 mb-1">
-                <span className="font-mono text-[28px] leading-none" style={{color:"var(--ice)"}}>{rep.score != null ? rep.score.toFixed(1) : "–"}</span>
-                <span className="text-[12px]" style={{color:"var(--ink-mute)"}}>/ 10</span>
-              </div>
-              <div className="text-[12px]" style={{color:"var(--ink-mute)"}}>
-                Nights {rep.nights || 0} · Shows {rep.shows || 0} · No-shows {rep.noShows || 0}
-              </div>
-              {rep.strikes > 0 && (
-                <div className="text-[12px] mt-0.5" style={{color:"var(--ink-mute)"}}>Strikes {rep.strikes}</div>
-              )}
-              {rep.withYou > 0 && (
-                <div className="text-[12px] mt-0.5" style={{color:"var(--ink-mute)"}}>With you Ã— {rep.withYou}</div>
-              )}
-            </div>
+          <div className="applicant-tabs shrink-0 mb-3" role="tablist" aria-label="Applicant analytics">
+            {tabs.map(name => (
+              <button key={name} className={tab === name ? "active press" : "press"} onClick={() => setTab(name)} role="tab" aria-selected={tab === name}>{name}</button>
+            ))}
+          </div>
 
-            {/* Socials */}
-            <div className="mb-4 px-1">
-              <div className="stamp mb-2">Socials</div>
-              <div className="flex gap-2 text-[13px]" style={{color:"var(--ink-2)"}}>
-                {applicant.socials?.instagram ? (
-                  <a href={applicant.socials.instagram} target="_blank" rel="noreferrer"
-                     style={{color:"var(--ink-2)"}}>
-                    <span className="font-mono">{fmtK(applicant.instagram_followers)}</span> IG
-                  </a>
-                ) : (
-                  <span><span className="font-mono">{fmtK(applicant.instagram_followers)}</span> IG</span>
-                )}
-                {applicant.socials?.tiktok ? (
-                  <a href={applicant.socials.tiktok} target="_blank" rel="noreferrer"
-                     style={{color:"var(--ink-2)"}}>
-                    <span className="font-mono">{fmtK(applicant.tiktok_followers)}</span> TikTok
-                  </a>
-                ) : (
-                  <span><span className="font-mono">{fmtK(applicant.tiktok_followers)}</span> TikTok</span>
-                )}
-              </div>
-            </div>
-
-            {/* Audience */}
-            {(aud.female != null || countries.length > 0) && (
-              <div className="mb-4 px-1">
-                <div className="stamp mb-2">Audience</div>
-                {aud.female != null && (
-                  <div className="mb-2">
-                    <div className="flex justify-between text-[11px] mb-1" style={{color:"var(--ink-mute)"}}>
-                      <span>{femalePct}% female</span>
-                      <span>{malePct}% male</span>
-                    </div>
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{background:"var(--bg-elev2)"}}>
-                      <div className="h-full rounded-full" style={{width:`${femalePct}%`, background:"var(--ice)"}}/>
-                    </div>
-                  </div>
-                )}
-                {countries.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {countries.map(([name, pct]) => (
-                      <span key={name} className="px-2 py-0.5 rounded-full text-[11px]" style={{background:"var(--bg-elev2)", color:"var(--ink-mute)"}}>
-                        {name} {Math.round(pct*100)}%
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+          <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto noscroll pr-1" style={{overscrollBehavior:"contain"}}>
+            {tab === "Overview" && <Overview/>}
+            {tab === "Audience" && <Audience/>}
+            {tab === "Content" && <Content/>}
+            {tab === "The List" && <TheList/>}
           </div>
 
           {/* Footer decide pills */}
-          <div className="shrink-0 flex gap-3 pt-3">
+          <div className="shrink-0 flex gap-3 pt-3" style={{borderTop:"1px solid var(--line)"}}>
             <button onClick={()=> onDecide(false)}
               className="press flex-1 h-[52px] rounded-full text-[14px] font-semibold flex items-center justify-center"
               style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
@@ -3627,28 +3946,143 @@
     );
   }
 
-  function liveApplicant(application){
+  function optionalNumber(value){
+    if (value == null || value === "") return null;
+    const number = typeof value === "number" ? value : Number(value);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  function normalizeBreakdown(value){
+    const labels = { LB:"Lebanon", AE:"UAE", SA:"Saudi Arabia" };
+    if (Array.isArray(value)) {
+      return value.map(row => {
+        if (Array.isArray(row)) return [row[0], optionalNumber(row[1])];
+        if (!row || typeof row !== "object") return null;
+        const label = row.label || row.name || row.country || row.city || row.age || row.code;
+        return label ? [labels[label] || label, optionalNumber(row.pct ?? row.value ?? row.share)] : null;
+      }).filter(row => row && isNumber(row[1]));
+    }
+    if (value && typeof value === "object") {
+      return Object.entries(value).map(([label, share]) => [labels[label] || label, optionalNumber(share)])
+        .filter(row => isNumber(row[1]));
+    }
+    return [];
+  }
+
+  function normalizeConnectionStatus(value){
+    const status = String(value || "").toLowerCase();
+    if (status === "verified" || status.startsWith("connected")) return "connected";
+    if (status === "estimated" || status === "public_estimate") return "estimated";
+    return null;
+  }
+
+  function freshnessLabel(value){
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.valueOf())) return null;
+    const days = Math.max(0, Math.floor((Date.now()-date.valueOf())/(24*60*60*1000)));
+    if (days === 0) return "Synced today";
+    if (days === 1) return "Refreshed yesterday";
+    return `Refreshed ${days} days ago`;
+  }
+
+  function normalizeApplicant(application){
     const profile = Array.isArray(application.profiles) ? application.profiles[0] : application.profiles || {};
     const creator = profile.creator_data || {};
-    const audience = creator.audience || {};
+    const creatorInsights = creator.insights || creator.creator_insights || {};
+    const audience = { ...(creator.audience || {}), ...(creatorInsights.audience || {}) };
+    const content = { ...(creator.content_metrics || {}), ...(creatorInsights.content || {}) };
+    const listSource = { ...(creator.the_list || {}), ...(creatorInsights.theList || creatorInsights.the_list || {}) };
+    const reputationSource = profile.reputation || {};
+    const reputation = {
+      score: optionalNumber(reputationSource.score),
+      nights: optionalNumber(reputationSource.nights ?? reputationSource.events),
+      shows: optionalNumber(reputationSource.shows ?? reputationSource.showed),
+      noShows: optionalNumber(reputationSource.noShows ?? reputationSource.no_shows),
+      strikes: optionalNumber(reputationSource.strikes),
+      withYou: optionalNumber(reputationSource.withYou ?? reputationSource.with_you),
+    };
+    const followers = optionalNumber(creator.followers_count);
+    const engagementRate = optionalNumber(creatorInsights.engagementRate ?? creatorInsights.engagement_rate ?? creator.engagement_rate);
+    const countries = normalizeBreakdown(audience.country_split ?? audience.countries);
+    const lebanon = optionalNumber(audience.lebanon) ?? countries.find(([label]) => label === "Lebanon")?.[1] ?? null;
+    const female = optionalNumber(audience.gender_split?.female ?? audience.female);
+    const male = optionalNumber(audience.gender_split?.male ?? audience.male) ?? (isNumber(female) ? 1-female : null);
+    const localFollowers = optionalNumber(creatorInsights.overview?.localFollowers ?? creatorInsights.overview?.local_followers)
+      ?? (isNumber(followers) && isNumber(lebanon) ? Math.round(followers*lebanon) : null);
+    const showUpRate = optionalNumber(listSource.showUpRate ?? listSource.show_up_rate)
+      ?? (isNumber(reputation.shows) && isNumber(reputation.nights) && reputation.nights > 0 ? reputation.shows/reputation.nights : null);
+    const reliability = optionalNumber(listSource.reliability)
+      ?? (isNumber(reputation.score) ? reputation.score/10 : showUpRate);
+    const postingFrequency = content.postingFrequency ?? content.posting_frequency;
+    const topContent = Array.isArray(content.topContent || content.top_content)
+      ? (content.topContent || content.top_content).map(item => ({
+          thumbnail: item?.thumbnail || item?.thumbnail_url || item?.image_url || null,
+          label: item?.label || item?.type || "Post",
+          reach: optionalNumber(item?.reach),
+        })).filter(item => item.thumbnail).slice(0,4)
+      : [];
+    const status = normalizeConnectionStatus(creatorInsights.dataStatus ?? creatorInsights.data_status ?? creator.data_status);
+    const insights = {
+      dataStatus: status,
+      freshness: creatorInsights.freshness || freshnessLabel(creator.fetched_at),
+      engagementRate,
+      overview: {
+        localFollowers,
+        trend: Array.isArray(creatorInsights.overview?.trend) ? creatorInsights.overview.trend.map(optionalNumber).filter(isNumber) : null,
+        trendLabel: creatorInsights.overview?.trendLabel || creatorInsights.overview?.trend_label || null,
+      },
+      audience: {
+        lebanon,
+        cities: normalizeBreakdown(audience.cities ?? audience.city_split),
+        ages: normalizeBreakdown(audience.ages ?? audience.age_split),
+        female,
+        male,
+        credibility: optionalNumber(audience.credibility ?? audience.credibility_score ?? creator.quality_score),
+        languages: Array.isArray(audience.languages) ? audience.languages.map(item => typeof item === "string" ? item : item?.label).filter(Boolean) : null,
+        activeHours: Array.isArray(audience.activeHours || audience.active_hours) ? (audience.activeHours || audience.active_hours).filter(Boolean) : null,
+      },
+      content: {
+        performance: normalizeBreakdown(content.performance),
+        topContent,
+        averageLikes: optionalNumber(content.averageLikes ?? content.average_likes),
+        averageComments: optionalNumber(content.averageComments ?? content.average_comments),
+        averageViews: optionalNumber(content.averageViews ?? content.average_views),
+        averageReelsViews: optionalNumber(content.averageReelsViews ?? content.average_reels_views),
+        postingFrequency: isNumber(optionalNumber(postingFrequency)) ? `${optionalNumber(postingFrequency)} posts / week` : postingFrequency || null,
+        sponsoredShare: optionalNumber(content.sponsoredShare ?? content.sponsored_share),
+      },
+      theList: {
+        reliability,
+        showUpRate,
+        storyCompletion: optionalNumber(listSource.storyCompletion ?? listSource.story_completion ?? reputationSource.storyCompletion ?? reputationSource.story_completion),
+        venueRating: optionalNumber(listSource.venueRating ?? listSource.venue_rating ?? reputationSource.venueRating ?? reputationSource.venue_rating),
+        events: optionalNumber(listSource.events ?? reputation.nights),
+        verifiedReach: optionalNumber(listSource.verifiedReach ?? listSource.verified_reach),
+        noShows: optionalNumber(listSource.noShows ?? listSource.no_shows ?? reputation.noShows),
+        strikes: optionalNumber(listSource.strikes ?? reputation.strikes),
+        trend: Array.isArray(listSource.trend) ? listSource.trend.map(optionalNumber).filter(isNumber) : null,
+      },
+    };
     return {
       id: application.id,
       name: profile.full_name || profile.ig_handle || "Member",
-      gender: creator.gender || "female",
-      quality_score: creator.quality_score || 0,
+      gender: creator.gender || null,
+      quality_score: optionalNumber(creator.quality_score),
       photo: profile.avatar_url || creator.profile_picture_url || FACE.sara,
-      instagram_followers: creator.followers_count || 0,
-      tiktok_followers: 0,
+      instagram_followers: followers,
+      tiktok_followers: optionalNumber(creator.tiktok_followers),
       socials: { instagram: profile.ig_handle ? "https://instagram.com/" + profile.ig_handle.replace(/^@/, "") : null, tiktok:null, other:null },
-      reputation: profile.reputation || { score:0, nights:0, shows:0, noShows:0, strikes:0, withYou:0 },
-      audience: { female: audience.gender_split?.female || .5, countries:Object.entries(audience.country_split || {}) },
+      reputation,
+      audience: { female, countries },
+      insights,
     };
   }
 
   function liveEvent(row, applications=[], stories=[], booking=null){
     const storyByApp = new Map(stories.map(s => [s.application_id, s]));
     const guests = applications.map(application => {
-      applicantById[application.id] = liveApplicant(application);
+      applicantById[application.id] = normalizeApplicant(application);
       const story = storyByApp.get(application.id);
       return {
         applicantId: application.id,
@@ -3986,5 +4420,3 @@
 </script>
 </body>
 </html>
-
-

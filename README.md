@@ -12,6 +12,8 @@ iPhone-first. The live member + venue web app runs on Supabase; the SwiftUI app 
 | know the design register, brand, principles | [`PRODUCT.md`](PRODUCT.md) |
 | know the visual system (colors, type, components, rules) | [`DESIGN.md`](DESIGN.md) |
 | see the roadmap + current phase | [`docs/agent/plan.md`](docs/agent/plan.md) |
+| track work needed for App Store launch | [`docs/app-store-launch-checklist.md`](docs/app-store-launch-checklist.md) |
+| review the Phyllo feasibility report | [`docs/phyllo-feasibility.md`](docs/phyllo-feasibility.md) |
 | catch up on what was decided when | [`docs/agent/memory.md`](docs/agent/memory.md) |
 | avoid known pitfalls | [`docs/agent/errors.md`](docs/agent/errors.md) |
 | know how Claude & Codex should behave here | [`AGENTS.md`](AGENTS.md) |

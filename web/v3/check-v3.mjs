@@ -25,6 +25,9 @@ const REQUIRED = {
     "function DemoPanel", "Reset demo",
     // v3 Frosted glass reskin (2026-07-04): photo ground + real glass surfaces.
     "--bg-photo", "backdrop-filter",
+    // Profile analytics dashboard (2026-07-11): four tabs, truthful data modes, charts, lazy media.
+    "profile-tabs", "Average Story reach", "Lebanon audience", "Top content",
+    "Reliability score", "7 days", "90 days", "loading=\"lazy\"", "Not available",
   ],
   "venue.html": [
     "function ScreenVenueIntro", "function ScreenVenueLogin", "function ScreenDesk",
@@ -34,6 +37,9 @@ const REQUIRED = {
     "from(\"venues\").select(\"*\")", "from(\"events\").select(\"*\")",
     "pick_applicant", "skip_applicant", "check_in", "close_event", "post_event",
     "venue-notifications-", "--bg-photo", "backdrop-filter",
+    // Applied-member analytics: fast swipe summary plus full tabbed applicant sheet.
+    "applicant-tabs", "Applied to this event", "Estimated local followers",
+    "Audience location", "Content metrics", "Exact active count", "loading=\"lazy\"",
   ],
 };
 
