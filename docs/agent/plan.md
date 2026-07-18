@@ -35,7 +35,8 @@ Release tracker: [App Store launch checklist](../app-store-launch-checklist.md).
 [done]      Deterministic Sara preview (2026-07-11): /v3?demo=1 bypasses saved login and opens the complete seeded dashboard
 [done]      Full web functionality wave (2026-07-18): all four web surfaces wired; draft/edit, Story upload/review, billing and settings gaps closed
 [done]      Live RPC hardening (2026-07-18): PUBLIC/anon revoked, internal helpers private, close-night and Story review guards verified
-[doing]     Deploy verification + full authenticated production click-test  ◄── HERE
+[done]      Deploy verification (2026-07-18): member/venue demos, teaser, and authenticated founder ops loaded on Vercel
+[doing]     Full member + venue authenticated production click-test  ◄── HERE
 [next]      Will visually approves the deployed HTML Profile analytics; then port it to SwiftUI
 [next]      Choose SMS provider; switch auth from email OTP to phone OTP
 [next]      Add GEMINI_API_KEY + complete Meta App Review; then light up Story scoring

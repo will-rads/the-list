@@ -25,11 +25,13 @@ Resumed the interrupted Fable wave and finished all four production web surfaces
   Story re-upload plus media-required founder review.
 - Product truth: Story screenshots plus founder review are the working v1 fallback. Gemini scoring is
   still a future port. Profile deactivation is honest anonymization, not full auth/media deletion.
+- Deployment: code commit `2b45a73` was pushed to `main` and verified on Vercel. Member analytics,
+  settings, venue desk/events/draft editor, public teaser, and authenticated founder ops all loaded.
 - Verification: all four checker gates and `git diff --check` pass; live database grants and function
-  guards were queried after migration. Full authenticated production click-testing is still required.
+  guards were queried after migration. Full member and venue authenticated click-testing is still required.
 
-**Next:** deploy this web commit, click-test member/venue/founder production accounts, then port the
-approved HTML behavior to SwiftUI and bind native services to Supabase.
+**Next:** click-test member and venue production accounts, then port the approved HTML behavior to
+SwiftUI and bind native services to Supabase.
 
 ## 2026-07-11 — Profile analytics dashboard redesigned in web v3
 
