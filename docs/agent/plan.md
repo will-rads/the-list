@@ -6,7 +6,7 @@ Release tracker: [App Store launch checklist](../app-store-launch-checklist.md).
 
 **Phyllo direction (2026-07-11):** preferred provider for the first sandbox trial. Onboarding uses handle-only public estimates with no Instagram login. Members can later use **Connect Instagram** from Profile through either Instagram Direct or the richer professional-account + Facebook Page route. This connection verifies Instagram data; it does not replace Supabase login. Production price, exact fields, IG Direct enablement, and full white-label terms still need written confirmation from Phyllo.
 
-**Phase: backend v1 LIVE on Supabase (2026-07-10) — next: Will click-tests the production backend.** Project `zrbakomzpuesifasuamb` powers the production app at `the-list-omega.vercel.app`: `/v3` = wired member app, `/v3/venue` = wired venue app, `/v3/e?id=` = public teaser, and `/admin` = founder ops. `/` and `/v2` are frozen archives. The SwiftUI app is scaffolded with mock services and CI green; Supabase binding is the Mac-day wave. v3 glass is the adopted look. After the production click-test: choose the SMS provider; add `GEMINI_API_KEY` + complete Meta App Review to light up Stories; trial Phyllo or another creator-data provider.
+**Phase: complete Supabase-backed web implementation (2026-07-18) — next: production click-test.** Project `zrbakomzpuesifasuamb` powers `the-list-omega.vercel.app`: `/v3` = member app, `/v3/venue` = venue app, `/v3/e?id=` = public teaser, and `/admin` = founder ops. Draft/edit/publish, applicant decisions, Door, recap, Story screenshot upload/manual review, billing status, settings, and notifications are wired. RPC grants are hardened and the live migration guards were verified. `/` and `/v2` stay frozen. The SwiftUI app is scaffolded with mock services and CI green; Supabase binding is still the native-app wave.
 
 ```text
 [done]      Voice notes transcribed + plan synthesized
@@ -33,7 +33,9 @@ Release tracker: [App Store launch checklist](../app-store-launch-checklist.md).
 [done]      Backend v1 + venue web + teaser + admin deployed (2026-07-10): live Supabase loop wired through production
 [done]      Web v3 Profile analytics redesign (2026-07-11): member + venue four-tab dashboards, truthful data modes, charts, lazy content
 [done]      Deterministic Sara preview (2026-07-11): /v3?demo=1 bypasses saved login and opens the complete seeded dashboard
-[doing]     Will click-tests production backend  ◄── HERE
+[done]      Full web functionality wave (2026-07-18): all four web surfaces wired; draft/edit, Story upload/review, billing and settings gaps closed
+[done]      Live RPC hardening (2026-07-18): PUBLIC/anon revoked, internal helpers private, close-night and Story review guards verified
+[doing]     Deploy verification + full authenticated production click-test  ◄── HERE
 [next]      Will visually approves the deployed HTML Profile analytics; then port it to SwiftUI
 [next]      Choose SMS provider; switch auth from email OTP to phone OTP
 [next]      Add GEMINI_API_KEY + complete Meta App Review; then light up Story scoring
@@ -76,7 +78,7 @@ Track A — Build (Will)                Track B — Sell (Radwan + Dima)
 v3 member + venue web live            target list: 5-10 anchor venues
 SwiftUI scaffold + CI green           Kee Beirut + 2 clubs
 Provider trial pending                2-3 restaurants
-Graph API + Gemini dark               1-2 beach clubs
+Manual Story review live              1-2 beach clubs
 Browse drops + Apply live             1 wellness anchor
 Realtime web notifications live       pitch deck (5 slides)
 Venue v3 web live                     6-12mo soft exclusivity
@@ -92,7 +94,7 @@ Run 20-30 real bookings **before the app is in App Store**.
 - Dima WhatsApps the drop.
 - Google Form claim.
 - Notion as venue dashboard.
-- Story proof = Graph API + Gemini once keys + Meta review land; no manual upload path.
+- Story proof = screenshot upload + founder review today; Gemini can automate the first pass later.
 - We pay venue via Whish / cash. Keep our 20%.
 - Log every friction point.
 
@@ -120,7 +122,7 @@ Rule: **every flow we build into the app should be a flow we've already done 5 t
 - **Android.** Phase 2, after iOS revenue.
 - **Multi-city.** Beirut only.
 - **Multi-language UI.** English first, Arabic v2.
-- **Superseded:** manual screenshot Story proof. Current ruling (2026-07-10) is Graph API + Gemini only; it stays dark until keys + Meta review.
+- **Automatic Story scoring.** Manual screenshot upload + founder review works now; Gemini remains a later automation port.
 - **Auto payments.** Whish / OMT / cash v1.
 
 ## Risks to actively manage

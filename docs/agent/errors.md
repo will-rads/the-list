@@ -4,6 +4,29 @@ Things that have already gone wrong, or known traps. New entries on top, dated `
 
 ---
 
+## 2026-07-18 — Revoking RPC access from anon is not enough
+
+PostgreSQL grants new functions to `PUBLIC` by default. Revoking only `anon` and `authenticated`
+still left security-definer functions executable through the inherited public grant.
+
+Rule: after creating public RPCs, revoke from PostgreSQL `PUBLIC`, `anon`, and `authenticated`, then
+grant only the exact client RPCs back to `authenticated`. Keep cron, trigger, notification, and nested
+admin helpers private. Verify the live `pg_proc.proacl`; do not trust migration comments.
+
+---
+
+## 2026-07-18 — Client onboarding cannot write protected analytics
+
+The profiles security fix correctly removed member write access to `creator_data`, but onboarding
+still tried a direct client update. That made new-member onboarding fail after the Edge Function
+returned.
+
+Rule: provider analytics are server-owned. The browser may use an Edge Function response in memory,
+but only a service-role Edge Function may persist normalized analytics. Never restore broad profile
+update rights to make onboarding pass.
+
+---
+
 ## 2026-07-10 — Never retype or reconstruct secrets and keys
 
 Codex reconstructed the Supabase anon-key JWT instead of copying it and hallucinated the middle segment. Runtime result: `Invalid API key`.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>The List · Venue v3</title>
+<title>The List · Venues</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -169,9 +169,10 @@
     gap:5px; color: var(--nav-idle);
     font-size: 10px; letter-spacing: 0.01em;
     padding: 4px 0; border-radius: 14px;
-    transition: color .15s;
+    transition: color .15s, transform .12s ease;
     background: transparent; border: 0; cursor: pointer;
   }
+  .tabbar button:active { transform: scale(.96); }
   .tabbar button.active { color: var(--ink); }
   .tabbar button.active svg { color: var(--ice); }
 
@@ -224,16 +225,35 @@
     background: var(--bg-elev); border: 1px solid var(--line-2);
     color: var(--ink); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500;
     font-size: 11px; letter-spacing: 0.01em;
-    cursor: pointer; transition: all .2s;
+    cursor: pointer; transition: border-color .2s, color .2s, background .2s;
   }
   .theme-toggle:hover { border-color: var(--ice); color: var(--ice); }
   .theme-toggle .dot { width:6px; height:6px; border-radius:50%; background: var(--ice); }
 
+  /* better-ui: ring pulse animates transform/opacity (compositor-friendly),
+     not box-shadow spread. The ring lives on a pseudo-element. */
   @keyframes pulseIce {
-    0% { box-shadow: 0 0 0 0 rgba(255,255,255,.35); }
-    100% { box-shadow: 0 0 0 28px rgba(255,255,255,0); }
+    0%   { opacity: .55; transform: scale(1); }
+    100% { opacity: 0;   transform: scale(2.1); }
   }
-  .pulse-ice { animation: pulseIce 1.8s cubic-bezier(.4,.2,.2,1) infinite; }
+  .pulse-ice { position: relative; }
+  .pulse-ice::after {
+    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.35);
+    animation: pulseIce 1.8s cubic-bezier(.4,.2,.2,1) infinite;
+  }
+
+  /* better-ui: extend sub-44px controls to a 44px hit target without any
+     visual change. The pseudo-element participates in hit testing. */
+  .hit { position: relative; }
+  .hit::after {
+    content:""; position:absolute; left:50%; top:50%;
+    transform: translate(-50%,-50%);
+    width: max(100%, 44px); height: max(100%, 44px);
+  }
+
+  /* better-ui: DemoPanel chevron rotates smoothly */
+  .chev { transition: transform .2s ease; }
 
   @keyframes slideUp {
     from { transform: translateY(20px); opacity: 0; }
@@ -387,7 +407,7 @@
     padding: 8px 14px; border-radius: 999px;
     background: var(--bg-elev); border: 1px solid var(--line-2);
     color: var(--ink); font-size: 11px; letter-spacing: 0.01em;
-    font-weight:500; text-decoration:none; transition: all .2s;
+    font-weight:500; text-decoration:none; transition: border-color .2s, color .2s, background .2s;
   }
   .side-link:hover { border-color: var(--ice); color: var(--ice); }
 
@@ -560,10 +580,10 @@
 
   // Renders an image cropped to a fixed aspect frame using a stored transform.
   // value: { src, scale, x, y } | null. ratio: e.g. "4/5". Empty state when null.
-  function FramedImage({ value, ratio="4/5", className="", empty="No image" }){
+  function FramedImage({ value, ratio="4/5", className="", empty="No image", radius }){
     return (
       <div className={"relative overflow-hidden rounded-[14px] "+className}
-           style={{aspectRatio:ratio, background:"var(--bg-elev)"}}>
+           style={{aspectRatio:ratio, background:"var(--bg-elev)", ...(radius != null ? {borderRadius:radius} : {})}}>
         {value && value.src ? (
           <img src={value.src} alt="" draggable={false}
             style={{position:"absolute", left:"50%", top:"50%",
@@ -576,14 +596,14 @@
     );
   }
 
-  // Pick a local file, drag + zoom inside a fixed-aspect frame, return {src,scale,x,y}.
-  // No upload, no canvas export – the transform is reused by FramedImage everywhere.
+  // Pick a local file, drag + zoom inside a fixed-aspect frame, return its transform.
   function ImageCropper({ ratio="4/5", value, onChange, onCancel, label="Position your image" }){
     const [src, setSrc]   = useState(value?.src || null);
     const [scale, setScale] = useState(value?.scale || 1);
     const [pos, setPos]   = useState({ x: value?.x || 0, y: value?.y || 0 });
     const drag = useRef(null);
     const fileRef = useRef(null);
+    const frameRef = useRef(null);
 
     const pick = (e) => {
       const f = e.target.files && e.target.files[0];
@@ -600,7 +620,7 @@
     return (
       <div className="flex flex-col gap-4">
         <div className="stamp" style={{color:"var(--ink-mute)"}}>{label}</div>
-        <div className="relative overflow-hidden rounded-[14px] mx-auto w-full"
+        <div ref={frameRef} className="relative overflow-hidden rounded-[14px] mx-auto w-full"
              style={{aspectRatio:ratio, background:"var(--bg-elev)", touchAction:"none"}}
              onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
              onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}>
@@ -629,7 +649,7 @@
         <div className="flex gap-3">
           <button onClick={onCancel} className="press flex-1 h-[52px] rounded-full text-[12px] font-medium"
                   style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Cancel</button>
-          <button disabled={!src} onClick={()=>onChange({ src, scale, x:pos.x, y:pos.y })}
+          <button disabled={!src} onClick={()=>onChange({ src, scale, x:pos.x, y:pos.y, frameW: frameRef.current ? frameRef.current.clientWidth : null })}
                   className="press flex-1 h-[52px] rounded-full text-[12px] font-semibold"
                   style={{background: src?"var(--ice)":"var(--bg-elev2)", color: src?"var(--ice-ink)":"var(--ink-mute)"}}>
             Use this
@@ -639,22 +659,75 @@
     );
   }
 
+  function loadBrowserImage(src){
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("Could not read that image"));
+      image.crossOrigin = "anonymous";
+      image.src = src;
+    });
+  }
+
+  async function bakeCroppedJpeg(value){
+    if (!value?.src) return null;
+    const image = await loadBrowserImage(value.src);
+    const frameW = Math.max(1, Number(value.frameW) || 320);
+    const frameH = frameW * 5 / 4;
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1350;
+    const ctx = canvas.getContext("2d");
+    const outputScale = canvas.width / frameW;
+    const imageScale = Math.max(.5, Number(value.scale) || 1);
+    const coverScale = Math.max(frameW / image.naturalWidth, frameH / image.naturalHeight);
+    const baseWidth = image.naturalWidth * coverScale;
+    const baseHeight = image.naturalHeight * coverScale;
+    const drawWidth = baseWidth * imageScale * outputScale;
+    const drawHeight = baseHeight * imageScale * outputScale;
+    const drawX = (canvas.width - drawWidth) / 2 + (Number(value.x) || 0) * outputScale;
+    const drawY = (canvas.height - drawHeight) / 2 + (Number(value.y) || 0) * outputScale;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+    return new Promise((resolve, reject) => canvas.toBlob(
+      blob => blob ? resolve(blob) : reject(new Error("Could not prepare that image")),
+      "image/jpeg",
+      .85
+    ));
+  }
+
+  async function uploadCroppedMedia(value, path){
+    if (!value?.src) return null;
+    if (value.remote && /^https?:/i.test(value.src)) return value.src;
+    const blob = await bakeCroppedJpeg(value);
+    const { error } = await supabaseClient.storage.from("media").upload(path, blob, {
+      upsert:true,
+      contentType:"image/jpeg",
+    });
+    if (error) throw error;
+    return supabaseClient.storage.from("media").getPublicUrl(path).data.publicUrl;
+  }
+
   const VENUE_TYPES = ["Club","Restaurant","Beach","Lounge","Gym"];
   const BEIRUT_AREAS = ["Mar Mikhael","Gemmayze","Achrafieh","Hamra","Badaro","Saifi","Manara","Jiyeh","Batroun"];
 
   function makeVenue(over={}){ return {
     id: "venue-1", groupId: null, name: "", type: "Club", area: "Mar Mikhael",
-    description: "", heroImage: null, images: [null,null,null,null], ...over,
+    description: "", igHandle: "", heroImage: null, images: [null,null,null,null], ...over,
   }; }
 
   let _evt = 0;
   function makeEvent(over={}){ return {
     id: "evt-"+(++_evt), venueId: "venue-1", title: "", type: "Club", date: "", time: "",
     mix: { girls: 15, guys: 5 },   // null === no gender preference
-    seats: 20, heroImage: null, exchange: "1 Story + venue tag", status: "draft", ...over,
+    seats: 20, storyHours: 24, heroImage: null, exchange: "1 Story + venue tag", status: "draft", ...over,
   }; }
 
   const TODAY = "Sun · 25 May"; // canonical demo today – time never advances
+  // Live mode derives today from the clock; format matches liveEvent's date field.
+  const todayLabel = () =>
+    new Date().toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}).replace(",", " ·");
 
   // Event stages
   const STAGE = { draft:"draft", open:"open", locked:"locked", past:"past", cancelled:"cancelled" };
@@ -679,7 +752,9 @@
 
   function makeGuest(applicantId, state, opts = {}) {
     return { applicantId, state, story: opts.story || null, code: opts.code || null,
-             rating: opts.rating || null, inAt: opts.inAt || null };
+             rating: opts.rating ?? null, inAt: opts.inAt || null,
+             storyId: opts.storyId || null, storyMedia: opts.storyMedia || null,
+             verdict: opts.verdict || null };
   }
 
   const SARA_INSIGHTS = {
@@ -1322,7 +1397,7 @@
                 onChange={e => setEmail(e.target.value)}
                 type="text"
                 placeholder="you@yourvenue.com"
-                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                className="w-full h-12 px-3 rounded-[12px] text-[16px]"
                 style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
               />
             </div>
@@ -1333,7 +1408,7 @@
                 onChange={e => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 inputMode="numeric"
                 placeholder="000000"
-                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                className="w-full h-12 px-3 rounded-[12px] text-[16px]"
                 style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
               />
             </div>}
@@ -1387,7 +1462,7 @@
                 onChange={e => setName(e.target.value)}
                 type="text"
                 placeholder="e.g. Skyline Hospitality"
-                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                className="w-full h-12 px-3 rounded-[12px] text-[16px]"
                 style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
               />
             </div>
@@ -1450,8 +1525,16 @@
   /* ========== ScreenOnboardVenue – register venue assets ========== */
   function ScreenOnboardVenue({ venue, setVenue, group, onDone }){
     const [editing, setEditing] = useState(null); // null | "hero" | 0..3
+    const [saving, setSaving] = useState(false);
 
     const canSave = venue.name && venue.name.length >= 2 && venue.heroImage;
+    const handleDone = async () => {
+      if (!canSave || saving) return;
+      setSaving(true);
+      try { await onDone(venue); }
+      catch (_) { /* parent reports the actionable error */ }
+      finally { setSaving(false); }
+    };
 
     // When editing, show only the cropper full-screen
     if (editing !== null){
@@ -1516,7 +1599,7 @@
                 onChange={e => setVenue(v => ({...v, name:e.target.value}))}
                 type="text"
                 placeholder="e.g. Skybar"
-                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                className="w-full h-12 px-3 rounded-[12px] text-[16px]"
                 style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
               />
             </div>
@@ -1531,7 +1614,7 @@
                     <button
                       key={t}
                       onClick={() => setVenue(v => ({...v, type:t}))}
-                      className="press px-4 h-9 rounded-full text-[12px] font-medium"
+                      className="press hit px-4 h-9 rounded-full text-[12px] font-medium"
                       style={{
                         background: sel ? "var(--ice)" : "transparent",
                         color: sel ? "var(--ice-ink)" : "var(--ink)",
@@ -1553,7 +1636,7 @@
                     <button
                       key={a}
                       onClick={() => setVenue(v => ({...v, area:a}))}
-                      className="press px-3 h-9 rounded-full text-[11px] font-medium"
+                      className="press hit px-3 h-9 rounded-full text-[11px] font-medium"
                       style={{
                         background: sel ? "var(--ice)" : "transparent",
                         color: sel ? "var(--ice-ink)" : "var(--ink)",
@@ -1573,9 +1656,24 @@
                 value={venue.description}
                 onChange={e => setVenue(v => ({...v, description:e.target.value}))}
                 placeholder="Tell influencers what makes this venue worth posting."
-                className="w-full px-3 py-3 rounded-[12px] text-[15px] resize-none"
+                className="w-full px-3 py-3 rounded-[12px] text-[16px] resize-none"
                 style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
               />
+            </div>
+
+            <div>
+              <div className="stamp mb-2">Instagram handle</div>
+              <input
+                value={venue.igHandle || ""}
+                onChange={e => setVenue(v => ({...v, igHandle:e.target.value.replace(/^@/, "")}))}
+                type="text"
+                autoCapitalize="none"
+                autoCorrect="off"
+                placeholder="yourvenue"
+                className="w-full h-12 px-3 rounded-[12px] text-[16px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+              <div className="text-[11px] mt-2" style={{color:"var(--ink-mute)"}}>Used in the member event brief.</div>
             </div>
 
             {/* Hero image */}
@@ -1637,14 +1735,14 @@
           {/* Primary CTA */}
           <div className="shrink-0 px-6 pb-10">
             <button
-              onClick={canSave ? onDone : undefined}
-              disabled={!canSave}
+              onClick={handleDone}
+              disabled={!canSave || saving}
               className={"press w-full h-[52px] rounded-full font-semibold text-[14px] flex items-center justify-center gap-2 "+(canSave?"glow-primary":"")}
               style={{
                 background: canSave ? "var(--ice)" : "var(--bg-elev2)",
                 color: canSave ? "var(--ice-ink)" : "var(--ink-mute)"
               }}
-            >Save venue <Icon name="arrow-right" size={16} stroke={1.8}/></button>
+            >{saving ? "Saving…" : "Save venue"} <Icon name="arrow-right" size={16} stroke={1.8}/></button>
           </div>
         </div>
         <HomeIndicator/>
@@ -1712,20 +1810,17 @@
   }
 
   /* ========== NotifSheet – renders venueNotifs() rows ========== */
-  function NotifSheet({ events, rows:liveRows, onClose, onReview, onGuestList, onToast, onRecap }){
-    const rows = liveRows?.length ? liveRows : venueNotifs(events);
+  function NotifSheet({ events, rows:liveRows, onClose, onReview, onGuestList, onToast, onRecap, onDoor, onOpenEvent, live=false }){
+    const rows = live ? (liveRows || []) : venueNotifs(events);
     const handleRow = (r) => {
       onClose();
-      if (r.action === "review") {
-        const evt = events.find(e => e.id === r.eventId);
-        if (evt) onReview(evt);
-      } else if (r.action === "guestlist") {
-        onGuestList(r.eventId);
-      } else if (r.action === "recap") {
-        onRecap(r.eventId);
-      } else {
-        onToast("–");
-      }
+      const evt = r.eventId ? events.find(e => e.id === r.eventId) : null;
+      if (r.action === "review"    && evt) return onReview(evt);
+      if (r.action === "guestlist" && evt) return onGuestList(evt.id);
+      if (r.action === "recap"     && evt) return onRecap(evt.id);
+      if (r.action === "event"     && evt && onOpenEvent) return onOpenEvent(evt);
+      if (r.action === "door"      && evt && onDoor) return onDoor(evt.id);
+      onToast("Nothing to open for this update");
     };
     return (
       <>
@@ -1734,13 +1829,13 @@
           <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
           <div className="flex items-center justify-between mb-5">
             <div className="font-black text-[22px] leading-none">Activity</div>
-            <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+            <button onClick={onClose} aria-label="Close" className="press hit w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
               <Icon name="x" size={14} stroke={1.5}/>
             </button>
           </div>
           <div className="space-y-2">
             {rows.length === 0 && (
-              <div className="card rounded-[14px] p-4 text-center text-[13px]" style={{opacity:.6}}>All clear</div>
+              <div className="card rounded-[14px] p-4 text-center text-[13px]">No activity yet</div>
             )}
             {rows.map((r) => (
               <button key={r.id} onClick={() => handleRow(r)}
@@ -1758,12 +1853,13 @@
   }
 
   /* ========== ScreenDesk – stage-driven venue dashboard (Task 7) ========== */
-  function ScreenDesk({ venue, events, notifications, onReview, onPost, onEditDraft, onGuestList, onToast, onTab, onRecap }){
+  function ScreenDesk({ venue, events, notifications, onReview, onPost, onEditDraft, onGuestList, onToast, onTab, onRecap, onOpenEvent, today=TODAY, live=false, onNotifsOpened, onDoorEvent }){
     const [notifOpen, setNotifOpen] = useState(false);
 
-    // 1. Tonight card – the locked event dated TODAY
-    const tonightEvent = events.find(e => e.stage === STAGE.locked && e.date === TODAY)
-      || events.find(e => (e.guests || []).some(g => g.state === GS.confirmed)) || null;
+    // 1. Tonight card – the locked event dated today (live: real clock; demo keeps
+    //    the loose confirmed-guests fallback so the seed world always has a card)
+    const tonightEvent = events.find(e => e.stage === STAGE.locked && e.date === today)
+      || (live ? null : events.find(e => (e.guests || []).some(g => g.state === GS.confirmed))) || null;
 
     // 2. Needs attention rows
     const openWithUnswiped = events.filter(e =>
@@ -1806,12 +1902,21 @@
     const appliedTotal = openEvents.reduce((s, e) => s + (e.appliedTotal || 0), 0);
     const toReview     = openEvents.reduce((s, e) => s + (e.guests || []).filter(g => g.state === GS.applied).length, 0);
     const tonightConfirmed = tonightEvent ? (tonightEvent.guests || []).filter(g => g.state === GS.confirmed).length : 0;
-    const roomsTonight = events.filter(e => e.stage === STAGE.locked && e.date === TODAY).length;
+    const roomsTonight = events.filter(e => e.stage === STAGE.locked && e.date === today).length;
 
     const firstOpenEvent = openEvents[0] || null;
 
-    // Bell badge count
-    const notifCount = notifications?.length || venueNotifs(events).length;
+    // Bell badge – live counts unread only; demo counts derived rows
+    const notifCount = live
+      ? (notifications || []).filter(n => !n.read).length
+      : venueNotifs(events).length;
+
+    // Header date – live shows the real date
+    const now = new Date();
+    const headerDate = live
+      ? now.toLocaleDateString("en-GB", {weekday:"short"}) + " · "
+        + String(now.getDate()).padStart(2,"0") + "." + String(now.getMonth()+1).padStart(2,"0")
+      : "Sun · 25.05";
 
     // Tonight card sub-line
     const tonightWaitlistCount = tonightEvent ? (tonightEvent.guests || []).filter(g => g.state === GS.waitlist).length : 0;
@@ -1823,7 +1928,7 @@
           {/* Header row */}
           <div className="pt-16 px-5 flex items-center justify-between">
             <div className="font-display text-[14px]" style={{opacity:.75}}>The List · Venues</div>
-            <button onClick={()=>setNotifOpen(true)} aria-label="Activity" className="press glass w-10 h-10 rounded-full flex items-center justify-center relative">
+            <button onClick={()=>{ setNotifOpen(true); if (onNotifsOpened) onNotifsOpened(); }} aria-label="Activity" className="press hit glass w-10 h-10 rounded-full flex items-center justify-center relative">
               <Icon name="bell" size={17} stroke={1.5}/>
               {notifCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>{notifCount}</span>
@@ -1837,7 +1942,7 @@
                 <Icon name="map-pin" size={12} stroke={1.5}/>{venue.name || "Your venue"} · {venue.area}
               </div>
             </div>
-            <div className="text-[12px] font-mono pb-1" style={{opacity:.75}}>Sun · 25.05</div>
+            <div className="text-[12px] font-mono pb-1" style={{opacity:.75}}>{headerDate}</div>
           </div>
 
           {/* 1. Tonight card – locked event dated TODAY */}
@@ -1855,7 +1960,7 @@
                     {tonightConfirmed} confirmed · {tonightWaitlistCount} waitlist
                   </div>
                   <button
-                    onClick={() => onTab("door")}
+                    onClick={() => { if (onDoorEvent) onDoorEvent(tonightEvent.id); onTab("door"); }}
                     className="press mt-4 w-full h-12 rounded-full flex items-center justify-center gap-2 text-[12px] font-semibold glow-primary"
                     style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
                     Door <Icon name="arrow-right" size={14} stroke={1.8}/>
@@ -1964,6 +2069,9 @@
             onGuestList={(id)=>onGuestList(id)}
             onToast={onToast}
             onRecap={onRecap}
+            onDoor={(id)=>{ if (onDoorEvent) onDoorEvent(id); onTab("door"); }}
+            onOpenEvent={onOpenEvent}
+            live={live}
           />
         )}
       </div>
@@ -1971,7 +2079,7 @@
   }
 
   /* ========== ScreenDoor – night-of check-in + scoring ========== */
-  function ScreenDoor({ events, setEvents, askConfirm, onToast, onTab, onCheckIn, onCloseEvent }){
+  function ScreenDoor({ events, setEvents, askConfirm, onToast, onTab, onCheckIn, onCloseEvent, onNoShow, onRate, eventId=null, today=TODAY, live=false }){
     const [seg, setSeg] = useState("expected");
     const [rateFor, setRateFor] = useState(null);      // { applicantId, name, photo, index } | null
     const [score, setScore] = useState(9);
@@ -1979,10 +2087,15 @@
     const [ratingQueue, setRatingQueue] = useState(null);
     const [queueScore, setQueueScore] = useState(9);
     const [showClose, setShowClose] = useState(false);   // confirm dialog open
+    // better-ui: row entrances stagger once on mount, not on every guest-state write
+    const [staggerDone, setStaggerDone] = useState(false);
+    useEffect(() => { const t = setTimeout(() => setStaggerDone(true), 2000); return () => clearTimeout(t); }, []);
 
-    // Self-select tonight's locked event
-    const event = events.find(e => e.stage === STAGE.locked && e.date === TODAY)
-      || events.find(e => (e.guests || []).some(g => [GS.confirmed, GS.checkedIn, GS.noShow].includes(g.state))) || null;
+    // Self-select tonight's locked event. Live: genuinely-tonight only; demo keeps
+    // the loose fallback so the seed world always has a door.
+    const selectedEvent = eventId ? events.find(e => e.id === eventId && e.stage === STAGE.locked) : null;
+    const event = selectedEvent || events.find(e => e.stage === STAGE.locked && e.date === today)
+      || (live ? null : events.find(e => (e.guests || []).some(g => [GS.confirmed, GS.checkedIn, GS.noShow].includes(g.state)))) || null;
     const guests = event ? (event.guests || []) : [];
 
     // Derive segments – only confirmed/checked_in/no_show appear at the door
@@ -2003,26 +2116,42 @@
     };
 
     const checkIn = async (g, idx) => {
-      const inAt = "22:" + String(10 + idx * 3).padStart(2, "0");
+      const ap = applicantById[g.applicantId] || {};
       if (onCheckIn) {
+        // Live: the RPC + rehydrate carry the real checked_in_at – no fabricated clock.
         try { await onCheckIn(g.applicantId); }
         catch (error) { onToast(error.message || "Could not check in"); return; }
+        onToast((ap.name || "Guest").split(" ")[0] + " checked in");
+        return;
       }
+      const inAt = "22:" + String(10 + idx * 3).padStart(2, "0");
       writeGuest(g.applicantId, { state: GS.checkedIn, inAt });
-      const ap = applicantById[g.applicantId] || {};
       onToast((ap.name || "Guest").split(" ")[0] + " checked in · " + inAt);
     };
 
-    const markNoShow = (g) => {
-      writeGuest(g.applicantId, { state: GS.noShow });
+    const markNoShow = async (g) => {
       const ap = applicantById[g.applicantId] || {};
+      if (onNoShow) {
+        try { await onNoShow(g.applicantId); }
+        catch (error) { onToast(error.message || "Could not mark no-show"); return; }
+        onToast((ap.name || "Guest").split(" ")[0] + " marked no-show");
+        return;
+      }
+      writeGuest(g.applicantId, { state: GS.noShow });
       onToast((ap.name || "Guest").split(" ")[0] + " marked no-show");
     };
 
     // Single-guest rate (from In tab)
-    const submitSingleScore = () => {
+    const submitSingleScore = async () => {
+      if (onRate) {
+        try { await onRate(rateFor.applicantId, score); }
+        catch (error) { onToast(error.message || "Could not save score"); return; }
+        onToast("Scored " + score + " · saved to their event record");
+        setRateFor(null); setScore(9);
+        return;
+      }
       writeGuest(rateFor.applicantId, { rating: score });
-      onToast("Scored " + score + " · feeds their reputation");
+      onToast("Scored " + score + " · saved to their event record");
       setRateFor(null); setScore(9);
     };
 
@@ -2039,10 +2168,16 @@
       }
     };
 
-    // Submit a rating inside the queue then advance
-    const submitQueueScore = () => {
+    // Submit a rating inside the queue then advance (live: rate_guest per guest,
+    // close_event fires at the end of the queue via the close confirm)
+    const submitQueueScore = async () => {
       const currentId = ratingQueue.ids[0];
-      writeGuest(currentId, { rating: queueScore });
+      if (onRate) {
+        try { await onRate(currentId, queueScore); }
+        catch (error) { onToast(error.message || "Could not save score"); return; }
+      } else {
+        writeGuest(currentId, { rating: queueScore });
+      }
       const remaining = ratingQueue.ids.slice(1);
       if (remaining.length === 0) {
         setRatingQueue(null);
@@ -2068,8 +2203,14 @@
 
     const doCloseNight = async () => {
       if (onCloseEvent) {
+        // Live: close_event builds the recap + booking server-side; rehydrate
+        // renders from the bookings row – nothing fabricated locally.
         try { await onCloseEvent(event.id); }
         catch (error) { onToast(error.message || "Could not close event"); return; }
+        setShowClose(false);
+        onToast("Recap ready");
+        if (onTab) onTab("desk");
+        return;
       }
       setShowClose(false);
       setEvents(es => {
@@ -2164,7 +2305,7 @@
               <button onClick={submitQueueScore} className="press glow-primary w-full h-12 rounded-full mt-5 text-[12px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
                 Save score →
               </button>
-              <button onClick={skipQueueGuest} className="w-full mt-3 text-center text-[11px]" style={{color:"var(--ink-mute)"}}>Skip</button>
+              <button onClick={skipQueueGuest} className="press w-full mt-2 py-3.5 text-center text-[11px]" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Skip</button>
             </div>
           </div>
           <HomeIndicator/>
@@ -2188,7 +2329,7 @@
               { id:"noshow",   label:"No show",  count:noShowGuests.length },
             ]}/>
           </div>
-          <div className="px-5 mt-4 space-y-2 stagger">
+          <div className={"px-5 mt-4 space-y-2" + (staggerDone ? "" : " stagger")}>
             {list.length===0 && (
               <div className="card rounded-[14px] p-6 text-center text-[13px]" style={{opacity:.7}}>
                 {seg==="expected" ? "Everyone's in." : seg==="in" ? "No one's in yet." : "No no-shows. Good night."}
@@ -2213,14 +2354,14 @@
                   )}
                   {seg==="expected" && (
                     <>
-                      <button onClick={()=>markNoShow(g)} className="press h-9 px-3 rounded-full text-[10px] font-medium shrink-0" style={{border:"1px solid var(--line-2)", opacity:.7}}>No show</button>
-                      <button onClick={()=>checkIn(g, i)} className="press h-9 px-3.5 rounded-full text-[10px] font-semibold glow-primary shrink-0" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Check in</button>
+                      <button onClick={()=>markNoShow(g)} className="press hit h-9 px-3 rounded-full text-[10px] font-medium shrink-0" style={{border:"1px solid var(--line-2)", opacity:.7}}>No show</button>
+                      <button onClick={()=>checkIn(g, i)} className="press hit h-9 px-3.5 rounded-full text-[10px] font-semibold glow-primary shrink-0" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Check in</button>
                     </>
                   )}
                   {seg==="in" && (
                     g.rating != null
                       ? <StatusPill label="Scored" tone="outline"/>
-                      : <button onClick={()=>{ setRateFor(g); setScore(9); }} className="press h-9 px-3.5 rounded-full text-[10px] font-medium shrink-0" style={{border:"1px solid var(--line-2)"}}>Rate</button>
+                      : <button onClick={()=>{ setRateFor(g); setScore(9); }} className="press hit h-9 px-3.5 rounded-full text-[10px] font-medium shrink-0" style={{border:"1px solid var(--line-2)"}}>Rate</button>
                   )}
                   {seg==="noshow" && <StatusPill label="No show"/>}
                 </div>
@@ -2261,7 +2402,7 @@
                     <div className="text-[11px] mt-1" style={{opacity:.7}}>How was the night?</div>
                   </div>
                 </>); })()}
-                <button onClick={()=>setRateFor(null)} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+                <button onClick={()=>setRateFor(null)} aria-label="Close" className="press hit w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
                   <Icon name="x" size={14} stroke={1.5}/>
                 </button>
               </div>
@@ -2400,7 +2541,7 @@
                 <span className="font-mono">{confirmed.length}</span> confirmed of <span className="font-mono">{seats}</span>
               </div>
             </div>
-            <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{background:"var(--bg-elev)"}}>
+            <button onClick={onClose} aria-label="Close" className="press hit w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{background:"var(--bg-elev)"}}>
               <Icon name="x" size={14} stroke={1.5}/>
             </button>
           </div>
@@ -2432,7 +2573,7 @@
   }
 
   /* ========== ScreenEvents – Events dashboard (stage-driven, Task 4) ========== */
-  function ScreenEvents({ events, venue, onPost, onOpenEvent, onEditDraft, onGuestList, askConfirm, setEvents, onToast, onRecap }){
+  function ScreenEvents({ events, venue, onPost, onOpenEvent, onEditDraft, onGuestList, askConfirm, setEvents, onToast, onRecap, onCancelEvent, onDeleteDraft }){
     const [seg, setSeg] = useState("open");
 
     const counts = {
@@ -2465,9 +2606,15 @@
     const handleCancel = (event) => {
       askConfirm({
         title: "Cancel this event?",
-        body: "Everyone gets notified. No charge, no strikes.",
+        body: "Applicants and savers get notified. No charge, no strikes.",
         confirmLabel: "Cancel event",
-        onConfirm: () => {
+        onConfirm: async () => {
+          if (onCancelEvent) {
+            try { await onCancelEvent(event.id); }
+            catch (error) { onToast(error.message || "Could not cancel event"); return; }
+            onToast("Event cancelled – guests notified");
+            return;
+          }
           setEvents(es => es.map(e => e.id !== event.id ? e : {
             ...e,
             stage: STAGE.cancelled,
@@ -2475,6 +2622,24 @@
             guests: (e.guests || []).map(g => ({ ...g, state: GS.cancelled })),
           }));
           onToast("Event cancelled – guests notified");
+        },
+      });
+    };
+
+    const handleDeleteDraft = (event) => {
+      askConfirm({
+        title: "Delete this draft?",
+        body: "The draft goes away for good. Nobody was notified about it.",
+        confirmLabel: "Delete draft",
+        onConfirm: async () => {
+          if (onDeleteDraft) {
+            try { await onDeleteDraft(event.id); }
+            catch (error) { onToast(error.message || "Could not delete draft"); return; }
+            onToast("Draft deleted");
+            return;
+          }
+          setEvents(es => es.filter(e => e.id !== event.id));
+          onToast("Draft deleted");
         },
       });
     };
@@ -2507,9 +2672,9 @@
               {visible.map(event => (
                 <div key={event.id} className="w-full text-left rounded-[14px] overflow-hidden"
                   style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
-                  {/* Card body */}
+                  {/* Card body – inner thumb radius 8 keeps it concentric inside the 14px card */}
                   <div className="flex items-start gap-3 p-3">
-                    <FramedImage value={event.heroImage} ratio="4/5" className="w-14 shrink-0"/>
+                    <FramedImage value={event.heroImage} ratio="4/5" radius={8} className="w-14 shrink-0"/>
                     <div className="flex-1 min-w-0 py-0.5">
                       <div className="font-black text-[18px] leading-tight truncate">{event.title || "Untitled"}</div>
                       <div className="text-[11px] mt-0.5 truncate" style={{color:"var(--ink-mute)"}}>
@@ -2575,9 +2740,16 @@
                     </div>
                     {(event.stage === STAGE.open || event.stage === STAGE.locked) && (
                       <button onClick={() => handleCancel(event)}
-                        className="press text-[11px]"
+                        className="press hit text-[11px] py-2"
                         style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
                         Cancel event
+                      </button>
+                    )}
+                    {event.stage === STAGE.draft && (
+                      <button onClick={() => handleDeleteDraft(event)}
+                        className="press hit text-[11px] py-2"
+                        style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
+                        Delete draft
                       </button>
                     )}
                   </div>
@@ -2702,7 +2874,7 @@
     const reliability = insights.theList?.reliability;
     const Social = ({label, href, icon}) => href ? (
       <a href={href} target="_blank" rel="noreferrer"
-         className="press flex items-center gap-1.5 px-3 h-9 rounded-full text-[12px]"
+         className="press hit flex items-center gap-1.5 px-3 h-9 rounded-full text-[12px]"
          style={{border:"1px solid rgba(247,246,243,.32)", color:"#F7F6F3"}}>
         <Icon name={icon} size={14}/>{label}
       </a>
@@ -2715,7 +2887,11 @@
     ];
     return (
       <div className="relative w-full rounded-[18px] overflow-hidden" style={{aspectRatio:"4/5", background:"var(--bg-elev)"}}>
-        <FramedImage value={{src:a.photo, scale:1, x:0, y:0}} ratio="4/5" className="absolute inset-0"/>
+        {/* same box as the 18px card – matching radius keeps the corners concentric */}
+        <FramedImage
+          value={a.photo ? {src:a.photo, scale:1, x:0, y:0} : null}
+          empty={(a.name || "Member").split(" ").map(part=>part[0]).join("").slice(0,2).toUpperCase()}
+          ratio="4/5" radius={18} className="absolute inset-0"/>
         <div className="absolute inset-x-0 bottom-0 p-4 pt-24"
              style={{background:"linear-gradient(to top, rgba(0,0,0,.94) 0%, rgba(0,0,0,.76) 58%, rgba(0,0,0,0) 100%)", color:"#F7F6F3"}}>
           <div className="flex items-end justify-between gap-3">
@@ -2737,50 +2913,6 @@
             <Social label="TikTok" href={a.socials?.tiktok} icon="tiktok"/>
             <Social label="Link" href={a.socials?.other} icon="link"/>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  /* ========== ScreenApplicants – live events to review ========== */
-  function ScreenApplicants({ events, onReview }){
-    const live = events.filter(e => e.status === "live");
-    return (
-      <div className="absolute inset-0 flex flex-col" style={{background:"transparent"}}>
-        <StatusBar/>
-        <div className="shrink-0 px-5 pt-[60px] pb-3">
-          <div className="font-black font-display-l text-[40px] leading-none">Applicants</div>
-        </div>
-        <div className="hr-2 mx-5 mb-4 shrink-0"/>
-        <div className="flex-1 overflow-y-auto noscroll px-5 pb-24">
-          {live.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-center px-6">
-              <span className="text-[13px]" style={{color:"var(--ink-mute)"}}>No live drops yet – post one to start receiving applicants.</span>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {live.map(event => (
-                <button key={event.id} onClick={() => onReview(event)}
-                  className="press w-full text-left flex items-center gap-3 p-3 rounded-[14px]"
-                  style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
-                  <FramedImage value={event.heroImage} ratio="4/5" className="w-14 shrink-0"/>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-black text-[18px] leading-tight truncate">{event.title || "Untitled"}</div>
-                    <div className="text-[11px] mt-0.5 truncate" style={{color:"var(--ink-mute)"}}>
-                      {event.type}{event.date ? " · " + event.date : ""}
-                    </div>
-                    <div className="text-[12px] mt-1.5" style={{color:"var(--ink-mute)"}}>
-                      <span className="font-mono">{APPLICANTS.length}</span> waiting
-                    </div>
-                  </div>
-                  <div className="shrink-0">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium"
-                          style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Review</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     );
@@ -2925,7 +3057,7 @@
                 <span className="font-mono shrink-0">{status}</span>
               </div>
             </div>
-            <button onClick={onClose} className="press w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{border:"1px solid var(--line-2)"}} aria-label="Close applicant details">
+            <button onClick={onClose} className="press hit w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{border:"1px solid var(--line-2)"}} aria-label="Close applicant details">
               <Icon name="x" size={17}/>
             </button>
           </div>
@@ -2962,7 +3094,7 @@
   }
 
   /* ========== ScreenReview – swipe deck (Task 6: serves event guests, undo, close apps, replacements) ========== */
-  function ScreenReview({ eventId, events, setEvents, onClose, askConfirm, onToast, onDecide }){
+  function ScreenReview({ eventId, events, setEvents, onClose, askConfirm, onToast, onDecide, onCloseApps }){
     // Derive live event from events array so guest-state writes show up immediately.
     const event = events.find(e => e.id === eventId) || null;
 
@@ -3087,13 +3219,22 @@
       setUndoEntry(null);
     };
 
-    // Close applications: lock the event + flip remaining applied → waitlist
+    // Close applications: lock the event + flip remaining applied → waitlist.
+    // Live: close_applications does both server-side; rehydrate brings the
+    // locked stage and the waitlist back from the DB.
     const handleCloseApplications = () => {
       askConfirm({
         title: "Close applications?",
         body: "No new applications. Members get notified. Picks must confirm within 24h – the waitlist stays available for replacements.",
         confirmLabel: "Close applications",
-        onConfirm: () => {
+        onConfirm: async () => {
+          if (onCloseApps) {
+            try { await onCloseApps(eventId); }
+            catch (error) { onToast(error.message || "Could not close applications"); return; }
+            onToast("Applications closed");
+            onClose();
+            return;
+          }
           setEvents(es => es.map(e => {
             if (e.id !== eventId) return e;
             return {
@@ -3117,7 +3258,7 @@
         <div className="flex flex-col px-5 pt-[64px] pb-4 flex-1">
           {/* Header row */}
           <div className="flex items-center justify-between mb-1 shrink-0">
-            <button onClick={onClose} className="stamp" style={{color:"var(--ink-mute)"}}>Close</button>
+            <button onClick={onClose} className="press hit stamp py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Close</button>
             <div className="stamp text-center" style={{color:"var(--ink-mute)"}}>
               {isLocked
                 ? "Pick replacements"
@@ -3125,7 +3266,7 @@
             </div>
             {!isLocked && (
               <button onClick={handleCloseApplications}
-                className="press px-3 h-8 rounded-full text-[11px] font-semibold flex items-center gap-1"
+                className="press hit px-3 h-8 rounded-full text-[11px] font-semibold flex items-center gap-1"
                 style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
                 Close applications <Icon name="arrow-right" size={12} stroke={2}/>
               </button>
@@ -3138,6 +3279,7 @@
             {isLocked
               ? `${deckPool.length} on the waitlist`
               : `${event.appliedTotal != null ? event.appliedTotal : deckPool.length} applied · ${deckPool.length} to review`}
+            {!isLocked && event.closesAt ? ` · Closes ${event.closesAt}` : ""}
           </div>
 
           {/* Mix counter */}
@@ -3158,8 +3300,8 @@
             )}
           </div>
 
-          {/* Undo chip */}
-          {undoEntry && !done && (
+          {/* Undo chip – live decisions are committed + the member was notified, so no undo */}
+          {undoEntry && !done && !onDecide && (
             <div className="shrink-0 flex justify-center mb-2">
               <button onClick={handleUndo}
                 className="press px-4 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5"
@@ -3255,7 +3397,7 @@
       <div className="px-5 pt-6 pb-2">
         <button onClick={()=>setOpen(o=>!o)} className="press w-full flex items-center justify-between py-2 text-[11px]" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
           <span>Demo</span>
-          <Icon name="arrow-right" size={12} stroke={1.5} className={open ? "rotate-90" : ""}/>
+          <Icon name="arrow-right" size={12} stroke={1.5} className={"chev " + (open ? "rotate-90" : "")}/>
         </button>
         {open && (
           <div>
@@ -3312,6 +3454,9 @@
             <div className="text-[13px] mt-1" style={{ color: "var(--ink-mute)" }}>
               {venue.type} · {venue.area}
             </div>
+            {venue.igHandle && (
+              <div className="text-[12px] mt-1" style={{ color:"var(--ink-2)" }}>@{venue.igHandle.replace(/^@/, "")}</div>
+            )}
             {hasDesc && (
               <div className="text-[14px] mt-3 leading-relaxed" style={{ color: "var(--ink-2)" }}>
                 {venue.description}
@@ -3407,7 +3552,7 @@
     return (
       <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"transparent"}}>
         <StatusBar/>
-        <button onClick={onBack} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+        <button onClick={onBack} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
         <div className="font-black font-display-l text-[40px]">Bundle</div>
         <StepCircles current={3}/>
         <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Choose your package</div>
@@ -3461,7 +3606,7 @@
                       type="text"
                       inputMode="numeric"
                       placeholder="e.g. 500"
-                      className="w-full h-10 px-3 rounded-[10px] text-[14px]"
+                      className="w-full h-11 px-3 rounded-[10px] text-[16px]"
                       style={{background:"var(--bg-elev2)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
                     />
                   </div>
@@ -3499,7 +3644,7 @@
     return (
       <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"transparent"}}>
         <StatusBar/>
-        <button onClick={onBack} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+        <button onClick={onBack} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
         <div className="font-black font-display-l text-[40px]">Brief</div>
         <StepCircles current={4}/>
         <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Guest instructions · all optional</div>
@@ -3513,11 +3658,24 @@
                 onChange={e => setBrief({ [f.key]: e.target.value })}
                 type="text"
                 placeholder={f.placeholder}
-                className="w-full h-11 px-3 rounded-[12px] text-[14px]"
+                className="w-full h-11 px-3 rounded-[12px] text-[16px]"
                 style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
               />
             </div>
           ))}
+          <div>
+            <div className="stamp mb-2">Story window</div>
+            <div className="flex gap-2">
+              {[24,48].map(hours => {
+                const selected = (draft.storyHours || 24) === hours;
+                return <button key={hours} onClick={()=>set({storyHours:hours})}
+                  className="press hit h-9 px-4 rounded-full text-[12px] font-medium"
+                  style={{background:selected?"var(--ice)":"transparent", color:selected?"var(--ice-ink)":"var(--ink)", border:selected?"none":"1px solid var(--line-2)"}}>
+                  {hours} hours
+                </button>;
+              })}
+            </div>
+          </div>
           <div className="pt-2 text-[11px]" style={{color:"var(--ink-mute)"}}>We handle all guest comms.</div>
         </div>
 
@@ -3529,7 +3687,7 @@
   }
 
   /* ========== StepBasics – step 1 of post wizard ========== */
-  function StepBasics({ draft, set, onNext, onCancel }){
+  function StepBasics({ draft, set, onNext, onCancel, live=false }){
     const closesChips = ["24h before doors", "48h before doors", "Custom"];
     const [customMode, setCustomMode] = useState(() => {
       const c = draft.closesAt;
@@ -3542,7 +3700,7 @@
     return (
       <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"transparent"}}>
         <StatusBar/>
-        <button onClick={onCancel} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Cancel</button>
+        <button onClick={onCancel} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Cancel</button>
         <div className="font-black font-display-l text-[40px]">Post</div>
         <StepCircles current={1}/>
         <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>The basics</div>
@@ -3554,7 +3712,7 @@
               onChange={e => set({title:e.target.value})}
               type="text"
               placeholder="e.g. Pool Day"
-              className="w-full h-11 px-3 rounded-[12px] text-[15px]"
+              className="w-full h-11 px-3 rounded-[12px] text-[16px]"
               style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
             />
           </div>
@@ -3565,7 +3723,7 @@
                 const sel = draft.type === t;
                 return (
                   <button key={t} onClick={() => set({type:t})}
-                    className="press px-4 h-9 rounded-full text-[12px] font-medium"
+                    className="press hit px-4 h-9 rounded-full text-[12px] font-medium"
                     style={{ background: sel?"var(--ice)":"transparent", color: sel?"var(--ice-ink)":"var(--ink)", border: sel?"none":"1px solid var(--line-2)" }}
                   >{t}</button>
                 );
@@ -3577,9 +3735,9 @@
             <input
               value={draft.date}
               onChange={e => set({date:e.target.value})}
-              type="text"
-              placeholder="Sun · 25 May"
-              className="w-full h-11 px-3 rounded-[12px] text-[15px]"
+              type={live ? "date" : "text"}
+              placeholder={live ? undefined : "Sun · 25 May"}
+              className="w-full h-11 px-3 rounded-[12px] text-[16px]"
               style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
             />
           </div>
@@ -3588,9 +3746,9 @@
             <input
               value={draft.time}
               onChange={e => set({time:e.target.value})}
-              type="text"
-              placeholder="22:00"
-              className="w-full h-11 px-3 rounded-[12px] text-[15px]"
+              type={live ? "time" : "text"}
+              placeholder={live ? undefined : "22:00"}
+              className="w-full h-11 px-3 rounded-[12px] text-[16px]"
               style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
             />
           </div>
@@ -3611,7 +3769,7 @@
                         set({ closesAt: chip });
                       }
                     }}
-                    className="press px-3 h-8 rounded-full text-[11px] font-medium"
+                    className="press hit px-3 h-8 rounded-full text-[11px] font-medium"
                     style={{ background: sel?"var(--ice)":"transparent", color: sel?"var(--ice-ink)":"var(--ink)", border: sel?"none":"1px solid var(--line-2)" }}
                   >{chip}</button>
                 );
@@ -3621,9 +3779,8 @@
               <input
                 value={draft.closesAt}
                 onChange={e => set({ closesAt: e.target.value })}
-                type="text"
-                placeholder="Fri · 30 May · 20:00"
-                className="w-full h-10 px-3 rounded-[10px] text-[13px] mt-2"
+                type="datetime-local"
+                className="w-full h-11 px-3 rounded-[10px] text-[16px] mt-2"
                 style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
               />
             )}
@@ -3639,17 +3796,30 @@
   /* ========== ScreenPostEvent – 6-step post wizard ========== */
   // Substeps: basics → seats → bundle → brief → image → review
   // initialDraft: if set, prefills the wizard (edit mode); draftId: id of event being edited
-  function ScreenPostEvent({ venue, onPublish, onCancel, initialDraft, draftId }){
+  function ScreenPostEvent({ venue, onPublish, onSaveDraft, onCancel, initialDraft, draftId, live=false }){
     const isEdit = !!draftId;
     const [sub, setSub] = useState("basics");
+    const [savingMode, setSavingMode] = useState(null);
     const [draft, setDraft] = useState(() => {
-      if (initialDraft) return { ...initialDraft };
+      if (initialDraft) return {
+        ...initialDraft,
+        date: live && initialDraft.startsAt ? toLocalDate(new Date(initialDraft.startsAt)) : initialDraft.date,
+        time: live && initialDraft.startsAt ? toLocalTime(new Date(initialDraft.startsAt)) : initialDraft.time,
+        closesAt: initialDraft.closesInput || initialDraft.closesAt || "24h before doors",
+      };
       return makeEvent({ venueId: venue.id, heroImage: venue.heroImage, closesAt:"24h before doors" });
     });
     const set = (patch) => setDraft(d => ({ ...d, ...patch }));
+    const persist = async (mode) => {
+      if (savingMode) return;
+      setSavingMode(mode);
+      try { await (mode === "publish" ? onPublish : onSaveDraft)(draft, draftId); }
+      catch (_) { /* parent keeps the wizard open and reports the error */ }
+      finally { setSavingMode(null); }
+    };
 
     if (sub === "basics") {
-      return <StepBasics draft={draft} set={set} onNext={()=>setSub("seats")} onCancel={onCancel}/>;
+      return <StepBasics draft={draft} set={set} onNext={()=>setSub("seats")} onCancel={onCancel} live={live}/>;
     }
 
     if (sub === "seats") {
@@ -3659,16 +3829,16 @@
         <div className="flex items-center justify-between py-3">
           <div className="text-[15px]">{label}</div>
           <div className="flex items-center gap-4">
-            <button onClick={()=>onDelta(-1)} className="press w-9 h-9 rounded-full" style={{border:"1px solid var(--line-2)"}}>–</button>
+            <button onClick={()=>onDelta(-1)} className="press hit w-9 h-9 rounded-full" style={{border:"1px solid var(--line-2)"}}>–</button>
             <div className="font-mono text-[20px] w-8 text-center" style={{color:"var(--ice)"}}>{val}</div>
-            <button onClick={()=>onDelta(1)} className="press w-9 h-9 rounded-full" style={{border:"1px solid var(--line-2)"}}>+</button>
+            <button onClick={()=>onDelta(1)} className="press hit w-9 h-9 rounded-full" style={{border:"1px solid var(--line-2)"}}>+</button>
           </div>
         </div>
       );
       return (
         <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"transparent"}}>
           <StatusBar/>
-          <button onClick={()=>setSub("basics")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+          <button onClick={()=>setSub("basics")} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
           <div className="font-black font-display-l text-[40px]">Seats</div>
           <StepCircles current={2}/>
           <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Who fills the room</div>
@@ -3676,7 +3846,7 @@
           <div className="flex items-center justify-between mt-6 py-3 border-b" style={{borderColor:"var(--line)"}}>
             <div className="text-[15px]">Set a gender mix</div>
             <button onClick={()=> set({ mix: noPref ? {girls:15,guys:5} : null }) }
-              className="press px-3 h-8 rounded-full text-[11px] font-medium"
+              className="press hit px-3 h-8 rounded-full text-[11px] font-medium"
               style={{background: noPref?"transparent":"var(--ice)", color: noPref?"var(--ink)":"var(--ice-ink)",
                       border: noPref?"1px solid var(--line-2)":"none"}}>{noPref?"Off":"On"}</button>
           </div>
@@ -3713,7 +3883,7 @@
       return (
         <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"transparent"}}>
           <StatusBar/>
-          <button onClick={()=>setSub("brief")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+          <button onClick={()=>setSub("brief")} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
           <div className="font-black font-display-l text-[40px]">Image</div>
           <StepCircles current={5}/>
           <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>The event photo</div>
@@ -3743,7 +3913,7 @@
     return (
       <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-6" style={{background:"transparent"}}>
         <StatusBar/>
-        <button onClick={()=>setSub("image")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+        <button onClick={()=>setSub("image")} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
         <div className="font-black font-display-l text-[40px]">Review</div>
         <StepCircles current={6}/>
         <div className="mt-4 flex-1 overflow-y-auto noscroll space-y-4">
@@ -3769,6 +3939,7 @@
           <div>
             <div className="stamp mb-1">The exchange</div>
             <div className="text-[14px]">{draft.exchange}</div>
+            <div className="text-[12px] mt-1" style={{color:"var(--ink-mute)"}}>{draft.storyHours || 24}-hour Story window</div>
           </div>
           {briefLines.length > 0 && (
             <div>
@@ -3784,11 +3955,18 @@
             </div>
           )}
         </div>
-        <button onClick={()=>onPublish(draft, draftId)}
-          className="press w-full h-[58px] rounded-full text-[14px] font-semibold flex items-center justify-center gap-2 mt-4 shrink-0"
-          style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-          {isEdit ? "Save & publish" : "Publish"} <Icon name="arrow-right" size={16} stroke={1.8}/>
-        </button>
+        <div className="mt-4 shrink-0 flex flex-col gap-2">
+          <button onClick={()=>persist("publish")} disabled={!!savingMode}
+            className="press w-full h-[58px] rounded-full text-[14px] font-semibold flex items-center justify-center gap-2"
+            style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+            {savingMode === "publish" ? "Publishing…" : isEdit ? "Save & publish" : "Publish"} <Icon name="arrow-right" size={16} stroke={1.8}/>
+          </button>
+          <button onClick={()=>persist("draft")} disabled={!!savingMode}
+            className="press w-full h-12 rounded-full text-[12px] font-medium"
+            style={{border:"1px solid var(--line-2)", color:"var(--ink)", background:"transparent"}}>
+            {savingMode === "draft" ? "Saving…" : "Save draft"}
+          </button>
+        </div>
       </div>
     );
   }
@@ -3826,6 +4004,7 @@
       else if (story === SS.review)  pill = <StatusPill label="Under review" tone="neutral"/>;
       else if (story === SS.needsReview) pill = <StatusPill label="Needs review" tone="neutral"/>;
       else if (story === SS.due)     pill = <StatusPill label="Story due" tone="outline"/>;
+      else if (story === SS.rejected) pill = <StatusPill label="Rejected" tone="neutral"/>;
       else if (story === SS.missed)  pill = <StatusPill label="Missed" tone="neutral"/>;
       else                           pill = null;
 
@@ -3840,17 +4019,25 @@
               <span className="text-[14px] font-medium leading-tight">{ap.name || "–"}</span>
               {pill}
             </div>
-            {/* Verified: thumbnail stand-in (face image in small rounded frame) */}
+            {/* Verified proof. Live rows use the submitted story media; demo rows keep their seeded stand-in. */}
             {story === SS.verified && (
               <div className="mt-2 flex items-start gap-2">
-                <img src={ap.photo || ""} alt="Story"
-                     className="w-12 h-12 rounded-[10px] object-cover shrink-0"
-                     style={{background:"var(--bg-elev2)", border:"1px solid var(--line)"}}/>
+                {g.storyMedia ? (
+                  <a href={g.storyMedia} target="_blank" rel="noreferrer" aria-label="Open story proof" className="press shrink-0">
+                    <img src={g.storyMedia} alt="Story proof"
+                         className="w-12 h-12 rounded-[10px] object-cover"
+                         style={{background:"var(--bg-elev2)", border:"1px solid var(--line)"}}/>
+                  </a>
+                ) : (
+                  <img src={ap.photo || ""} alt="Story"
+                       className="w-12 h-12 rounded-[10px] object-cover shrink-0"
+                       style={{background:"var(--bg-elev2)", border:"1px solid var(--line)"}}/>
+                )}
                 {/* Verdict if present */}
-                {g.verdict && (
+                {g.verdict && (g.verdict.score != null || g.verdict.reason) && (
                   <div className="text-[11px] leading-snug mt-0.5" style={{color:"var(--ink-mute)"}}>
-                    <span className="font-mono">{g.verdict.score}</span>
-                    {" · "}{g.verdict.reason}
+                    {g.verdict.score != null && <span className="font-mono">{g.verdict.score}</span>}
+                    {g.verdict.score != null && g.verdict.reason ? " · " : ""}{g.verdict.reason || ""}
                   </div>
                 )}
               </div>
@@ -3867,7 +4054,7 @@
         {/* Header */}
         <div className="shrink-0 px-5 pt-[60px] pb-4">
           <div className="flex items-center mb-3">
-            <button onClick={onClose} className="press stamp flex items-center gap-1"
+            <button onClick={onClose} className="press hit stamp flex items-center gap-1 py-2"
                     style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
               <Icon name="arrow-left" size={14} stroke={2}/> Back
             </button>
@@ -3880,7 +4067,7 @@
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto noscroll px-5 pb-24">
 
-          {/* 1. Stat tiles 2Ã—2 */}
+          {/* 1. Stat tiles, two by two */}
           <div className="grid grid-cols-2 gap-3 mt-5">
             <StatTile n={recap.confirmed ?? "–"} label="Confirmed"/>
             <StatTile n={recap.confirmed != null && recap.showed != null
@@ -3926,7 +4113,7 @@
                   <div className="font-mono text-[22px] leading-none mt-1">${invoice.price}</div>
                 </div>
                 <StatusPill
-                  label={invoice.status === "paid" ? "Paid" : "Due"}
+                  label={invoice.status === "paid" ? "Paid" : invoice.status === "invoiced" ? "Invoiced" : invoice.status === "pending" ? "Pending" : "Due"}
                   tone={invoice.status === "paid" ? "neutral" : "outline"}
                 />
               </div>
@@ -4069,7 +4256,7 @@
       name: profile.full_name || profile.ig_handle || "Member",
       gender: creator.gender || null,
       quality_score: optionalNumber(creator.quality_score),
-      photo: profile.avatar_url || creator.profile_picture_url || FACE.sara,
+      photo: profile.avatar_url || creator.profile_picture_url || null,
       instagram_followers: followers,
       tiktok_followers: optionalNumber(creator.tiktok_followers),
       socials: { instagram: profile.ig_handle ? "https://instagram.com/" + profile.ig_handle.replace(/^@/, "") : null, tiktok:null, other:null },
@@ -4084,37 +4271,74 @@
     const guests = applications.map(application => {
       applicantById[application.id] = normalizeApplicant(application);
       const story = storyByApp.get(application.id);
+      const storyState = !story ? null
+        : story.verdict === "pending" ? (story.media_url ? SS.review : SS.due)
+        : story.verdict === "needs_review" ? SS.needsReview
+        : story.verdict === "rejected" ? SS.rejected
+        : story.verdict === "verified" ? SS.verified
+        : story.verdict;
       return {
         applicantId: application.id,
         state: application.status,
         code: application.pass_code || null,
         inAt: application.checked_in_at ? new Date(application.checked_in_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) : null,
-        rating: application.rating || null,
-        story: story ? (story.verdict === "pending" ? SS.review : story.verdict) : null,
-        verdict: story ? {score:story.score, reason:story.verdict} : null,
+        rating: application.rating ?? null,
+        story: storyState,
+        storyId: story?.id || null,
+        storyMedia: story?.media_url || null,
+        verdict: story ? {score:story.score ?? null, reason:story.reason || null} : null,
       };
     });
     const start = new Date(row.starts_at);
+    const end = new Date(row.ends_at);
+    const closes = row.closes_at ? new Date(row.closes_at) : null;
     const status = row.status || "draft";
-    const hasConfirmed = applications.some(a => ["confirmed","checked_in","no_show"].includes(a.status));
     const stage = status === "draft" ? STAGE.draft
       : status === "cancelled" ? STAGE.cancelled
+      : status === "locked" ? STAGE.locked
       : ["closed","completed","past"].includes(status) || booking ? STAGE.past
-      : hasConfirmed && !Number.isNaN(start.valueOf()) && start <= new Date(Date.now() + 24*60*60*1000) ? STAGE.locked
       : STAGE.open;
     const checked = applications.filter(a => a.status === "checked_in").length;
     const confirmed = applications.filter(a => ["confirmed","checked_in","no_show"].includes(a.status)).length;
+    const ratings = applications.map(a => a.rating).filter(value => value != null).map(Number).filter(Number.isFinite);
+    const avgRating = ratings.length ? Math.round((ratings.reduce((sum,value)=>sum+value,0)/ratings.length)*10)/10 : null;
+    const mix = row.mix_girls == null || row.mix_guys == null ? null : {girls:Number(row.mix_girls), guys:Number(row.mix_guys)};
+    const bundleName = row.bundle || "Custom";
     return makeEvent({
       id: row.id, venueId: row.venue_id, title: row.title || "Untitled", type: row.kind || "Club",
       date: Number.isNaN(start.valueOf()) ? "" : start.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}).replace(",", " ·"),
       time: Number.isNaN(start.valueOf()) ? "" : start.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", hour12:false}),
-      seats: row.seats || 0, heroImage: row.image_url ? {src:row.image_url,scale:1,x:0,y:0} : null,
+      startsAt: row.starts_at || null, endsAt: row.ends_at || null,
+      endTime: Number.isNaN(end.valueOf()) ? "" : end.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", hour12:false}),
+      description: row.description || "", closesAt: closes && !Number.isNaN(closes.valueOf()) ? formatEventDateTime(closes) : null,
+      closesInput: closes && !Number.isNaN(closes.valueOf()) ? toLocalDateTime(closes) : null,
+      mix, storyHours:Number(row.story_window_hours || 24), brief:row.brief || null,
+      seats: row.seats ?? 0, heroImage: row.image_url ? {src:row.image_url,scale:1,x:0,y:0,remote:true} : null,
       exchange: "1 Story + venue tag", stage, status:stageToStatus(stage), guests,
-      appliedTotal: applications.length, bundle:{name:"Custom", price:Number(row.bundle_price || 0)},
-      brief: row.description ? {rules:row.description} : null,
-      recap: stage === STAGE.past ? {confirmed, showed:checked, noShows:applications.filter(a=>a.status === "no_show").length, avgRating:null} : null,
-      invoice: booking ? {bundle:"Custom", price:Number(booking.bundle_price || row.bundle_price || 0), status:booking.invoice_status || "due"} : null,
+      appliedTotal: applications.length, bundle:{name:bundleName, price:Number(row.bundle_price || 0)},
+      recap: stage === STAGE.past ? {confirmed, showed:checked, noShows:applications.filter(a=>a.status === "no_show").length, avgRating} : null,
+      invoice: booking ? {id:booking.id, bundle:bundleName, price:Number(booking.bundle_price ?? row.bundle_price ?? 0), status:booking.invoice_status || "pending"} : null,
     });
+  }
+
+  function toLocalDate(date){
+    if (!date || Number.isNaN(date.valueOf())) return "";
+    return [date.getFullYear(), String(date.getMonth()+1).padStart(2,"0"), String(date.getDate()).padStart(2,"0")].join("-");
+  }
+
+  function toLocalTime(date){
+    if (!date || Number.isNaN(date.valueOf())) return "";
+    return String(date.getHours()).padStart(2,"0") + ":" + String(date.getMinutes()).padStart(2,"0");
+  }
+
+  function toLocalDateTime(date){
+    const day = toLocalDate(date);
+    return day ? day + "T" + toLocalTime(date) : "";
+  }
+
+  function formatEventDateTime(date){
+    return date.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}).replace(",", " ·")
+      + " · " + toLocalTime(date);
   }
 
   function eventStart(draft){
@@ -4124,11 +4348,34 @@
     return new Date(clean + " " + new Date().getFullYear() + " " + clock);
   }
 
+  function eventCloses(draft, starts){
+    if (draft.closesAt === "24h before doors") return new Date(starts.getTime() - 24*60*60*1000);
+    if (draft.closesAt === "48h before doors") return new Date(starts.getTime() - 48*60*60*1000);
+    const custom = new Date(draft.closesAt);
+    return Number.isNaN(custom.valueOf()) ? null : custom;
+  }
+
   function ScreenNoVenue({ onLogout }){
     return <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center gap-4">
       <StatusBar/><div className="font-black font-display-l text-[34px]">This login has no venue</div>
       <button onClick={onLogout} className="press h-11 px-6 rounded-full" style={{border:"1px solid var(--line-2)"}}>Sign out</button>
     </div>;
+  }
+
+  function venueNotificationAction(kind){
+    const targets = {
+      story_submitted:"recap", post_event_report:"recap",
+      invoice_pending:"recap", invoice_invoiced:"recap", invoice_paid:"recap",
+      applications_digest:"review", pick_expired_venue:"review", pick_declined:"review",
+      picked:"review", pick_expired:"review", confirm_reminder:"review",
+      pick_confirmed:"guestlist", pass_ready:"guestlist", no_show:"guestlist",
+      tonight_lineup:"door",
+      event_filled:"event", event_changed:"event", new_drop:"event",
+      list_closed:"event", not_selected:"event", waitlist_promoted:"event",
+      story_due:"recap", story_deadline:"recap", story_missed:"recap", story_verified:"recap",
+      account_paused:"event",
+    };
+    return targets[kind] || "event";
   }
 
   /* ========== APP – onboarding state machine ========== */
@@ -4144,6 +4391,7 @@
     const toastTimer = useRef(null);
     const [confirm, setConfirm] = useState(null);      // {title,body,confirmLabel,onConfirm} | null
     const [guestListEventId, setGuestListEventId] = useState(null); // event id | null
+    const [doorEventId, setDoorEventId] = useState(null);           // manually selected night | null
     const [editingDraft, setEditingDraft] = useState(null);         // event being edited | null
     const [recapEventId, setRecapEventId] = useState(null);        // event id for recap screen | null
     const [session, setSession] = useState(null);
@@ -4151,19 +4399,22 @@
     const [roleMismatch, setRoleMismatch] = useState(false);
 
     const hydrateVenue = async (uid) => {
-      const [profileResult, venueResult, eventResult, notificationResult] = await Promise.all([
+      const [profileResult, venueResult, notificationResult] = await Promise.all([
         supabaseClient.from("profiles").select("*").eq("id", uid).single(),
-        supabaseClient.from("venues").select("*"),
-        supabaseClient.from("events").select("*"),
-        supabaseClient.from("notifications").select("*").order("created_at", {ascending:false}),
+        supabaseClient.from("venues").select("*").eq("owner_id", uid).limit(1),
+        supabaseClient.from("notifications").select("*").eq("user_id", uid).order("created_at", {ascending:false}),
       ]);
-      const firstError = [profileResult, venueResult, eventResult, notificationResult].find(result => result.error)?.error;
+      const firstError = [profileResult, venueResult, notificationResult].find(result => result.error)?.error;
       if (firstError) throw firstError;
       if (profileResult.data.role !== "venue" || !(venueResult.data || []).length) {
+        setVenue(makeVenue()); setEvents([]); setNotifications([]);
         setRoleMismatch(true); setStep("no-venue"); return;
       }
       const venueRow = venueResult.data[0];
-      const ownRows = (eventResult.data || []).filter(row => row.venue_id === venueRow.id);
+      const eventResult = await supabaseClient.from("events").select("*")
+        .eq("venue_id", venueRow.id).order("starts_at", {ascending:true});
+      if (eventResult.error) throw eventResult.error;
+      const ownRows = eventResult.data || [];
       const liveEvents = await Promise.all(ownRows.map(async row => {
         const applicationResult = await supabaseClient.from("applications")
           .select("*, profiles(full_name, ig_handle, avatar_url, creator_data, reputation)")
@@ -4179,16 +4430,24 @@
         if (bookingResult.error) throw bookingResult.error;
         return liveEvent(row, apps, storyResult.data || [], bookingResult.data || null);
       }));
+      const gallery = Array.isArray(venueRow.gallery) ? venueRow.gallery : [];
+      const images = gallery.slice(0,4).map(item => {
+        const src = typeof item === "string" ? item : item?.src;
+        return src ? {src,scale:1,x:0,y:0,remote:true} : null;
+      });
+      while (images.length < 4) images.push(null);
       setVenue(makeVenue({
-        id:venueRow.id, name:venueRow.name || "Your venue", type:venueRow.kind || venueRow.type || "Club",
-        area:venueRow.area || "Beirut", description:venueRow.description || "",
-        heroImage:venueRow.image_url ? {src:venueRow.image_url,scale:1,x:0,y:0} : null,
+        id:venueRow.id, name:venueRow.name || "", type:venueRow.kind || venueRow.type || "Club",
+        area:venueRow.area || "", description:venueRow.description || "", igHandle:venueRow.ig_handle || "",
+        heroImage:venueRow.image_url ? {src:venueRow.image_url,scale:1,x:0,y:0,remote:true} : null,
+        images,
       }));
       setEvents(liveEvents);
       setNotifications((notificationResult.data || []).map(n => ({
         id:n.id, kind:n.kind, text:[n.title,n.body].filter(Boolean).join(" · "), eventId:n.event_id,
-        action:n.kind === "post_event_report" ? "recap" : n.kind === "pick_confirmed" ? "guestlist" : "review",
+        action:venueNotificationAction(n.kind), read:n.read === true,
       })));
+      setGroup(null);
       setRoleMismatch(false); setStep("done");
     };
 
@@ -4219,6 +4478,66 @@
     const [reviewEventId, setReviewEventId] = useState(null);
     const showToast = (msg) => { setToast(msg); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(()=>setToast(null), 2200); };
     const askConfirm = (cfg) => setConfirm(cfg);
+    const liveToday = session ? todayLabel() : TODAY;
+
+    const runRpc = async (name, args) => {
+      const { error } = await supabaseClient.rpc(name, args);
+      if (error) throw error;
+      await hydrateVenue(session.user.id);
+    };
+
+    const markNotificationsRead = async () => {
+      if (!session) return;
+      const ids = notifications.filter(row => !row.read).map(row => row.id);
+      if (!ids.length) return;
+      setNotifications(rows => rows.map(row => ids.includes(row.id) ? {...row, read:true} : row));
+      const { error } = await supabaseClient.from("notifications").update({read:true})
+        .eq("user_id", session.user.id).in("id", ids);
+      if (error) {
+        showToast("Could not mark activity as read");
+        hydrateVenue(session.user.id).catch(() => {});
+      }
+    };
+
+    const logout = async () => {
+      if (session) await supabaseClient.auth.signOut();
+      setSession(null); setRoleMismatch(false); setNotifications([]);
+      setVenue(makeVenue()); setEvents(SEED_EVENTS); setGroup(null);
+      setGuestListEventId(null); setDoorEventId(null); setReviewEventId(null); setRecapEventId(null);
+      setTab("desk"); setStep("intro");
+    };
+
+    const saveVenue = async venueDraft => {
+      if (!session) { setStep("done"); setTab("desk"); return; }
+      try {
+        const stamp = Date.now();
+        const heroUrl = await uploadCroppedMedia(venueDraft.heroImage, `${session.user.id}/venue-${stamp}.jpg`);
+        const galleryUrls = (await Promise.all((venueDraft.images || []).map((image,index) =>
+          image ? uploadCroppedMedia(image, `${session.user.id}/venue-${stamp}-${index}.jpg`) : null
+        ))).filter(Boolean);
+        const { error } = await supabaseClient.from("venues").update({
+          name:venueDraft.name,
+          kind:venueDraft.type,
+          area:venueDraft.area,
+          description:venueDraft.description || null,
+          image_url:heroUrl,
+          gallery:galleryUrls,
+          ig_handle:(venueDraft.igHandle || "").replace(/^@/, "") || null,
+        }).eq("id", venueDraft.id);
+        if (error) throw error;
+        await hydrateVenue(session.user.id);
+        setStep("done"); setTab("venue"); showToast("Venue saved");
+      } catch (error) {
+        showToast(error.message || "Could not save venue");
+        throw error;
+      }
+    };
+
+    useEffect(() => {
+      if (guestListEventId && !events.some(event => event.id === guestListEventId)) {
+        setGuestListEventId(null);
+      }
+    }, [guestListEventId, events]);
 
     // wrap: page chrome (theme toggle + explanatory card + phone frame + Toast), like index.html's App return
     const wrap = (node) => (
@@ -4226,8 +4545,8 @@
         <a className="side-link" href="./">← Influencer side</a>
         <button className="theme-toggle" onClick={() => setLight(l => !l)}><span className="dot"></span>{light ? 'Light' : 'Dark'} · switch</button>
         <div className="mb-8 text-center">
-          <div className="font-display text-[14px]" style={{color:"var(--ink-mute)"}}>The List · Venue side · Prototype v0.1</div>
-          <div className="font-black text-[28px] leading-none mt-2">Venue flow</div>
+          <div className="font-display text-[14px]" style={{color:"var(--ink-mute)"}}>{session ? "The List · Venue" : "The List · Venue side · Prototype v0.1"}</div>
+          <div className="font-black text-[28px] leading-none mt-2">{session ? "Venue desk" : "Venue flow"}</div>
         </div>
         <div className="iphone"><div className="iphone-screen">
           {node}
@@ -4243,7 +4562,6 @@
           )}
           {(() => {
             const guestListEvent = guestListEventId ? events.find(e => e.id === guestListEventId) : null;
-            if (guestListEventId && !guestListEvent) { setGuestListEventId(null); return null; }
             return guestListEvent ? <GuestListSheet event={guestListEvent} onClose={() => setGuestListEventId(null)}/> : null;
           })()}
         </div></div>
@@ -4253,9 +4571,9 @@
     if (step === "intro") return wrap(<ScreenVenueIntro onList={()=>setStep("login")} onLogin={()=>setStep("login")}
       onDemo={()=>{ setVenue(DEMO_VENUE); setGroup(null); setStep("done"); setTab("desk"); }}/>);
     if (step === "login") return wrap(<ScreenVenueLogin onDone={completeLogin}/>);
-    if (step === "no-venue" || roleMismatch) return wrap(<ScreenNoVenue onLogout={async()=>{ await supabaseClient.auth.signOut(); setSession(null); setRoleMismatch(false); setStep("intro"); }}/>);
+    if (step === "no-venue" || roleMismatch) return wrap(<ScreenNoVenue onLogout={logout}/>);
     if (step === "onboard-group") return wrap(<ScreenOnboardGroup group={group} setGroup={setGroup} onNext={()=>setStep("onboard-venue")}/>);
-    if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} setVenue={setVenue} group={group} onDone={()=>{ setStep("done"); setTab("desk"); }}/>);
+    if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} setVenue={setVenue} group={group} onDone={saveVenue}/>);
 
     const openReview = (e) => { setReviewEventId(e.id); setStep("review-deck"); };
     const openRecap  = (eventId) => { setRecapEventId(eventId); setStep("recap"); };
@@ -4325,53 +4643,76 @@
     const openEvent = (e) => {
       if (e.stage === STAGE.open)   return openReview(e);
       if (e.stage === STAGE.locked) return setGuestListEventId(e.id);
-      // fallback
-      showToast("Draft – editing coming soon");
+      if (e.stage === STAGE.draft)  return editDraft(e);
+      if (e.stage === STAGE.past)   return openRecap(e.id);
+      showToast("This event is cancelled");
     };
     const editDraft = (event) => {
       setEditingDraft(event);
       setStep("post");
     };
-    const publishEvent = async (draft, draftId) => {
+    const persistEvent = async (draft, draftId, publish) => {
       if (session) {
-        if (draftId) { showToast("Live draft editing is not available"); return; }
-        const starts = eventStart(draft);
-        if (Number.isNaN(starts.valueOf())) { showToast("Use a valid date and time"); return; }
-        const description = [draft.description, draft.brief && Object.values(draft.brief).filter(Boolean).join(" · ")].filter(Boolean).join(" · ");
-        const { error } = await supabaseClient.rpc("post_event", {
-          p_title:draft.title,
-          p_kind:draft.type,
-          p_description:description || null,
-          p_image:draft.heroImage?.src || venue.heroImage?.src || null,
-          p_starts:starts.toISOString(),
-          p_ends:new Date(starts.getTime() + 4*60*60*1000).toISOString(),
-          p_seats:draft.seats,
-          p_price:draft.bundle?.price || 0,
-          p_story_hours:24,
-        });
-        if (error) { showToast(error.message || "Could not publish event"); return; }
-        await hydrateVenue(session.user.id);
-        setEditingDraft(null); setStep("done"); setTab("events"); showToast("Event published");
-        return;
+        try {
+          const starts = eventStart(draft);
+          if (Number.isNaN(starts.valueOf())) throw new Error("Use a valid date and time");
+          const closes = eventCloses(draft, starts);
+          if (!closes || Number.isNaN(closes.valueOf())) throw new Error("Use a valid applications-close time");
+          if (closes >= starts) throw new Error("Applications must close before doors");
+          const originalStart = draft.startsAt ? new Date(draft.startsAt) : null;
+          const originalEnd = draft.endsAt ? new Date(draft.endsAt) : null;
+          const originalDuration = originalStart && originalEnd && !Number.isNaN(originalStart.valueOf()) && !Number.isNaN(originalEnd.valueOf())
+            ? Math.max(60*60*1000, originalEnd - originalStart)
+            : 4*60*60*1000;
+          const imageValue = draft.heroImage || venue.heroImage;
+          const imageUrl = imageValue ? await uploadCroppedMedia(imageValue, `${session.user.id}/event-${Date.now()}.jpg`) : null;
+          const args = {
+            p_title:draft.title,
+            p_kind:draft.type,
+            p_description:draft.description || null,
+            p_image:imageUrl,
+            p_starts:starts.toISOString(),
+            p_ends:new Date(starts.getTime() + originalDuration).toISOString(),
+            p_seats:draft.seats,
+            p_price:draft.bundle?.price || 0,
+            p_story_hours:draft.storyHours || 24,
+            p_closes_at:closes.toISOString(),
+            p_mix_girls:draft.mix ? draft.mix.girls : null,
+            p_mix_guys:draft.mix ? draft.mix.guys : null,
+            p_brief:draft.brief || null,
+            p_bundle:draft.bundle?.name || null,
+          };
+          const result = draftId
+            ? await supabaseClient.rpc("update_event", {...args, p_event:draftId, p_publish:publish})
+            : await supabaseClient.rpc("post_event", {...args, p_draft:!publish});
+          if (result.error) throw result.error;
+          await hydrateVenue(session.user.id);
+          setEditingDraft(null); setStep("done"); setTab("events");
+          showToast(publish ? "Event published" : "Draft saved");
+          return;
+        } catch (error) {
+          showToast(error.message || (publish ? "Could not publish event" : "Could not save draft"));
+          throw error;
+        }
       }
-      const published = {
+      const saved = {
         ...draft,
-        stage: STAGE.open,
-        status: stageToStatus(STAGE.open),
+        stage: publish ? STAGE.open : STAGE.draft,
+        status: stageToStatus(publish ? STAGE.open : STAGE.draft),
         guests: draft.guests || [],
         appliedTotal: draft.appliedTotal || 0,
       };
       if (draftId) {
-        // Edit mode: update in place
-        setEvents(es => es.map(e => e.id === draftId ? { ...published, id: draftId } : e));
+        setEvents(es => es.map(e => e.id === draftId ? { ...saved, id: draftId } : e));
       } else {
-        // New event
-        setEvents(es => [published, ...es]);
+        setEvents(es => [saved, ...es]);
       }
       setEditingDraft(null);
       setStep("done"); setTab("events");
-      showToast("Event published");
+      showToast(publish ? "Event published" : "Draft saved");
     };
+    const publishEvent = (draft, draftId) => persistEvent(draft, draftId, true);
+    const saveDraft = (draft, draftId) => persistEvent(draft, draftId, false);
     const cancelPost = () => {
       if (editingDraft) {
         showToast("Draft unchanged");
@@ -4382,26 +4723,38 @@
     if (step === "post") return wrap(<ScreenPostEvent venue={venue}
       onCancel={cancelPost}
       onPublish={publishEvent}
+      onSaveDraft={saveDraft}
+      live={!!session}
       initialDraft={editingDraft || undefined}
       draftId={editingDraft ? editingDraft.id : undefined}
     />);
     if (step === "done") return wrap(
       <>
-        {tab === "desk"   && <ScreenDesk venue={venue} events={events} notifications={notifications} onReview={openReview} onPost={()=>setStep("post")} onEditDraft={editDraft} onGuestList={(id)=>setGuestListEventId(id)} onToast={showToast} onTab={setTab} onRecap={openRecap}/>}
+        {tab === "desk"   && <ScreenDesk venue={venue} events={events} notifications={notifications}
+          onReview={openReview} onPost={()=>setStep("post")} onEditDraft={editDraft}
+          onGuestList={(id)=>setGuestListEventId(id)} onToast={showToast} onTab={setTab}
+          onRecap={openRecap} onOpenEvent={openEvent} onDoorEvent={setDoorEventId}
+          today={liveToday} live={!!session} onNotifsOpened={markNotificationsRead}/>}
         {tab === "events" && <ScreenEvents events={events} setEvents={setEvents} venue={venue}
                                onPost={()=>setStep("post")} onOpenEvent={openEvent}
                                onEditDraft={editDraft} onGuestList={(e) => setGuestListEventId(e.id)}
-                               askConfirm={askConfirm} onToast={showToast} onRecap={openRecap}/>}
+                               askConfirm={askConfirm} onToast={showToast} onRecap={openRecap}
+                               onCancelEvent={session ? eventId => runRpc("cancel_event", {p_event:eventId}) : null}
+                               onDeleteDraft={session ? eventId => runRpc("delete_event", {p_event:eventId}) : null}/>}
         {tab === "door"   && <ScreenDoor events={events} setEvents={setEvents} askConfirm={askConfirm} onToast={showToast} onTab={setTab}
-          onCheckIn={session ? async appId => { const {error}=await supabaseClient.rpc("check_in", {p_app:appId}); if(error) throw error; await hydrateVenue(session.user.id); } : null}
-          onCloseEvent={session ? async eventId => { const {error}=await supabaseClient.rpc("close_event", {p_event:eventId}); if(error) throw error; await hydrateVenue(session.user.id); } : null}/>} 
-        {tab === "venue"  && <ScreenVenueProfile venue={venue} group={group} onEdit={()=>setStep("onboard-venue")} onLogout={async()=>{ if(session) await supabaseClient.auth.signOut(); setSession(null); setStep("intro"); }} onToast={showToast} demo={demoActions}/>}
+          eventId={doorEventId} today={liveToday} live={!!session}
+          onCheckIn={session ? appId => runRpc("check_in", {p_app:appId}) : null}
+          onNoShow={session ? appId => runRpc("mark_no_show", {p_app:appId}) : null}
+          onRate={session ? (appId,rating) => runRpc("rate_guest", {p_app:appId,p_rating:rating}) : null}
+          onCloseEvent={session ? async eventId => { await runRpc("close_event", {p_event:eventId}); setDoorEventId(null); } : null}/>}
+        {tab === "venue"  && <ScreenVenueProfile venue={venue} group={group} onEdit={()=>setStep("onboard-venue")} onLogout={logout} onToast={showToast} demo={session ? null : demoActions}/>}
         <VenueTabBar tab={tab} onTab={setTab}/>
       </>
     );
 
     if (step === "review-deck") return wrap(<ScreenReview eventId={reviewEventId} events={events} setEvents={setEvents} askConfirm={askConfirm} onToast={showToast}
-      onDecide={session ? async (appId, yes) => { const {error}=await supabaseClient.rpc(yes ? "pick_applicant" : "skip_applicant", {p_app:appId}); if(error) throw error; await hydrateVenue(session.user.id); } : null}
+      onDecide={session ? (appId, yes) => runRpc(yes ? "pick_applicant" : "skip_applicant", {p_app:appId}) : null}
+      onCloseApps={session ? eventId => runRpc("close_applications", {p_event:eventId}) : null}
       onClose={()=>{ setStep("done"); setTab("desk"); }}/>);
     if (step === "recap") return wrap(<ScreenRecap eventId={recapEventId} events={events} onClose={()=>setStep("done")}/>);
 

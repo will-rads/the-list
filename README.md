@@ -2,7 +2,7 @@
 
 A Lebanese clone of *The Secret Society* (Dubai). An invite-only nightlife marketplace where models / influencers / DJs apply to time-boxed events at clubs, restaurants, beach clubs and gyms. Venues swipe through applicants and pick who they want. Limited spots. Heavily discounted or free access in exchange for posting Instagram Stories.
 
-iPhone-first. The live member + venue web app runs on Supabase; the SwiftUI app is scaffolded and CI-compiled, with Supabase binding queued for Mac day.
+iPhone-first. The member, venue, founder, and teaser web flows are backed by live Supabase. The SwiftUI app is scaffolded and CI-compiled, with Supabase binding still pending.
 
 ## How to use this folder
 

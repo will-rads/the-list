@@ -29,6 +29,12 @@ const REQUIRED = {
     "profile-tabs", "Average Story reach", "Lebanon audience", "Top content",
     "Reliability score", "7 days", "90 days", "loading=\"lazy\"", "Not available",
     "DEMO_PREVIEW", "new URLSearchParams(window.location.search)",
+    // Full-functionality wave (2026-07-18): live settings, proof, records, counts and deep links.
+    'supabaseClient.rpc("submit_story"', 'supabaseClient.rpc("member_record"',
+    'supabaseClient.rpc("delete_account"', 'supabaseClient.rpc("event_stats"',
+    'supabaseClient.storage.from("media")', 'type:"text/calendar',
+    'https://maps.google.com/?q=', 'sessionStorage.setItem("pending-event"',
+    'Deactivate profile', 'Deadline unavailable',
   ],
   "venue.html": [
     "function ScreenVenueIntro", "function ScreenVenueLogin", "function ScreenDesk",
@@ -41,8 +47,21 @@ const REQUIRED = {
     // Applied-member analytics: fast swipe summary plus full tabbed applicant sheet.
     "applicant-tabs", "Applied to this event", "Estimated local followers",
     "Audience location", "Content metrics", "Exact active count", "loading=\"lazy\"",
+    // Full-functionality wave (2026-07-18): every live venue action reaches Supabase.
+    'runRpc("mark_no_show"', 'runRpc("rate_guest"', 'runRpc("close_applications"',
+    'runRpc("cancel_event"', 'runRpc("delete_event"',
+    'supabaseClient.rpc("update_event"', 'supabaseClient.storage.from("media")',
+    '.eq("owner_id", uid)', 'demo={session ? null : demoActions}',
+    'saved to their event record', 'creator.profile_picture_url || null',
   ],
 };
+
+const BANNED_STALE = [
+  "Pass — next build step", "Opening in Maps", "22 km south of city",
+  '<Countdown value="04:56:12"', "Live draft editing is not available",
+  "Draft – editing coming soon", "creator_data:creatorData",
+  "Delete account", "feeds their reputation",
+];
 
 function balance(src, open, close) {
   let d = 0;
@@ -63,6 +82,7 @@ for (const [file, tokens] of Object.entries(REQUIRED)) {
   const roots = (src.match(/createRoot/g) || []).length;
   if (roots !== 1) problems.push(`createRoot count ${roots} (want 1)`);
   for (const t of tokens) if (!src.includes(t)) problems.push(`missing token: ${t}`);
+  for (const stale of BANNED_STALE) if (src.includes(stale)) problems.push(`stale token present: ${JSON.stringify(stale)}`);
   // Curly/smart quotes inside JS source = Babel SyntaxError = blank app (caught live 2026-06-11, T11).
   // v3 (2026-07-04): Cormorant retired with the Ultraviolet reskin; Space Grotesk
   // (stock 1c's face) never adopted — Jakarta everywhere per Will's ruling.
@@ -87,8 +107,41 @@ for (const [file, tokens] of Object.entries(REQUIRED)) {
     } catch (err) {
       const msg = (err.stderr || "").toString();
       if (msg.includes("ERROR")) problems.push("JSX parse failed:\n  " + msg.split(/\r?\n/).slice(0, 10).join("\n  "));
-      else console.warn(`note: parse gate skipped for ${file} (esbuild unavailable)`);
+      else problems.push(`JSX parse gate unavailable: ${err.message}`);
     }
+  }
+  if (problems.length) { failed = true; console.error(`FAIL ${file}\n  ` + problems.join("\n  ")); }
+  else console.log(`OK   ${file} (${src.split(/\r?\n/).length} lines)`);
+}
+
+// Founder ops and teaser are plain JavaScript. Keep a small syntax + contract gate
+// here so all four production web surfaces are checked by one command.
+const PLAIN = {
+  "../admin.html": [
+    "founder_promote_waitlists", "founder_run_tick", "set_invoice_status",
+    "suspend_member", "data-signout", "Recent notifications", "review_story",
+    ".not('media_url', 'is', null)", "row.status === 'locked'",
+  ],
+  "e.html": [
+    "/v3/?event=", "This one is done. More drops soon.", "This event is gone.",
+  ],
+};
+const PLAIN_BANNED = {
+  "../admin.html": ["override_story"],
+};
+for (const [relative, tokens] of Object.entries(PLAIN)) {
+  const file = relative.split("/").at(-1);
+  const src = readFileSync(join(here, relative), "utf8");
+  const problems = [];
+  for (const token of tokens) if (!src.includes(token)) problems.push(`missing token: ${token}`);
+  for (const token of PLAIN_BANNED[relative] || []) {
+    if (src.includes(token)) problems.push(`banned token present: ${JSON.stringify(token)}`);
+  }
+  const scripts = [...src.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]
+    .map(match => match[1]).filter(code => code.trim());
+  if (!scripts.length) problems.push("no JavaScript block found");
+  for (const code of scripts) {
+    try { Function(code); } catch (error) { problems.push(`JavaScript parse failed: ${error.message}`); }
   }
   if (problems.length) { failed = true; console.error(`FAIL ${file}\n  ` + problems.join("\n  ")); }
   else console.log(`OK   ${file} (${src.split(/\r?\n/).length} lines)`);

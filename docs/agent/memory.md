@@ -4,6 +4,33 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-07-18 — Full web functionality wave completed + live backend hardened
+
+Resumed the interrupted Fable wave and finished all four production web surfaces: member
+`web/v3/index.html`, venue `web/v3/venue.html`, founder `web/admin.html`, and public teaser
+`web/v3/e.html`. The provider-specific Phyllo port and automatic Gemini scoring remain excluded.
+
+- Member: live settings, logout, profile deactivation, event counts/details, application deadlines,
+  maps/calendar/pass links, member record, approval polling/realtime, Story proof upload to Supabase
+  Storage, manual review states, rejection retry, and notification deep links.
+- Venue: live draft save/edit/publish/delete, event and venue media uploads, venue editing, applicant
+  decisions, close applications, replacements, door check-in/no-show/rating, close night, recap,
+  bookings, notifications, cancellation, and real date behavior. The demo switchboard stays hidden
+  for authenticated venues.
+- Founder: searchable members/owners, venue creation, event actions, invoice status, Story proof
+  review, member suspension, notification visibility, sign-out, and founder-only maintenance wrappers.
+- Backend: full-functionality schema/RPC migration and founder wrappers applied to Supabase project
+  `zrbakomzpuesifasuamb`. Follow-up hardening revoked function execution from PostgreSQL `PUBLIC`
+  and `anon`, kept cron/trigger helpers private, blocked early event closure, and added safe rejected
+  Story re-upload plus media-required founder review.
+- Product truth: Story screenshots plus founder review are the working v1 fallback. Gemini scoring is
+  still a future port. Profile deactivation is honest anonymization, not full auth/media deletion.
+- Verification: all four checker gates and `git diff --check` pass; live database grants and function
+  guards were queried after migration. Full authenticated production click-testing is still required.
+
+**Next:** deploy this web commit, click-test member/venue/founder production accounts, then port the
+approved HTML behavior to SwiftUI and bind native services to Supabase.
+
 ## 2026-07-11 — Profile analytics dashboard redesigned in web v3
 
 HTML-first redesign implemented in `web/v3/index.html` and `web/v3/venue.html`. SwiftUI remains unchanged until Will approves the deployed HTML.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>The List · Prototype v2</title>
+<title>The List · Member</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -202,7 +202,16 @@
 
   .press { transition: transform .12s ease, opacity .12s ease, background .2s, border-color .2s, box-shadow .2s; cursor: pointer; }
   @media (hover:hover){ .press:hover { opacity: .96; } }
-  .press:active { transform: scale(.97); opacity: .85; }
+  .press:active { transform: scale(.96); opacity: .85; }
+
+  /* better-ui: guarantee a 44px minimum hit target on small controls without
+     changing their visual size. */
+  .hit-44 { position: relative; }
+  .hit-44::after {
+    content: ""; position: absolute; left: 50%; top: 50%;
+    width: max(100%, 44px); height: max(100%, 44px);
+    transform: translate(-50%, -50%); border-radius: inherit;
+  }
 
   .vt { writing-mode: vertical-rl; transform: rotate(180deg); }
 
@@ -220,20 +229,28 @@
   .theme-toggle {
     position: fixed; top: 24px; right: 24px; z-index: 100;
     display:flex; align-items:center; gap:8px;
-    padding: 8px 14px; border-radius: 999px;
+    min-height: 44px; padding: 8px 14px; border-radius: 999px;
     background: var(--bg-elev); border: 1px solid var(--line-2);
     color: var(--ink); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500;
     font-size: 11px; letter-spacing: 0.01em;
-    cursor: pointer; transition: all .2s;
+    cursor: pointer; transition: border-color .2s, color .2s, background .2s;
   }
   .theme-toggle:hover { border-color: var(--ice); color: var(--ice); }
   .theme-toggle .dot { width:6px; height:6px; border-radius:50%; background: var(--ice); }
 
+  /* better-ui: pulse rides a pseudo-element on transform/opacity (compositor)
+     instead of an animated box-shadow (repaints every frame). */
   @keyframes pulseIce {
-    0% { box-shadow: 0 0 0 0 rgba(255,255,255,.35); }
-    100% { box-shadow: 0 0 0 28px rgba(255,255,255,0); }
+    0%   { transform: scale(1); opacity: .6; }
+    100% { transform: scale(1.28); opacity: 0; }
   }
-  .pulse-ice { animation: pulseIce 1.8s cubic-bezier(.4,.2,.2,1) infinite; }
+  .pulse-ice { position: relative; }
+  .pulse-ice::before {
+    content: ""; position: absolute; inset: -2px; border-radius: inherit;
+    border: 2px solid rgba(255,255,255,.35);
+    animation: pulseIce 1.8s cubic-bezier(.4,.2,.2,1) infinite;
+    pointer-events: none;
+  }
 
   @keyframes slideUp {
     from { transform: translateY(20px); opacity: 0; }
@@ -464,6 +481,9 @@ const supabaseClient = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyYmFrb216cHVlc2lmYXN1YW1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMTYzNzIsImV4cCI6MjA5ODY5MjM3Mn0.3ntox_XSnie3EIEflgZb7hxbsC0CFlwF-M1J2wVfCGA"
 );
 const DEMO_PREVIEW = new URLSearchParams(window.location.search).get("demo") === "1";
+// ?event=<id> deep link — stored through the login flow, opened after hydrate.
+const URL_EVENT = new URLSearchParams(window.location.search).get("event");
+if (URL_EVENT) { try { sessionStorage.setItem("pending-event", URL_EVENT); } catch (e) {} }
 
 /* ========== curated imagery ========== */
 const IMG = {
@@ -760,49 +780,63 @@ const APPLICATION_STATE = {
 
 function normalizeEvent(row){
   const starts = row.starts_at ? new Date(row.starts_at) : null;
+  const ends = row.ends_at ? new Date(row.ends_at) : null;
   const closes = row.closes_at ? new Date(row.closes_at) : null;
   const venue = Array.isArray(row.venues) ? row.venues[0] : row.venues;
   const stage = row.status === "cancelled" ? STAGE.cancelled
-    : ["completed", "past"].includes(row.status) ? STAGE.past
-    : ["closed", "locked"].includes(row.status) ? STAGE.locked
+    : ["completed", "past", "closed"].includes(row.status) ? STAGE.past
+    : row.status === "locked" ? STAGE.locked
     : row.status === "draft" ? STAGE.draft : STAGE.open;
+  const startsValid = starts && !Number.isNaN(starts.valueOf()) ? starts : null;
+  const endsValid = ends && !Number.isNaN(ends.valueOf()) ? ends : null;
+  const closesValid = closes && !Number.isNaN(closes.valueOf()) ? closes : null;
+  const startTime = startsValid
+    ? startsValid.toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit", hour12:false})
+    : null;
+  const kind = row.kind ? String(row.kind) : null;
   return {
     ...row,
     id:row.id,
     title:row.title || row.name || "Untitled room",
     venue:venue?.name || row.venue_name || "The List",
+    venueIg:venue?.ig_handle || row.venue_ig || null,
     area:venue?.area || row.area || "Beirut",
-    date:starts && !Number.isNaN(starts.valueOf())
-      ? starts.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}).replace(/,/, " ·")
+    date:startsValid
+      ? startsValid.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}).replace(/,/, " ·")
       : "Date TBA",
-    time:starts && !Number.isNaN(starts.valueOf())
-      ? starts.toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit", hour12:false})
-      : (row.time || "TBA"),
-    doors:row.doors || row.doors_at || row.time || "TBA",
+    time:startTime || row.time || "TBA",
+    doors:row.doors || row.doors_at || startTime || row.time || "TBA",
     img:row.image_url || row.cover_url || IMG.lounge,
-    type:row.type || row.category || "Night",
+    type:kind ? kind.charAt(0).toUpperCase() + kind.slice(1).toLowerCase() : (row.type || row.category || "Night"),
     stage,
     seats:row.seats || row.capacity || 0,
     applied:row.application_count ?? row.applied ?? 0,
-    closesAt:closes && !Number.isNaN(closes.valueOf())
-      ? closes.toLocaleString("en-GB", {weekday:"short", day:"numeric", month:"short", hour:"2-digit", minute:"2-digit", hour12:false}).replace(/,/, " ·")
+    taken:row.taken ?? null,
+    closesAt:closesValid
+      ? closesValid.toLocaleString("en-GB", {weekday:"short", day:"numeric", month:"short", hour:"2-digit", minute:"2-digit", hour12:false}).replace(/,/, " ·")
       : row.closes_at,
+    closesAtDate:closesValid,
+    startsAtDate:startsValid,
+    endsAtDate:endsValid,
+    endsTime:endsValid ? endsValid.toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit", hour12:false}) : null,
+    storyHours:row.story_window_hours ?? null,
+    description:row.description || "",
     gallery:Array.isArray(row.gallery) && row.gallery.length ? row.gallery : [row.image_url || row.cover_url || IMG.lounge],
     brief:row.brief,
   };
 }
 
-function notificationKind(kind){
+function notificationKind(kind, title=""){
   if (kind === "picked") return "picked";
   if (["confirm_reminder", "pick_expired"].includes(kind)) return "expiring";
   if (kind === "pass_ready") return "pass";
   if (kind?.startsWith("story_")) return "story";
-  if (kind === "event_changed") return "cancelled";
+  if (kind === "event_changed" && /^cancelled/i.test(title)) return "cancelled";
   return "drop";
 }
 
 function mapNotification(row){
-  return { id:row.id, kind:notificationKind(row.kind), text:[row.title, row.body].filter(Boolean).join(" · "), eventId:row.event_id, read:row.read };
+  return { id:row.id, kind:notificationKind(row.kind, row.title), text:[row.title, row.body].filter(Boolean).join(" · "), eventId:row.event_id, read:row.read };
 }
 
 function mapApplication(row, story){
@@ -812,20 +846,97 @@ function mapApplication(row, story){
     storyState = SS.verified;
     verdict = { score:story.score, reason:story.breakdown?.reason || story.reason || "Story verified" };
   } else if (story?.verdict === "rejected") {
-    storyState = SS.rejected;
+    storyState = !story.media_url && story.due_at && new Date(story.due_at).getTime() < Date.now() ? SS.missed : SS.rejected;
     verdict = { score:story.score, reason:story.breakdown?.reason || story.reason || "Story did not pass review" };
+  } else if (story?.verdict === "needs_review") {
+    storyState = SS.needsReview;
+    verdict = { score:story.score, reason:story.breakdown?.reason || story.reason || "Our team is taking a second look" };
   } else if (story?.verdict === "pending") {
-    storyState = story.due_at ? SS.due : SS.review;
+    // Under review = proof uploaded, verdict pending. Due = nothing uploaded yet.
+    storyState = story.media_url ? SS.review : SS.due;
   }
+  const rawPickExpiresAt = row.pick_expires_at ? new Date(row.pick_expires_at).getTime() : null;
+  const pickExpiresAt = Number.isFinite(rawPickExpiresAt) ? rawPickExpiresAt : undefined;
+  const checkedInAt = row.checked_in_at ? new Date(row.checked_in_at) : null;
   return {
     applicationId:row.id,
     eventId:row.event_id,
     state:APPLICATION_STATE[row.status] || row.status,
     code:row.pass_code,
-    pickedAt:row.pick_expires_at ? new Date(row.pick_expires_at).getTime() - 24*3600000 : undefined,
+    pickExpiresAt,
+    pickedAt:pickExpiresAt ? pickExpiresAt - 24*3600000 : undefined,
+    inAt:checkedInAt && !Number.isNaN(checkedInAt.valueOf())
+      ? checkedInAt.toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit", hour12:false})
+      : undefined,
+    storyMediaUrl:story?.media_url || null,
     story:storyState,
     verdict,
   };
+}
+
+function localDateKey(value){
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.valueOf())) return null;
+  return [date.getFullYear(), String(date.getMonth()+1).padStart(2,"0"), String(date.getDate()).padStart(2,"0")].join("-");
+}
+
+function countdownTo(deadline, now=Date.now()){
+  if (!deadline) return "--:--:--";
+  const time = deadline instanceof Date ? deadline.getTime() : Number(deadline);
+  if (!Number.isFinite(time)) return "--:--:--";
+  const diff = Math.max(0, time - now);
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  return String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+}
+
+function calendarDate(event, end=false){
+  const direct = end ? event?.endsAtDate : event?.startsAtDate;
+  if (direct instanceof Date && !Number.isNaN(direct.valueOf())) return direct;
+  const raw = end ? event?.ends_at : event?.starts_at;
+  if (raw) {
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.valueOf())) return parsed;
+  }
+  const match = String(event?.date || "").match(/(\d{1,2})\s+([A-Za-z]{3})/);
+  if (!match) return null;
+  const weekday = String(event?.date || "").match(/^([A-Za-z]{3})/)?.[1];
+  let year = new Date().getFullYear();
+  if (weekday) {
+    for (let candidate=year-2; candidate<=year+1; candidate++) {
+      const check = new Date(`${match[2]} ${match[1]}, ${candidate} ${event?.time || "12:00"}`);
+      if (!Number.isNaN(check.valueOf()) && check.toLocaleDateString("en-GB", {weekday:"short"}) === weekday) { year = candidate; break; }
+    }
+  }
+  const parsed = new Date(`${match[2]} ${match[1]}, ${year} ${event?.time || "12:00"}`);
+  return Number.isNaN(parsed.valueOf()) ? null : parsed;
+}
+
+function downloadEventCalendar(event){
+  const starts = calendarDate(event);
+  if (!starts) return false;
+  const ends = calendarDate(event, true) || new Date(starts.getTime() + 3 * 3600000);
+  const stamp = date => date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const clean = value => String(value || "").replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
+  const lines = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//The List//Member invite//EN", "BEGIN:VEVENT",
+    "UID:" + clean(event.id) + "@the-list.app", "DTSTAMP:" + stamp(new Date()),
+    "DTSTART:" + stamp(starts), "DTEND:" + stamp(ends), "SUMMARY:" + clean(event.title),
+    "LOCATION:" + clean([event.venue, event.area].filter(Boolean).join(", ")),
+    "DESCRIPTION:" + clean(event.description || "Your confirmed invitation from The List."),
+    "END:VEVENT", "END:VCALENDAR",
+  ];
+  const url = URL.createObjectURL(new Blob([lines.join("\r\n")], {type:"text/calendar;charset=utf-8"}));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = String(event.title || "the-list-event").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() + ".ics";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  return true;
 }
 
 /* ========== Intro clips — grainy Beirut nightlife montage ==========
@@ -918,7 +1029,7 @@ function SaveButton({ saved, onClick, size=36 }){
       onClick={(e)=>{ e.stopPropagation(); onClick(); }}
       aria-label={saved ? "Saved · tap to remove" : "Save event"}
       aria-pressed={saved}
-      className={"press rounded-full flex items-center justify-center "+(saved ? "" : "glass-over-image")}
+      className={"press hit-44 rounded-full flex items-center justify-center "+(saved ? "" : "glass-over-image")}
       style={{ width:size, height:size, ...(saved ? {background:"var(--ice)", color:"var(--ice-ink)"} : {}) }}>
       <Icon name={saved ? "bookmark-fill" : "bookmark"} size={Math.round(size*0.42)} stroke={1.6}/>
     </button>
@@ -928,11 +1039,11 @@ function SaveButton({ saved, onClick, size=36 }){
 // iOS-style switch. Ice when on.
 function Toggle({ on, onChange }){
   return (
-    <button onClick={()=>onChange(!on)} role="switch" aria-checked={on} className="press shrink-0"
+    <button onClick={()=>onChange(!on)} role="switch" aria-checked={on} className="press hit-44 shrink-0"
       style={{ width:46, height:28, borderRadius:999, position:"relative",
         background: on ? "var(--ice)" : "var(--bg-elev2)", border:"1px solid var(--line-2)", transition:"background .2s" }}>
-      <span style={{ position:"absolute", top:2, left: on ? 20 : 2, width:22, height:22, borderRadius:"50%",
-        background: on ? "var(--ice-ink)" : "var(--ink)", transition:"left .2s" }}/>
+      <span style={{ position:"absolute", top:2, left:2, width:22, height:22, borderRadius:"50%",
+        background: on ? "var(--ice-ink)" : "var(--ink)", transform: on ? "translateX(18px)" : "translateX(0)", transition:"transform .2s ease, background .2s" }}/>
     </button>
   );
 }
@@ -1032,13 +1143,20 @@ function ShareSheet({ event, onClose, onToast }){
   const link = "https://the-list-omega.vercel.app/v3/e?id=" + event.id;
   const actions = [
     { id:"copy",  label:"Copy link",       icon:"link",        toast:"Link copied" },
-    { id:"story", label:"To Story",        icon:"instagram",   toast:"Opening Instagram" },
     { id:"dm",    label:"WhatsApp",        icon:"whatsapp",    toast:"Opening WhatsApp" },
-    { id:"more",  label:"More",            icon:"share",       toast:"More share options" },
+    { id:"more",  label:"More",            icon:"share",       toast:"Link copied" },
   ];
   const act = async (action) => {
     if (action.id === "copy") await navigator.clipboard.writeText(link);
     if (action.id === "dm") window.open("https://wa.me/?text=" + encodeURIComponent(link), "_blank", "noopener,noreferrer");
+    if (action.id === "more") {
+      if (navigator.share) {
+        try { await navigator.share({ title:event.title, url:link }); } catch (e) {}
+        onClose();
+        return;
+      }
+      await navigator.clipboard.writeText(link);
+    }
     onToast(action.toast);
     onClose();
   };
@@ -1049,14 +1167,14 @@ function ShareSheet({ event, onClose, onToast }){
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
         <div className="flex items-center justify-between mb-5">
           <div className="font-black text-[22px] leading-none">Share</div>
-          <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+          <button onClick={onClose} aria-label="Close" className="press hit-44 w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
             <Icon name="x" size={14} stroke={1.5}/>
           </button>
         </div>
 
         {/* Preview of what is being shared */}
         <div className="card flex items-center gap-3 p-3 rounded-[14px] mb-5">
-          <img src={event.img} className="w-14 h-16 rounded-[10px] object-cover" alt=""/>
+          <img src={event.img} className="w-14 h-16 rounded-[6px] object-cover" alt=""/>
           <div className="flex-1 min-w-0">
             <div className="stamp">{event.type}</div>
             <div className="font-display text-[17px] mt-0.5 truncate">{event.title}</div>
@@ -1064,7 +1182,7 @@ function ShareSheet({ event, onClose, onToast }){
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {actions.map(a=>(
             <button key={a.id} onClick={()=>act(a)} className="press flex flex-col items-center gap-2 py-3 rounded-[14px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
               <Icon name={a.icon} size={20} stroke={1.5}/>
@@ -1101,9 +1219,9 @@ function DemoPanel({ demo }){
           <div className="py-2.5" style={{borderTop:"1px solid var(--line)"}}>
             <div className="text-[12px] mb-2" style={{color:"var(--ink-2)"}}>Story verdict</div>
             <div className="flex gap-2">
-              <button onClick={()=>demo.verdict(SS.verified)} className="press px-3 h-8 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Verified</button>
-              <button onClick={()=>demo.verdict(SS.needsReview)} className="press px-3 h-8 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Needs review</button>
-              <button onClick={()=>demo.verdict(SS.rejected)} className="press px-3 h-8 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Rejected</button>
+              <button onClick={()=>demo.verdict(SS.verified)} className="press px-3 h-11 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Verified</button>
+              <button onClick={()=>demo.verdict(SS.needsReview)} className="press px-3 h-11 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Needs review</button>
+              <button onClick={()=>demo.verdict(SS.rejected)} className="press px-3 h-11 rounded-full text-[11px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Rejected</button>
             </div>
           </div>
           <Row label="Reset demo" onTap={()=>demo.reset()}/>
@@ -1119,13 +1237,20 @@ function DemoPanel({ demo }){
    + Gemini rubric — see spec §4; founders always able to override). ========== */
 function StorySheet({ event, onClose, onSubmit }){
   const [shot, setShot] = useState(null); // dataURL preview
+  const [busy, setBusy] = useState(false);
   const fileRef = useRef(null);
+  if (!event) return null;
   const pick = (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
     const reader = new FileReader();
     reader.onload = () => setShot(reader.result);
     reader.readAsDataURL(f);
+  };
+  const submit = async () => {
+    if (!shot || busy) return;
+    setBusy(true);
+    try { await onSubmit(shot); } finally { setBusy(false); }
   };
   return (
     <>
@@ -1134,7 +1259,7 @@ function StorySheet({ event, onClose, onSubmit }){
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
         <div className="flex items-center justify-between mb-2">
           <div className="font-black text-[22px] leading-none">Your Story</div>
-          <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+          <button onClick={onClose} aria-label="Close" className="press hit-44 w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
             <Icon name="x" size={14} stroke={1.5}/>
           </button>
         </div>
@@ -1160,10 +1285,15 @@ function StorySheet({ event, onClose, onSubmit }){
           </button>
         )}
 
-        <button onClick={()=>{ if (shot) onSubmit(); }} disabled={!shot}
+        <button onClick={submit} disabled={!shot || busy}
                 className="press glow-primary w-full h-12 rounded-full text-[13px] font-semibold flex items-center justify-center gap-2"
                 style={shot ? {background:"var(--ice)", color:"var(--ice-ink)"} : {background:"var(--bg-elev2)", color:"var(--ink-mute)"}}>
-          Submit <Icon name="arrow-right" size={14} stroke={1.6}/>
+          {busy ? (<>
+            <span>Uploading</span>
+            <span className="spin inline-block w-4 h-4 rounded-full" style={{border:"2px solid currentColor", borderTopColor:"transparent"}}/>
+          </>) : (<>
+            Submit <Icon name="arrow-right" size={14} stroke={1.6}/>
+          </>)}
         </button>
         <div className="text-[11px] text-center mt-3" style={{color:"var(--ink-mute)"}}>Under review · we check within a few hours</div>
       </div>
@@ -1171,14 +1301,39 @@ function StorySheet({ event, onClose, onSubmit }){
   );
 }
 
-function SettingsSheet({ profile, light, setLight, onClose, onToast, demo }){
-  const seed = profile || SEED_PROFILE;
-  const [name, setName] = useState(seed.full_name);
-  const [handle, setHandle] = useState(seed.handle);
-  const [phone, setPhone] = useState("+961 71 000 000");
-  const [notifPicks, setNotifPicks] = useState(true);
-  const [notifDrops, setNotifDrops] = useState(true);
+function SettingsSheet({ profile, light, setLight, onClose, onToast, demo, live, onSave, onLogout, onDelete }){
+  const seed = profile || (!live ? SEED_PROFILE : {});
+  const [name, setName] = useState(seed.full_name || "");
+  const [handle, setHandle] = useState(seed.handle || seed.ig_handle || "");
+  const [phone, setPhone] = useState(live ? (seed.phone || "") : "+961 71 000 000");
+  const [notifPicks, setNotifPicks] = useState(live ? seed.notif_picks !== false : true);
+  const [notifDrops, setNotifDrops] = useState(live ? seed.notif_drops !== false : true);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const verified = seed.data_status === "verified";
+
+  const save = async () => {
+    if (!live) { onToast("Settings saved"); onClose(); return; }
+    if (saving) return;
+    setSaving(true);
+    const ok = await onSave({
+      name:name.trim(),
+      handle:handle.trim().replace(/^@/, ""),
+      phone:phone.trim(),
+      notifPicks,
+      notifDrops,
+    });
+    setSaving(false);
+    if (ok !== false) onClose();
+  };
+
+  const removeAccount = async () => {
+    if (deleting) return;
+    setDeleting(true);
+    const ok = await onDelete();
+    if (ok === false) setDeleting(false);
+  };
 
   return (
     <>
@@ -1187,23 +1342,23 @@ function SettingsSheet({ profile, light, setLight, onClose, onToast, demo }){
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
         <div className="flex items-center justify-between mb-5">
           <div className="font-black text-[22px] leading-none">Settings</div>
-          <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+          <button onClick={onClose} aria-label="Close" className="press hit-44 w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
             <Icon name="x" size={14} stroke={1.5}/>
           </button>
         </div>
 
         <div className="stamp mb-2">Display name</div>
-        <input value={name} onChange={e=>setName(e.target.value)} aria-label="Display name" className="w-full h-12 px-3 rounded-[12px] text-[15px] mb-4" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+        <input value={name} onChange={e=>setName(e.target.value)} aria-label="Display name" className="w-full h-12 px-3 rounded-[12px] text-[16px] mb-4" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
 
         <div className="stamp mb-2">Instagram handle</div>
         <div className="flex h-12 rounded-[12px] overflow-hidden mb-4 items-center" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)"}}>
-          <div className="px-3 flex items-center text-[15px]" style={{color:"var(--ink-mute)"}}>@</div>
-          <input value={handle} onChange={e=>setHandle(e.target.value)} aria-label="Instagram handle" className="flex-1 bg-transparent text-[15px] focus:outline-none" style={{color:"var(--ink)"}}/>
+          <div className="px-3 flex items-center text-[16px]" style={{color:"var(--ink-mute)"}}>@</div>
+          <input value={handle} onChange={e=>setHandle(e.target.value)} aria-label="Instagram handle" className="flex-1 bg-transparent text-[16px] focus:outline-none" style={{color:"var(--ink)"}}/>
           {verified && <span className="pr-2"><StatusPill label="Verified" tone="ice"/></span>}
         </div>
 
         <div className="stamp mb-2">Phone</div>
-        <input value={phone} onChange={e=>setPhone(e.target.value)} aria-label="Phone" className="w-full h-12 px-3 rounded-[12px] text-[15px] mb-5" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+        <input value={phone} onChange={e=>setPhone(e.target.value)} aria-label="Phone" className="w-full h-12 px-3 rounded-[12px] text-[16px] mb-5" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
 
         <div className="stamp mb-2">Notifications</div>
         <div className="card rounded-[14px] px-4 mb-5">
@@ -1229,13 +1384,27 @@ function SettingsSheet({ profile, light, setLight, onClose, onToast, demo }){
           Your reach and audience data are read from Instagram through a licensed provider. The List never sees your password and never posts on your behalf.
         </div>
 
-        <button onClick={()=>{ onToast("Settings saved"); onClose(); }} className="press glow-primary w-full h-12 rounded-full text-[13px] font-semibold mb-3" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-          Save changes
+        <button onClick={save} disabled={saving} className="press glow-primary w-full h-12 rounded-full text-[13px] font-semibold mb-3 flex items-center justify-center gap-2" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+          {saving ? (<>
+            <span>Saving</span>
+            <span className="spin inline-block w-4 h-4 rounded-full" style={{border:"2px solid currentColor", borderTopColor:"transparent"}}/>
+          </>) : "Save changes"}
         </button>
         <div className="flex gap-2">
-          <button onClick={()=>onToast("Logged out (prototype)")} className="press flex-1 h-11 rounded-full text-[12px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Log out</button>
-          <button onClick={()=>onToast("Account deletion requested (prototype)")} className="press flex-1 h-11 rounded-full text-[12px]" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>Delete account</button>
+          <button onClick={()=>{ live ? onLogout() : onToast("Logged out (prototype)"); }} className="press flex-1 h-11 rounded-full text-[12px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Log out</button>
+          <button onClick={()=>{
+              if (!live) { onToast("Profile deactivated (prototype)"); return; }
+              if (confirmDelete) { removeAccount(); return; }
+              setConfirmDelete(true);
+            }}
+            className="press flex-1 h-11 rounded-full text-[12px]"
+            style={confirmDelete ? {background:"var(--ink)", color:"var(--bg)"} : {border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>
+            {deleting ? "Deactivating" : confirmDelete ? "Tap again to deactivate" : "Deactivate profile"}
+          </button>
         </div>
+        {confirmDelete && (
+          <div className="text-[11px] text-center mt-3" style={{color:"var(--ink)"}}>This anonymizes your profile, cancels open applications, and signs you out. Contact support for full data deletion.</div>
+        )}
 
         {demo && <DemoPanel demo={demo}/>}
       </div>
@@ -1254,11 +1423,20 @@ function NotificationsSheet({ notifs, onClose, onTarget }){
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
         <div className="flex items-center justify-between mb-5">
           <div className="font-black text-[22px] leading-none">Activity</div>
-          <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+          <button onClick={onClose} aria-label="Close" className="press hit-44 w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
             <Icon name="x" size={14} stroke={1.5}/>
           </button>
         </div>
 
+        {notifs.length === 0 && (
+          <div className="py-12 text-center">
+            <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center" style={{border:"1px solid var(--line-2)"}}>
+              <Icon name="bell" size={18} stroke={1.4}/>
+            </div>
+            <div className="section-label mt-4">No activity yet</div>
+            <div className="text-[13px] mt-2" style={{color:"var(--ink)"}}>Picks, passes and story updates land here.</div>
+          </div>
+        )}
         <div className="space-y-2">
           {notifs.map(n => {
             const icon = kindIcon[n.kind] || "bell";
@@ -1352,17 +1530,47 @@ function stageBadge(event){
 }
 
 /* ========== 01 — HOME ========== */
-function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, onBell, unreadCount, onOpenPass, events }){
-  const featured = events.find(e => e.id === "pool") || events[0] || SEED_EVENTS[0];
-  // Pinned next room — the member's most advanced active application, else next open room
+function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, onBell, unreadCount, onOpenPass, events, live }){
   const activeRow = [GS.confirmed, GS.picked, GS.checkedIn, GS.applied, GS.waitlist]
     .map(s => (myEvents || []).find(r => r.state === s)).find(Boolean);
   const activeEvent = activeRow ? events.find(e => e.id === activeRow.eventId) : null;
+  const browseEvents = events.filter(e => e.stage === STAGE.open || e.stage === STAGE.locked);
+  // Live + no rooms → real empty state, never the seed world.
+  if (live && !activeEvent && browseEvents.length === 0) {
+    return (
+      <PhoneScreen tab={tab} onTab={onTab}>
+        <div className="px-5 pt-[60px] pb-3">
+          <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={onBell} aria-label="Activity" className="press glass w-10 h-10 rounded-full flex items-center justify-center relative">
+                <Icon name="bell" size={16} stroke={1.4}/>
+                {unreadCount > 0 && <span className="absolute rounded-full flex items-center justify-center font-mono" style={{top:-2, right:-2, width:16, height:16, fontSize:10, background:"var(--ice)", color:"var(--ice-ink)"}}>{unreadCount}</span>}
+              </button>
+              <button onClick={()=>onTab("explore")} aria-label="Search" className="press glass w-10 h-10 rounded-full flex items-center justify-center">
+                <Icon name="search" size={16} stroke={1.4}/>
+              </button>
+            </div>
+          </div>
+          <div className="flex items-end justify-between mt-3">
+            <div className="font-black font-display-l text-[40px] leading-none">Home</div>
+            <div className="font-medium text-[14px] pb-1" style={{color:"var(--ink-2)"}}>{new Date().toLocaleDateString("en-GB",{weekday:"long"})} · {String(new Date().getDate()).padStart(2,"0")}.{String(new Date().getMonth()+1).padStart(2,"0")}</div>
+          </div>
+        </div>
+        <div className="hr-2 mx-5 mb-5"/>
+        <div className="px-5 py-20 text-center">
+          <div className="section-label">No rooms open yet</div>
+          <div className="text-[13px] mt-2 on-photo" style={{color:"var(--ink)"}}>New drops land here the moment a venue opens one.</div>
+        </div>
+      </PhoneScreen>
+    );
+  }
+  const featured = browseEvents.find(e => e.id === "pool") || browseEvents[0] || activeEvent || SEED_EVENTS[0];
+  // Pinned next room — the member's most advanced active application, else next open room
   const confirmedRow = activeRow?.state === GS.confirmed ? activeRow : null;
   const confirmedEvent = confirmedRow ? activeEvent : null;
-  const nextEvent = activeEvent || events.find(e => e.id === "lounge") || events.find(e => e.stage === STAGE.open) || featured;
+  const nextEvent = activeEvent || browseEvents.find(e => e.id === "lounge") || browseEvents.find(e => e.stage === STAGE.open) || featured;
   // Tonight: open events only (no cancelled, no past), minus whatever is already featured or pinned
-  const tonight  = events.filter(e => e.stage === STAGE.open && e.id !== featured.id && e.id !== nextEvent.id);
+  const tonight  = browseEvents.filter(e => e.stage === STAGE.open && e.id !== featured.id && e.id !== nextEvent.id);
   const nextDate  = parseDate(nextEvent.date);
   return (
     <PhoneScreen tab={tab} onTab={onTab}>
@@ -1435,7 +1643,7 @@ function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, on
       <div className="px-5 space-y-3 stagger">
         {tonight.map((e,i)=>(
           <button key={e.id} onClick={()=>onPickEvent(e)} style={{"--i":i}} className="press card w-full flex gap-3 items-center text-left p-3 rounded-[14px]">
-            <img src={e.img} className="w-16 h-20 rounded-[10px] object-cover" alt=""/>
+            <img src={e.img} className="w-16 h-20 rounded-[6px] object-cover" alt=""/>
             <div className="flex-1 min-w-0">
               <div className="stamp">{e.type}</div>
               <div className="font-display text-[17px] mt-0.5 truncate">{e.title}</div>
@@ -1457,10 +1665,10 @@ function ScreenHome({ tab, onTab, onPickEvent, saved, onToggleSave, myEvents, on
 }
 
 /* ========== Filter sheet (Explore overlay) ========== */
-function FilterSheet({ open, onClose, advFilters, setAdvFilters }){
+function FilterSheet({ open, onClose, advFilters, setAdvFilters, live }){
   if(!open) return null;
   const verticals = ["Beach","Club","Restaurant","Lounge","Gym","Rooftop"];
-  const distances = ["< 5 km","5 – 15 km","15 – 30 km","Beirut + Mount"];
+  const distances = ["< 5 km","5 - 15 km","15 - 30 km","Beirut + Mount"];
   const timings = ["Tonight","This week","Anytime"];
 
   const toggleVert = (v) => setAdvFilters({
@@ -1478,7 +1686,7 @@ function FilterSheet({ open, onClose, advFilters, setAdvFilters }){
 
         <div className="flex items-center justify-between mb-5">
           <div className="font-black text-[22px] leading-none">Filters</div>
-          <button onClick={onClose} className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+          <button onClick={onClose} aria-label="Close" className="press hit-44 w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
             <Icon name="x" size={14} stroke={1.5}/>
           </button>
         </div>
@@ -1488,31 +1696,33 @@ function FilterSheet({ open, onClose, advFilters, setAdvFilters }){
           {verticals.map(v=>{
             const on = advFilters.verticals.includes(v);
             return (
-              <button key={v} onClick={()=>toggleVert(v)} className={"press px-3 h-8 rounded-full text-[12px] "+(on?"glow-ice":"")} style={on ? {background:"var(--ink)", color:"var(--bg)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+              <button key={v} onClick={()=>toggleVert(v)} className={"press px-3 h-11 rounded-full text-[12px] "+(on?"glow-ice":"")} style={on ? {background:"var(--ink)", color:"var(--bg)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
                 {v}
               </button>
             );
           })}
         </div>
 
-        <div className="stamp mb-2">Distance</div>
-        <div className="flex flex-wrap gap-1.5 mb-5">
-          {distances.map(d=>{
-            const on = advFilters.distance === d;
-            return (
-              <button key={d} onClick={()=>setAdvFilters({...advFilters, distance: on ? null : d})} className={"press px-3 h-8 rounded-full text-[12px] "+(on?"glow-ice":"")} style={on ? {background:"var(--ice)", color:"var(--ice-ink)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
-                {d}
-              </button>
-            );
-          })}
-        </div>
+        {!live && (<>
+          <div className="stamp mb-2">Distance</div>
+          <div className="flex flex-wrap gap-1.5 mb-5">
+            {distances.map(d=>{
+              const on = advFilters.distance === d;
+              return (
+                <button key={d} onClick={()=>setAdvFilters({...advFilters, distance: on ? null : d})} className={"press px-3 h-11 rounded-full text-[12px] "+(on?"glow-ice":"")} style={on ? {background:"var(--ice)", color:"var(--ice-ink)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+                  {d}
+                </button>
+              );
+            })}
+          </div>
+        </>)}
 
         <div className="stamp mb-2">When</div>
         <div className="flex gap-1.5 mb-6">
           {timings.map(t=>{
             const on = advFilters.timing === t;
             return (
-              <button key={t} onClick={()=>setAdvFilters({...advFilters, timing: t})} className={"press flex-1 h-10 rounded-[12px] text-[12px] "+(on?"glow-ice":"")} style={on ? {background:"var(--ink)", color:"var(--bg)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+              <button key={t} onClick={()=>setAdvFilters({...advFilters, timing: t})} className={"press flex-1 h-11 rounded-[12px] text-[12px] "+(on?"glow-ice":"")} style={on ? {background:"var(--ink)", color:"var(--bg)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
                 {t}
               </button>
             );
@@ -1520,7 +1730,7 @@ function FilterSheet({ open, onClose, advFilters, setAdvFilters }){
         </div>
 
         <div className="flex gap-2">
-          <button onClick={()=>setAdvFilters({ verticals:[], distance:null, timing:"Tonight" })} className="press flex-1 h-12 rounded-full text-[12px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+          <button onClick={()=>setAdvFilters({ verticals:[], distance:null, timing:"Anytime" })} className="press flex-1 h-12 rounded-full text-[12px]" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
             Reset
           </button>
           <button onClick={onClose} className="press glow-primary flex-[2] h-12 rounded-full text-[13px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
@@ -1533,17 +1743,26 @@ function FilterSheet({ open, onClose, advFilters, setAdvFilters }){
 }
 
 /* ========== Calendar sheet (Explore overlay) — full month, May ========== */
-function CalendarSheet({ onClose, activeDay, onPick }){
-  const eventDays = [24, 25, 30, 31];
-  const blanks = 3; // May here starts on a Thursday — 3 leading gaps in a Mon-first grid
+function CalendarSheet({ onClose, activeKey, onPick, eventDates, live }){
+  const liveDates = (eventDates || []).filter(date => date instanceof Date && !Number.isNaN(date.valueOf()));
+  const selected = activeKey ? new Date(activeKey + "T12:00:00") : null;
+  const base = live && liveDates.length ? (selected || liveDates[0]) : new Date(new Date().getFullYear(), 4, 1);
+  const year = base.getFullYear();
+  const month = base.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const blanks = (new Date(year, month, 1).getDay() + 6) % 7;
+  const eventKeys = new Set(live
+    ? liveDates.filter(date => date.getFullYear() === year && date.getMonth() === month).map(localDateKey)
+    : [24,25,30,31].map(day => localDateKey(new Date(year, month, day))));
+  const title = new Date(year, month, 1).toLocaleDateString("en-GB", {month:"long", year:live ? "numeric" : undefined});
   return (
     <>
       <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
       <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{borderTop:"1px solid var(--line-2)"}}>
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink-mute)", opacity:.4}}/>
         <div className="flex items-center justify-between mb-5">
-          <div className="font-black text-[22px] leading-none">May</div>
-          <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+          <div className="font-black text-[22px] leading-none">{title}</div>
+          <button onClick={onClose} aria-label="Close" className="press hit-44 w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
             <Icon name="x" size={14} stroke={1.5}/>
           </button>
         </div>
@@ -1557,14 +1776,15 @@ function CalendarSheet({ onClose, activeDay, onPick }){
           {Array.from({length:blanks}).map((_,i)=>(
             <div key={"b"+i} style={{width:36, height:36}}/>
           ))}
-          {Array.from({length:31}, (_,i)=>i+1).map(d=>{
-            const has = eventDays.includes(d);
-            const sel = d === activeDay;
+          {Array.from({length:daysInMonth}, (_,i)=>i+1).map(d=>{
+            const key = localDateKey(new Date(year, month, d));
+            const has = eventKeys.has(key);
+            const sel = key === activeKey;
             const Tag = has ? "button" : "div";
             return (
-              <Tag key={d} onClick={has ? ()=>onPick(d) : undefined}
+              <Tag key={d} onClick={has ? ()=>onPick(key) : undefined}
                 className={"rounded-full flex flex-col items-center justify-center "+(has?"press":"")}
-                style={{width:36, height:36, background: sel ? "var(--ice)" : "transparent", color: sel ? "var(--ice-ink)" : "var(--ink)"}}>
+                style={{width:44, height:44, background: sel ? "var(--ice)" : "transparent", color: sel ? "var(--ice-ink)" : "var(--ink)"}}>
                 <span className="font-mono text-[13px] leading-none">{d}</span>
                 {has && <span className="rounded-full mt-1" style={{width:4, height:4, background: sel ? "var(--ice-ink)" : "var(--ice)"}}/>}
               </Tag>
@@ -1577,61 +1797,79 @@ function CalendarSheet({ onClose, activeDay, onPick }){
 }
 
 /* ========== 02 — EXPLORE ========== */
-function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast, events }){
+function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast, events, live }){
   const [filter, setFilter] = useState("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [calOpen, setCalOpen] = useState(false);
-  const [activeDay, setActiveDay] = useState(25);
-  const [advFilters, setAdvFilters] = useState({ verticals:[], distance:null, timing:"Tonight" });
-  const days = [
-    { d:"23", w:"Fri" }, { d:"24", w:"Sat" }, { d:"25", w:"Sun" }, { d:"26", w:"Mon" }, { d:"27", w:"Tue" }, { d:"28", w:"Wed" }
-  ];
-  // May here starts Thursday — weekday lookup for the day-pick toast.
-  const weekdayOf = (d) => ["Thu","Fri","Sat","Sun","Mon","Tue","Wed"][(d-1)%7];
-  const pickDay = (d) => {
-    setActiveDay(d);
+  const exploreEvents = events.filter(e => e.stage !== STAGE.cancelled && e.stage !== STAGE.past);
+  const liveDates = exploreEvents.map(e => e.startsAtDate).filter(date => date instanceof Date && !Number.isNaN(date.valueOf())).sort((a,b)=>a-b);
+  const demoDays = exploreEvents.map(calendarDate).filter(date => date instanceof Date && !Number.isNaN(date.valueOf()));
+  if (!demoDays.length) [23,24,25,26,27,28].forEach(day => demoDays.push(new Date(new Date().getFullYear(), 4, day)));
+  const eventDates = live ? liveDates : demoDays;
+  const dayKeys = [...new Set(eventDates.map(localDateKey).filter(Boolean))];
+  const [activeKey, setActiveKey] = useState(dayKeys[0] || null);
+  const [advFilters, setAdvFilters] = useState({ verticals:[], distance:null, timing:"Anytime" });
+  useEffect(() => {
+    if (live && dayKeys.length && !dayKeys.includes(activeKey)) setActiveKey(dayKeys[0]);
+  }, [live, dayKeys.join("|"), activeKey]);
+  const displayDates = dayKeys.map(key => new Date(key + "T12:00:00"));
+  const days = displayDates.slice(0,6).map(date => ({key:localDateKey(date), d:String(date.getDate()).padStart(2,"0"), w:date.toLocaleDateString("en-GB", {weekday:"short"})}));
+  const pickDay = (key) => {
+    setActiveKey(key);
     setCalOpen(false);
-    if (onToast) onToast("Showing " + weekdayOf(d) + " · " + d + " May");
+    const date = new Date(key + "T12:00:00");
+    if (onToast) onToast("Showing " + date.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}));
   };
   const filters = ["all","beach","club","restaurant","lounge"];
   // Browse shows only open+locked events; cancelled and past are never shown in browse
-  const browseable = events.filter(e => e.stage !== STAGE.cancelled && e.stage !== STAGE.past);
-  const list = browseable.filter(e => filter==="all" ? true : e.type.toLowerCase()===filter);
-  const activeAdvCount = advFilters.verticals.length + (advFilters.distance ? 1 : 0) + (advFilters.timing !== "Tonight" ? 1 : 0);
+  const browseable = exploreEvents;
+  const todayKey = localDateKey(new Date());
+  const weekEnd = Date.now() + 7 * 86400000;
+  const eventDayKey = e => localDateKey(e.startsAtDate || calendarDate(e));
+  const list = browseable
+    .filter(e => !activeKey || eventDayKey(e) === activeKey)
+    .filter(e => filter==="all" ? true : String(e.type).toLowerCase()===filter)
+    .filter(e => advFilters.verticals.length === 0 || advFilters.verticals.includes(e.type))
+    .filter(e => advFilters.timing === "Anytime"
+      || (advFilters.timing === "Tonight" && eventDayKey(e) === todayKey)
+      || (advFilters.timing === "This week" && (e.startsAtDate || calendarDate(e)) && (e.startsAtDate || calendarDate(e)).getTime() >= Date.now() && (e.startsAtDate || calendarDate(e)).getTime() <= weekEnd))
+    .sort((a,b) => (a.closesAtDate?.getTime() || a.startsAtDate?.getTime() || Infinity) - (b.closesAtDate?.getTime() || b.startsAtDate?.getTime() || Infinity));
+  const defaultTiming = "Anytime";
+  const activeAdvCount = advFilters.verticals.length + (!live && advFilters.distance ? 1 : 0) + (advFilters.timing !== defaultTiming ? 1 : 0);
 
   return (
     <PhoneScreen tab={tab} onTab={onTab}>
       <div className="px-5 pt-[60px] pb-3 flex items-end justify-between">
         <div className="font-black font-display-l text-[40px] leading-none">Explore</div>
         <div className="flex items-center gap-2">
-          <button onClick={()=>setCalOpen(true)} aria-label="Open calendar" className="press glass w-9 h-9 rounded-full flex items-center justify-center">
+          <button onClick={()=>setCalOpen(true)} aria-label="Open calendar" className="press glass w-11 h-11 rounded-full flex items-center justify-center">
             <Icon name="calendar" size={15} stroke={1.5}/>
           </button>
-          <button onClick={()=>setSheetOpen(true)} className="press glass flex items-center gap-1.5 px-3 h-9 rounded-full">
+          <button onClick={()=>setSheetOpen(true)} className="press glass flex items-center gap-1.5 px-3 h-11 rounded-full">
             <Icon name="sliders-horizontal" size={13} stroke={1.5}/>
             <span className="text-[11px] font-medium">Filters</span>
             {activeAdvCount > 0 && <span className="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-mono" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>{activeAdvCount}</span>}
           </button>
         </div>
       </div>
-      <FilterSheet open={sheetOpen} onClose={()=>setSheetOpen(false)} advFilters={advFilters} setAdvFilters={setAdvFilters}/>
-      {calOpen && <CalendarSheet onClose={()=>setCalOpen(false)} activeDay={activeDay} onPick={pickDay}/>}
+      <FilterSheet open={sheetOpen} onClose={()=>setSheetOpen(false)} advFilters={advFilters} setAdvFilters={setAdvFilters} live={live}/>
+      {calOpen && <CalendarSheet onClose={()=>setCalOpen(false)} activeKey={activeKey} onPick={pickDay} eventDates={liveDates} live={live}/>}
 
       <div className="px-5 pt-4 flex gap-2 overflow-x-auto noscroll">
         {days.map(d=>{
-          const on = Number(d.d) === activeDay;
+          const on = d.key === activeKey;
           return (
-            <div key={d.d} className={"flex-shrink-0 w-[58px] h-[68px] rounded-[12px] flex flex-col items-center justify-center "+(on?"glow-ice":"border")} style={{background: on ? "var(--ice)" : "transparent", borderColor:"var(--line-2)", color: on ? "var(--ice-ink)" : "var(--ink)"}}>
+            <button key={d.key} onClick={()=>pickDay(d.key)} className={"press flex-shrink-0 w-[58px] h-[68px] rounded-[12px] flex flex-col items-center justify-center "+(on?"glow-ice":"border")} style={{background: on ? "var(--ice)" : "transparent", borderColor:"var(--line-2)", color: on ? "var(--ice-ink)" : "var(--ink)"}}>
               <div className="font-mono text-[20px] leading-none">{d.d}</div>
               <div className="text-[9px] font-medium mt-1 opacity-75">{d.w}</div>
-            </div>
+            </button>
           );
         })}
       </div>
 
       <div className="px-5 pt-4 flex gap-2 overflow-x-auto noscroll">
         {filters.map(f=>(
-          <button key={f} onClick={()=>setFilter(f)} className={"press flex-shrink-0 px-3 h-8 rounded-full text-[11px] font-medium "+(filter===f?"glow-ice":"chip-outline")} style={filter===f ? {background:"var(--ink)", color:"var(--bg)"} : {}}>
+          <button key={f} onClick={()=>setFilter(f)} className={"press flex-shrink-0 px-3 h-11 rounded-full text-[11px] font-medium "+(filter===f?"glow-ice":"chip-outline")} style={filter===f ? {background:"var(--ink)", color:"var(--bg)"} : {}}>
             {f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
@@ -1650,14 +1888,15 @@ function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast, 
           <>
             {/* Lead — first room gets full editorial weight */}
             <div className="px-5">
-              <button onClick={()=>onPickEvent(lead)} className="press card w-full text-left rounded-[18px] overflow-hidden grain relative" style={{height:300}}>
+              <div className="card w-full text-left rounded-[18px] overflow-hidden grain relative" style={{height:300}}>
+                <button onClick={()=>onPickEvent(lead)} aria-label={"Open " + lead.title} className="press absolute inset-0 z-10 rounded-[18px]"/>
                 <img src={lead.img} className="absolute inset-0 w-full h-full object-cover" alt=""/>
                 <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(0,0,0,.3) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,.92) 100%)"}}/>
                 <div className="absolute top-3 left-3 flex gap-1.5">
                   <span className="text-[10px] font-medium px-2 py-1 rounded-full glass-over-image" style={{color:"#F7F6F3"}}>{lead.type}</span>
                   {stageBadge(lead) && <StatusPill label={stageBadge(lead)} tone="ice"/>}
                 </div>
-                <div className="absolute top-3 right-3"><SaveButton saved={saved.includes(lead.id)} onClick={()=>onToggleSave(lead.id)}/></div>
+                <div className="absolute top-3 right-3 z-20"><SaveButton saved={saved.includes(lead.id)} onClick={()=>onToggleSave(lead.id)}/></div>
                 <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between" style={{color:"#F7F6F3"}}>
                   <div className="min-w-0">
                     <div className="font-black font-display-l text-[34px] leading-[0.95]">{lead.title}</div>
@@ -1669,7 +1908,7 @@ function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast, 
                     <div className="font-mono text-[12px] mt-1"><span style={{color:"var(--ice)"}}>{lead.seats}</span><span> seats</span></div>
                   </div>
                 </div>
-              </button>
+              </div>
             </div>
 
             {/* Index — the rest, denser rows */}
@@ -1677,7 +1916,7 @@ function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast, 
               <div className="px-5 pt-6 space-y-2 stagger">
                 {rest.map((e,i)=>(
                   <button key={e.id} onClick={()=>onPickEvent(e)} style={{"--i":i}} className="press card w-full flex gap-3 items-center text-left p-2.5 rounded-[14px]">
-                    <img src={e.img} className="w-14 h-16 rounded-[10px] object-cover shrink-0" alt=""/>
+                    <img src={e.img} className="w-14 h-16 rounded-[6px] object-cover shrink-0" alt=""/>
                     <div className="flex-1 min-w-0">
                       <div className="stamp">{e.type}</div>
                       <div className="font-display text-[17px] mt-0.5 truncate">{e.title}</div>
@@ -1701,12 +1940,35 @@ function ScreenExplore({ tab, onTab, onPickEvent, saved, onToggleSave, onToast, 
 }
 
 /* ========== 03 — EVENT DETAIL ========== */
-function ScreenEventDetail({ event, onBack, onApply, onCancel, applyState, onShare, saved, onToggleSave, onToast, myEvents, onOpenPicked }){
+function ScreenEventDetail({ event, onBack, onApply, onCancel, applyState, onShare, saved, onToggleSave, onToast, myEvents, onOpenPicked, onOpenPass, live }){
   const [heroIdx, setHeroIdx] = useState(0);
-  const e = event || SEED_EVENTS[0];
+  const [clockNow, setClockNow] = useState(Date.now());
+  const heroRaf = useRef(null);
+  const e = event || (!live ? SEED_EVENTS[0] : null);
+  const deadline = e?.closesAtDate || e?.startsAtDate || null;
+  useEffect(() => {
+    if (!deadline) return;
+    const timer = setInterval(() => setClockNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [deadline?.getTime?.()]);
+  useEffect(() => () => { if (heroRaf.current) cancelAnimationFrame(heroRaf.current); }, []);
+  if (!e) return (
+    <div className="absolute inset-0 screen-ground flex flex-col items-center justify-center px-8 text-center">
+      <div className="section-label">Room unavailable</div>
+      <div className="text-[13px] mt-2">This room could not be loaded.</div>
+      <button onClick={onBack} className="press h-12 px-5 rounded-full mt-6" style={{border:"1px solid var(--line-2)"}}>Go back</button>
+    </div>
+  );
   const gallery = e.gallery || [e.img];
   // Derive member's relationship to this event
   const myRow = (myEvents||[]).find(r => r.eventId === e.id);
+  const seatsLeft = Number.isFinite(Number(e.taken)) ? Math.max(0, Number(e.seats || 0) - Number(e.taken)) : Number(e.seats || 0);
+  const storyWindow = live
+    ? (e.storyHours ? "Post within " + e.storyHours + " hours of doors" : [e.time, e.endsTime].filter(Boolean).join(" - "))
+    : "Posted between 14:00 - 21:00";
+  const venueTag = e.venueIg ? "@" + String(e.venueIg).replace(/^@/, "") : e.venue;
+  const description = e.description || (!live ? "Resident DJ Karim Sahli from 16:00. Mediterranean menu at sunset. Dress: swimwear and an attitude." : "");
+  const openMaps = () => window.open("https://maps.google.com/?q=" + encodeURIComponent([e.venue, e.area].filter(Boolean).join(", ")), "_blank", "noopener,noreferrer");
   return (
     <div className="absolute inset-0 anim-fade screen-ground">
       <StatusBar/>
@@ -1715,7 +1977,15 @@ function ScreenEventDetail({ event, onBack, onApply, onCancel, applyState, onSha
       {/* Hero */}
       <div className="relative h-[480px]">
         <div className="flex overflow-x-auto snap-x snap-mandatory noscroll h-full" style={{scrollSnapType:"x mandatory"}}
-             onScroll={(ev)=>{ const w=ev.target.clientWidth; setHeroIdx(Math.round(ev.target.scrollLeft/w)); }}>
+             onScroll={(ev)=>{
+               const target = ev.currentTarget;
+               if (heroRaf.current) return;
+               heroRaf.current = requestAnimationFrame(() => {
+                 heroRaf.current = null;
+                 const w = target.clientWidth;
+                 if (w) setHeroIdx(Math.round(target.scrollLeft/w));
+               });
+             }}>
           {gallery.map((src,i)=>(
             <img key={i} src={src} alt="" className="w-full shrink-0 object-cover" style={{height:"480px", scrollSnapAlign:"center", minWidth:"100%"}}/>
           ))}
@@ -1741,12 +2011,12 @@ function ScreenEventDetail({ event, onBack, onApply, onCancel, applyState, onSha
             <span className="text-[10px] font-medium">{e.venue}</span>
           </div>
           <div className="font-black font-display-l text-[52px] leading-[0.92]">{e.title}</div>
-          <div className="text-[12px] mt-3 max-w-[280px] opacity-80">Resident DJ Karim Sahli from 16:00. Mediterranean menu at sunset. Dress: swimwear and an attitude.</div>
+          {description && <div className="text-[12px] mt-3 max-w-[280px] opacity-80">{description}</div>}
           {gallery.length > 1 && (
             <div className="flex justify-center gap-1.5 mt-4">
               {gallery.map((_,i)=>(
-                <div key={i} className="h-1.5 rounded-full transition-all"
-                     style={{width: i===heroIdx ? 16 : 6, background: i===heroIdx ? "var(--ice)" : "var(--line-2)"}}/>
+                <div key={i} className="h-1.5 rounded-full"
+                     style={{width: i===heroIdx ? 16 : 6, background: i===heroIdx ? "var(--ice)" : "var(--line-2)", transition:"width .2s ease, background-color .2s ease"}}/>
               ))}
             </div>
           )}
@@ -1765,11 +2035,11 @@ function ScreenEventDetail({ event, onBack, onApply, onCancel, applyState, onSha
           <div className="card rounded-[18px] p-3.5">
             <div className="stamp">Doors</div>
             <div className="font-black text-[20px] leading-none mt-1.5 font-mono">{e.time}</div>
-            <div className="text-[11px] mt-1" style={{color:"var(--ink-mute)"}}>til 21:00</div>
+            <div className="text-[11px] mt-1" style={{color:"var(--ink-mute)"}}>{e.endsTime ? "til " + e.endsTime : "End time TBA"}</div>
           </div>
           <div className="card rounded-[18px] p-3.5">
             <div className="stamp">Seats</div>
-            <div className="font-black text-[20px] leading-none mt-1.5 font-mono"><span style={{color:"var(--ice)"}}>{e.seats}</span><span style={{color:"var(--ink-mute)"}}> / {e.seats}</span></div>
+            <div className="font-black text-[20px] leading-none mt-1.5 font-mono"><span style={{color:"var(--ice)"}}>{seatsLeft}</span><span style={{color:"var(--ink-mute)"}}> / {e.seats}</span></div>
             <div className="text-[11px] mt-1" style={{color:"var(--ink-mute)"}}>{e.applied} applied</div>
           </div>
         </div>
@@ -1783,9 +2053,9 @@ function ScreenEventDetail({ event, onBack, onApply, onCancel, applyState, onSha
           </div>
           <div className="flex-1">
             <div className="font-display text-[16px]">{e.venue}</div>
-            <div className="text-[12px] on-photo" style={{color:"var(--ink-mute)"}}>{e.area} · 22 km south of city</div>
+            <div className="text-[12px] on-photo" style={{color:"var(--ink-mute)"}}>{e.area}</div>
           </div>
-          <button onClick={()=>onToast("Opening in Maps")} className="press text-[11px] px-3 h-8 rounded-full" style={{border:"1px solid var(--line-2)"}}>Map</button>
+          <button onClick={openMaps} className="press text-[11px] px-3 h-11 rounded-full" style={{border:"1px solid var(--line-2)"}}>Map</button>
         </div>
       </div>
 
@@ -1800,8 +2070,8 @@ function ScreenEventDetail({ event, onBack, onApply, onCancel, applyState, onSha
       <SectionHead label="The exchange" className="pt-8 pb-3"/>
       <div className="px-5 space-y-4">
         {[
-          { n:"01", t:"One Story, on the day", s:"Posted between 14:00 - 21:00" },
-          { n:"02", t:"Tag @cyanbeachclub", s:"And the venue handle in caption" },
+          { n:"01", t:"One Story, on the day", s:storyWindow || "Posting window in the brief" },
+          { n:"02", t:"Tag " + venueTag, s:e.venueIg ? "Use the venue handle in your Story" : "Tag the venue name in your Story" },
         ].map((r,i)=>(
           <div key={i} className="flex items-center gap-4 py-3" style={{borderBottom:"1px solid var(--line)"}}>
             <span className="font-mono text-[11px] on-photo" style={{color:"var(--ink-mute)"}}>{r.n}</span>
@@ -1823,7 +2093,7 @@ function ScreenEventDetail({ event, onBack, onApply, onCancel, applyState, onSha
           // confirmed row → "View pass →"
           if (myRow && myRow.state === GS.confirmed) {
             return (
-              <button onClick={()=>onToast("Pass — next build step")} className="press glow-primary w-full h-[56px] rounded-full flex items-center justify-center gap-3" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+              <button onClick={()=>onOpenPass(e.id)} className="press glow-primary w-full h-[56px] rounded-full flex items-center justify-center gap-3" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
                 <span className="font-semibold text-[15px]">View pass</span>
                 <Icon name="arrow-right" size={16} stroke={1.6}/>
               </button>
@@ -1868,7 +2138,7 @@ function ScreenEventDetail({ event, onBack, onApply, onCancel, applyState, onSha
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <div className="stamp" style={{color:"var(--ink-mute)"}}>Closes in</div>
-                <div className="font-black text-[22px] leading-none mt-0.5" style={{color:"var(--ice)"}}><Countdown value="04:56:12"/></div>
+                <div className="font-black text-[22px] leading-none mt-0.5" style={{color:"var(--ice)"}}><Countdown value={countdownTo(deadline, clockNow)}/></div>
               </div>
               <button onClick={onApply} disabled={applyState !== 'idle'} className={"press flex items-center gap-3 h-[56px] px-6 rounded-full "+(applyState==='idle'?"glow-primary":"")} style={{background: applyState === 'idle' ? "var(--ice)" : "var(--bg-elev2)", color: applyState === 'idle' ? "var(--ice-ink)" : "var(--ink)", minWidth: 168, justifyContent:'center'}}>
                 {applyState === 'idle' && (<>
@@ -1928,12 +2198,17 @@ function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPic
     { id:"saved",     label:"Saved",     count: counts.saved },
     { id:"past",      label:"Past",      count: counts.past },
   ];
+  const addConfirmedCalendar = () => {
+    if (!confirmedEvent) { onToast("No confirmed event to add"); return; }
+    if (!downloadEventCalendar(confirmedEvent)) { onToast("Event time is not available yet"); return; }
+    onToast("Calendar file downloaded");
+  };
 
   return (
     <PhoneScreen tab={tab} onTab={onTab}>
       <div className="px-5 pt-[60px] pb-4 flex items-center justify-between">
         <div className="font-black font-display-l text-[36px] leading-none">Invites</div>
-        <button onClick={()=>onToast("Calendar sync coming in the build")} aria-label="Calendar" className="press glass w-10 h-10 rounded-full flex items-center justify-center">
+        <button onClick={addConfirmedCalendar} aria-label="Add confirmed event to calendar" className="press glass w-11 h-11 rounded-full flex items-center justify-center">
           <Icon name="calendar" size={16} stroke={1.4}/>
         </button>
       </div>
@@ -1986,11 +2261,11 @@ function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPic
             const isPicked = r.state === GS.picked;
             // Hours left to confirm — 24h from pickedAt (fallback 24 when a seed has no timestamp)
             const hoursLeft = isPicked
-              ? Math.max(1, Math.ceil(((r.pickedAt || Date.now()) + 24*3600000 - Date.now()) / 3600000))
+              ? Math.max(0, Math.ceil(((r.pickExpiresAt || ((r.pickedAt || Date.now()) + 24*3600000)) - Date.now()) / 3600000))
               : null;
             return (
               <button key={r.eventId} onClick={()=> isPicked ? onOpenPicked(r.eventId) : onPickEvent(ev)} className="press card w-full text-left flex items-center gap-3 p-3 rounded-[14px]">
-                <img src={ev.img} className="w-14 h-14 rounded-[10px] object-cover" alt=""/>
+                <img src={ev.img} className="w-14 h-14 rounded-[6px] object-cover" alt=""/>
                 <div className="flex-1 min-w-0">
                   <div className="font-display text-[16px]">{ev.title}</div>
                   <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{ev.venue} · {ev.date}</div>
@@ -2016,7 +2291,7 @@ function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPic
           {savedEvents.map((e,i)=>(
             <div key={e.id} style={{"--i":i}} className="card flex items-center gap-3 p-3 rounded-[14px]">
               <button onClick={()=>onPickEvent(e)} className="press flex items-center gap-3 flex-1 min-w-0 text-left">
-                <img src={e.img} className="w-14 h-16 rounded-[10px] object-cover shrink-0" alt=""/>
+                <img src={e.img} className="w-14 h-16 rounded-[6px] object-cover shrink-0" alt=""/>
                 <div className="flex-1 min-w-0">
                   <div className="stamp">{e.type}</div>
                   <div className="font-display text-[17px] mt-0.5 truncate">{e.title}</div>
@@ -2053,7 +2328,7 @@ function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPic
             if (storyDue) return (
               <div key={r.eventId} className="card rounded-[14px] p-3" style={{"--i":i, border:"1px solid var(--line-2)"}}>
                 <div className="flex items-center gap-3">
-                  <img src={ev.img} className="w-14 h-14 rounded-[10px] object-cover" alt=""/>
+                  <img src={ev.img} className="w-14 h-14 rounded-[6px] object-cover" alt=""/>
                   <div className="flex-1 min-w-0">
                     <div className="font-display text-[16px]">{ev.title}</div>
                     <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{ev.venue} · {ev.date}</div>
@@ -2072,7 +2347,7 @@ function ScreenMyEvents({ tab, onTab, myEvents, savedEvents, onToggleSave, onPic
             // Everything else — one calm row; story axis rides as a second pill
             return (
               <div key={r.eventId} className="card flex items-center gap-3 p-3 rounded-[14px]" style={{"--i":i, opacity: quiet ? 0.6 : 1}}>
-                <img src={ev.img} className="w-14 h-14 rounded-[10px] object-cover" style={{filter: quiet ? "grayscale(1)" : "grayscale(.25)"}} alt=""/>
+                <img src={ev.img} className="w-14 h-14 rounded-[6px] object-cover" style={{filter: quiet ? "grayscale(1)" : "grayscale(.25)"}} alt=""/>
                 <div className="flex-1">
                   <div className="font-display text-[16px]">{ev.title}</div>
                   <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{ev.venue} · {ev.date}</div>
@@ -2423,13 +2698,59 @@ function ProfileContent({ analytics, period }){
   );
 }
 
-function ProfileListRecord({ analytics }){
-  const record = analytics?.the_list || {};
-  const reliability = hasProfileMetric(record.reliability_score)
-    ? formatProfileNumber(record.reliability_score, {decimals:1})+" / 10"
+function ProfileListRecord({ analytics, live, record, profile, loading }){
+  if (live) {
+    if (loading) return (
+      <div className="px-5 py-16 text-center anim-fade">
+        <span className="spin inline-block w-6 h-6 rounded-full" style={{border:"2px solid var(--line-2)", borderTopColor:"var(--ice)"}}/>
+        <div className="text-[12px] mt-3">Loading your record</div>
+      </div>
+    );
+    const applications = Number(record?.applications || 0);
+    if (!applications) return (
+      <div className="px-5 py-16 text-center anim-fade">
+        <div className="section-label">No record yet</div>
+        <div className="text-[13px] mt-2">Your attendance and Story record starts after your first application.</div>
+      </div>
+    );
+    const attended = Number(record?.attended || 0);
+    const noShows = Number(record?.no_shows || 0);
+    const verifiedStories = Number(record?.stories_verified || 0);
+    const missedStories = Number(record?.stories_missed || 0);
+    const attendanceOutcomes = attended + noShows;
+    const storyOutcomes = verifiedStories + missedStories;
+    const showUpRate = attendanceOutcomes ? attended / attendanceOutcomes : null;
+    const storyCompletion = storyOutcomes ? verifiedStories / storyOutcomes : null;
+    const derivedReliability = [showUpRate, storyCompletion].filter(hasProfileMetric);
+    const reliabilityNumber = hasProfileMetric(profile?.reputation)
+      ? Number(profile.reputation)
+      : derivedReliability.length ? (derivedReliability.reduce((sum,value)=>sum+Number(value),0) / derivedReliability.length) * 10 : null;
+    const reliability = hasProfileMetric(reliabilityNumber) ? formatProfileNumber(reliabilityNumber, {decimals:1}) + " / 10" : "New record";
+    const rating = hasProfileMetric(record?.avg_rating) ? formatProfileNumber(record.avg_rating, {decimals:1}) + " / 10" : "No ratings yet";
+    return (
+      <div className="px-5 pt-5 pb-5 space-y-7 anim-fade">
+        <div className="card rounded-[14px] p-5">
+          <div className="text-[11px] font-semibold">Reliability score</div>
+          <div className={"font-black font-display-l mt-5 break-words "+(hasProfileMetric(reliabilityNumber) ? "text-[42px] leading-none" : "text-[20px]")}>{reliability}</div>
+          <div className="text-[10px] mt-3">Based on {applications} application{applications === 1 ? "" : "s"}</div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <ProfileMetricBox value={showUpRate === null ? "No completed nights" : formatProfilePercent(showUpRate)} label="Show-up rate"/>
+          <ProfileMetricBox value={storyCompletion === null ? "No stories due" : formatProfilePercent(storyCompletion)} label="Story completion"/>
+          <ProfileMetricBox value={rating} label="Average venue rating"/>
+          <ProfileMetricBox value={formatProfileNumber(attended)} label="Events attended"/>
+          <ProfileMetricBox value={formatProfileNumber(verifiedStories)} label="Stories verified"/>
+          <ProfileMetricBox value={formatProfileNumber(noShows)} label="Exact no-shows"/>
+        </div>
+      </div>
+    );
+  }
+  const demoRecord = analytics?.the_list || {};
+  const reliability = hasProfileMetric(demoRecord.reliability_score)
+    ? formatProfileNumber(demoRecord.reliability_score, {decimals:1})+" / 10"
     : "Not available";
-  const venueRating = hasProfileMetric(record.average_venue_rating)
-    ? formatProfileNumber(record.average_venue_rating, {decimals:1})+" / 5"
+  const venueRating = hasProfileMetric(demoRecord.average_venue_rating)
+    ? formatProfileNumber(demoRecord.average_venue_rating, {decimals:1})+" / 5"
     : "Not available";
 
   return (
@@ -2441,20 +2762,20 @@ function ProfileListRecord({ analytics }){
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <ProfileMetricBox value={formatProfilePercent(record.show_up_rate)} label="Show-up rate"/>
-        <ProfileMetricBox value={formatProfilePercent(record.story_completion)} label="Story completion"/>
+        <ProfileMetricBox value={formatProfilePercent(demoRecord.show_up_rate)} label="Show-up rate"/>
+        <ProfileMetricBox value={formatProfilePercent(demoRecord.story_completion)} label="Story completion"/>
         <ProfileMetricBox value={venueRating} label="Average venue rating"/>
-        <ProfileMetricBox value={formatProfileNumber(record.events_attended)} label="Events attended"/>
-        <ProfileMetricBox value={formatProfileNumber(record.total_verified_reach, {compact:true})} label="Total verified reach"/>
-        <ProfileMetricBox value={formatProfileNumber(record.no_shows)} label="Exact no-shows"/>
-        <ProfileMetricBox value={formatProfileNumber(record.active_strikes)} label="Active strikes" className="col-span-2"/>
+        <ProfileMetricBox value={formatProfileNumber(demoRecord.events_attended)} label="Events attended"/>
+        <ProfileMetricBox value={formatProfileNumber(demoRecord.total_verified_reach, {compact:true})} label="Total verified reach"/>
+        <ProfileMetricBox value={formatProfileNumber(demoRecord.no_shows)} label="Exact no-shows"/>
+        <ProfileMetricBox value={formatProfileNumber(demoRecord.active_strikes)} label="Active strikes" className="col-span-2"/>
       </div>
 
       <div>
         <SectionHead label="Last six events" right="Performance" className="!px-0 pb-3"/>
         <div className="card rounded-[14px] p-4">
-          <ProfileSparkline values={record.last_six}/>
-          {Array.isArray(record.last_six) && record.last_six.length >= 2 && (
+          <ProfileSparkline values={demoRecord.last_six}/>
+          {Array.isArray(demoRecord.last_six) && demoRecord.last_six.length >= 2 && (
             <div className="flex justify-between text-[9px] mt-1"><span>Six events ago</span><span>Latest event</span></div>
           )}
         </div>
@@ -2463,19 +2784,26 @@ function ProfileListRecord({ analytics }){
   );
 }
 
-function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
-  const p = profile || SEED_PROFILE;
+function ScreenProfile({ tab, onTab, profile, onSettings, onVerify, live, memberRecord, memberRecordLoading, onLoadRecord }){
+  const p = profile || (!live ? SEED_PROFILE : {});
   const analytics = p.analytics || null;
   const verified = p.data_status === "verified";
   const [profileTab, setProfileTab] = useState("overview");
   const [period, setPeriod] = useState("30");
+  useEffect(() => {
+    if (profileTab === "list" && live && !memberRecord && !memberRecordLoading && onLoadRecord) onLoadRecord();
+  }, [profileTab, live, memberRecord, memberRecordLoading]);
   const fullName = p.full_name || "Member profile";
   const nameParts = fullName.trim().split(/\s+/);
   const firstName = nameParts[0] || "Member";
   const lastName = nameParts.slice(1).join(" ");
   const handle = p.handle || p.ig_handle;
-  const tier = hasProfileMetric(p.tier_suggestion) ? "Tier "+p.tier_suggestion : (p.demo_profile ? "Tier 1" : "Tier not available");
-  const memberSince = p.member_since || (p.demo_profile ? "2024" : null);
+  const tier = "Tier " + (hasProfileMetric(p.tier_suggestion) ? p.tier_suggestion : 1);
+  const createdAt = p.created_at ? new Date(p.created_at) : null;
+  const memberSince = createdAt && !Number.isNaN(createdAt.valueOf())
+    ? createdAt.toLocaleDateString("en-GB", {month:"short", year:"numeric"})
+    : (p.member_since || (p.demo_profile ? "2024" : null));
+  const memberNumber = hasProfileMetric(p.member_no) ? String(p.member_no).padStart(3,"0") : (p.demo_profile ? "048" : "---");
   const profileTabs = [
     {id:"overview", label:"Overview"},
     {id:"audience", label:"Audience"},
@@ -2484,6 +2812,7 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
   ];
   const changeProfileTab = (event, nextTab) => {
     setProfileTab(nextTab);
+    if (nextTab === "list" && live && !memberRecord && onLoadRecord) onLoadRecord();
     const scroller = event.currentTarget.closest(".noscroll.overflow-y-auto");
     if (scroller && scroller.scrollTop > 300) scroller.scrollTo({top:246, behavior:"smooth"});
   };
@@ -2505,13 +2834,13 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:"var(--ice)"}}/>
             <span className="text-[9px] font-semibold truncate">{verified ? "Verified" : "Estimated"} &middot; {tier}</span>
           </div>
-          <button onClick={onSettings} aria-label="Settings" className="profile-glass press w-9 h-9 rounded-full flex items-center justify-center shrink-0">
+          <button onClick={onSettings} aria-label="Settings" className="profile-glass press hit-44 w-9 h-9 rounded-full flex items-center justify-center shrink-0">
             <Icon name="settings" size={15} stroke={1.4}/>
           </button>
         </div>
 
         <div className="profile-hero-text absolute right-3 top-[112px] vt z-10">
-          <span className="text-[9px] font-semibold">Beirut &middot; No. 048</span>
+          <span className="text-[9px] font-semibold">Beirut &middot; No. {memberNumber}</span>
         </div>
 
         <div className="profile-hero-text absolute bottom-4 left-5 right-12 z-10">
@@ -2558,7 +2887,7 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
             <div className="text-[11px] font-semibold">Verify with Instagram</div>
             <div className="text-[9px] mt-1 leading-relaxed">Connect for verified reach, reporting timestamps, and private account insights.</div>
           </div>
-          <button onClick={onVerify} className="press px-3 h-8 rounded-full text-[10px] font-semibold shrink-0" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+          <button onClick={onVerify} className="press px-3 h-11 rounded-full text-[10px] font-semibold shrink-0" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
             Connect
           </button>
         </div>
@@ -2567,7 +2896,7 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
       {profileTab === "overview" && <ProfileOverview profile={p} analytics={analytics} period={period} verified={verified}/>}
       {profileTab === "audience" && <ProfileAudience profile={p} analytics={analytics}/>}
       {profileTab === "content" && <ProfileContent analytics={analytics} period={period}/>}
-      {profileTab === "list" && <ProfileListRecord analytics={analytics}/>}
+      {profileTab === "list" && <ProfileListRecord analytics={analytics} live={live} record={memberRecord} profile={p} loading={memberRecordLoading}/>}
 
       <div className="h-8"/>
     </PhoneScreen>
@@ -2575,13 +2904,13 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify }){
 }
 
 /* ========== 06 — PICKED (full-screen takeover) ========== */
-function ScreenPicked({ event, pickedAt, onConfirm, onDecline }){
-  const e = event || SEED_EVENTS[0];
+function ScreenPicked({ event, pickedAt, pickExpiresAt, onConfirm, onDecline, live }){
+  const e = event || (!live ? SEED_EVENTS[0] : null);
 
-  // Live countdown — 24h from pickedAt, ticking every second
+  // Live uses the server deadline directly. Demo keeps the 24-hour timer.
   const computeRemaining = () => {
-    if (!pickedAt) return "23:59:59";
-    const deadline = pickedAt + 24 * 60 * 60 * 1000;
+    const deadline = pickExpiresAt || (pickedAt ? pickedAt + 24 * 60 * 60 * 1000 : null);
+    if (!deadline) return live ? "Deadline unavailable" : "23:59:59";
     const diff = Math.max(0, deadline - Date.now());
     const h = Math.floor(diff / 3600000);
     const m = Math.floor((diff % 3600000) / 60000);
@@ -2591,10 +2920,17 @@ function ScreenPicked({ event, pickedAt, onConfirm, onDecline }){
   const [remaining, setRemaining] = useState(computeRemaining);
   const countdownRef = useRef(null);
   useEffect(() => {
-    if (!pickedAt) return;
+    if (!pickExpiresAt && !pickedAt) return;
+    setRemaining(computeRemaining());
     countdownRef.current = setInterval(() => setRemaining(computeRemaining()), 1000);
     return () => clearInterval(countdownRef.current);
-  }, [pickedAt]);
+  }, [pickedAt, pickExpiresAt]);
+
+  if (!e) return (
+    <div className="absolute inset-0 flex items-center justify-center px-8 text-center" style={{background:"#000000", color:"#F7F6F3"}}>
+      <div><div className="font-black text-[24px]">Invitation unavailable</div><div className="text-[13px] mt-3">Refresh your account and try again.</div></div>
+    </div>
+  );
 
   return (
     <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
@@ -2664,10 +3000,32 @@ function BriefBlock({ brief, className="" }){
   );
 }
 
-function ScreenPass({ event, row, profile, onBack }){
-  const e = event || SEED_EVENTS[0];
-  const p = profile || SEED_PROFILE;
+function ScreenPass({ event, row, profile, onBack, onRefresh, live }){
+  const e = event || (!live ? SEED_EVENTS[0] : null);
+  const p = profile || (!live ? SEED_PROFILE : null);
   const checkedIn = row && row.state === GS.checkedIn;
+  const refreshTried = useRef(false);
+  useEffect(() => {
+    if (live && e && row && !row.code && !refreshTried.current && onRefresh) {
+      refreshTried.current = true;
+      onRefresh();
+    }
+  }, [live, e?.id, row?.code]);
+  if (!e || !p || !row) return (
+    <div className="absolute inset-0 screen-ground flex flex-col items-center justify-center px-8 text-center">
+      <div className="section-label">Pass unavailable</div>
+      <div className="text-[13px] mt-2">Your pass could not be loaded.</div>
+      <button onClick={onBack} className="press h-12 px-5 rounded-full mt-6" style={{border:"1px solid var(--line-2)"}}>Go back</button>
+    </div>
+  );
+  if (live && !row.code) return (
+    <div className="absolute inset-0 screen-ground flex flex-col items-center justify-center px-8 text-center">
+      <div className="section-label">Pass is still syncing</div>
+      <div className="text-[13px] mt-2">We could not load your door code yet.</div>
+      <button onClick={onRefresh} className="press h-12 px-5 rounded-full mt-6" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Try again</button>
+      <button onClick={onBack} className="press h-11 px-5 rounded-full mt-2">Go back</button>
+    </div>
+  );
   return (
     <div className="absolute inset-0 anim-fade noscroll overflow-y-auto screen-ground">
       <StatusBar/>
@@ -2683,9 +3041,9 @@ function ScreenPass({ event, row, profile, onBack }){
         {/* The ticket */}
         <div className="card rounded-[18px] mt-6 overflow-hidden">
           <div className="px-6 pt-7 pb-6 text-center">
-            <img src={p.profile_picture_url} className="w-[76px] h-[76px] rounded-full object-cover mx-auto" style={{border:"1px solid var(--line-2)"}} alt=""/>
+            {p.profile_picture_url ? <img src={p.profile_picture_url} className="w-[76px] h-[76px] rounded-full object-cover mx-auto" style={{border:"1px solid var(--line-2)"}} alt=""/> : <div className="w-[76px] h-[76px] rounded-full mx-auto flex items-center justify-center" style={{border:"1px solid var(--line-2)"}}><Icon name="user" size={26} stroke={1.3}/></div>}
             <div className="font-black font-display text-[26px] leading-none mt-4">{p.full_name}</div>
-            <div className="text-[11px] mt-1.5" style={{color:"var(--ink-mute)"}}>@{p.handle}</div>
+            {(p.handle || p.ig_handle) && <div className="text-[11px] mt-1.5" style={{color:"var(--ink-mute)"}}>@{p.handle || p.ig_handle}</div>}
           </div>
           <div className="mx-5" style={{borderTop:"1px dashed var(--line-2)"}}/>
           <div className="px-6 py-5 text-center">
@@ -2693,7 +3051,7 @@ function ScreenPass({ event, row, profile, onBack }){
             <div className="text-[12px] mt-1" style={{color:"var(--ink-mute)"}}>{e.venue} · {e.area}</div>
             <div className="text-[12px] mt-0.5 font-mono">{e.date} · Doors {e.doors || e.time}</div>
             <div className="stamp mt-5">Door code</div>
-            <div className="font-black font-display-l leading-none mt-1" style={{fontSize:56, letterSpacing:".08em"}}>{(row && row.code) || "LST-4F"}</div>
+            <div className="font-black font-display-l leading-none mt-1" style={{fontSize:56, letterSpacing:".08em"}}>{row.code}</div>
           </div>
           {checkedIn ? (
             <div className="px-6 py-3.5 text-center text-[13px] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
@@ -2780,7 +3138,7 @@ function Steps({ current, total=3, dark=false, className="" }){
   );
 }
 
-function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenticated }){
+function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenticated, onLogout, sessionUserId, profile }){
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [handle, setHandle] = useState("");
@@ -2789,7 +3147,48 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenti
   const [inviteMode, setInviteMode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errorText, setErrorText] = useState("");
+  const [resendIn, setResendIn] = useState(0);
+  const [queueUserId, setQueueUserId] = useState(null);
+  const [tierSuggestion, setTierSuggestion] = useState(profile?.tier_suggestion || 1);
   const canSubmit = email.includes("@") && fullName.trim().length >= 2 && handle.trim().length >= 2 && (!inviteMode || inviteCode.trim().length >= 2);
+
+  useEffect(() => {
+    if (!resendIn) return;
+    const timer = setInterval(() => setResendIn(value => Math.max(0, value - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [resendIn > 0]);
+
+  useEffect(() => {
+    if (profile?.tier_suggestion) setTierSuggestion(profile.tier_suggestion);
+  }, [profile?.tier_suggestion]);
+
+  useEffect(() => {
+    const uid = queueUserId || sessionUserId;
+    if (step !== "queue" || !uid) return;
+    let active = true;
+    const acceptApproval = row => {
+      if (!active || row?.status !== "approved") return;
+      const creatorData = row.creator_data || {};
+      const merged = {...row, ...creatorData, handle:creatorData.handle || row.ig_handle};
+      setTierSuggestion(creatorData.tier_suggestion || 1);
+      onProfileFetched(merged);
+      setStep("tier-reveal");
+    };
+    const check = async () => {
+      const {data} = await supabaseClient.from("profiles").select("*").eq("id", uid).single();
+      acceptApproval(data);
+    };
+    const channel = supabaseClient.channel("member-approval-" + uid)
+      .on("postgres_changes", {event:"UPDATE", schema:"public", table:"profiles", filter:"id=eq." + uid}, payload => acceptApproval(payload.new))
+      .subscribe();
+    check();
+    const poll = setInterval(check, 60000);
+    return () => {
+      active = false;
+      clearInterval(poll);
+      supabaseClient.removeChannel(channel);
+    };
+  }, [step, queueUserId, sessionUserId]);
 
   const submit = async () => {
     setBusy(true);
@@ -2805,7 +3204,21 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenti
       setStep('error');
       return;
     }
+    setResendIn(30);
     setStep('otp');
+  };
+
+  const resend = async () => {
+    if (resendIn || busy) return;
+    setBusy(true);
+    setErrorText("");
+    const {error} = await supabaseClient.auth.signInWithOtp({
+      email:email.trim(),
+      options:{data:{full_name:fullName.trim(), ig_handle:handle.trim().replace(/^@/, "")}},
+    });
+    setBusy(false);
+    if (error) { setErrorText(error.message); return; }
+    setResendIn(30);
   };
 
   const verify = async () => {
@@ -2819,6 +3232,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenti
       setStep('error');
       return;
     }
+    setQueueUserId(data.user.id);
     setStep('reviewing');
     if (inviteMode) {
       const { error:inviteError } = await supabaseClient.rpc("redeem_invite", {p_code:inviteCode.trim()});
@@ -2852,15 +3266,9 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenti
         setStep('error');
         return;
       }
-      const {error:updateError} = await supabaseClient.from("profiles").update({creator_data:creatorData}).eq("id", data.user.id);
-      if (updateError) {
-        setBusy(false);
-        setErrorText(updateError.message);
-        setStep('error');
-        return;
-      }
     }
     const mergedProfile = {...profileRow, ...(creatorData || {}), handle:creatorData?.handle || profileRow.ig_handle};
+    setTierSuggestion(creatorData?.tier_suggestion || 1);
     onProfileFetched(mergedProfile);
     try {
       await onAuthenticated(data.session, mergedProfile);
@@ -2925,21 +3333,21 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenti
         <div className="mt-10 space-y-5">
           <div>
             <div className="stamp mb-2">Email</div>
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" className="w-full h-12 px-3 rounded-[12px] text-[15px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" className="w-full h-12 px-3 rounded-[12px] text-[16px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
           </div>
           <div>
             <div className="stamp mb-2">Full name</div>
-            <input value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Sara Capriotti" className="w-full h-12 px-3 rounded-[12px] text-[15px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+            <input value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Sara Capriotti" className="w-full h-12 px-3 rounded-[12px] text-[16px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
           </div>
           {inviteMode && <div>
             <div className="stamp mb-2">Invite code</div>
-            <input value={inviteCode} onChange={e=>setInviteCode(e.target.value)} placeholder="LST-XX" className="w-full h-12 px-3 rounded-[12px] text-[15px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+            <input value={inviteCode} onChange={e=>setInviteCode(e.target.value)} placeholder="LST-XX" className="w-full h-12 px-3 rounded-[12px] text-[16px]" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
           </div>}
           <div>
             <div className="stamp mb-2">Instagram handle</div>
             <div className="flex h-12 rounded-[12px] overflow-hidden" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)"}}>
-              <div className="px-3 flex items-center text-[15px]" style={{color:"var(--ink-mute)"}}>@</div>
-              <input value={handle} onChange={e=>setHandle(e.target.value)} placeholder="capriottisara" className="flex-1 bg-transparent text-[15px] pr-3 focus:outline-none" style={{color:"var(--ink)"}}/>
+              <div className="px-3 flex items-center text-[16px]" style={{color:"var(--ink-mute)"}}>@</div>
+              <input value={handle} onChange={e=>setHandle(e.target.value)} placeholder="capriottisara" className="flex-1 bg-transparent text-[16px] pr-3 focus:outline-none" style={{color:"var(--ink)"}}/>
             </div>
           </div>
         </div>
@@ -2965,6 +3373,9 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenti
         <div className="font-black font-display-l text-[44px] leading-[.95] mt-3">Check<br/>your email</div>
         <div className="text-[13px] mt-3 max-w-[280px]" style={{color:"var(--ink-2)"}}>Enter the six-digit code sent to {email}.</div>
         <input inputMode="numeric" maxLength="6" value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g, ""))} placeholder="000000" className="w-full h-14 px-4 rounded-[12px] text-[24px] tracking-[.3em] mt-10" style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}/>
+        <button onClick={resend} disabled={resendIn > 0 || busy} className="press h-11 px-3 self-center mt-3 text-[12px]" style={{color:"var(--ink)"}}>
+          {resendIn > 0 ? "Resend code in " + resendIn + "s" : "Resend code"}
+        </button>
         <div className="flex-1"/>
         <button onClick={verify} disabled={otp.length !== 6 || busy} className={"press w-full h-[58px] rounded-full font-semibold text-[15px] "+(otp.length === 6 ? "glow-primary" : "")} style={{background:otp.length === 6 ? "var(--ice)" : "var(--bg-elev2)", color:otp.length === 6 ? "var(--ice-ink)" : "var(--ink)"}}>
           {busy ? "Reading profile" : "Verify code"}
@@ -2997,6 +3408,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenti
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-7">
         <div className="font-black font-display-l text-[38px] leading-[.95]">You're on<br/>the queue</div>
         <div className="text-[13px] mt-4 max-w-[280px]">We review every application. You'll get access as soon as your profile is approved.</div>
+        <button onClick={onLogout} className="press h-11 px-5 rounded-full mt-8 text-[12px]" style={{border:"1px solid rgba(247,246,243,.28)", color:"#F7F6F3"}}>Log out</button>
       </div>
       <HomeIndicator/>
     </div>
@@ -3032,7 +3444,7 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenti
 
         <div className="flex-1 flex flex-col justify-center items-center text-center">
           <div className="ring-pop w-[180px] h-[180px] rounded-full flex items-center justify-center" style={{border:"2px solid #F7F6F3", color:"#F7F6F3", animationDelay:"120ms", boxShadow:"inset 0 0 0 7px rgba(247,246,243,.12)"}}>
-            <div className="font-black text-[36px] leading-none">Tier<br/>One</div>
+            <div className="font-black text-[36px] leading-none">Tier<br/>{["One","Two","Three","Four"][Math.max(0, Number(tierSuggestion || 1)-1)] || tierSuggestion}</div>
           </div>
           <div className="font-black font-display-l text-[34px] leading-[.95] mt-10 picked-stagger" style={{animationDelay:"680ms"}}>Listed</div>
           <div className="text-[13px] mt-3 opacity-80 max-w-[280px] picked-stagger" style={{animationDelay:"820ms"}}>Your audience fits the rooms. Tier reviews happen quarterly.</div>
@@ -3080,6 +3492,8 @@ function App(){
   const [shareEvent, setShareEvent] = useState(null); // event being shared (null = sheet closed)
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);  // Activity sheet (bell on Home)
+  const [memberRecord, setMemberRecord] = useState(null);
+  const [memberRecordLoading, setMemberRecordLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
   // Timer refs — apply delay + per-event pick timers + story verdict timers (maps: eventId → timeoutId)
@@ -3088,14 +3502,15 @@ function App(){
   const verdictTimersRef = useRef({});
 
   const hydrateMember = async (uid, gate=false) => {
-    const [profileResult, eventResult, applicationResult, saveResult, notificationResult] = await Promise.all([
+    const [profileResult, eventResult, applicationResult, saveResult, notificationResult, eventStatsResult] = await Promise.all([
       supabaseClient.from("profiles").select("*").eq("id", uid).single(),
-      supabaseClient.from("events").select("*, venues(name,area)").eq("status", "published"),
-      supabaseClient.from("applications").select("*, events(*)").eq("member_id", uid),
+      supabaseClient.from("events").select("*, venues(name,area,ig_handle)").in("status", ["published","locked","closed"]).order("starts_at", {ascending:true}),
+      supabaseClient.from("applications").select("*, events(*, venues(name,area,ig_handle))").eq("member_id", uid),
       supabaseClient.from("saves").select("*"),
       supabaseClient.from("notifications").select("*").order("created_at", {ascending:false}),
+      supabaseClient.rpc("event_stats"),
     ]);
-    const firstError = [profileResult, eventResult, applicationResult, saveResult, notificationResult].find(result => result.error)?.error;
+    const firstError = [profileResult, eventResult, applicationResult, saveResult, notificationResult, eventStatsResult].find(result => result.error)?.error;
     if (firstError) throw firstError;
 
     const applications = applicationResult.data || [];
@@ -3107,23 +3522,53 @@ function App(){
       stories = storyResult.data || [];
     }
     const storyByApplication = new Map(stories.map(story => [story.application_id, story]));
-    const liveEvents = (eventResult.data || []).map(row => normalizeEvent(row));
+    const statsByEvent = new Map((eventStatsResult.data || []).map(row => [row.event_id, row]));
+    const withStats = row => ({...row, ...(statsByEvent.get(row.id) || {})});
+    const liveEvents = (eventResult.data || []).map(row => normalizeEvent(withStats(row)));
     const knownIds = new Set(liveEvents.map(event => event.id));
     applications.forEach(application => {
       if (application.events && !knownIds.has(application.events.id)) {
-        liveEvents.push(normalizeEvent(application.events));
+        liveEvents.push(normalizeEvent(withStats(application.events)));
         knownIds.add(application.events.id);
       }
     });
     const profileRow = profileResult.data;
     const creatorData = profileRow.creator_data || {};
-    setProfile({...profileRow, ...creatorData, handle:creatorData.handle || profileRow.ig_handle});
+    const liveProfile = {
+      ...creatorData,
+      ...profileRow,
+      full_name:profileRow.full_name || creatorData.full_name,
+      handle:profileRow.ig_handle || creatorData.handle,
+      profile_picture_url:profileRow.avatar_url || creatorData.profile_picture_url,
+    };
+    setProfile(liveProfile);
     setEvents(liveEvents);
     setMyEvents(applications.map(row => mapApplication(row, storyByApplication.get(row.id))));
     setSaved((saveResult.data || []).map(row => row.event_id));
     setNotifs((notificationResult.data || []).map(mapNotification));
+    setMemberRecord(null);
     if (gate) setOnboardStep(profileRow.status === "approved" ? "done" : "queue");
+    try {
+      const pendingId = sessionStorage.getItem("pending-event");
+      const pendingEvent = pendingId ? liveEvents.find(event => String(event.id) === String(pendingId)) : null;
+      if (pendingId) sessionStorage.removeItem("pending-event");
+      if (pendingEvent) {
+        setCurrentEvent(pendingEvent);
+        setTab("explore");
+        setScreen("detail");
+      }
+    } catch (e) {}
     return profileRow;
+  };
+
+  const loadMemberRecord = async () => {
+    if (!session || memberRecordLoading) return null;
+    setMemberRecordLoading(true);
+    const {data, error} = await supabaseClient.rpc("member_record");
+    setMemberRecordLoading(false);
+    if (error) { showToast(error.message); return null; }
+    setMemberRecord(data || {});
+    return data;
   };
 
   const completeAuth = async (nextSession) => {
@@ -3134,6 +3579,66 @@ function App(){
       showToast(error.message || "Could not load your account");
       throw error;
     }
+  };
+
+  const resetToIntro = () => {
+    setSession(null);
+    setProfile(null);
+    setEvents(SEED_EVENTS);
+    setMyEvents(MY_EVENTS);
+    setNotifs(SEED_NOTIFS);
+    setSaved([]);
+    setMemberRecord(null);
+    setMemberRecordLoading(false);
+    setCurrentEvent(null);
+    setPickedEventId(null);
+    setPassEventId(null);
+    setStoryEventId(null);
+    setShareEvent(null);
+    setSettingsOpen(false);
+    setNotifOpen(false);
+    setApplyState("idle");
+    setScreen("home");
+    setTab("home");
+    setOnboardStep("intro");
+  };
+
+  const logout = async () => {
+    const {error} = await supabaseClient.auth.signOut();
+    if (error) { showToast(error.message); return false; }
+    resetToIntro();
+    return true;
+  };
+
+  const deleteAccount = async () => {
+    if (!session) return false;
+    const {error} = await supabaseClient.rpc("delete_account");
+    if (error) { showToast(error.message); return false; }
+    const {error:signOutError} = await supabaseClient.auth.signOut();
+    if (signOutError) { showToast(signOutError.message); return false; }
+    resetToIntro();
+    return true;
+  };
+
+  const saveSettings = async ({name, handle, phone, notifPicks, notifDrops}) => {
+    if (!session) return false;
+    if (!name || !handle) { showToast("Name and Instagram handle are required"); return false; }
+    const previousHandle = String(profile?.ig_handle || profile?.handle || "").replace(/^@/, "");
+    const {error} = await supabaseClient.from("profiles").update({
+      full_name:name,
+      ig_handle:handle,
+      phone:phone || null,
+      notif_picks:notifPicks,
+      notif_drops:notifDrops,
+    }).eq("id", session.user.id);
+    if (error) { showToast(error.message); return false; }
+    if (handle !== previousHandle) {
+      const refresh = await supabaseClient.functions.invoke("creator-data", {body:{handle}});
+      if (refresh.error) showToast("Profile saved. Instagram data will refresh later.");
+    }
+    await hydrateMember(session.user.id);
+    showToast("Settings saved");
+    return true;
   };
 
   // Cleanup all pending timers on unmount
@@ -3303,8 +3808,32 @@ function App(){
     }
   }
 
-  // submitStory — screenshot in → review state → simulated verdict 8s later
-  const submitStory = (eventId) => {
+  // Live proof is uploaded and stays pending for founder/Gemini review.
+  // Demo keeps the eight-second simulated verdict.
+  const submitStory = async (eventId, dataUrl) => {
+    if (session) {
+      const row = myEvents.find(item => item.eventId === eventId);
+      if (!row?.applicationId) { showToast("Could not find this invitation"); return false; }
+      try {
+        const blob = await (await fetch(dataUrl)).blob();
+        const path = session.user.id + "/story-" + row.applicationId + ".jpg";
+        const {error:uploadError} = await supabaseClient.storage.from("media").upload(path, blob, {
+          upsert:true,
+          contentType:blob.type || "image/jpeg",
+        });
+        if (uploadError) throw uploadError;
+        const publicUrl = supabaseClient.storage.from("media").getPublicUrl(path).data.publicUrl;
+        const {error:submitError} = await supabaseClient.rpc("submit_story", {p_app:row.applicationId, p_media:publicUrl});
+        if (submitError) throw submitError;
+        await hydrateMember(session.user.id);
+        setStoryEventId(null);
+        showToast("Under review · we check within a few hours");
+        return true;
+      } catch (error) {
+        showToast(error.message || "Could not upload your Story");
+        return false;
+      }
+    }
     setMyEvents(prev => prev.map(r => r.eventId === eventId ? { ...r, story: SS.review, verdict: undefined } : r));
     setStoryEventId(null);
     showToast("Under review · we check within a few hours");
@@ -3313,6 +3842,7 @@ function App(){
       delete verdictTimersRef.current[eventId];
       forceVerdict(eventId, SS.verified);
     }, 8000);
+    return true;
   };
 
   // Open the pass (ticket) for a confirmed/checked-in event
@@ -3461,6 +3991,10 @@ function App(){
 
   // Verify-with-Instagram: flips the (vendor-neutral) creator data to verified.
   const onVerify = () => {
+    if (session) {
+      showToast("Instagram connection is not enabled yet");
+      return;
+    }
     setProfile(p => ({
       ...(p || SEED_PROFILE),
       data_status: "verified",
@@ -3478,6 +4012,7 @@ function App(){
   // Derive pickedAt for the currently-shown picked event
   const pickedRow = pickedEventId ? myEvents.find(r => r.eventId === pickedEventId) : null;
   const pickedAt = pickedRow ? pickedRow.pickedAt : null;
+  const pickExpiresAt = pickedRow ? pickedRow.pickExpiresAt : null;
 
   // Unread notif count for badge
   const unreadCount = notifs.filter(n => !n.read).length;
@@ -3495,46 +4030,48 @@ function App(){
       )}
 
       <div className="mb-8 text-center">
-        <div className="stamp" style={{color:"var(--ink-mute)"}}>The List · Influencer side · Prototype v0.3</div>
-        <div className="font-black text-[28px] leading-none mt-2">{DEMO_PREVIEW ? "Sara's analytics" : "Tap through Sara's flow"}</div>
-        <div className="text-[12px] mt-2" style={{color:"var(--ink-mute)"}}>{onboardActive ? "Grainy entry splash → apply → review → tier reveal." : "Tap an event → Apply → 10s later venue picks you → Activity bell → confirm."}</div>
+        <div className="stamp" style={{color:"var(--ink-mute)"}}>{session ? "The List · Member" : "The List · Influencer side · Prototype v0.3"}</div>
+        <div className="font-black text-[28px] leading-none mt-2">{session ? "Your List" : DEMO_PREVIEW ? "Sara's analytics" : "Tap through Sara's flow"}</div>
+        <div className="text-[12px] mt-2" style={{color:"var(--ink-mute)"}}>{session ? "Invitations, passes and your profile." : onboardActive ? "Grainy entry splash → apply → review → tier reveal." : "Tap an event → Apply → 10s later venue picks you → Activity bell → confirm."}</div>
       </div>
 
       <div className="iphone">
         <div className="iphone-screen">
-          {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={skipOnboarding} onProfileFetched={setProfile} onAuthenticated={completeAuth}/>}
-          {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} myEvents={myEvents} onBell={()=>setNotifOpen(true)} unreadCount={unreadCount} onOpenPass={openPass} events={events}/>}
-          {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} onToast={showToast} events={events}/>}
-          {!onboardActive && screen === "detail"  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply} onCancel={onCancelApplication} onShare={()=>setShareEvent(currentEvent)} saved={saved} onToggleSave={toggleSave} onToast={showToast} myEvents={myEvents} onOpenPicked={openPickedTakeover}/>}
+          {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={skipOnboarding} onProfileFetched={setProfile} onAuthenticated={completeAuth} onLogout={logout} sessionUserId={session?.user?.id} profile={profile}/>}
+          {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} myEvents={myEvents} onBell={()=>setNotifOpen(true)} unreadCount={unreadCount} onOpenPass={openPass} events={events} live={!!session}/>}
+          {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} onToast={showToast} events={events} live={!!session}/>}
+          {!onboardActive && screen === "detail"  && <ScreenEventDetail event={currentEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply} onCancel={onCancelApplication} onShare={()=>setShareEvent(currentEvent)} saved={saved} onToggleSave={toggleSave} onToast={showToast} myEvents={myEvents} onOpenPicked={openPickedTakeover} onOpenPass={openPass} live={!!session}/>}
           {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} myEvents={myEvents} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast} onOpenPass={openPass} onOpenPicked={openPickedTakeover} onOpenStory={setStoryEventId} initialSeg={mylistSeg} events={events}/>}
-          {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab} profile={profile} onSettings={()=>setSettingsOpen(true)} onVerify={onVerify}/>}
-          {!onboardActive && screen === "picked"  && <ScreenPicked event={currentEvent} pickedAt={pickedAt} onConfirm={onConfirmPick} onDecline={onDeclinePick}/>}
+          {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab} profile={profile} onSettings={()=>setSettingsOpen(true)} onVerify={onVerify} live={!!session} memberRecord={memberRecord} memberRecordLoading={memberRecordLoading} onLoadRecord={loadMemberRecord}/>}
+          {!onboardActive && screen === "picked"  && <ScreenPicked event={currentEvent} pickedAt={pickedAt} pickExpiresAt={pickExpiresAt} onConfirm={onConfirmPick} onDecline={onDeclinePick} live={!!session}/>}
 
           {/* Pass — full-screen overlay above screens, below sheets */}
           {!onboardActive && passEventId && (
             <ScreenPass event={eventById(passEventId, events)}
                         row={myEvents.find(r => r.eventId === passEventId)}
                         profile={profile}
+                        live={!!session}
+                        onRefresh={()=>session ? hydrateMember(session.user.id).catch(error=>showToast(error.message)) : null}
                         onBack={()=>setPassEventId(null)}/>
           )}
 
           {/* Overlays — scoped to the phone frame */}
-          {!onboardActive && storyEventId && <StorySheet event={eventById(storyEventId, events)} onClose={()=>setStoryEventId(null)} onSubmit={()=>submitStory(storyEventId)}/>}
+          {!onboardActive && storyEventId && <StorySheet event={eventById(storyEventId, events)} onClose={()=>setStoryEventId(null)} onSubmit={(shot)=>submitStory(storyEventId, shot)}/>}
           {!onboardActive && <ShareSheet event={shareEvent} onClose={()=>setShareEvent(null)} onToast={showToast}/>}
-          {!onboardActive && settingsOpen && <SettingsSheet profile={profile} light={light} setLight={setLight} onClose={()=>setSettingsOpen(false)} onToast={showToast} demo={session ? null : demoActions}/>}
+          {!onboardActive && settingsOpen && <SettingsSheet profile={profile} light={light} setLight={setLight} onClose={()=>setSettingsOpen(false)} onToast={showToast} demo={session ? null : demoActions} live={!!session} onSave={saveSettings} onLogout={logout} onDelete={deleteAccount}/>}
           {!onboardActive && notifOpen && <NotificationsSheet notifs={notifs} onClose={closeNotifs} onTarget={notifTarget}/>}
           <Toast msg={toast}/>
         </div>
       </div>
 
-      <div className="mt-8 text-center max-w-[420px]">
+      {!session && <div className="mt-8 text-center max-w-[420px]">
         <div className="stamp mb-2" style={{color:"var(--ink-mute)"}}>How to use</div>
         <div className="text-[12px]" style={{color:"var(--ink-2)"}}>
           {onboardActive
             ? "Entry splash plays the grainy Beirut montage. Tap Apply for access, type anything in the two fields, watch the review animation, tap Enter The List on the tier reveal."
             : "Tap Sunset Sessions → Apply → 10 seconds later the Activity bell gets a badge → tap it → tap the pick notification → confirm or decline."}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

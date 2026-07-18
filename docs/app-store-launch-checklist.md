@@ -13,6 +13,9 @@
 - [x] Phyllo feasibility research is complete.
 - [x] Instagram flow is locked: handle lookup at onboarding, optional Connect Instagram from Profile.
 - [x] Member and venue Profile analytics dashboards are redesigned in web v3.
+- [x] Complete web workflows are implemented for member, venue, founder, and public teaser surfaces.
+- [x] Manual Story screenshot upload, rejected-proof retry, and founder review are implemented.
+- [x] Sensitive RPC grants are hardened; PostgreSQL `PUBLIC` and `anon` execute access are zero.
 - [ ] Approve the deployed HTML analytics design before porting it to SwiftUI.
 
 ## Backend work still missing
@@ -23,10 +26,10 @@
 - [ ] Add backend integration tests for the complete member, venue, and founder loops.
 - [ ] Audit Supabase RLS, RPC permissions, rate limits, and secret handling.
 - [ ] Add monitoring, error logging, backups, and recovery instructions.
-- [ ] Add venue draft editing.
-- [ ] Add editing for open events where the product allows it.
-- [ ] Persist gender mix and custom event close time.
-- [ ] Let founders update booking invoice status.
+- [x] Add venue draft editing.
+- [x] Add editing for open events where the product allows it.
+- [x] Persist gender mix and custom event close time.
+- [x] Let founders update booking invoice status.
 - [ ] Add payment records, cancellations, refunds, and settlement notes.
 - [ ] Add real account deletion and remove the user's stored data where legally allowed.
 - [ ] Replace email OTP with phone OTP after an SMS provider is chosen.

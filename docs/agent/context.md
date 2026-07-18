@@ -79,25 +79,25 @@ Their structure works. We **copy structure, throw away visual language**.
 - Purple-pink gradients, cheesy visual language → we go editorial dark / bone light
 - English only → we do bilingual (English + Arabizi-friendly)
 
-## Architecture (live 2026-07-10)
+## Architecture (live backend + complete web implementation, 2026-07-18)
 
 ```text
 Production          → the-list-omega.vercel.app
   /v3               → live member web app
   /v3/venue         → live venue web app
   /v3/e?id=         → anonymous event teaser
-  /admin            → founder approvals, invites, story overrides, bookings
+  /admin            → founder approvals, invites, Story review, events, bookings
   / and /v2         → frozen archives
 
 Backend             → Supabase project zrbakomzpuesifasuamb
-  data + security   → 9 tables, RLS, ~20 security-definer RPCs
+  data + security   → 9 tables, RLS, hardened security-definer RPCs
   lifecycle         → RPC state machine + pg_cron tick every 10 minutes
   notifications     → 18 kinds, stored + realtime
   edge stubs        → creator-data + score-story (dark until keys/provider)
 
 Creator data        → vendor-neutral normalized API; provider trial still open
-Story verification  → Graph API fetch + Gemini rubric; binary score ≥70
-Founder override    → /admin
+Story verification  → screenshot upload + founder review today; Gemini rubric later
+Founder review      → /admin, proof required before verify/reject
 Payments            → booking ledger + computed 20% cut; no processing yet
 SwiftUI             → mock-first scaffold, CI green; Supabase binding on Mac day
 ```
@@ -116,16 +116,21 @@ IG handle saved to a real profiles row
 Valid invite code → approved immediately
 No invite code → pending approval queue in /admin
   ↓
-creator-data Edge Function returns the normalized mock shape until a provider is chosen
+creator-data Edge Function returns a temporary normalized mock shape until a provider is chosen;
+provider-owned analytics are not written directly by the member client
 ```
 
 Founders approve or reject access in `/admin`. Venue accounts are founder-created. Invite codes skip the member approval queue.
 
 ### Story verification ruling
 
-**Current (2026-07-10):** Graph API fetch + Gemini rubric scoring only. A score of 70 or higher verifies the Story; lower rejects it. Founders can override in `/admin`. The pipeline stays dark until `GEMINI_API_KEY` and Meta App Review are complete.
+**Current (2026-07-18):** a checked-in member uploads a Story screenshot to Supabase Storage. The
+proof appears in `/admin`, where a founder verifies or rejects it with a reason. Rejected proof can
+be uploaded again. Empty Story rows cannot be approved.
 
-**Superseded:** manual screenshot upload/review and the 2026-07-03 `@thelist` mention spine as the verification mechanism. Tag requirements remain inside the Gemini scoring rubric.
+**Later:** Gemini will grade the uploaded proof against the approved rubric. Meta/Phyllo access can
+add stronger source data, but it is not required for the working manual fallback. Founder review
+remains the override path.
 
 ### Superseded architecture and onboarding notes
 
@@ -224,7 +229,7 @@ The client never sees vendor specifics, so swapping providers is one backend Edg
 ## Open questions still on the table
 
 - Working name — "The List" is the working title. Test with Dima's first 30 contacts before locking.
-- **Superseded:** manual screenshot upload / Phyllo media-history verification. The 2026-07-10 ruling is Graph API + Gemini only; remaining work is keys + Meta review.
+- **Current fallback:** manual screenshot upload and founder review are live. Gemini and Meta remain the automation upgrade.
 - Venue exclusivity contracts — 6-month? 12-month? What's enforceable in Lebanon?
 - Operating entity — Lebanese LLC vs offshore (Delaware / Estonia e-Residency)?
 - Whish vs OMT vs USD cash payouts to venues
