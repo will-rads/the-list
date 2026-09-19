@@ -4,6 +4,25 @@ Things that have already gone wrong, or known traps. New entries on top, dated `
 
 ---
 
+## 2026-09-20 — Keep committed writes separate from refresh failures
+
+A server write can succeed and its follow-up read fail. Do not keep a creation wizard open and
+label the whole operation failed: retry can create duplicates. Preserve success, exit the form,
+and retry only hydration. Member and venue action checks cover this boundary. Associate delayed
+member apply feedback with the original event so navigating to another event cannot disable it.
+
+## 2026-09-20 — Check computed glass styles in the production build
+
+The original CSS put `backdrop-filter` before `-webkit-backdrop-filter`. Minification dropped the
+standard declaration in these pairs, leaving Chrome with no glass blur. Put the prefixed property
+first, standard property last; keep Safari and Chrome CSS targets. The mobile check asserts actual
+computed blur. Token checks alone did not catch it.
+
+**Current tooling:** V3 uses local React/Vite/Tailwind, per Will's 2026-09-20 instruction. The older
+CDN-only / wait-for-SwiftUI notes below are historical and do not apply to active V3.
+
+---
+
 ## 2026-07-18 — Revoking RPC access from anon is not enough
 
 PostgreSQL grants new functions to `PUBLIC` by default. Revoking only `anon` and `authenticated`
@@ -200,7 +219,7 @@ The Icon component uses `ref.current.innerHTML = ""` to clear the slot before `a
 
 - Don't push to GitHub without confirmation.
 - Don't commit secrets. `.env` is gitignored. Edit `.env.example` for new keys.
-- Don't refactor Tailwind / Babel CDN to local until SwiftUI port.
+- Active V3 uses the local React/Vite/Tailwind build; do not restore runtime Babel/CDN compilation.
 - Don't add a font without checking AGENTS.md for the no-go list (Inter, Instrument Serif).
 - Don't rebuild what already exists in `web/` or `docs/` — check first.
 - Don't propose Android in v1.

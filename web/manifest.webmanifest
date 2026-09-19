@@ -1,0 +1,9 @@
+{
+  "name": "The List",
+  "short_name": "The List",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000"
+}

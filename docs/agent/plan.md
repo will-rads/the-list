@@ -6,7 +6,9 @@ Release tracker: [App Store launch checklist](../app-store-launch-checklist.md).
 
 **Phyllo direction (2026-07-11):** preferred provider for the first sandbox trial. Onboarding uses handle-only public estimates with no Instagram login. Members can later use **Connect Instagram** from Profile through either Instagram Direct or the richer professional-account + Facebook Page route. This connection verifies Instagram data; it does not replace Supabase login. Production price, exact fields, IG Direct enablement, and full white-label terms still need written confirmation from Phyllo.
 
-**Phase: complete Supabase-backed web implementation (2026-07-18) — next: production click-test.** Project `zrbakomzpuesifasuamb` powers `the-list-omega.vercel.app`: `/v3` = member app, `/v3/venue` = venue app, `/v3/e?id=` = public teaser, and `/admin` = founder ops. Draft/edit/publish, applicant decisions, Door, recap, Story screenshot upload/manual review, billing status, settings, and notifications are wired. RPC grants are hardened and the live migration guards were verified. `/` and `/v2` stay frozen. The SwiftUI app is scaffolded with mock services and CI green; Supabase binding is still the native-app wave.
+**Phase (2026-09-20): local V3 mobile layout, flow fixes, Vite build, and Capacitor project ready for review.** V3 is the only active version. V1/V2 are preserved in `archive/web/`; SwiftUI in `ios/` is paused. React uses Vite with JSX/local CSS in `web/`, and the generated Capacitor wrapper is in `web/ios/`. No new SwiftUI port is planned.
+
+**Production remains the 2026-07-18 baseline:** Supabase project `zrbakomzpuesifasuamb` powers `the-list-omega.vercel.app` member, venue, public teaser, and founder flows. The local refactor has not been pushed, deployed, or compiled as a native app. A full authenticated production walkthrough is still pending.
 
 ```text
 [done]      Voice notes transcribed + plan synthesized
@@ -36,8 +38,13 @@ Release tracker: [App Store launch checklist](../app-store-launch-checklist.md).
 [done]      Full web functionality wave (2026-07-18): all four web surfaces wired; draft/edit, Story upload/review, billing and settings gaps closed
 [done]      Live RPC hardening (2026-07-18): PUBLIC/anon revoked, internal helpers private, close-night and Story review guards verified
 [done]      Deploy verification (2026-07-18): member/venue demos, teaser, and authenticated founder ops loaded on Vercel
-[doing]     Full member + venue authenticated production click-test  ◄── HERE
-[next]      Will visually approves the deployed HTML Profile analytics; then port it to SwiftUI
+[done]      V3 full-screen layout and flow fixes; 390x844 + 320x568 demo journeys pass locally
+[done]      React + Vite build; local dependencies/fonts/CSS; failure-recovery regression checks
+[done]      Capacitor iOS project generated and synced in web/ios (not native-compiled)
+[next]      Validate member + venue flows, mobile layouts, and the production build; record remaining failures
+[next]      Review local V3; push/deploy only after explicit approval
+[next]      Build/sign Capacitor on Mac; verify keyboard, safe areas, uploads and links on real iPhones
+[next]      Deploy only after explicit approval; complete authenticated production click-test
 [next]      Choose SMS provider; switch auth from email OTP to phone OTP
 [next]      Add GEMINI_API_KEY + complete Meta App Review; then light up Story scoring
 [next]      Open Phyllo sandbox; test Lebanese handles; request written pricing, field matrix, IG Direct, and white-label terms
@@ -77,7 +84,7 @@ Lock the v1 spec. See `context.md` in this folder for the table of defaults.
 Track A — Build (Will)                Track B — Sell (Radwan + Dima)
 ──────────────────────                ─────────────────────────────
 v3 member + venue web live            target list: 5-10 anchor venues
-SwiftUI scaffold + CI green           Kee Beirut + 2 clubs
+React build + Capacitor shell ready   Kee Beirut + 2 clubs
 Provider trial pending                2-3 restaurants
 Manual Story review live              1-2 beach clubs
 Browse drops + Apply live             1 wellness anchor

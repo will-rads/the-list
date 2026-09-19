@@ -1,0 +1,9 @@
+{
+  "appId": "co.thelist.app",
+  "appName": "The List",
+  "webDir": "dist",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#000000"
+  }
+}

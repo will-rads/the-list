@@ -1,0 +1,1923 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>The List · Venue</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+
+<style>
+  :root{
+    --bg:        #0A0A0A;
+    --bg-elev:   #141414;
+    --bg-elev2:  #1C1C1C;
+    --ink:       #F5F1EA;
+    --ink-2:     #F5F1EA;
+    --ink-mute:  #F5F1EA;
+    --line:      rgba(245,241,234,0.10);
+    --line-2:    rgba(245,241,234,0.18);
+    --ice:       #9FD8E8;
+    --ice-dim:   #6FB5C9;
+    --ice-ink:   #0A0A0A;
+    --page:      #050505;
+  }
+  html.light{
+    --bg:        #FFFFFF;
+    --bg-elev:   #F5F5F5;
+    --bg-elev2:  #EAEAEA;
+    --ink:       #0A0A0A;
+    --ink-2:     #0A0A0A;
+    --ink-mute:  #0A0A0A;
+    --line:      rgba(10,10,10,0.08);
+    --line-2:    rgba(10,10,10,0.14);
+    --ice:       #26768F;
+    --ice-dim:   #2C7A92;
+    --ice-ink:   #FFFFFF;
+    --page:      #FAFAFA;
+  }
+  html, body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+  /* One family across the app: Plus Jakarta Sans. Headers just go bolder (800);
+     everything else inherits the body weight. No second family. */
+  .font-black,
+  .font-display {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+  .font-display-l {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+  }
+  /* font-mono = legacy class for numbers/timers. One family across the app, so
+     numbers read exactly like the body text — no monospace, no tabular fixed-width.
+     Doubled selector (.font-mono.font-mono) so it beats Tailwind CDN's own .font-mono
+     utility, which otherwise forces a system monospace stack. Weight inherits
+     (bold only where .font-black / .font-display is also applied). */
+  .font-mono.font-mono {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+  }
+
+  /* hide scrollbars inside phone screens */
+  .noscroll::-webkit-scrollbar { display:none; }
+  .noscroll { scrollbar-width: none; }
+
+  /* iphone bezel */
+  .iphone {
+    width: 393px; height: 852px;
+    border-radius: 54px;
+    padding: 11px;
+    background: linear-gradient(140deg,#2a2722 0%, #0c0a08 45%, #1d1a16 100%);
+    box-shadow:
+      inset 0 0 0 1.5px #3a3631,
+      inset 0 0 0 3px #0a0807,
+      0 60px 80px -40px rgba(0,0,0,.9),
+      0 30px 60px -30px rgba(0,0,0,.6);
+    position: relative;
+  }
+  .iphone-screen {
+    width: 100%; height: 100%; border-radius: 43px;
+    overflow: hidden; position: relative; background: var(--bg);
+    isolation: isolate;
+  }
+  .island { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:120px; height:34px; background:#000; border-radius:20px; z-index:50; }
+
+  .statusbar { position:absolute; top:0; left:0; right:0; height:54px; padding: 16px 28px 0; display:flex; justify-content:space-between; align-items:flex-start; z-index:40; font-family:'Plus Jakarta Sans', sans-serif; font-weight:600; font-variant-numeric: tabular-nums; font-size:14px; color: var(--ink); pointer-events:none; }
+  .statusbar svg { width: 16px; height: 16px; }
+
+  .tabbar {
+    position:absolute; left:0; right:0; bottom:0; height: 88px;
+    padding: 12px 18px 30px;
+    display:grid; grid-template-columns:repeat(4,1fr); gap: 4px;
+    background: linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,.72) 45%, rgba(10,10,10,.92) 100%);
+    backdrop-filter: blur(22px) saturate(1.3);
+    -webkit-backdrop-filter: blur(22px) saturate(1.3);
+    z-index: 30;
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -12px 34px -22px rgba(159,216,232,.35);
+  }
+  html.light .tabbar {
+    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.72) 45%, rgba(255,255,255,.92) 100%);
+  }
+  .tabbar button {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:5px; color: var(--ink-mute);
+    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 4px 0; border-radius: 14px;
+    transition: color .15s;
+    background: transparent; border: 0; cursor: pointer;
+  }
+  .tabbar button.active { color: var(--ink); }
+  .tabbar button.active svg { color: var(--ice); filter: drop-shadow(0 0 8px rgba(159,216,232,.7)); }
+
+  .hr { height: 1px; background: var(--line); }
+  .hr-2 { height: 1px; background: var(--line-2); }
+
+  .stamp { font-family:'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-mute); }
+  .smallcaps { text-transform: uppercase; letter-spacing: 0.22em; font-size: 10px; font-weight: 500; }
+  /* Calmer section marker — breaks the uniform uppercase-tracked-eyebrow cadence.
+     Used for section dividers; .stamp stays for true value labels (When/Doors/Seats). */
+  .section-label { font-family:'Plus Jakarta Sans', ui-sans-serif, system-ui; font-weight: 700; font-size: 14px; letter-spacing: normal; color: var(--ink-2); }
+
+  .chip-ice { background: var(--ice); color: var(--ice-ink); }
+  .chip-outline { border: 1px solid var(--line-2); color: var(--ink); }
+
+  .press { transition: transform .12s ease, opacity .12s ease, background .2s, border-color .2s, box-shadow .2s; cursor: pointer; }
+  @media (hover:hover){ .press:hover { opacity: .96; } }
+  .press:active { transform: scale(.97); opacity: .85; }
+
+  .vt { writing-mode: vertical-rl; transform: rotate(180deg); }
+
+  /* film grain */
+  .grain::after {
+    content:""; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 3px 3px; mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  .page-bg {
+    background:
+      radial-gradient(900px 500px at 10% -10%, rgba(159,216,232,.04), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(159,216,232,.025), transparent 60%),
+      var(--page);
+  }
+  html.light .page-bg {
+    background:
+      radial-gradient(900px 500px at 10% -10%, rgba(111,181,201,.10), transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, rgba(111,181,201,.05), transparent 60%),
+      var(--page);
+  }
+
+  .theme-toggle {
+    position: fixed; top: 24px; right: 24px; z-index: 100;
+    display:flex; align-items:center; gap:8px;
+    padding: 8px 14px; border-radius: 999px;
+    background: var(--bg-elev); border: 1px solid var(--line-2);
+    color: var(--ink); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 500;
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    cursor: pointer; transition: all .2s;
+  }
+  .theme-toggle:hover { border-color: var(--ice); color: var(--ice); }
+  .theme-toggle .dot { width:6px; height:6px; border-radius:50%; background: var(--ice); }
+
+  .side-link {
+    position: fixed; top: 24px; left: 24px; z-index: 100;
+    display:flex; align-items:center; gap:8px;
+    padding: 8px 14px; border-radius: 999px;
+    background: var(--bg-elev); border: 1px solid var(--line-2);
+    color: var(--ink); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    font-weight:500; text-decoration:none; transition: all .2s;
+  }
+  .side-link:hover { border-color: var(--ice); color: var(--ice); }
+
+  @keyframes pulseIce {
+    0% { box-shadow: 0 0 0 0 rgba(159,216,232,.5); }
+    100% { box-shadow: 0 0 0 28px rgba(159,216,232,0); }
+  }
+  .pulse-ice { animation: pulseIce 1.8s cubic-bezier(.4,.2,.2,1) infinite; }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .anim-up { animation: slideUp .5s cubic-bezier(.2,.7,.2,1); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .anim-fade { animation: fadeIn .35s ease; }
+
+  /* Stagger entrance for list children. Each child sets style={{"--i": index}}. */
+  .stagger > * { opacity: 1; }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes staggerUp {
+      from { transform: translateY(12px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    .stagger > * {
+      animation: staggerUp .45s ease-out both;
+      animation-delay: calc(var(--i, 0) * 60ms);
+    }
+  }
+
+  /* Picked screen — ring scale-in + content stagger */
+  @keyframes ringPop {
+    0%   { transform: scale(.3); opacity: 0; }
+    60%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes pickedFadeUp {
+    from { transform: translateY(14px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .ring-pop { animation: ringPop .8s cubic-bezier(.2,.7,.2,1) backwards; }
+  .picked-stagger { animation: pickedFadeUp .55s ease-out backwards; }
+
+  /* Filter sheet — backdrop dim + sheet slide up */
+  @keyframes sheetIn {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  @keyframes dimIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .sheet-backdrop { animation: dimIn .25s ease; }
+  .sheet { animation: sheetIn .35s cubic-bezier(.2,.7,.2,1); }
+
+  /* Submit spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin .9s linear infinite; }
+
+  /* ===== polish pass: glass depth + restrained ice glow ===== */
+  /* frosted glass for top controls */
+  .glass {
+    background: rgba(20,20,20,.5) !important;
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    border: 1px solid rgba(245,241,234,.12) !important;
+  }
+  html.light .glass {
+    background: rgba(255,255,255,.55) !important;
+    border-color: rgba(10,10,10,.1) !important;
+  }
+  /* translucent black cards: 1px glass border + softer shadow */
+  .card {
+    /* Flat-At-Rest: resting cards are NOT glass. Translucent fill + hairline +
+       soft shadow only. Blur is reserved for genuinely-floating surfaces. */
+    background: rgba(26,26,26,.66);
+    border: 1px solid rgba(245,241,234,.08);
+    box-shadow: 0 16px 36px -24px rgba(0,0,0,.9);
+    transition: border-color .2s, box-shadow .2s, transform .12s;
+  }
+  html.light .card {
+    /* #7 — firmer edge so cards read as objects on white, not flat panels. */
+    background: rgba(255,255,255,.78);
+    border-color: rgba(10,10,10,.12);
+    box-shadow: 0 12px 30px -22px rgba(10,10,10,.30);
+  }
+  @media (hover:hover){ button.card:hover, .card.press:hover { border-color: rgba(159,216,232,.35); } }
+  @media (hover:hover){ html.light button.card:hover, html.light .card.press:hover { border-color: rgba(38,118,143,.40); } }
+  /* ice glow — active + pressed states only */
+  .glow-ice { box-shadow: 0 0 0 1px rgba(159,216,232,.4), 0 0 20px -4px rgba(159,216,232,.5); }
+  .press.glow-primary:active { box-shadow: 0 0 26px -2px rgba(159,216,232,.65); }
+  @media (hover:hover){ .glow-primary:hover { box-shadow: 0 0 24px -4px rgba(159,216,232,.55); } }
+  /* #7 — in light theme, active/press states key off the deep ice (#26768F):
+     a tighter ring, not the bright dark-theme halo that looks alien on white. */
+  html.light .glow-ice { box-shadow: 0 0 0 1px rgba(38,118,143,.55), 0 3px 12px -5px rgba(38,118,143,.40); }
+  html.light .press.glow-primary:active { box-shadow: 0 0 16px -4px rgba(38,118,143,.50); }
+  @media (hover:hover){ html.light .glow-primary:hover { box-shadow: 0 5px 16px -6px rgba(38,118,143,.40); } }
+  /* ornamental texture — only paints outside the (opaque) phone */
+  body::before {
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background-image: radial-gradient(rgba(159,216,232,.06) 1px, transparent 1px);
+    background-size: 26px 26px;
+    -webkit-mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
+    mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
+  }
+  html.light body::before { background-image: radial-gradient(rgba(79,168,197,.10) 1px, transparent 1px); }
+
+  .profile-hero-overlay {
+    background: linear-gradient(180deg, rgba(10,10,10,.3) 0%, rgba(10,10,10,0) 40%, var(--bg) 100%);
+  }
+  html.light .profile-hero-overlay {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,0) 36%, rgba(255,255,255,.98) 100%),
+      linear-gradient(180deg, rgba(10,10,10,.08) 0%, rgba(10,10,10,0) 28%);
+  }
+  /* #5 — one canonical "floating control over a photo" recipe. Event Detail
+     header buttons and the Profile hero controls share it, so there is a single
+     over-image glass, distinct from .glass (which floats over the app bg). */
+  .glass-over-image, .profile-glass {
+    background: rgba(10,10,10,.46);
+    border: 1px solid rgba(245,241,234,.18);
+    backdrop-filter: blur(12px) saturate(1.25);
+    -webkit-backdrop-filter: blur(12px) saturate(1.25);
+  }
+  html.light .glass-over-image, html.light .profile-glass {
+    background: rgba(255,255,255,.72);
+    border-color: rgba(10,10,10,.12);
+    box-shadow: 0 12px 28px -22px rgba(10,10,10,.45);
+  }
+  /* Profile keeps its own text-color contract on top of the shared glass. */
+  .profile-glass { color: #F5F1EA; }
+  html.light .profile-glass { color: #0A0A0A; }
+  .profile-hero-text { color: #F5F1EA; }
+  .profile-hero-muted { color: rgba(245,241,234,.72); }
+  html.light .profile-hero-text { color: #0A0A0A; }
+  html.light .profile-hero-muted { color: rgba(10,10,10,.58); }
+  html.light .profile-hero-text .stamp,
+  html.light .profile-hero-text .smallcaps { color: rgba(10,10,10,.58) !important; }
+</style>
+</head>
+<body class="page-bg min-h-screen">
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+  const { useState, useRef, useEffect, useMemo } = React;
+
+  // === COPIED VERBATIM from index.html: IMG, Icon + HICONS, StatusBar, HomeIndicator ===
+
+  /* ========== curated imagery ========== */
+  const IMG = {
+    beachClub:  "./assets/pool-day.jpg",
+    pool:       "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=900&q=80&auto=format&fit=crop",
+    rooftop:    "https://images.unsplash.com/photo-1551918120-9739cb430c6d?w=900&q=80&auto=format&fit=crop",
+    restaurant: "https://images.unsplash.com/photo-1592861956120-e524fc739696?w=900&q=80&auto=format&fit=crop",
+    club:       "https://images.unsplash.com/photo-1545128485-c400e7702796?w=900&q=80&auto=format&fit=crop",
+    clubRed:    "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900&q=80&auto=format&fit=crop",
+    gym:        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&q=80&auto=format&fit=crop",
+    lounge:     "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=900&q=80&auto=format&fit=crop",
+    cocktail:   "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=900&q=80&auto=format&fit=crop",
+    beirut:     "https://images.unsplash.com/photo-1620553967747-50fdadc4b606?w=1200&q=80&auto=format&fit=crop",
+    saraFull:   "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&q=80&auto=format&fit=crop",
+  };
+
+  /* Applicant portraits — people, not venues. Unsplash, editorial quality. */
+  const FACE = {
+    sara:    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&q=80&auto=format&fit=crop",
+    lina:    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=900&q=80&auto=format&fit=crop",
+    maya:    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=900&q=80&auto=format&fit=crop",
+    nour:    "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=900&q=80&auto=format&fit=crop",
+    yasmine: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=900&q=80&auto=format&fit=crop",
+    karim:   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=900&q=80&auto=format&fit=crop",
+    rami:    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=900&q=80&auto=format&fit=crop",
+    tala:    "https://images.unsplash.com/photo-1517841905260-fc24eaa86c50?w=900&q=80&auto=format&fit=crop",
+  };
+
+  /* ========== Icon helper (Heroicons, inline) ==========
+     Heroicons outline, inlined as SVG so there's no icon CDN dependency at all.
+     Closest free stand-in for SF Symbols, which the SwiftUI build will use.
+     Call sites keep their lucide-style names; we map to Heroicon glyphs here.
+     `stroke` drives stroke-width (Heroicons outline is 1.5 by default).
+     instagram has no Heroicon (no brand glyphs) so it's a small custom mark.
+  ====================================================== */
+  const HICONS = {
+    "battery-full": '<path stroke-linecap="round" stroke-linejoin="round" d="M21 10.5h.375c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125H21M4.5 10.5H18V15H4.5v-4.5ZM3.75 18h15A2.25 2.25 0 0 0 21 15.75v-6a2.25 2.25 0 0 0-2.25-2.25h-15A2.25 2.25 0 0 0 1.5 9.75v6A2.25 2.25 0 0 0 3.75 18Z"/>',
+    "sparkle": '<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/>',
+    "compass": '<path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/>',
+    "bookmark": '<path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/>',
+    "bookmark-fill": '<path fill="currentColor" stroke="none" d="M6.32 2.577a49.255 49.255 0 0 1 11.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 0 1-1.085.67L12 18.089l-7.165 3.583A.75.75 0 0 1 3.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93Z"/>',
+    "link": '<path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/>',
+    "paper-plane": '<path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/>',
+    "bell": '<path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/>',
+    "user": '<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>',
+    "search": '<path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>',
+    "arrow-right": '<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>',
+    "arrow-left": '<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/>',
+    "sliders-horizontal": '<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"/>',
+    "x": '<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>',
+    "share": '<path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"/>',
+    "map-pin": '<path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>',
+    "check": '<path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>',
+    "calendar": '<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/>',
+    "settings": '<path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>',
+    "instagram": '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/>',
+    "sparkles": '<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/>',
+    "tiktok": '<path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 1 1-.99-3.467l2.31-.66a2.25 2.25 0 0 0 1.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 0 1-.99-3.467l2.31-.66A2.25 2.25 0 0 0 9 15.553z"/>',
+    "plus": '<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>',
+    "magnifying-glass": '<path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>',
+    "users": '<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/>',
+    "building-storefront": '<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349M3.75 21V9.349m0 0a3.001 3.001 0 0 0 3.75-.615A2.993 2.993 0 0 0 9.75 9.75c.896 0 1.7-.393 2.25-1.016a2.999 2.999 0 0 0 4.5 0A3.001 3.001 0 0 0 20.25 9c.896 0 1.7-.393 2.25-1.015m-18 0A2.993 2.993 0 0 1 3.75 6.75v-.265M21.75 9c.343-.36.59-.808.71-1.299a3 3 0 0 0-.21-2.183l-1.135-2.27A1.5 1.5 0 0 0 19.5 2.25h-15a1.5 1.5 0 0 0-1.382.918L1.04 5.55a3 3 0 0 0-.17 2.133c.124.49.37.937.71 1.298"/>',
+  };
+  function Icon({ name, size=18, stroke=1.5, className="" }){
+    const inner = HICONS[name] || HICONS["sparkle"];
+    return (
+      <svg className={"inline-block "+className} width={size} height={size}
+           viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke}
+           aria-hidden="true" style={{flexShrink:0}}
+           dangerouslySetInnerHTML={{__html: inner}}/>
+    );
+  }
+
+  /* ========== status bar / island / home indicator ========== */
+  function StatusBar(){
+    return (
+      <>
+        <div className="island"/>
+        <div className="statusbar">
+          <span>9:41</span>
+          <span className="flex items-center gap-1.5">
+            <span style={{fontSize:11}}>●●●●</span>
+            <span style={{fontSize:11}}>5G</span>
+            <Icon name="battery-full" size={16} stroke={1.5}/>
+          </span>
+        </div>
+      </>
+    );
+  }
+  function HomeIndicator(){
+    return (
+      <div className="absolute bottom-2 left-0 right-0 flex justify-center z-50 pointer-events-none">
+        <div className="w-32 h-1 rounded-full" style={{background:"var(--ink)", opacity:.7}}/>
+      </div>
+    );
+  }
+
+  // Transient toast inside the phone frame — copied VERBATIM from index.html.
+  // Gives minor controls a visible reply.
+  function Toast({ msg }){
+    if(!msg) return null;
+    return (
+      <div className="absolute left-0 right-0 flex justify-center z-[60] pointer-events-none" style={{bottom:104}}>
+        <div key={msg} className="anim-up px-4 py-2.5 rounded-full glass-over-image text-[12px] flex items-center gap-2" style={{maxWidth:"82%"}}>
+          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:"var(--ice)"}}/>
+          <span className="truncate">{msg}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Renders an image cropped to a fixed aspect frame using a stored transform.
+  // value: { src, scale, x, y } | null. ratio: e.g. "4/5". Empty state when null.
+  function FramedImage({ value, ratio="4/5", className="", empty="No image" }){
+    return (
+      <div className={"relative overflow-hidden rounded-[14px] "+className}
+           style={{aspectRatio:ratio, background:"var(--bg-elev)"}}>
+        {value && value.src ? (
+          <img src={value.src} alt="" draggable={false}
+            style={{position:"absolute", left:"50%", top:"50%",
+                    transform:`translate(-50%,-50%) translate(${value.x||0}px,${value.y||0}px) scale(${value.scale||1})`,
+                    maxWidth:"none", minWidth:"100%", minHeight:"100%", userSelect:"none"}}/>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center stamp" style={{color:"var(--ink-mute)"}}>{empty}</div>
+        )}
+      </div>
+    );
+  }
+
+  // Pick a local file, drag + zoom inside a fixed-aspect frame, return {src,scale,x,y}.
+  // No upload, no canvas export — the transform is reused by FramedImage everywhere.
+  function ImageCropper({ ratio="4/5", value, onChange, onCancel, label="Position your image" }){
+    const [src, setSrc]   = useState(value?.src || null);
+    const [scale, setScale] = useState(value?.scale || 1);
+    const [pos, setPos]   = useState({ x: value?.x || 0, y: value?.y || 0 });
+    const drag = useRef(null);
+    const fileRef = useRef(null);
+
+    const pick = (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { setSrc(r.result); setScale(1); setPos({x:0,y:0}); };
+      r.readAsDataURL(f);
+    };
+    const onDown = (e) => { const p = e.touches?e.touches[0]:e; drag.current = { x:p.clientX-pos.x, y:p.clientY-pos.y }; };
+    const onMove = (e) => { if(!drag.current) return; const p = e.touches?e.touches[0]:e;
+                            setPos({ x:p.clientX-drag.current.x, y:p.clientY-drag.current.y }); };
+    const onUp   = () => { drag.current = null; };
+
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="stamp" style={{color:"var(--ink-mute)"}}>{label}</div>
+        <div className="relative overflow-hidden rounded-[14px] mx-auto w-full"
+             style={{aspectRatio:ratio, background:"var(--bg-elev)", touchAction:"none"}}
+             onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+             onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}>
+          {src ? (
+            <img src={src} alt="" draggable={false}
+              style={{position:"absolute", left:"50%", top:"50%",
+                      transform:`translate(-50%,-50%) translate(${pos.x}px,${pos.y}px) scale(${scale})`,
+                      maxWidth:"none", minWidth:"100%", minHeight:"100%", userSelect:"none"}}/>
+          ) : (
+            <button onClick={()=>fileRef.current.click()}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+              <Icon name="plus" size={28} stroke={1.4}/>
+              <span className="stamp">Choose a file</span>
+            </button>
+          )}
+        </div>
+        <input ref={fileRef} type="file" accept="image/*" onChange={pick} style={{display:"none"}}/>
+        {src && (
+          <div className="flex items-center gap-3">
+            <Icon name="magnifying-glass" size={16}/>
+            <input type="range" min="1" max="3" step="0.01" value={scale}
+                   onChange={e=>setScale(parseFloat(e.target.value))} className="flex-1"/>
+            <button onClick={()=>fileRef.current.click()} className="stamp" style={{color:"var(--ice)"}}>Replace</button>
+          </div>
+        )}
+        <div className="flex gap-3">
+          <button onClick={onCancel} className="press flex-1 h-[52px] rounded-full text-[12px] uppercase tracking-[.2em]"
+                  style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Cancel</button>
+          <button disabled={!src} onClick={()=>onChange({ src, scale, x:pos.x, y:pos.y })}
+                  className="press flex-1 h-[52px] rounded-full text-[12px] uppercase tracking-[.2em]"
+                  style={{background: src?"var(--ice)":"var(--bg-elev2)", color: src?"var(--ice-ink)":"var(--ink-mute)"}}>
+            Use this
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const VENUE_TYPES = ["Club","Restaurant","Beach","Lounge","Gym"];
+  const BEIRUT_AREAS = ["Mar Mikhael","Gemmayze","Achrafieh","Hamra","Badaro","Saifi","Manara","Jiyeh","Batroun"];
+
+  function makeVenue(over={}){ return {
+    id: "venue-1", groupId: null, name: "", type: "Club", area: "Mar Mikhael",
+    description: "", heroImage: null, images: [null,null,null,null], ...over,
+  }; }
+
+  let _evt = 0;
+  function makeEvent(over={}){ return {
+    id: "evt-"+(++_evt), venueId: "venue-1", title: "", type: "Club", date: "", time: "",
+    mix: { girls: 15, guys: 5 },   // null === no gender preference
+    seats: 20, heroImage: null, exchange: "1 Story + venue tag", status: "draft", ...over,
+  }; }
+
+  // A couple of pre-seeded drops so the dashboard isn't empty on first load.
+  const SEED_EVENTS = [
+    makeEvent({ title:"Pool Day", type:"Beach", date:"Sun · 25 May", time:"14:00",
+                mix:{girls:15,guys:5}, seats:20, status:"live",
+                heroImage:{ src: IMG.beachClub, scale:1, x:0, y:0 } }),
+    makeEvent({ title:"Late Lounge", type:"Lounge", date:"Sun · 25 May", time:"22:00",
+                mix:null, seats:18, status:"draft",
+                heroImage:{ src: IMG.lounge, scale:1, x:0, y:0 } }),
+  ];
+
+  // Applicants for the swipe deck (vendor-neutral; mirrors a normalized provider row).
+  const APPLICANTS = [
+    { id:"a1", name:"Sara Capriotti", gender:"female", quality_score:0.94, photo:FACE.sara,
+      instagram_followers:28400, tiktok_followers:51200,
+      socials:{ instagram:"https://instagram.com/capriottisara", tiktok:"https://tiktok.com/@capriottisara", other:null } },
+    { id:"a2", name:"Karim Haddad", gender:"male", quality_score:0.88, photo:FACE.karim,
+      instagram_followers:14200, tiktok_followers:9800,
+      socials:{ instagram:"https://instagram.com/karim", tiktok:"https://tiktok.com/@karim", other:null } },
+    { id:"a3", name:"Lea Nassar", gender:"female", quality_score:0.91, photo:FACE.lina,
+      instagram_followers:46100, tiktok_followers:120300,
+      socials:{ instagram:"https://instagram.com/lea", tiktok:null, other:"https://leanassar.com" } },
+    { id:"a4", name:"Tariq Bou", gender:"male", quality_score:0.79, photo:FACE.rami,
+      instagram_followers:8200, tiktok_followers:21000,
+      socials:{ instagram:"https://instagram.com/tariq", tiktok:"https://tiktok.com/@tariq", other:null } },
+    { id:"a5", name:"Nour Khoury", gender:"female", quality_score:0.86, photo:FACE.nour,
+      instagram_followers:33000, tiktok_followers:5400,
+      socials:{ instagram:"https://instagram.com/nour", tiktok:"https://tiktok.com/@nour", other:null } },
+    { id:"a6", name:"Maya Fares", gender:"female", quality_score:0.97, photo:FACE.maya,
+      instagram_followers:88000, tiktok_followers:240000,
+      socials:{ instagram:"https://instagram.com/maya", tiktok:"https://tiktok.com/@maya", other:null } },
+    { id:"a7", name:"Jad Aoun", gender:"male", quality_score:0.72, photo:FACE.karim,
+      instagram_followers:5100, tiktok_followers:3200,
+      socials:{ instagram:"https://instagram.com/jad", tiktok:null, other:null } },
+    { id:"a8", name:"Yara Saad", gender:"female", quality_score:0.83, photo:FACE.yasmine,
+      instagram_followers:19500, tiktok_followers:42000,
+      socials:{ instagram:"https://instagram.com/yara", tiktok:"https://tiktok.com/@yara", other:null } },
+  ];
+
+  const fmtK = (n) => n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+"k" : ""+n;
+  const quality10 = (q) => (q*10).toFixed(1);   // 0.94 -> "9.4"
+
+  function tally(pickedIds, pool){
+    const ids = new Set(pickedIds); let girls=0, guys=0;
+    pool.forEach(a => { if (ids.has(a.id)) (a.gender==="female" ? girls++ : guys++); });
+    return { girls, guys };
+  }
+
+  /* Demo seed — lets Will (or a venue in a pitch) see the whole desk with zero
+     typing. Entered via "Preview the desk" on the intro screen. */
+  const DEMO_VENUE = makeVenue({
+    name: "Cyan Beach Club", type: "Beach", area: "Jiyeh",
+    description: "Daybeds, shallow pool, golden-hour sets. Jiyeh's calmest room.",
+    heroImage: { src: IMG.beachClub, scale: 1, x: 0, y: 0 },
+    images: [
+      { src: IMG.pool,     scale: 1, x: 0, y: 0 },
+      { src: IMG.cocktail, scale: 1, x: 0, y: 0 },
+      { src: IMG.lounge,   scale: 1, x: 0, y: 0 },
+      { src: IMG.rooftop,  scale: 1, x: 0, y: 0 },
+    ],
+  });
+
+  /* ========== shared atoms — same vocabulary as index.html ========== */
+  // Timers: tighter dimmed colons, digits carry the weight.
+  function Countdown({ value, className="", style={} }){
+    const parts = String(value).split(":");
+    return (
+      <span className={"font-mono "+className} style={style}>
+        {parts.map((p,i)=>(
+          <React.Fragment key={i}>
+            {i>0 && <span style={{opacity:.4, margin:"0 .06em"}}>:</span>}
+            {p}
+          </React.Fragment>
+        ))}
+      </span>
+    );
+  }
+
+  function StatusPill({ label, tone="neutral", dot=false }){
+    const style = tone==="ice" ? {background:"var(--ice)", color:"var(--ice-ink)"}
+      : tone==="outline" ? {border:"1px solid var(--line-2)", color:"var(--ink)"}
+      : {background:"var(--bg-elev2)", color:"var(--ink)"};
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium" style={style}>
+        {dot && <span className="w-1.5 h-1.5 rounded-full" style={{background: tone==="ice" ? "var(--ice-ink)" : "var(--ice)"}}/>}
+        {label}
+      </span>
+    );
+  }
+
+  function DateChip({ day, sub, tone="neutral" }){
+    const style = tone==="ice" ? {background:"var(--ice)", color:"var(--ice-ink)"} : {background:"var(--bg-elev2)", color:"var(--ink)"};
+    return (
+      <div className="rounded-[12px] flex flex-col items-center justify-center shrink-0" style={{ width:48, height:54, ...style }}>
+        <div className="font-black font-mono text-[20px] leading-none">{day}</div>
+        <div className="text-[9px] uppercase tracking-[.18em] mt-0.5" style={{opacity:.8}}>{sub}</div>
+      </div>
+    );
+  }
+
+  function SectionHead({ label, right, className="" }){
+    return (
+      <div className={"px-5 flex items-center justify-between "+className}>
+        <div className="flex items-center gap-2.5">
+          <span className="rounded-full" style={{ width:3, height:15, background:"var(--ice)" }}/>
+          <span className="section-label">{label}</span>
+        </div>
+        {right != null && (
+          <span className="text-[10px] uppercase tracking-[.2em] px-2.5 py-1 rounded-full" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>{right}</span>
+        )}
+      </div>
+    );
+  }
+
+  function Segmented({ items, value, onChange }){
+    return (
+      <div className="flex gap-1 p-1 rounded-full" style={{ background:"var(--bg-elev)", border:"1px solid var(--line)" }}>
+        {items.map(it=>{
+          const on = it.id===value;
+          return (
+            <button key={it.id} onClick={()=>onChange(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[10px] uppercase tracking-[.06em] font-medium"
+              style={on ? {background:"var(--ink)", color:"var(--bg)"} : {color:"var(--ink)", opacity:.6}}>
+              <span>{it.label}</span>
+              {it.count != null && <span style={{opacity:.65}}>{it.count}</span>}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  /* TSS-style widget stat tile: big number top, small label under.
+     Ice only on the one number that matters per screen. */
+  function StatTile({ n, label, ice=false, onClick }){
+    const cls = "card rounded-[16px] p-4 text-left w-full" + (onClick ? " press" : "");
+    const body = (
+      <>
+        <div className="font-black font-mono text-[26px] leading-none" style={ice?{color:"var(--ice)"}:undefined}>{n}</div>
+        <div className="stamp mt-1.5" style={{opacity:.75}}>{label}</div>
+      </>
+    );
+    return onClick
+      ? <button onClick={onClick} className={cls}>{body}</button>
+      : <div className={cls}>{body}</div>;
+  }
+
+  /* ========== ScreenVenueIntro — business splash ========== */
+  function ScreenVenueIntro({ onList, onLogin, onDemo }){
+    return (
+      <div className="absolute inset-0 anim-fade" style={{background:"#050505", color:"#F5F1EA"}}>
+        {/* Static dark background — no video assets needed */}
+        <div className="absolute inset-0 grain" style={{background:"#050505"}}/>
+        {/* Radial vignette */}
+        <div className="absolute inset-0 pointer-events-none" style={{boxShadow:"inset 0 0 170px 46px rgba(0,0,0,.82)"}}/>
+        {/* Top + bottom scrims */}
+        <div className="absolute inset-0 pointer-events-none" style={{background:"linear-gradient(180deg, rgba(5,5,5,.72) 0%, rgba(5,5,5,0) 24%, rgba(5,5,5,0) 46%, rgba(5,5,5,.92) 100%)"}}/>
+
+        <StatusBar/>
+
+        <div className="absolute inset-0 z-10 flex flex-col px-7 pt-[120px] pb-10">
+          {/* Centered wordmark lockup */}
+          <div className="flex-1 flex flex-col items-center justify-center text-center -mt-6">
+            <div className="anim-fade stamp" style={{color:"rgba(245,241,234,.78)"}}>Est. MMXXVI · Beirut</div>
+            <div className="font-black font-display-l anim-up" style={{fontSize:66, lineHeight:.88, letterSpacing:".04em", marginTop:14, textShadow:"0 2px 40px rgba(0,0,0,.6)"}}>THE<br/>LIST</div>
+            <div className="anim-up" style={{marginTop:18, fontSize:12, letterSpacing:".26em", textTransform:"uppercase", color:"rgba(245,241,234,.82)"}}>For the rooms that matter</div>
+          </div>
+
+          {/* Bottom actions */}
+          <div className="flex flex-col gap-3 anim-up">
+            <button onClick={onList} className="press glow-primary w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em]" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+              List your venue
+            </button>
+            <button onClick={onLogin} className="press w-full h-[58px] rounded-full font-medium text-[13px] uppercase tracking-[.2em]" style={{background:"transparent", color:"#F5F1EA", border:"1px solid rgba(245,241,234,.32)"}}>
+              Business login
+            </button>
+          </div>
+
+          {/* Member link + zero-typing demo path */}
+          <div className="text-center mt-4 anim-up flex flex-col gap-2">
+            <button onClick={()=>{ window.location.href = "./index.html"; }} className="press" style={{color:"rgba(245,241,234,.5)", fontSize:12, letterSpacing:".16em", textTransform:"uppercase", background:"transparent", border:"none"}}>
+              I'm a member
+            </button>
+            <button onClick={onDemo} className="press" style={{color:"var(--ice)", fontSize:12, letterSpacing:".16em", textTransform:"uppercase", background:"transparent", border:"none"}}>
+              Preview the desk · demo data
+            </button>
+          </div>
+        </div>
+
+        <HomeIndicator/>
+      </div>
+    );
+  }
+
+  /* ========== ScreenVenueLogin — mocked login ========== */
+  function ScreenVenueLogin({ onDone }){
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const canSubmit = email.length >= 3 && password.length >= 3;
+
+    return (
+      <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <div className="absolute inset-0 flex flex-col px-7 pt-[110px] pb-10">
+          <div className="font-black font-display-l text-[44px] leading-[.95] tracking-tight">Sign in</div>
+          <div className="text-[13px] mt-3" style={{color:"var(--ink-2)"}}>Manage your venue and its drops.</div>
+
+          <div className="mt-10 space-y-5">
+            <div>
+              <div className="stamp mb-2">Work email</div>
+              <input
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                type="text"
+                placeholder="you@yourvenue.com"
+                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+            <div>
+              <div className="stamp mb-2">Password</div>
+              <input
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                type="password"
+                placeholder="••••••••"
+                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+          </div>
+
+          <div className="flex-1"/>
+
+          <button
+            onClick={canSubmit ? onDone : undefined}
+            disabled={!canSubmit}
+            className={"press w-full h-[58px] rounded-full font-medium text-[14px] uppercase tracking-[.2em] "+(canSubmit ? "glow-primary" : "")}
+            style={{
+              background: canSubmit ? "var(--ice)" : "var(--bg-elev2)",
+              color: canSubmit ? "var(--ice-ink)" : "var(--ink-mute)"
+            }}
+          >
+            Sign in
+          </button>
+          <div className="text-center text-[11px] mt-3" style={{color:"var(--ink-mute)"}}>New venue? Signing in sets you up.</div>
+        </div>
+        <HomeIndicator/>
+      </div>
+    );
+  }
+
+  /* ========== ScreenOnboardGroup — optional group registration ========== */
+  function ScreenOnboardGroup({ group, setGroup, onNext }){
+    const [name, setName] = useState(group?.name || "");
+    const [logo, setLogo] = useState(group?.logo || null);
+    const [editingLogo, setEditingLogo] = useState(false);
+    const canCreate = name.length >= 2;
+
+    return (
+      <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <div className="absolute inset-0 flex flex-col" style={{paddingTop:54}}>
+          {/* Header */}
+          <div className="px-6 pt-6 pb-2 shrink-0">
+            <div className="font-black font-display-l" style={{fontSize:44,lineHeight:.95,letterSpacing:"-.02em",color:"var(--ink)"}}>Group</div>
+            <div className="text-[13px] mt-3" style={{color:"var(--ink-2)"}}>Run more than one venue? Group them. Otherwise skip.</div>
+          </div>
+
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto noscroll px-6 pt-4 pb-4">
+            {/* Group name field */}
+            <div className="mb-5">
+              <div className="stamp mb-2">Group name</div>
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                type="text"
+                placeholder="e.g. Skyline Hospitality"
+                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+
+            {/* Logo field */}
+            <div className="mb-6">
+              <div className="stamp mb-2">Group logo</div>
+              {editingLogo ? (
+                <ImageCropper
+                  ratio="1/1"
+                  value={logo}
+                  label="Group logo"
+                  onChange={(v) => { setLogo(v); setEditingLogo(false); }}
+                  onCancel={() => setEditingLogo(false)}
+                />
+              ) : logo ? (
+                <div className="flex items-center gap-3">
+                  <FramedImage value={logo} ratio="1/1" className="w-20 h-20"/>
+                  <button
+                    onClick={() => setEditingLogo(true)}
+                    className="press text-[12px] uppercase tracking-[.18em]"
+                    style={{color:"var(--ice)", background:"transparent", border:"none"}}
+                  >Replace</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setEditingLogo(true)}
+                  className="press w-20 h-20 rounded-[14px] flex items-center justify-center"
+                  style={{border:"1px dashed var(--line-2)", background:"transparent", color:"var(--ink-mute)"}}
+                >
+                  <span className="stamp">+ Logo</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom actions */}
+          <div className="shrink-0 px-6 pb-10 flex flex-col gap-3">
+            <button
+              onClick={() => { if(canCreate){ setGroup({ id:"grp-1", name, logo }); onNext(); } }}
+              disabled={!canCreate}
+              className={"press w-full h-[52px] rounded-full font-medium text-[14px] uppercase tracking-[.2em] "+(canCreate?"glow-primary":"")}
+              style={{
+                background: canCreate ? "var(--ice)" : "var(--bg-elev2)",
+                color: canCreate ? "var(--ice-ink)" : "var(--ink-mute)"
+              }}
+            >Create group</button>
+            <button
+              onClick={() => { setGroup(null); onNext(); }}
+              className="press w-full h-[48px] rounded-full text-[12px] uppercase tracking-[.2em]"
+              style={{background:"transparent", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+            >I'm independent · skip</button>
+          </div>
+        </div>
+        <HomeIndicator/>
+      </div>
+    );
+  }
+
+  /* ========== ScreenOnboardVenue — register venue assets ========== */
+  function ScreenOnboardVenue({ venue, setVenue, group, onDone }){
+    const [editing, setEditing] = useState(null); // null | "hero" | 0..3
+
+    const canSave = venue.name && venue.name.length >= 2 && venue.heroImage;
+
+    // When editing, show only the cropper full-screen
+    if (editing !== null){
+      if (editing === "hero"){
+        return (
+          <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
+            <StatusBar/>
+            <div className="absolute inset-0 flex flex-col px-6 overflow-y-auto noscroll" style={{paddingTop:70, paddingBottom:24}}>
+              <ImageCropper
+                ratio="4/5"
+                value={venue.heroImage}
+                label="Venue hero"
+                onChange={(v) => { setVenue(p => ({...p, heroImage:v})); setEditing(null); }}
+                onCancel={() => setEditing(null)}
+              />
+            </div>
+          </div>
+        );
+      } else {
+        const i = editing;
+        return (
+          <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
+            <StatusBar/>
+            <div className="absolute inset-0 flex flex-col px-6 overflow-y-auto noscroll" style={{paddingTop:70, paddingBottom:24}}>
+              <ImageCropper
+                ratio="4/5"
+                value={venue.images[i]}
+                label={"Photo " + (i + 1)}
+                onChange={(v) => { setVenue(p => ({...p, images: p.images.map((im,idx) => idx===i ? v : im)})); setEditing(null); }}
+                onCancel={() => setEditing(null)}
+              />
+            </div>
+          </div>
+        );
+      }
+    }
+
+    // Normal form view
+    return (
+      <div className="absolute inset-0 anim-fade" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <div className="absolute inset-0 flex flex-col" style={{paddingTop:54}}>
+          {/* Header */}
+          <div className="px-6 pt-6 pb-2 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="font-black font-display-l" style={{fontSize:44,lineHeight:.95,letterSpacing:"-.02em",color:"var(--ink)"}}>Venue</div>
+              {group && (
+                <div className="stamp px-2.5 py-1 rounded-full" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>
+                  Under {group.name}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Scrollable form */}
+          <div className="flex-1 overflow-y-auto noscroll px-6 pt-4 pb-4 flex flex-col gap-5">
+            {/* Venue name */}
+            <div>
+              <div className="stamp mb-2">Venue name</div>
+              <input
+                value={venue.name}
+                onChange={e => setVenue(v => ({...v, name:e.target.value}))}
+                type="text"
+                placeholder="e.g. Skybar"
+                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+
+            {/* Type pills */}
+            <div>
+              <div className="stamp mb-2">Type</div>
+              <div className="flex flex-wrap gap-2">
+                {VENUE_TYPES.map(t => {
+                  const sel = venue.type === t;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setVenue(v => ({...v, type:t}))}
+                      className="press px-4 h-9 rounded-full text-[12px] uppercase tracking-[.18em] font-medium"
+                      style={{
+                        background: sel ? "var(--ice)" : "transparent",
+                        color: sel ? "var(--ice-ink)" : "var(--ink)",
+                        border: sel ? "none" : "1px solid var(--line-2)"
+                      }}
+                    >{t}</button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Area pills */}
+            <div>
+              <div className="stamp mb-2">Area</div>
+              <div className="flex flex-wrap gap-2">
+                {BEIRUT_AREAS.map(a => {
+                  const sel = venue.area === a;
+                  return (
+                    <button
+                      key={a}
+                      onClick={() => setVenue(v => ({...v, area:a}))}
+                      className="press px-3 h-9 rounded-full text-[11px] uppercase tracking-[.14em] font-medium"
+                      style={{
+                        background: sel ? "var(--ice)" : "transparent",
+                        color: sel ? "var(--ice-ink)" : "var(--ink)",
+                        border: sel ? "none" : "1px solid var(--line-2)"
+                      }}
+                    >{a}</button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <div className="stamp mb-2">Description</div>
+              <textarea
+                rows={3}
+                value={venue.description}
+                onChange={e => setVenue(v => ({...v, description:e.target.value}))}
+                placeholder="Tell influencers what makes this venue worth posting."
+                className="w-full px-3 py-3 rounded-[12px] text-[15px] resize-none"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+
+            {/* Hero image */}
+            <div>
+              <div className="stamp mb-2">Hero image</div>
+              {venue.heroImage ? (
+                <div>
+                  <FramedImage value={venue.heroImage} ratio="4/5" className="w-full"/>
+                  <button
+                    onClick={() => setEditing("hero")}
+                    className="press mt-2 text-[12px] uppercase tracking-[.18em]"
+                    style={{color:"var(--ice)", background:"transparent", border:"none"}}
+                  >Replace</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setEditing("hero")}
+                  className="press w-full flex items-center justify-center rounded-[14px]"
+                  style={{aspectRatio:"4/5", border:"1px dashed var(--line-2)", background:"transparent", color:"var(--ink-mute)"}}
+                >
+                  <span className="stamp">+ Add hero</span>
+                </button>
+              )}
+            </div>
+
+            {/* Gallery */}
+            <div>
+              <div className="stamp mb-1">Venue photos</div>
+              <div className="text-[12px] mb-3" style={{color:"var(--ink-mute)"}}>Four photos influencers swipe through.</div>
+              <div className="grid grid-cols-2 gap-3">
+                {[0,1,2,3].map(i => (
+                  venue.images[i] ? (
+                    <button
+                      key={i}
+                      onClick={() => setEditing(i)}
+                      className="press rounded-[14px] overflow-hidden"
+                      style={{aspectRatio:"4/5", background:"var(--bg-elev)", border:"none", padding:0}}
+                    >
+                      <FramedImage value={venue.images[i]} ratio="4/5" className="w-full h-full"/>
+                    </button>
+                  ) : (
+                    <button
+                      key={i}
+                      onClick={() => setEditing(i)}
+                      className="press rounded-[14px] flex items-center justify-center"
+                      style={{aspectRatio:"4/5", border:"1px dashed var(--line-2)", background:"transparent", color:"var(--ink-mute)"}}
+                    >
+                      <span className="stamp">+</span>
+                    </button>
+                  )
+                ))}
+              </div>
+            </div>
+
+            {/* bottom spacer so CTA isn't occluded */}
+            <div style={{height:8}}/>
+          </div>
+
+          {/* Primary CTA */}
+          <div className="shrink-0 px-6 pb-10">
+            <button
+              onClick={canSave ? onDone : undefined}
+              disabled={!canSave}
+              className={"press w-full h-[52px] rounded-full font-medium text-[14px] uppercase tracking-[.2em] "+(canSave?"glow-primary":"")}
+              style={{
+                background: canSave ? "var(--ice)" : "var(--bg-elev2)",
+                color: canSave ? "var(--ice-ink)" : "var(--ink-mute)"
+              }}
+            >Save venue</button>
+          </div>
+        </div>
+        <HomeIndicator/>
+      </div>
+    );
+  }
+
+  /* ========== NotifSheet — venue activity feed ========== */
+  function NotifSheet({ onClose }){
+    const rows = [
+      { txt:"Sara Capriotti confirmed her seat — Pool Day", time:"2h", ice:true },
+      { txt:"Pool Day swipe window closes in 5 hours",      time:"4h" },
+      { txt:"Story posted by @lea — review it on the desk", time:"1d" },
+    ];
+    return (
+      <>
+        <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(4px)"}}/>
+        <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
+          <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
+          <div className="flex items-center justify-between mb-5">
+            <div className="font-black text-[22px] leading-none">Activity</div>
+            <button onClick={onClose} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+              <Icon name="x" size={14} stroke={1.5}/>
+            </button>
+          </div>
+          <div className="space-y-2">
+            {rows.map((r,i)=>(
+              <div key={i} className="card rounded-[14px] p-3.5 flex items-center gap-3">
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background: r.ice ? "var(--ice)" : "var(--line-2)"}}/>
+                <div className="flex-1 text-[13px] leading-snug">{r.txt}</div>
+                <div className="text-[11px] shrink-0" style={{opacity:.6}}>{r.time}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  /* ========== ScreenDesk — the venue dashboard (Tonight tab) ========== */
+  function ScreenDesk({ venue, events, pool, pickedIds, onReview, onPost }){
+    const [notifOpen, setNotifOpen] = useState(false);
+    const live = events.find(e => e.status === "live");
+    const drafts = events.filter(e => e.status === "draft");
+    const confirmed = 14 + pickedIds.length;
+    const toReview = Math.max(0, pool.length - pickedIds.length);
+
+    return (
+      <div className="absolute inset-0 flex flex-col" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <div className="flex-1 overflow-y-auto noscroll pb-24">
+          <div className="pt-16 px-5 flex items-center justify-between">
+            <div className="stamp" style={{opacity:.75}}>The List · Venues</div>
+            <button onClick={()=>setNotifOpen(true)} aria-label="Activity" className="press glass w-10 h-10 rounded-full flex items-center justify-center relative">
+              <Icon name="bell" size={17} stroke={1.5}/>
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>3</span>
+            </button>
+          </div>
+          <div className="px-5 mt-2 flex items-end justify-between">
+            <div>
+              <div className="font-black font-display-l text-[40px] leading-none">Tonight</div>
+              <div className="text-[12px] mt-2 flex items-center gap-1.5" style={{opacity:.75}}>
+                <Icon name="map-pin" size={12} stroke={1.5}/>{venue.name || "Your venue"} · {venue.area}
+              </div>
+            </div>
+            <div className="text-[12px] font-mono pb-1" style={{opacity:.75}}>Sun · 25.05</div>
+          </div>
+
+          {/* urgent task — the one thing to do now */}
+          {live && (
+            <div className="px-5 mt-6">
+              <button onClick={()=>onReview(live)} className="press card w-full text-left rounded-[18px] overflow-hidden relative grain">
+                {live.heroImage && <img src={live.heroImage.src} className="absolute inset-0 w-full h-full object-cover" alt=""/>}
+                <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(10,10,10,.25) 0%, rgba(10,10,10,.84) 100%)"}}/>
+                <div className="relative p-4" style={{color:"#F5F1EA"}}>
+                  <div className="flex items-center justify-between">
+                    <StatusPill label="Open for swipe" tone="ice" dot/>
+                    <Countdown value="04:56:12" className="text-[13px] font-medium" style={{color:"var(--ice)"}}/>
+                  </div>
+                  <div className="font-black font-display text-[30px] leading-none mt-9">{live.title}</div>
+                  <div className="text-[12px] mt-1.5" style={{opacity:.85}}>{live.date} · {live.time} · 137 applied for {live.seats} seats</div>
+                  <div className="mt-4 h-12 rounded-full flex items-center justify-center gap-2 text-[12px] uppercase tracking-[.18em] font-medium glow-primary" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                    Start swiping <Icon name="arrow-right" size={14} stroke={1.8}/>
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
+
+          {/* the desk numbers — TSS widget tiles, our skin */}
+          <SectionHead label="The desk" className="pt-7 pb-3"/>
+          <div className="px-5 grid grid-cols-2 gap-2.5 stagger">
+            <div style={{"--i":0}}><StatTile n={137} label="Applied"/></div>
+            <div style={{"--i":1}}><StatTile n={toReview} label="To review" onClick={live ? ()=>onReview(live) : undefined}/></div>
+            <div style={{"--i":2}}><StatTile n={confirmed} label="Confirmed" ice/></div>
+            <div style={{"--i":3}}><StatTile n={1} label="Room tonight"/></div>
+          </div>
+
+          {/* upcoming rooms */}
+          <SectionHead label="Upcoming rooms" right={drafts.length + " draft"} className="pt-8 pb-3"/>
+          <div className="px-5 space-y-2 stagger">
+            {drafts.length===0 && (
+              <div className="card rounded-[14px] p-5 text-center text-[13px]" style={{opacity:.7}}>Nothing scheduled. Post a room.</div>
+            )}
+            {drafts.map((r,i)=>{
+              const m = (r.date.split("·")[1]||"").trim().split(" ");
+              return (
+                <div key={r.id} style={{"--i":i}} className="card rounded-[14px] p-3 flex items-center gap-3">
+                  <DateChip day={m[0]||"—"} sub={m[1]||""}/>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-[15px] truncate">{r.title}</div>
+                    <div className="text-[11px] mt-0.5" style={{opacity:.7}}>{r.time} · {r.seats} seats</div>
+                  </div>
+                  <StatusPill label="Draft" tone="outline"/>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="px-5 mt-5 pb-4">
+            <button onClick={onPost} className="press w-full h-[52px] rounded-full flex items-center justify-center gap-2 text-[12px] uppercase tracking-[.18em] font-medium" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+              <Icon name="plus" size={15} stroke={1.8}/> New room
+            </button>
+          </div>
+        </div>
+        {notifOpen && <NotifSheet onClose={()=>setNotifOpen(false)}/>}
+      </div>
+    );
+  }
+
+  /* ========== ScreenDoor — night-of check-in + scoring ========== */
+  function ScreenDoor({ pool, onToast }){
+    const [seg, setSeg] = useState("expected");
+    const [inIds, setInIds] = useState(["a1","a3"]);
+    const [noShowIds, setNoShowIds] = useState([]);
+    const [rated, setRated] = useState([]);
+    const [rateFor, setRateFor] = useState(null);
+    const [score, setScore] = useState(9);
+
+    const expected = pool.filter(g=>!inIds.includes(g.id) && !noShowIds.includes(g.id));
+    const checkedIn = pool.filter(g=>inIds.includes(g.id));
+    const noShows = pool.filter(g=>noShowIds.includes(g.id));
+    const list = seg==="expected" ? expected : seg==="in" ? checkedIn : noShows;
+
+    const checkIn = (g)=>{ setInIds(ids=>[...ids, g.id]); onToast(g.name.split(" ")[0]+" checked in · 22:41"); };
+    const noShow = (g)=>{ setNoShowIds(ids=>[...ids, g.id]); onToast("Marked no-show — counts on their record"); };
+    const submitScore = ()=>{
+      setRated(r=>[...r, rateFor.id]);
+      onToast("Scored "+score+" · feeds their reputation");
+      setRateFor(null); setScore(9);
+    };
+
+    return (
+      <div className="absolute inset-0 flex flex-col" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <div className="flex-1 overflow-y-auto noscroll pb-24">
+          <div className="pt-16 px-5">
+            <div className="font-black font-display-l text-[40px] leading-none">Door</div>
+            <div className="text-[12px] mt-2" style={{opacity:.75}}>Pool Day · Sun 25 May · {pool.length} on the list</div>
+          </div>
+          <div className="px-5 mt-5">
+            <Segmented value={seg} onChange={setSeg} items={[
+              { id:"expected", label:"Expected", count:expected.length },
+              { id:"in",       label:"In",       count:checkedIn.length },
+              { id:"noshow",   label:"No show",  count:noShows.length },
+            ]}/>
+          </div>
+          <div className="px-5 mt-4 space-y-2 stagger">
+            {list.length===0 && (
+              <div className="card rounded-[14px] p-6 text-center text-[13px]" style={{opacity:.7}}>
+                {seg==="expected" ? "Everyone's in." : seg==="in" ? "No one's in yet." : "No no-shows. Good night."}
+              </div>
+            )}
+            {list.map((g,i)=>(
+              <div key={g.id} style={{"--i":i}} className="card rounded-[14px] p-3 flex items-center gap-3">
+                <img src={g.photo} className="w-11 h-11 rounded-full object-cover shrink-0" alt=""/>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-[14px] truncate">{g.name}</div>
+                  <div className="text-[11px]" style={{opacity:.7}}>
+                    <span className="font-mono">{quality10(g.quality_score)}</span> rep{seg==="in" ? " · in 22:41" : ""}
+                  </div>
+                </div>
+                {seg==="expected" && (
+                  <>
+                    <button onClick={()=>noShow(g)} className="press h-9 px-3 rounded-full text-[10px] uppercase tracking-[.12em]" style={{border:"1px solid var(--line-2)", opacity:.7}}>No show</button>
+                    <button onClick={()=>checkIn(g)} className="press h-9 px-3.5 rounded-full text-[10px] uppercase tracking-[.14em] font-medium glow-primary" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Check in</button>
+                  </>
+                )}
+                {seg==="in" && (
+                  rated.includes(g.id)
+                    ? <StatusPill label="Scored" tone="outline"/>
+                    : <button onClick={()=>setRateFor(g)} className="press h-9 px-3.5 rounded-full text-[10px] uppercase tracking-[.14em]" style={{border:"1px solid var(--line-2)"}}>Rate</button>
+                )}
+                {seg==="noshow" && <StatusPill label="No show"/>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {rateFor && (
+          <>
+            <div onClick={()=>setRateFor(null)} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(10,10,10,.55)", backdropFilter:"blur(4px)"}}/>
+            <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
+              <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
+              <div className="flex items-center gap-3 mb-5">
+                <img src={rateFor.photo} className="w-11 h-11 rounded-full object-cover" alt=""/>
+                <div className="flex-1">
+                  <div className="font-black text-[18px] leading-none">{rateFor.name}</div>
+                  <div className="text-[11px] mt-1" style={{opacity:.7}}>How was the night?</div>
+                </div>
+                <button onClick={()=>setRateFor(null)} aria-label="Close" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+                  <Icon name="x" size={14} stroke={1.5}/>
+                </button>
+              </div>
+              <div className="flex gap-2">
+                {[6,7,8,9,10].map(n=>(
+                  <button key={n} onClick={()=>setScore(n)} className={"press flex-1 h-12 rounded-[12px] font-black font-mono text-[18px] "+(score===n?"glow-ice":"")}
+                    style={score===n ? {background:"var(--ice)", color:"var(--ice-ink)"} : {background:"var(--bg-elev)", border:"1px solid var(--line)"}}>{n}</button>
+                ))}
+              </div>
+              <div className="text-[11px] mt-3" style={{opacity:.7}}>Feeds their reputation. Honest beats nice — it keeps the list good.</div>
+              <button onClick={submitScore} className="press glow-primary w-full h-12 rounded-full mt-5 text-[12px] uppercase tracking-[.18em] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                Save score
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  /* ========== VenueTabBar — 4-tab frosted bar for the venue shell ========== */
+  function VenueTabBar({ tab, onTab }){
+    const items = [
+      { id:"desk",   icon:"sparkle",             label:"Tonight" },
+      { id:"events", icon:"calendar",            label:"Events" },
+      { id:"door",   icon:"users",               label:"Door" },
+      { id:"venue",  icon:"building-storefront", label:"Venue" },
+    ];
+    return (
+      <div className="tabbar" style={{gridTemplateColumns:"repeat(4,1fr)"}}>
+        {items.map(it => {
+          const active = tab === it.id;
+          return (
+            <button key={it.id} onClick={() => onTab(it.id)} className={"press " + (active ? "active" : "")}>
+              <Icon name={it.icon} size={18} stroke={1.4}/>
+              <span>{it.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  /* ========== ScreenStub — placeholder for unbuilt tabs ========== */
+  function ScreenStub({ title }){
+    return (
+      <>
+        <StatusBar/>
+        <div className="absolute inset-0 flex items-center justify-center" style={{background:"var(--bg)"}}>
+          <div className="font-black font-display-l text-[40px]" style={{color:"var(--ink-mute)"}}>{title}</div>
+        </div>
+        <HomeIndicator/>
+      </>
+    );
+  }
+
+  /* ========== ScreenEvents — Events dashboard (Task 9) ========== */
+  function ScreenEvents({ events, venue, onPost, onOpenEvent }){
+    const [seg, setSeg] = useState("live");
+
+    const counts = {
+      live:  events.filter(e => e.status === "live").length,
+      draft: events.filter(e => e.status === "draft").length,
+      past:  events.filter(e => e.status === "past").length,
+    };
+
+    const segments = [
+      { id:"live",  label:"Live",  count: counts.live  },
+      { id:"draft", label:"Draft", count: counts.draft },
+      { id:"past",  label:"Past",  count: counts.past  },
+    ];
+
+    const visible = events.filter(e => e.status === seg);
+
+    function EventStatusPill({ status }){
+      if(status === "live")  return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Live</span>;
+      if(status === "draft") return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Draft</span>;
+      return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium" style={{background:"var(--bg-elev2)", color:"var(--ink-mute)"}}>Past</span>;
+    }
+
+    return (
+      <div className="absolute inset-0 flex flex-col" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+
+        {/* Header */}
+        <div className="shrink-0 px-5 pt-[60px] pb-3">
+          <div className="font-black font-display-l text-[40px] leading-none">Events</div>
+        </div>
+        <div className="hr-2 mx-5 mb-4 shrink-0"/>
+
+        {/* Segmented control */}
+        <div className="shrink-0 px-5 mb-4">
+          <div className="flex gap-1 p-1 rounded-full" style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
+            {segments.map(it => {
+              const on = it.id === seg;
+              return (
+                <button key={it.id} onClick={() => setSeg(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[10px] uppercase tracking-[.06em] font-medium"
+                  style={on ? {background:"var(--ink)", color:"var(--bg)"} : {color:"var(--ink-mute)"}}>
+                  <span>{it.label}</span>
+                  <span style={{opacity:.65}}>{it.count}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Scrollable event list */}
+        <div className="flex-1 overflow-y-auto noscroll px-5 pb-2">
+          {visible.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <span className="stamp" style={{color:"var(--ink-mute)"}}>
+                {seg === "live" ? "No live events" : seg === "draft" ? "No drafts" : "No past events"}
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {visible.map(event => (
+                <button key={event.id} onClick={() => onOpenEvent(event)}
+                  className="press w-full text-left flex items-center gap-3 p-3 rounded-[14px]"
+                  style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
+                  <FramedImage value={event.heroImage} ratio="4/5" className="w-14 shrink-0"/>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-black text-[16px] leading-tight truncate">{event.title || "Untitled"}</div>
+                    <div className="text-[11px] mt-0.5 truncate" style={{color:"var(--ink-mute)"}}>
+                      {event.type}{event.date ? " · " + event.date : ""}{event.time ? " · " + event.time : ""}
+                    </div>
+                  </div>
+                  <div className="shrink-0 flex flex-col items-end gap-1.5">
+                    <EventStatusPill status={event.status}/>
+                    <span className="stamp text-[10px]" style={{color:"var(--ink-mute)"}}>
+                      {event.mix
+                        ? "Girls " + event.mix.girls + " · Guys " + event.mix.guys
+                        : event.seats + " seats"}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Pinned Post CTA */}
+        <div className="shrink-0 px-5 pb-24 pt-3">
+          <button onClick={onPost} className="press glow-primary w-full h-[52px] rounded-full font-medium text-[14px] uppercase tracking-[.2em]"
+            style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+            Post an event
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ========== SwipeCard — one applicant card ========== */
+  // One applicant card. Shows photo, name, quality 0-10, IG + TikTok, tappable socials.
+  function SwipeCard({ a }){
+    const Social = ({label, href, icon}) => href ? (
+      <a href={href} target="_blank" rel="noreferrer"
+         className="press flex items-center gap-1.5 px-3 h-9 rounded-full text-[12px]"
+         style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+        <Icon name={icon} size={14}/>{label}
+      </a>
+    ) : null;
+    return (
+      <div className="relative w-full rounded-[18px] overflow-hidden" style={{aspectRatio:"4/5", background:"var(--bg-elev)"}}>
+        <FramedImage value={{src:a.photo, scale:1, x:0, y:0}} ratio="4/5" className="absolute inset-0"/>
+        <div className="absolute inset-x-0 bottom-0 p-4"
+             style={{background:"linear-gradient(to top, rgba(5,5,5,.92), rgba(5,5,5,.0))"}}>
+          <div className="flex items-end justify-between">
+            <div className="font-black font-display-l text-[28px] leading-none">{a.name}</div>
+            <div className="flex items-center gap-1 font-mono text-[20px]" style={{color:"var(--ice)"}}>
+              {quality10(a.quality_score)}<Icon name="sparkles" size={14}/>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 mt-3 text-[13px]">
+            <span><span className="font-mono">{fmtK(a.instagram_followers)}</span> IG</span>
+            <span><span className="font-mono">{fmtK(a.tiktok_followers)}</span> TikTok</span>
+          </div>
+          <div className="flex items-center gap-2 mt-3">
+            <Social label="Instagram" href={a.socials.instagram} icon="instagram"/>
+            <Social label="TikTok" href={a.socials.tiktok} icon="tiktok"/>
+            <Social label="Link" href={a.socials.other} icon="link"/>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ========== ScreenApplicants — live events to review ========== */
+  function ScreenApplicants({ events, onReview }){
+    const live = events.filter(e => e.status === "live");
+    return (
+      <div className="absolute inset-0 flex flex-col" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <div className="shrink-0 px-5 pt-[60px] pb-3">
+          <div className="font-black font-display-l text-[40px] leading-none">Applicants</div>
+        </div>
+        <div className="hr-2 mx-5 mb-4 shrink-0"/>
+        <div className="flex-1 overflow-y-auto noscroll px-5 pb-24">
+          {live.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-center px-6">
+              <span className="text-[13px]" style={{color:"var(--ink-mute)"}}>No live drops yet — post one to start receiving applicants.</span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {live.map(event => (
+                <button key={event.id} onClick={() => onReview(event)}
+                  className="press w-full text-left flex items-center gap-3 p-3 rounded-[14px]"
+                  style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
+                  <FramedImage value={event.heroImage} ratio="4/5" className="w-14 shrink-0"/>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-black text-[16px] leading-tight truncate">{event.title || "Untitled"}</div>
+                    <div className="text-[11px] mt-0.5 truncate" style={{color:"var(--ink-mute)"}}>
+                      {event.type}{event.date ? " · " + event.date : ""}
+                    </div>
+                    <div className="text-[12px] mt-1.5" style={{color:"var(--ink-mute)"}}>
+                      <span className="font-mono">{APPLICANTS.length}</span> waiting
+                    </div>
+                  </div>
+                  <div className="shrink-0">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[.2em] font-medium"
+                          style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Review</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ========== ScreenReview — swipe deck ========== */
+  function ScreenReview({ event, pool, onClose, picked, setPicked }){
+    // picked state lives in App so the desk tiles move when you swipe.
+    const [idx, setIdx] = useState(0);
+    const t = tally(picked, pool);
+    const target = event.mix;                    // {girls,guys} | null
+    const done = idx >= pool.length;
+    const a = pool[idx];
+
+    const decide = (yes) => {
+      if (yes && a) setPicked(p => [...p, a.id]);
+      setIdx(i => i + 1);
+    };
+
+    return (
+      <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={onClose} className="stamp" style={{color:"var(--ink-mute)"}}>Close</button>
+          <div className="stamp" style={{color:"var(--ink-mute)"}}>{event.title}</div>
+        </div>
+
+        {target ? (
+          <div className="flex gap-3 mb-4 text-[12px]">
+            <div className="flex-1 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+              Girls <span className="font-mono" style={{color:"var(--ice)"}}>{t.girls}</span> / {target.girls}
+            </div>
+            <div className="flex-1 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+              Guys <span className="font-mono" style={{color:"var(--ice)"}}>{t.guys}</span> / {target.guys}
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4 text-[12px] px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+            Picked <span className="font-mono" style={{color:"var(--ice)"}}>{picked.length}</span> / {event.seats}
+          </div>
+        )}
+
+        {done ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
+            <div className="font-black font-display-l text-[30px]">All reviewed</div>
+            <div className="text-[13px]" style={{color:"var(--ink-2)"}}>You picked {picked.length}.</div>
+            <div className="w-full mt-4 space-y-2 overflow-y-auto">
+              {pool.filter(x=>picked.includes(x.id)).map(x => (
+                <div key={x.id} className="flex items-center gap-3 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+                  <FramedImage value={{src:x.photo,scale:1,x:0,y:0}} ratio="1/1" className="w-10 h-10"/>
+                  <div className="flex-1 text-left text-[14px]">{x.name}</div>
+                  <div className="font-mono text-[13px]" style={{color:"var(--ice)"}}>{quality10(x.quality_score)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 flex items-center"><SwipeCard a={a}/></div>
+            <div className="flex items-center justify-center gap-8 mt-5">
+              <button onClick={()=>decide(false)} className="press w-16 h-16 rounded-full flex items-center justify-center"
+                      style={{border:"1px solid var(--line-2)"}}><Icon name="x" size={26}/></button>
+              <button onClick={()=>decide(true)} className="press glow-primary w-16 h-16 rounded-full flex items-center justify-center"
+                      style={{background:"var(--ice)", color:"var(--ice-ink)"}}><Icon name="check" size={26}/></button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  /* ========== ScreenVenueProfile — venue tab ========== */
+  function ScreenVenueProfile({ venue, group, onEdit, onLogout, onToast }){
+    const name = venue.name && venue.name.length > 0 ? venue.name : null;
+    const hasDesc = venue.description && venue.description.length > 0;
+
+    const SettingsRow = ({ label, onTap, muted }) => (
+      <button
+        onClick={onTap}
+        className="press w-full flex items-center justify-between py-4 text-left"
+        style={{ background: "transparent", border: "none" }}
+      >
+        <span className="text-[15px]" style={{ color: muted ? "var(--ink-mute)" : "var(--ink)" }}>{label}</span>
+        <Icon name="arrow-right" size={15} stroke={1.5} style={{ color: "var(--ink-mute)", flexShrink: 0 }}/>
+      </button>
+    );
+
+    return (
+      <div className="absolute inset-0 flex flex-col" style={{ background: "var(--bg)" }}>
+        <StatusBar/>
+
+        {/* Header */}
+        <div className="shrink-0 px-5 pt-[60px] pb-3">
+          <div className="font-black font-display-l text-[40px] leading-none">Venue</div>
+        </div>
+        <div className="hr-2 mx-5 mb-0 shrink-0"/>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto noscroll pb-24">
+
+          {/* Hero image */}
+          <div className="px-5 pt-5">
+            <FramedImage value={venue.heroImage} ratio="4/5" className="w-full"/>
+          </div>
+
+          {/* Name + type/area + description */}
+          <div className="px-5 pt-4">
+            {name ? (
+              <div className="font-black text-[22px] leading-tight">{name}</div>
+            ) : (
+              <div className="font-black text-[22px] leading-tight" style={{ color: "var(--ink-mute)" }}>Unnamed venue</div>
+            )}
+            <div className="text-[13px] mt-1" style={{ color: "var(--ink-mute)" }}>
+              {venue.type} · {venue.area}
+            </div>
+            {hasDesc && (
+              <div className="text-[14px] mt-3 leading-relaxed" style={{ color: "var(--ink-2)" }}>
+                {venue.description}
+              </div>
+            )}
+          </div>
+
+          {/* Gallery */}
+          <div className="px-5 pt-6">
+            <div className="stamp mb-3">Photos</div>
+            <div className="grid grid-cols-4 gap-2">
+              {venue.images.map((im, i) => (
+                <FramedImage key={i} value={im} ratio="4/5" className="w-full" empty="—"/>
+              ))}
+            </div>
+          </div>
+
+          {/* Group / Independent */}
+          <div className="px-5 pt-6">
+            {group ? (
+              <div className="flex flex-col gap-3">
+                <span className="stamp px-3 py-1.5 rounded-full self-start" style={{ border: "1px solid var(--line-2)", color: "var(--ink-mute)" }}>
+                  Group · {group.name}
+                </span>
+                <div className="flex items-center justify-between py-3">
+                  <span className="text-[15px]" style={{ color: "var(--ink-mute)", opacity: 0.5 }}>Switch venue</span>
+                  <span className="stamp px-2.5 py-1 rounded-full" style={{ border: "1px solid var(--line)", color: "var(--ink-mute)", opacity: 0.5 }}>Soon</span>
+                </div>
+              </div>
+            ) : (
+              <span className="stamp" style={{ color: "var(--ink-mute)" }}>Independent venue</span>
+            )}
+          </div>
+
+          {/* Settings list */}
+          <div className="px-5 pt-5">
+            <div className="stamp mb-1">Settings</div>
+            <div style={{ borderTop: "1px solid var(--line)" }}>
+              <SettingsRow label="Edit venue" onTap={onEdit}/>
+              <div style={{ height: 1, background: "var(--line)" }}/>
+              <SettingsRow label="Switch to member" onTap={() => { window.location.href = "./index.html"; }}/>
+              <div style={{ height: 1, background: "var(--line)" }}/>
+              <SettingsRow label="Log out" onTap={onLogout}/>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  /* ========== ScreenPostEvent — 4-step post wizard ========== */
+  function ScreenPostEvent({ venue, onPublish, onCancel }){
+    const [sub, setSub] = useState("basics"); // basics | seats | image | review
+    const [draft, setDraft] = useState(makeEvent({ venueId: venue.id, heroImage: venue.heroImage }));
+    const set = (patch) => setDraft(d => ({ ...d, ...patch }));
+
+    if (sub === "basics") {
+      const ok = draft.title.length>=2 && draft.date && draft.time;
+      return (
+        <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
+          <StatusBar/>
+          <button onClick={onCancel} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Cancel</button>
+          <div className="font-black font-display-l text-[40px]">Post</div>
+          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Step 1 of 4 · The basics</div>
+          <div className="mt-6 space-y-5 flex-1 overflow-y-auto">
+            <div>
+              <div className="stamp mb-2">Title</div>
+              <input
+                value={draft.title}
+                onChange={e => set({title:e.target.value})}
+                type="text"
+                placeholder="e.g. Pool Day"
+                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+            <div>
+              <div className="stamp mb-2">Type</div>
+              <div className="flex flex-wrap gap-2">
+                {VENUE_TYPES.map(t => {
+                  const sel = draft.type === t;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => set({type:t})}
+                      className="press px-4 h-9 rounded-full text-[12px] uppercase tracking-[.18em] font-medium"
+                      style={{
+                        background: sel ? "var(--ice)" : "transparent",
+                        color: sel ? "var(--ice-ink)" : "var(--ink)",
+                        border: sel ? "none" : "1px solid var(--line-2)"
+                      }}
+                    >{t}</button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <div className="stamp mb-2">Date</div>
+              <input
+                value={draft.date}
+                onChange={e => set({date:e.target.value})}
+                type="text"
+                placeholder="Sun · 25 May"
+                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+            <div>
+              <div className="stamp mb-2">Time</div>
+              <input
+                value={draft.time}
+                onChange={e => set({time:e.target.value})}
+                type="text"
+                placeholder="22:00"
+                className="w-full h-12 px-3 rounded-[12px] text-[15px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+          </div>
+          <button disabled={!ok} onClick={()=>setSub("seats")}
+            className="press w-full h-[58px] rounded-full text-[14px] uppercase tracking-[.2em]"
+            style={{background: ok?"var(--ice)":"var(--bg-elev2)", color: ok?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
+        </div>
+      );
+    }
+    if (sub === "seats") {
+      const noPref = draft.mix === null;
+      const total = noPref ? draft.seats : (draft.mix.girls + draft.mix.guys);
+      const Stepper = ({label, val, onDelta}) => (
+        <div className="flex items-center justify-between py-3">
+          <div className="text-[15px]">{label}</div>
+          <div className="flex items-center gap-4">
+            <button onClick={()=>onDelta(-1)} className="press w-9 h-9 rounded-full" style={{border:"1px solid var(--line-2)"}}>–</button>
+            <div className="font-mono text-[20px] w-8 text-center" style={{color:"var(--ice)"}}>{val}</div>
+            <button onClick={()=>onDelta(1)} className="press w-9 h-9 rounded-full" style={{border:"1px solid var(--line-2)"}}>+</button>
+          </div>
+        </div>
+      );
+      return (
+        <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
+          <StatusBar/>
+          <button onClick={()=>setSub("basics")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+          <div className="font-black font-display-l text-[40px]">Seats</div>
+          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Step 2 of 4 · Who fills the room</div>
+
+          <div className="flex items-center justify-between mt-6 py-3 border-b" style={{borderColor:"var(--line)"}}>
+            <div className="text-[15px]">Set a gender mix</div>
+            <button onClick={()=> set({ mix: noPref ? {girls:15,guys:5} : null }) }
+              className="press px-3 h-8 rounded-full text-[11px] uppercase tracking-[.18em]"
+              style={{background: noPref?"transparent":"var(--ice)", color: noPref?"var(--ink)":"var(--ice-ink)",
+                      border: noPref?"1px solid var(--line-2)":"none"}}>{noPref?"Off":"On"}</button>
+          </div>
+
+          {noPref ? (
+            <Stepper label="Total seats" val={draft.seats} onDelta={d=> set({ seats: Math.max(1, draft.seats+d) })}/>
+          ) : (
+            <>
+              <Stepper label="Girls" val={draft.mix.girls} onDelta={d=> set({ mix: {...draft.mix, girls: Math.max(0, draft.mix.girls+d)} })}/>
+              <Stepper label="Guys"  val={draft.mix.guys}  onDelta={d=> set({ mix: {...draft.mix, guys:  Math.max(0, draft.mix.guys+d)} })}/>
+            </>
+          )}
+
+          <div className="mt-4 stamp" style={{color:"var(--ink-mute)"}}>{total} seats total</div>
+          <div className="flex-1"/>
+          <button disabled={total<1} onClick={()=> { set({ seats: total }); setSub("image"); }}
+            className="press w-full h-[58px] rounded-full text-[14px] uppercase tracking-[.2em]"
+            style={{background: total>=1?"var(--ice)":"var(--bg-elev2)", color: total>=1?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
+        </div>
+      );
+    }
+    if (sub === "image") {
+      return (
+        <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
+          <StatusBar/>
+          <button onClick={()=>setSub("seats")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+          <div className="font-black font-display-l text-[40px]">Image</div>
+          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Step 3 of 4 · The event photo</div>
+          <div className="text-[12px] mt-3" style={{color:"var(--ink-mute)"}}>Reuse your venue hero, or choose a new one.</div>
+          <div className="mt-5 flex-1 overflow-y-auto">
+            <ImageCropper
+              ratio="4/5"
+              value={draft.heroImage}
+              label="Event photo"
+              onChange={(v)=>{ set({heroImage:v}); setSub("review"); }}
+              onCancel={()=>setSub("seats")}
+            />
+          </div>
+        </div>
+      );
+    }
+    // sub === "review"
+    return (
+      <div className="absolute inset-0 flex flex-col px-5 pt-[64px] pb-24" style={{background:"var(--bg)"}}>
+        <StatusBar/>
+        <button onClick={()=>setSub("image")} className="stamp text-left mb-2" style={{color:"var(--ink-mute)"}}>Back</button>
+        <div className="font-black font-display-l text-[40px]">Review</div>
+        <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Step 4 of 4</div>
+        <div className="mt-5 flex-1 overflow-y-auto space-y-4">
+          <FramedImage value={draft.heroImage} ratio="4/5" className="w-full"/>
+          <div>
+            <div className="font-black text-[22px] leading-tight">{draft.title}</div>
+            <div className="text-[13px] mt-1" style={{color:"var(--ink-mute)"}}>{draft.type} · {draft.date} · {draft.time}</div>
+          </div>
+          <div className="text-[13px]" style={{color:"var(--ink-mute)"}}>
+            {draft.mix
+              ? "Girls " + draft.mix.girls + " · Guys " + draft.mix.guys + " · " + draft.seats + " seats"
+              : draft.seats + " seats · no gender preference"}
+          </div>
+          <div>
+            <div className="stamp mb-1">The exchange</div>
+            <div className="text-[14px]">{draft.exchange}</div>
+          </div>
+        </div>
+        <button onClick={()=>onPublish(draft)}
+          className="press w-full h-[58px] rounded-full text-[14px] uppercase tracking-[.2em]"
+          style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Publish</button>
+      </div>
+    );
+  }
+
+  /* ========== APP — onboarding state machine ========== */
+  function App(){
+    const [step, setStep] = useState("intro");
+    // intro | login | onboard-group | onboard-venue | done
+    const [light, setLight] = useState(false);
+    const [group, setGroup] = useState(null);          // {id,name,logo} | null (independent)
+    const [venue, setVenue] = useState(makeVenue());   // venue being registered
+    const [events, setEvents] = useState(SEED_EVENTS); // their drops
+    const [tab, setTab] = useState("desk");            // desk | events | door | venue
+    const [pickedIds, setPickedIds] = useState([]);    // swipe picks — shared with the desk tiles
+    const [toast, setToast] = useState(null);
+    const toastTimer = useRef(null);
+
+    useEffect(() => { document.documentElement.classList.toggle('light', light); }, [light]);
+    const [reviewEvent, setReviewEvent] = useState(null);
+    const showToast = (msg) => { setToast(msg); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(()=>setToast(null), 2200); };
+
+    // wrap: page chrome (theme toggle + explanatory card + phone frame + Toast), like index.html's App return
+    const wrap = (node) => (
+      <div className="min-h-screen w-full flex flex-col items-center pt-20 pb-24">
+        <a className="side-link" href="./">← Influencer side</a>
+        <button className="theme-toggle" onClick={() => setLight(l => !l)}><span className="dot"></span>{light ? 'Light' : 'Dark'} · switch</button>
+        <div className="mb-8 text-center">
+          <div className="stamp" style={{color:"var(--ink-mute)"}}>The List · Venue side · Prototype v0.1</div>
+          <div className="font-black text-[28px] leading-none mt-2">Venue flow</div>
+        </div>
+        <div className="iphone"><div className="iphone-screen">
+          {node}
+          <Toast msg={toast}/>
+        </div></div>
+      </div>
+    );
+
+    if (step === "intro") return wrap(<ScreenVenueIntro onList={()=>setStep("login")} onLogin={()=>setStep("login")}
+      onDemo={()=>{ setVenue(DEMO_VENUE); setGroup(null); setStep("done"); setTab("desk"); }}/>);
+    if (step === "login") return wrap(<ScreenVenueLogin onDone={()=>setStep("onboard-group")}/>);
+    if (step === "onboard-group") return wrap(<ScreenOnboardGroup group={group} setGroup={setGroup} onNext={()=>setStep("onboard-venue")}/>);
+    if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} setVenue={setVenue} group={group} onDone={()=>{ setStep("done"); setTab("desk"); }}/>);
+
+    const openReview = (e) => { setReviewEvent(e); setStep("review-deck"); };
+    const openEvent = (e) => { e.status === "live" ? openReview(e) : showToast("Draft — editing coming soon"); };
+    const publishEvent = (draft) => {
+      setEvents(es => [{ ...draft, status: "live" }, ...es]);
+      setStep("done"); setTab("events");
+      showToast("Event published");
+    };
+    if (step === "post") return wrap(<ScreenPostEvent venue={venue} onCancel={()=>setStep("done")} onPublish={publishEvent}/>);
+    if (step === "done") return wrap(
+      <>
+        {tab === "desk"   && <ScreenDesk venue={venue} events={events} pool={APPLICANTS} pickedIds={pickedIds} onReview={openReview} onPost={()=>setStep("post")}/>}
+        {tab === "events" && <ScreenEvents events={events} venue={venue} onPost={()=>setStep("post")} onOpenEvent={openEvent}/>}
+        {tab === "door"   && <ScreenDoor pool={APPLICANTS} onToast={showToast}/>}
+        {tab === "venue"  && <ScreenVenueProfile venue={venue} group={group} onEdit={()=>setStep("onboard-venue")} onLogout={()=>setStep("intro")} onToast={showToast}/>}
+        <VenueTabBar tab={tab} onTab={setTab}/>
+      </>
+    );
+
+    if (step === "review-deck") return wrap(<ScreenReview event={reviewEvent} pool={APPLICANTS} picked={pickedIds} setPicked={setPickedIds} onClose={()=>{ setStep("done"); setTab("desk"); }}/>);
+
+    // Generic fallback for steps not yet built.
+    return wrap(
+      <>
+        <StatusBar/>
+        <div className="absolute inset-0 flex items-center justify-center" style={{background:"var(--bg)"}}>
+          <div className="font-black font-display-l text-[34px]" style={{color:"var(--ink-mute)"}}>{step}</div>
+        </div>
+        <HomeIndicator/>
+      </>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

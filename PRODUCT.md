@@ -2,6 +2,8 @@
 
 > **Legacy v1 reference.** Current look = v3 glass (`docs/superpowers/specs/2026-07-04-v3-glass-reskin-design.md`) plus standing rulings in `docs/agent/memory.md`: no grey text, Jakarta-only, sentence case, bg-3 ground. Full sync is deliberately deferred.
 
+**Current delivery direction (2026-09-20):** V3 only, using React + Vite and Capacitor for iOS. It fills the phone viewport with persistent bottom navigation and content-only scrolling. V1/V2 are preserved in `archive/web/`; SwiftUI in `ios/` is paused. This local refactor is in progress, not deployed or native-compiled.
+
 ## Register
 
 product
@@ -10,7 +12,7 @@ product
 
 **Primary (v1): vetted Beirut influencers, models, and DJs.** Sourced from Dima's 250-300 contact database. Context: on their iPhone in the evening, deciding where to go out, scanning which events are worth applying to. The job to be done: find a desirable, time-boxed event, apply, get picked by the venue, show up, post one Instagram Story tagging the venue. They care about access and status, not discounts.
 
-**Secondary (post-v1): venues.** A separate dual UX where venues post events and swipe through applicants. Out of scope for the v1 influencer app; managed manually (Notion) during the dress-rehearsal phase.
+**Venue users:** a separate active V3 interface where venues post events, choose applicants, check guests in, and review the night.
 
 ## Product Purpose
 
@@ -18,7 +20,7 @@ The List is an invite-only nightlife marketplace for Beirut. Venues post time-bo
 
 It is a structural clone of The Secret Society (Dubai) with a deliberately different visual language. Success = paid drops booked, high venue-repeat rate, and Stories actually posted. The unfair advantage is Dima's pre-built creator database (the cold-start that took TSS three years to assemble) and Radwan's venue relationships.
 
-iPhone-first, Beirut only, SwiftUI app. The current surface is a clickable HTML prototype (`web/index.html`) standing in for the eventual native build.
+iPhone-first, Beirut only. The active member and venue interfaces live in `web/v3/`; the same React UI is the basis for browser and Capacitor builds.
 
 ## Brand Personality
 
@@ -45,4 +47,4 @@ Berlin nightlife meets fashion editorial. Closer to Aesop / Bottega / Berghain t
 
 Working target: **WCAG AA** (body text >=4.5:1, large text >=3:1, visible focus states, labeled controls) plus honoring `prefers-reduced-motion` (the prototype already guards its stagger/reveal animations). The ice-blue accent must never be the sole signal of state; always pair it with text or an icon so it survives color-blindness and the dark/light theme switch.
 
-Not yet formally ratified by the founders; treat as the design default and revisit when the SwiftUI build begins. Body text is now full-contrast ink (Bone on dark / Black on light) — no muted-grey body text anywhere. Known debt to check: white-on-image overlays on the prototype still need a contrast pass (good first `/impeccable audit` target). The ice-blue accent still must never be the sole signal of state.
+Treat accessibility as the default for both browser and Capacitor builds. Body text remains full-contrast ink; hierarchy comes from size and weight. Verify photo overlays, focus states, safe areas, and keyboard behavior during mobile QA. Color must never be the sole signal of state.

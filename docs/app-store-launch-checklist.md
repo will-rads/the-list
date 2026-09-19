@@ -2,21 +2,24 @@
 
 ## Current status
 
+**Direction, 2026-09-20:** V3 React + Vite, packaged with Capacitor for iOS. V1/V2 are preserved in `archive/web/`; SwiftUI in `ios/` is paused. Mobile demo journeys, regression checks, and the production build pass locally; the Capacitor project is generated and synced. The last recorded production deployment is 2026-07-18; no new deployment or native compile is claimed below.
+
 - [x] Backend v1 is live on Supabase.
 - [x] Member web app is live at `/v3`.
 - [x] Venue web app is live at `/v3/venue`.
 - [x] Public event teaser is live at `/v3/e?id=`.
 - [x] Founder admin is live at `/admin`.
-- [x] The main member and venue loop has passed browser testing.
-- [x] SwiftUI member and venue apps are scaffolded with mock services.
-- [x] SwiftUI CI build and tests are green.
+- [x] Earlier member and venue demo flows passed browser checks; the full authenticated walkthrough remains pending.
+- [x] SwiftUI scaffold and its earlier passing CI results are preserved as history; that track is paused.
 - [x] Phyllo feasibility research is complete.
 - [x] Instagram flow is locked: handle lookup at onboarding, optional Connect Instagram from Profile.
 - [x] Member and venue Profile analytics dashboards are redesigned in web v3.
 - [x] Complete web workflows are implemented for member, venue, founder, and public teaser surfaces.
 - [x] Manual Story screenshot upload, rejected-proof retry, and founder review are implemented.
 - [x] Sensitive RPC grants are hardened; PostgreSQL `PUBLIC` and `anon` execute access are zero.
-- [ ] Approve the deployed HTML analytics design before porting it to SwiftUI.
+- [x] Verify V3 demo journeys, anchored navigation, sheets, and no outer scroll at 390x844 and 320x568; reduced-height forms also checked.
+- [ ] Verify real iPhone keyboard and safe-area behavior.
+- [x] Validate the local Vite production build and Capacitor asset sync.
 
 ## Backend work still missing
 
@@ -35,7 +38,7 @@
 - [ ] Replace email OTP with phone OTP after an SMS provider is chosen.
 - [ ] Replace mock creator data with the chosen provider.
 - [ ] Turn on Story scoring after Gemini and Meta setup is complete.
-- [ ] Bind the SwiftUI services to live Supabase.
+- [ ] Verify existing Supabase authentication, uploads, links, and session persistence inside the Capacitor app.
 - [ ] Add APNs push notifications for the iOS app.
 
 ## External services still missing
@@ -56,11 +59,12 @@
 
 - [ ] Confirm the operating legal entity and Apple seller name.
 - [ ] Enrol the organization in the Apple Developer Program and complete D-U-N-S verification if needed.
-- [ ] Run `xcodegen` and build the app on a Mac.
+- [x] Generate/sync the Capacitor iOS wrapper in `web/ios/` from the Vite build.
+- [ ] Open the Capacitor project on a Mac and build it with Xcode.
 - [ ] Fix any first Xcode build errors.
 - [ ] Test every member and venue flow in an iPhone simulator.
 - [ ] Test the final build on real iPhones.
-- [ ] Compare the native screens with the live v3 web app.
+- [ ] Verify the shared V3 UI in the iOS wrapper, including safe areas, keyboard, navigation, and external links.
 - [ ] Create and add the final 1024 px app icon.
 - [ ] Confirm bundle ID, signing, capabilities, and release configuration.
 - [ ] Publish a privacy policy, Terms of Service, community rules, and support contact.
@@ -76,12 +80,12 @@
 
 ## Best implementation order
 
-- [ ] 1. Finish the production web click-test.
-- [ ] 2. Export, secure, and test the live Supabase backend.
-- [ ] 3. Close the known venue, billing, and account gaps.
-- [ ] 4. Choose SMS, creator-data, and payment providers.
-- [ ] 5. Complete Gemini, Meta, and creator-data integrations.
-- [ ] 6. Bind SwiftUI to Supabase and add push notifications.
+- [ ] 1. Fix V3 phone layout and test member/venue flows.
+- [x] 2. Validate the Vite production build and Capacitor asset sync; native compilation remains below.
+- [ ] 3. With deployment approval, finish the authenticated production walkthrough.
+- [ ] 4. Export and test the backend; close venue, billing, and account gaps.
+- [ ] 5. Choose providers and finish the required SMS, creator-data, and Story integrations.
+- [ ] 6. Test Capacitor authentication, uploads, links, and push notifications.
 - [ ] 7. Finish privacy, legal, account deletion, moderation, and App Store requirements.
 - [ ] 8. Build and test on a Mac and real iPhones.
 - [ ] 9. Run TestFlight with the first 30 members and 2-3 venues.

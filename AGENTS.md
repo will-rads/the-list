@@ -42,15 +42,18 @@ Always say:
 
 ## Tech choices already locked
 
+Current direction (Will, 2026-09-20) supersedes older CDN-only and SwiftUI-first plans. V3 is the sole active version; preserve V1/V2 in `archive/web/` and leave the SwiftUI scaffold in `ios/` paused. Local changes are not production until explicitly approved and deployed.
+
 | Layer | Choice |
 | --- | --- |
-| Prototype | HTML + React via CDN + Tailwind CDN |
-| Mobile app | SwiftUI (iOS-first, no Android v1) |
-| Backend (planned) | Supabase (auth + Postgres + storage + realtime) |
+| Active app | React + Vite in `web/`; JSX and local CSS, no runtime JSX compilation |
+| Mobile app | The same React UI packaged with Capacitor; iOS-first. Wrapper in `web/ios/`, distinct from paused `ios/` |
+| Phone layout | Fill the viewport, keep bottom navigation visible, scroll screen content, respect safe areas and keyboard |
+| Backend | Existing live Supabase (auth + Postgres + storage + realtime) |
 | Voice / transcription | Gemini 3 Flash |
 | Design fonts | **Plus Jakarta Sans** — one family, app-wide (the **One-Family Rule**). Headers bolder (800), body 400, numbers inherit (no monospace, no second family). NOT Inter, NOT Instrument Serif. |
-| Design accent | **Ice blue** `#9FD8E8` (light theme `#26768F`), restrained ≤10%. Carbon black `#0A0A0A` ground, Bone `#F5F1EA` text. |
-| Design source of truth | `DESIGN.md` (visual system + named rules) and `PRODUCT.md` (register, brand, principles). Read both before any UI work. |
+| Design accent | V3 monochrome frosted glass over `bg-3`, white on dark and dark ink on light. Preserve the existing V3 look |
+| Design source of truth | Read `DESIGN.md` and `PRODUCT.md`, but use the V3 glass spec and latest `docs/agent/memory.md` rulings over their legacy visual details |
 
 ## Skills available
 

@@ -16,7 +16,9 @@ posts Story                    reviews them
 gets reputation score          builds invite list
 ```
 
-iPhone-first. SwiftUI app. v1 = Beirut only.
+iPhone-first. V3 React app with Capacitor for iOS packaging. Beirut only for the first release.
+
+**2026-09-20 local direction:** V3 is the sole active version. V1/V2 are preserved in `archive/web/`; the mock SwiftUI scaffold in `ios/` is paused. Full-screen mobile layout, flow fixes, and the Vite build pass local checks (`web/v3/member.jsx`, `venue.jsx`, local CSS). `web/capacitor.config.json` packages that build; its iOS wrapper is generated and synced in `web/ios/`. Nothing in this refactor is yet pushed, deployed, or native-compiled.
 
 ## Why now
 
@@ -79,7 +81,9 @@ Their structure works. We **copy structure, throw away visual language**.
 - Purple-pink gradients, cheesy visual language → we go editorial dark / bone light
 - English only → we do bilingual (English + Arabizi-friendly)
 
-## Architecture (live backend + complete web implementation, 2026-07-18)
+## Last recorded production architecture (2026-07-18)
+
+This records the deployed baseline. The local React/Capacitor work above has not changed production.
 
 ```text
 Production          → the-list-omega.vercel.app
@@ -99,10 +103,10 @@ Creator data        → vendor-neutral normalized API; provider trial still open
 Story verification  → screenshot upload + founder review today; Gemini rubric later
 Founder review      → /admin, proof required before verify/reject
 Payments            → booking ledger + computed 20% cut; no processing yet
-SwiftUI             → mock-first scaffold, CI green; Supabase binding on Mac day
+SwiftUI             → mock-first scaffold; paused as of 2026-09-20
 ```
 
-The creator-data vendor remains swappable: Phyllo, Modash, Ensembledata, or another licensed provider can sit behind the same Edge Function and normalized response. Web and SwiftUI clients never see vendor-specific fields.
+The creator-data vendor remains swappable: Phyllo, Modash, Ensembledata, or another licensed provider can sit behind the same Edge Function and normalized response. The React client consumes normalized fields in both browser and Capacitor builds.
 
 ### Onboarding data flow
 
@@ -224,7 +228,7 @@ The client never sees vendor specifics, so swapping providers is one backend Edg
 - **Tone:** Berlin nightlife meets fashion editorial. Closer to Aesop / Bottega / Berghain than Uber Eats.
 - **Not:** purple, pink, gradient-y, cute, dating-app, coupon-app.
 - **Fonts (locked):** Plus Jakarta Sans — one family across the app (the One-Family Rule), headers bolder, numbers inherit. Avoiding Inter + Instrument Serif (too AI-flavored).
-- **Accent (locked):** Ice blue `#9FD8E8` (light `#26768F`) on Carbon Black `#0A0A0A`, Bone `#F5F1EA` text. No grey text — text is full-contrast ink (Bone `#F5F1EA` on dark / Black `#0A0A0A` on light). Restrained to ≤10% (actions / selection / state). Acid lime and champagne gold rejected. Dark mode is primary. Full visual system in `DESIGN.md`.
+- **Current visual system:** V3 monochrome frosted glass over the `bg-3` photo, white on dark and dark ink on light. No grey body text. The V3 glass spec and latest memory rulings supersede the legacy ice-blue details in `DESIGN.md`.
 
 ## Open questions still on the table
 

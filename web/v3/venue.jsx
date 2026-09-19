@@ -1,0 +1,4333 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { supabaseClient } from '../client.js';
+const { useState, useRef, useEffect, useMemo } = React;
+  
+
+  // === COPIED VERBATIM from index.html: IMG, Icon + HICONS ===
+
+  /* ========== curated imagery ========== */
+  const IMG = {
+    beachClub:  "../assets/pool-day.jpg",
+    pool:       "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=900&q=80&auto=format&fit=crop",
+    rooftop:    "https://images.unsplash.com/photo-1551918120-9739cb430c6d?w=900&q=80&auto=format&fit=crop",
+    restaurant: "https://images.unsplash.com/photo-1592861956120-e524fc739696?w=900&q=80&auto=format&fit=crop",
+    club:       "https://images.unsplash.com/photo-1545128485-c400e7702796?w=900&q=80&auto=format&fit=crop",
+    clubRed:    "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900&q=80&auto=format&fit=crop",
+    gym:        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=900&q=80&auto=format&fit=crop",
+    lounge:     "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=900&q=80&auto=format&fit=crop",
+    cocktail:   "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=900&q=80&auto=format&fit=crop",
+    beirut:     "https://images.unsplash.com/photo-1620553967747-50fdadc4b606?w=1200&q=80&auto=format&fit=crop",
+    saraFull:   "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&q=80&auto=format&fit=crop",
+  };
+
+  /* Applicant portraits – people, not venues. Unsplash, editorial quality. */
+  const FACE = {
+    sara:    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=900&q=80&auto=format&fit=crop",
+    lina:    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=900&q=80&auto=format&fit=crop",
+    maya:    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=900&q=80&auto=format&fit=crop",
+    nour:    "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=900&q=80&auto=format&fit=crop",
+    yasmine: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=900&q=80&auto=format&fit=crop",
+    karim:   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=900&q=80&auto=format&fit=crop",
+    rami:    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=900&q=80&auto=format&fit=crop",
+    tala:    "https://images.unsplash.com/photo-1517841905260-fc24eaa86c50?w=900&q=80&auto=format&fit=crop",
+  };
+
+  /* ========== Icon helper (Heroicons, inline) ==========
+     Heroicons outline, inlined as SVG so there's no icon CDN dependency at all.
+     Closest free stand-in for SF Symbols, which the SwiftUI build will use.
+     Call sites keep their lucide-style names; we map to Heroicon glyphs here.
+     `stroke` drives stroke-width (Heroicons outline is 1.5 by default).
+     instagram has no Heroicon (no brand glyphs) so it's a small custom mark.
+  ====================================================== */
+  const HICONS = {
+    "battery-full": '<path stroke-linecap="round" stroke-linejoin="round" d="M21 10.5h.375c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125H21M4.5 10.5H18V15H4.5v-4.5ZM3.75 18h15A2.25 2.25 0 0 0 21 15.75v-6a2.25 2.25 0 0 0-2.25-2.25h-15A2.25 2.25 0 0 0 1.5 9.75v6A2.25 2.25 0 0 0 3.75 18Z"/>',
+    "sparkle": '<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/>',
+    "compass": '<path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/>',
+    "bookmark": '<path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/>',
+    "bookmark-fill": '<path fill="currentColor" stroke="none" d="M6.32 2.577a49.255 49.255 0 0 1 11.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 0 1-1.085.67L12 18.089l-7.165 3.583A.75.75 0 0 1 3.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93Z"/>',
+    "link": '<path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/>',
+    "paper-plane": '<path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/>',
+    "bell": '<path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/>',
+    "user": '<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>',
+    "search": '<path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>',
+    "arrow-right": '<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>',
+    "arrow-left": '<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/>',
+    "sliders-horizontal": '<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"/>',
+    "x": '<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>',
+    "share": '<path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"/>',
+    "map-pin": '<path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>',
+    "check": '<path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>',
+    "calendar": '<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/>',
+    "settings": '<path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>',
+    "instagram": '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/>',
+    "sparkles": '<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/>',
+    "tiktok": '<path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 1 1-.99-3.467l2.31-.66a2.25 2.25 0 0 0 1.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 0 1-.99-3.467l2.31-.66A2.25 2.25 0 0 0 9 15.553z"/>',
+    "plus": '<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>',
+    "magnifying-glass": '<path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>',
+    "users": '<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/>',
+    "building-storefront": '<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349M3.75 21V9.349m0 0a3.001 3.001 0 0 0 3.75-.615A2.993 2.993 0 0 0 9.75 9.75c.896 0 1.7-.393 2.25-1.016a2.999 2.999 0 0 0 4.5 0A3.001 3.001 0 0 0 20.25 9c.896 0 1.7-.393 2.25-1.015m-18 0A2.993 2.993 0 0 1 3.75 6.75v-.265M21.75 9c.343-.36.59-.808.71-1.299a3 3 0 0 0-.21-2.183l-1.135-2.27A1.5 1.5 0 0 0 19.5 2.25h-15a1.5 1.5 0 0 0-1.382.918L1.04 5.55a3 3 0 0 0-.17 2.133c.124.49.37.937.71 1.298"/>',
+  };
+  function Icon({ name, size=18, stroke=1.5, className="" }){
+    const inner = HICONS[name] || HICONS["sparkle"];
+    return (
+      <svg className={"inline-block "+className} width={size} height={size}
+           viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke}
+           aria-hidden="true" style={{flexShrink:0}}
+           dangerouslySetInnerHTML={{__html: inner}}/>
+    );
+  }
+
+  // Transient toast inside the app surface.
+  // Gives minor controls a visible reply.
+  function Toast({ msg }){
+    if(!msg) return null;
+    return (
+      <div className="absolute left-0 right-0 flex justify-center z-[60] pointer-events-none" style={{bottom:"calc(env(safe-area-inset-bottom, 0px) + 104px)"}}>
+        <div key={msg} className="anim-up px-4 py-2.5 rounded-full glass-over-image text-[12px] flex items-center gap-2" style={{maxWidth:"82%"}}>
+          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:"var(--ice)"}}/>
+          <span className="truncate">{msg}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Renders an image cropped to a fixed aspect frame using a stored transform.
+  // value: { src, scale, x, y } | null. ratio: e.g. "4/5". Empty state when null.
+  function FramedImage({ value, ratio="4/5", className="", empty="No image", radius }){
+    return (
+      <div className={"relative overflow-hidden rounded-[14px] "+className}
+           style={{aspectRatio:ratio, background:"var(--bg-elev)", ...(radius != null ? {borderRadius:radius} : {})}}>
+        {value && value.src ? (
+          <img src={value.src} alt="" draggable={false}
+            style={{position:"absolute", left:"50%", top:"50%",
+                    transform:`translate(-50%,-50%) translate(${value.x||0}px,${value.y||0}px) scale(${value.scale||1})`,
+                    maxWidth:"none", minWidth:"100%", minHeight:"100%", userSelect:"none"}}/>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center stamp" style={{color:"var(--ink-mute)"}}>{empty}</div>
+        )}
+      </div>
+    );
+  }
+
+  // Pick a local file, drag + zoom inside a fixed-aspect frame, return its transform.
+  function ImageCropper({ ratio="4/5", value, onChange, onCancel, label="Position your image" }){
+    const [src, setSrc]   = useState(value?.src || null);
+    const [scale, setScale] = useState(value?.scale || 1);
+    const [pos, setPos]   = useState({ x: value?.x || 0, y: value?.y || 0 });
+    const drag = useRef(null);
+    const fileRef = useRef(null);
+    const frameRef = useRef(null);
+
+    const pick = (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { setSrc(r.result); setScale(1); setPos({x:0,y:0}); };
+      r.readAsDataURL(f);
+    };
+    const onDown = (e) => { const p = e.touches?e.touches[0]:e; drag.current = { x:p.clientX-pos.x, y:p.clientY-pos.y }; };
+    const onMove = (e) => { if(!drag.current) return; const p = e.touches?e.touches[0]:e;
+                            setPos({ x:p.clientX-drag.current.x, y:p.clientY-drag.current.y }); };
+    const onUp   = () => { drag.current = null; };
+
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="stamp" style={{color:"var(--ink-mute)"}}>{label}</div>
+        <div ref={frameRef} className="relative overflow-hidden rounded-[14px] mx-auto w-full"
+             style={{aspectRatio:ratio, background:"var(--bg-elev)", touchAction:"none"}}
+             onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+             onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}>
+          {src ? (
+            <img src={src} alt="" draggable={false}
+              style={{position:"absolute", left:"50%", top:"50%",
+                      transform:`translate(-50%,-50%) translate(${pos.x}px,${pos.y}px) scale(${scale})`,
+                      maxWidth:"none", minWidth:"100%", minHeight:"100%", userSelect:"none"}}/>
+          ) : (
+            <button onClick={()=>fileRef.current.click()}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+              <Icon name="plus" size={28} stroke={1.4}/>
+              <span className="stamp">Choose a file</span>
+            </button>
+          )}
+        </div>
+        <input ref={fileRef} type="file" accept="image/*" onChange={pick} style={{display:"none"}}/>
+        {src && (
+          <div className="flex items-center gap-3">
+            <Icon name="magnifying-glass" size={16}/>
+            <input type="range" min="1" max="3" step="0.01" value={scale}
+                   onChange={e=>setScale(parseFloat(e.target.value))} className="flex-1"/>
+            <button onClick={()=>fileRef.current.click()} className="stamp" style={{color:"var(--ice)"}}>Replace</button>
+          </div>
+        )}
+        <div className="flex gap-3">
+          <button onClick={onCancel} className="press flex-1 h-[52px] rounded-full text-[12px] font-medium"
+                  style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Cancel</button>
+          <button disabled={!src} onClick={()=>onChange({ src, scale, x:pos.x, y:pos.y, frameW: frameRef.current ? frameRef.current.clientWidth : null })}
+                  className="press flex-1 h-[52px] rounded-full text-[12px] font-semibold"
+                  style={{background: src?"var(--ice)":"var(--bg-elev2)", color: src?"var(--ice-ink)":"var(--ink-mute)"}}>
+            Use this
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  function loadBrowserImage(src){
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("Could not read that image"));
+      image.crossOrigin = "anonymous";
+      image.src = src;
+    });
+  }
+
+  async function bakeCroppedJpeg(value){
+    if (!value?.src) return null;
+    const image = await loadBrowserImage(value.src);
+    const frameW = Math.max(1, Number(value.frameW) || 320);
+    const frameH = frameW * 5 / 4;
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1350;
+    const ctx = canvas.getContext("2d");
+    const outputScale = canvas.width / frameW;
+    const imageScale = Math.max(.5, Number(value.scale) || 1);
+    const coverScale = Math.max(frameW / image.naturalWidth, frameH / image.naturalHeight);
+    const baseWidth = image.naturalWidth * coverScale;
+    const baseHeight = image.naturalHeight * coverScale;
+    const drawWidth = baseWidth * imageScale * outputScale;
+    const drawHeight = baseHeight * imageScale * outputScale;
+    const drawX = (canvas.width - drawWidth) / 2 + (Number(value.x) || 0) * outputScale;
+    const drawY = (canvas.height - drawHeight) / 2 + (Number(value.y) || 0) * outputScale;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+    return new Promise((resolve, reject) => canvas.toBlob(
+      blob => blob ? resolve(blob) : reject(new Error("Could not prepare that image")),
+      "image/jpeg",
+      .85
+    ));
+  }
+
+  async function uploadCroppedMedia(value, path){
+    if (!value?.src) return null;
+    if (value.remote && /^https?:/i.test(value.src)) return value.src;
+    const blob = await bakeCroppedJpeg(value);
+    const { error } = await supabaseClient.storage.from("media").upload(path, blob, {
+      upsert:true,
+      contentType:"image/jpeg",
+    });
+    if (error) throw error;
+    return supabaseClient.storage.from("media").getPublicUrl(path).data.publicUrl;
+  }
+
+  const VENUE_TYPES = ["Club","Restaurant","Beach","Lounge","Gym"];
+  const BEIRUT_AREAS = ["Mar Mikhael","Gemmayze","Achrafieh","Hamra","Badaro","Saifi","Manara","Jiyeh","Batroun"];
+
+  function makeVenue(over={}){ return {
+    id: "venue-1", groupId: null, name: "", type: "Club", area: "Mar Mikhael",
+    description: "", igHandle: "", heroImage: null, images: [null,null,null,null], ...over,
+  }; }
+
+  let _evt = 0;
+  function makeEvent(over={}){ return {
+    id: "evt-"+(++_evt), venueId: "venue-1", title: "", type: "Club", date: "", time: "",
+    mix: { girls: 15, guys: 5 },   // null === no gender preference
+    seats: 20, storyHours: 24, heroImage: null, exchange: "1 Story + venue tag", status: "draft", ...over,
+  }; }
+
+  const TODAY = "Sun · 25 May"; // canonical demo today – time never advances
+  // Live mode derives today from the clock; format matches liveEvent's date field.
+  const todayLabel = () =>
+    new Date().toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}).replace(",", " ·");
+
+  // Event stages
+  const STAGE = { draft:"draft", open:"open", locked:"locked", past:"past", cancelled:"cancelled" };
+  // Guest attendance states (one axis)
+  const GS = { applied:"applied", waitlist:"waitlist", picked:"picked", confirmed:"confirmed",
+    declined:"declined", expired:"expired", withdrawn:"withdrawn", checkedIn:"checked_in",
+    noShow:"no_show", notSelected:"not_selected", cancelled:"cancelled" };
+  // Story states (second axis; only meaningful after checked_in + event past)
+  const SS = { due:"due", review:"review", needsReview:"needs_review", rejected:"rejected", missed:"missed", verified:"verified" };
+
+  // open AND locked both fold to legacy "live" until Task 4 migrates filters to stage –
+  // so two events can sit in the old Live segment at once. Expected interim state.
+  // Derive legacy status from stage so current renders don't crash.
+  function stageToStatus(stage){
+    if (stage === STAGE.draft)      return "draft";
+    if (stage === STAGE.open)       return "live";
+    if (stage === STAGE.locked)     return "live";
+    if (stage === STAGE.past)       return "past";
+    if (stage === STAGE.cancelled)  return "past";
+    return "draft";
+  }
+
+  function makeGuest(applicantId, state, opts = {}) {
+    return { applicantId, state, story: opts.story || null, code: opts.code || null,
+             rating: opts.rating ?? null, inAt: opts.inAt || null,
+             storyId: opts.storyId || null, storyMedia: opts.storyMedia || null,
+             verdict: opts.verdict || null };
+  }
+
+  const SARA_INSIGHTS = {
+    dataStatus: "estimated",
+    freshness: "Refreshed 2 days ago",
+    engagementRate: 0.058,
+    overview: {
+      localFollowers: 20400,
+      trend: [23800, 24600, 25100, 26300, 27200, 28400],
+      trendLabel: "+19% followers in 90 days",
+    },
+    audience: {
+      lebanon: 0.72,
+      cities: [["Beirut",0.46],["Jounieh",0.14],["Tripoli",0.07],["Byblos",0.05]],
+      ages: [["13-17",0.04],["18-24",0.41],["25-34",0.38],["35-44",0.13],["45+",0.04]],
+      female: 0.68,
+      male: 0.32,
+      credibility: 0.91,
+      languages: ["Arabic","English","French"],
+      activeHours: ["6-9 PM","Friday","Sunday"],
+    },
+    content: {
+      performance: [["Reels",1.42],["Carousels",1.16],["Stories",0.94]],
+      topContent: [
+        { thumbnail:IMG.pool, label:"Reel", reach:48200 },
+        { thumbnail:IMG.rooftop, label:"Reel", reach:41600 },
+        { thumbnail:IMG.restaurant, label:"Carousel", reach:33700 },
+        { thumbnail:IMG.cocktail, label:"Story", reach:28900 },
+      ],
+      averageLikes: 1650,
+      averageComments: 74,
+      averageViews: 14600,
+      averageReelsViews: 32400,
+      postingFrequency: "4.2 posts / week",
+      sponsoredShare: 0.12,
+    },
+    theList: {
+      reliability: 0.94,
+      showUpRate: 17/18,
+      storyCompletion: 0.94,
+      venueRating: 4.8,
+      events: 18,
+      verifiedReach: 342000,
+      noShows: 1,
+      strikes: 0,
+      trend: [0.82,0.90,0.88,0.96,1],
+    },
+  };
+
+  function makeCompactDemoInsights(applicant, index){
+    const lebanon = (applicant.audience?.countries || []).find(([name]) => name === "Lebanon")?.[1] ?? null;
+    const reliability = applicant.reputation?.nights > 0
+      ? applicant.reputation.shows / applicant.reputation.nights
+      : null;
+    const followers = applicant.instagram_followers;
+    const engagementRate = [0.041,0.052,0.048,0.039,0.063,0.046][index % 6];
+    const female = applicant.audience?.female ?? null;
+    return {
+      dataStatus: index % 4 === 1 ? "connected" : "estimated",
+      freshness: index % 4 === 1 ? "Synced today" : "Refreshed 3 days ago",
+      engagementRate,
+      overview: {
+        localFollowers: followers != null && lebanon != null ? Math.round(followers * lebanon) : null,
+        trend: followers == null ? null : [0.82,0.87,0.91,0.95,0.98,1].map(x => Math.round(followers * x)),
+        trendLabel: "+8% followers in 90 days",
+      },
+      audience: {
+        lebanon,
+        cities: lebanon == null ? null : [["Beirut",lebanon*.62],["Jounieh",lebanon*.18],["Byblos",lebanon*.09]],
+        ages: [["18-24",0.44],["25-34",0.36],["35-44",0.14],["45+",0.06]],
+        female,
+        male: female == null ? null : 1-female,
+        credibility: applicant.quality_score,
+        languages: ["Arabic","English"],
+        activeHours: ["7-10 PM","Thursday","Saturday"],
+      },
+      content: {
+        performance: [["Reels",1.18],["Carousels",1.02],["Stories",0.88]],
+        topContent: [
+          { thumbnail:IMG.rooftop, label:"Reel", reach:followers == null ? null : Math.round(followers*1.34) },
+          { thumbnail:IMG.pool, label:"Story", reach:followers == null ? null : Math.round(followers*.92) },
+          { thumbnail:IMG.cocktail, label:"Reel", reach:followers == null ? null : Math.round(followers*.81) },
+          { thumbnail:IMG.restaurant, label:"Carousel", reach:followers == null ? null : Math.round(followers*.68) },
+        ],
+        averageLikes: followers == null ? null : Math.round(followers*engagementRate*.86),
+        averageComments: followers == null ? null : Math.round(followers*engagementRate*.04),
+        averageViews: followers == null ? null : Math.round(followers*.54),
+        averageReelsViews: followers == null ? null : Math.round(followers*.88),
+        postingFrequency: `${3 + (index % 3)} posts / week`,
+        sponsoredShare: [0.08,0.12,0.16][index % 3],
+      },
+      theList: {
+        reliability,
+        showUpRate: reliability,
+        storyCompletion: reliability == null ? null : Math.max(0, reliability-.03),
+        venueRating: 4.4 + (index % 5)*.1,
+        events: applicant.reputation?.nights ?? null,
+        verifiedReach: followers == null || reliability == null ? null : Math.round(followers*reliability*2.8),
+        noShows: applicant.reputation?.noShows ?? null,
+        strikes: applicant.reputation?.strikes ?? null,
+        trend: [0.72,0.84,0.80,0.92,reliability].filter(v => v != null),
+      },
+    };
+  }
+
+  // Applicants for the swipe deck (vendor-neutral; mirrors a normalized provider row).
+  const APPLICANTS = [
+    // ---- original 8 (kept exactly, with added reputation + audience) ----
+    { id:"a1", name:"Sara Capriotti", gender:"female", quality_score:0.94, photo:FACE.sara,
+      instagram_followers:28400, tiktok_followers:51200,
+      socials:{ instagram:"https://instagram.com/capriottisara", tiktok:"https://tiktok.com/@capriottisara", other:null },
+      reputation:{ score:9.1, nights:18, shows:17, noShows:1, strikes:0, withYou:3 },
+      audience:{ female:0.68, countries:[["Lebanon",0.72],["UAE",0.12],["France",0.08]] },
+      insights:SARA_INSIGHTS },
+    { id:"a2", name:"Karim Haddad", gender:"male", quality_score:0.88, photo:FACE.karim,
+      instagram_followers:14200, tiktok_followers:9800,
+      socials:{ instagram:"https://instagram.com/karim", tiktok:"https://tiktok.com/@karim", other:null },
+      reputation:{ score:8.7, nights:12, shows:11, noShows:1, strikes:0, withYou:2 },
+      audience:{ female:0.42, countries:[["Lebanon",0.70],["UAE",0.14],["KSA",0.06]] } },
+    { id:"a3", name:"Lea Nassar", gender:"female", quality_score:0.91, photo:FACE.lina,
+      instagram_followers:46100, tiktok_followers:120300,
+      socials:{ instagram:"https://instagram.com/lea", tiktok:null, other:"https://leanassar.com" },
+      reputation:{ score:9.4, nights:22, shows:22, noShows:0, strikes:0, withYou:4 },
+      audience:{ female:0.71, countries:[["Lebanon",0.65],["UAE",0.18],["KSA",0.07]] } },
+    { id:"a4", name:"Tariq Bou", gender:"male", quality_score:0.79, photo:FACE.rami,
+      instagram_followers:8200, tiktok_followers:21000,
+      socials:{ instagram:"https://instagram.com/tariq", tiktok:"https://tiktok.com/@tariq", other:null },
+      reputation:{ score:8.2, nights:7, shows:6, noShows:1, strikes:0, withYou:1 },
+      audience:{ female:0.38, countries:[["Lebanon",0.74],["Cyprus",0.10],["UAE",0.08]] } },
+    { id:"a5", name:"Nour Khoury", gender:"female", quality_score:0.86, photo:FACE.nour,
+      instagram_followers:33000, tiktok_followers:5400,
+      socials:{ instagram:"https://instagram.com/nour", tiktok:"https://tiktok.com/@nour", other:null },
+      reputation:{ score:8.9, nights:14, shows:13, noShows:1, strikes:0, withYou:2 },
+      audience:{ female:0.64, countries:[["Lebanon",0.70],["UAE",0.14],["KSA",0.06]] } },
+    { id:"a6", name:"Maya Fares", gender:"female", quality_score:0.97, photo:FACE.maya,
+      instagram_followers:88000, tiktok_followers:240000,
+      socials:{ instagram:"https://instagram.com/maya", tiktok:"https://tiktok.com/@maya", other:null },
+      reputation:{ score:9.6, nights:24, shows:24, noShows:0, strikes:0, withYou:4 },
+      audience:{ female:0.78, countries:[["Lebanon",0.60],["UAE",0.20],["France",0.08]] } },
+    { id:"a7", name:"Jad Aoun", gender:"male", quality_score:0.72, photo:FACE.karim,
+      instagram_followers:5100, tiktok_followers:3200,
+      socials:{ instagram:"https://instagram.com/jad", tiktok:null, other:null },
+      reputation:{ score:7.9, nights:5, shows:4, noShows:1, strikes:1, withYou:0 },
+      audience:{ female:0.41, countries:[["Lebanon",0.80],["Cyprus",0.09],["Qatar",0.05]] } },
+    { id:"a8", name:"Yara Saad", gender:"female", quality_score:0.83, photo:FACE.yasmine,
+      instagram_followers:19500, tiktok_followers:42000,
+      socials:{ instagram:"https://instagram.com/yara", tiktok:"https://tiktok.com/@yara", other:null },
+      reputation:{ score:8.6, nights:10, shows:10, noShows:0, strikes:0, withYou:2 },
+      audience:{ female:0.66, countries:[["Lebanon",0.68],["UAE",0.16],["KSA",0.08]] } },
+    // ---- 18 new applicants (female first, then male) ----
+    { id:"a9", name:"Lea Khoury", gender:"female", quality_score:0.82, photo:FACE.sara,
+      instagram_followers:22000, tiktok_followers:38000,
+      socials:{ instagram:"https://instagram.com/leakhoury", tiktok:"https://tiktok.com/@leakhoury", other:null },
+      reputation:{ score:8.8, nights:9, shows:9, noShows:0, strikes:0, withYou:1 },
+      audience:{ female:0.65, countries:[["Lebanon",0.71],["UAE",0.13],["KSA",0.07]] } },
+    { id:"a10", name:"Maya Rahme", gender:"female", quality_score:0.87, photo:FACE.maya,
+      instagram_followers:34000, tiktok_followers:61000,
+      socials:{ instagram:"https://instagram.com/mayarahme", tiktok:"https://tiktok.com/@mayarahme", other:null },
+      reputation:{ score:9.0, nights:11, shows:11, noShows:0, strikes:0, withYou:2 },
+      audience:{ female:0.70, countries:[["Lebanon",0.66],["UAE",0.17],["France",0.09]] } },
+    { id:"a11", name:"Nour Saab", gender:"female", quality_score:0.79, photo:FACE.nour,
+      instagram_followers:15000, tiktok_followers:27000,
+      socials:{ instagram:"https://instagram.com/noursaab", tiktok:"https://tiktok.com/@noursaab", other:null },
+      reputation:{ score:8.3, nights:6, shows:6, noShows:0, strikes:0, withYou:1 },
+      audience:{ female:0.62, countries:[["Lebanon",0.75],["UAE",0.12],["Qatar",0.06]] } },
+    { id:"a12", name:"Yara Chami", gender:"female", quality_score:0.84, photo:FACE.yasmine,
+      instagram_followers:27000, tiktok_followers:45000,
+      socials:{ instagram:"https://instagram.com/yarachami", tiktok:"https://tiktok.com/@yarachami", other:null },
+      reputation:{ score:8.7, nights:13, shows:12, noShows:1, strikes:0, withYou:2 },
+      audience:{ female:0.67, countries:[["Lebanon",0.69],["UAE",0.15],["KSA",0.07]] } },
+    { id:"a13", name:"Tala Aoun", gender:"female", quality_score:0.76, photo:FACE.tala,
+      instagram_followers:12000, tiktok_followers:19000,
+      socials:{ instagram:"https://instagram.com/talaaoun", tiktok:"https://tiktok.com/@talaaoun", other:null },
+      reputation:{ score:8.1, nights:5, shows:5, noShows:0, strikes:0, withYou:0 },
+      audience:{ female:0.63, countries:[["Lebanon",0.76],["Cyprus",0.10],["UAE",0.07]] } },
+    { id:"a14", name:"Rita Sleiman", gender:"female", quality_score:0.88, photo:FACE.sara,
+      instagram_followers:41000, tiktok_followers:78000,
+      socials:{ instagram:"https://instagram.com/ritasleiman", tiktok:"https://tiktok.com/@ritasleiman", other:null },
+      reputation:{ score:9.2, nights:19, shows:18, noShows:1, strikes:0, withYou:3 },
+      audience:{ female:0.72, countries:[["Lebanon",0.64],["UAE",0.18],["France",0.10]] } },
+    { id:"a15", name:"Dana Fakhry", gender:"female", quality_score:0.81, photo:FACE.lina,
+      instagram_followers:18000, tiktok_followers:30000,
+      socials:{ instagram:"https://instagram.com/danafakhry", tiktok:"https://tiktok.com/@danafakhry", other:null },
+      reputation:{ score:8.5, nights:8, shows:8, noShows:0, strikes:0, withYou:1 },
+      audience:{ female:0.66, countries:[["Lebanon",0.72],["UAE",0.14],["Qatar",0.07]] } },
+    { id:"a16", name:"Lana Matar", gender:"female", quality_score:0.92, photo:FACE.maya,
+      instagram_followers:55000, tiktok_followers:92000,
+      socials:{ instagram:"https://instagram.com/lanamatar", tiktok:"https://tiktok.com/@lanamatar", other:null },
+      reputation:{ score:9.3, nights:20, shows:20, noShows:0, strikes:0, withYou:4 },
+      audience:{ female:0.75, countries:[["Lebanon",0.62],["UAE",0.20],["KSA",0.09]] } },
+    { id:"a17", name:"Cyrine Nassar", gender:"female", quality_score:0.78, photo:FACE.nour,
+      instagram_followers:11000, tiktok_followers:16000,
+      socials:{ instagram:"https://instagram.com/cyrinenassar", tiktok:"https://tiktok.com/@cyrinenassar", other:null },
+      reputation:{ score:8.2, nights:4, shows:4, noShows:0, strikes:0, withYou:0 },
+      audience:{ female:0.61, countries:[["Lebanon",0.78],["Cyprus",0.08],["UAE",0.07]] } },
+    { id:"a18", name:"Joelle Abou Jaoude", gender:"female", quality_score:0.85, photo:FACE.yasmine,
+      instagram_followers:31000, tiktok_followers:54000,
+      socials:{ instagram:"https://instagram.com/joelleaj", tiktok:"https://tiktok.com/@joelleaj", other:null },
+      reputation:{ score:8.9, nights:15, shows:14, noShows:1, strikes:0, withYou:2 },
+      audience:{ female:0.68, countries:[["Lebanon",0.68],["UAE",0.16],["France",0.08]] } },
+    { id:"a19", name:"Karen Daou", gender:"female", quality_score:0.71, photo:FACE.tala,
+      instagram_followers:9000, tiktok_followers:12000,
+      socials:{ instagram:"https://instagram.com/karendaou", tiktok:"https://tiktok.com/@karendaou", other:null },
+      reputation:{ score:8.0, nights:3, shows:3, noShows:0, strikes:0, withYou:0 },
+      audience:{ female:0.60, countries:[["Lebanon",0.80],["UAE",0.10],["Qatar",0.05]] } },
+    { id:"a20", name:"Mira Haddad", gender:"female", quality_score:0.89, photo:FACE.lina,
+      instagram_followers:47000, tiktok_followers:88000,
+      socials:{ instagram:"https://instagram.com/mirahaddad", tiktok:"https://tiktok.com/@mirahaddad", other:null },
+      reputation:{ score:9.1, nights:16, shows:16, noShows:0, strikes:0, withYou:3 },
+      audience:{ female:0.73, countries:[["Lebanon",0.65],["UAE",0.19],["KSA",0.08]] } },
+    { id:"a21", name:"Omar Khalil", gender:"male", quality_score:0.80, photo:FACE.karim,
+      instagram_followers:17000, tiktok_followers:25000,
+      socials:{ instagram:"https://instagram.com/omarkhalil", tiktok:"https://tiktok.com/@omarkhalil", other:null },
+      reputation:{ score:8.4, nights:8, shows:7, noShows:1, strikes:0, withYou:1 },
+      audience:{ female:0.40, countries:[["Lebanon",0.73],["UAE",0.14],["KSA",0.06]] } },
+    { id:"a22", name:"Ziad Karam", gender:"male", quality_score:0.75, photo:FACE.rami,
+      instagram_followers:10000, tiktok_followers:0,
+      socials:{ instagram:"https://instagram.com/ziadkaram", tiktok:null, other:null },
+      reputation:{ score:8.1, nights:4, shows:4, noShows:0, strikes:0, withYou:0 },
+      audience:{ female:0.39, countries:[["Lebanon",0.77],["Cyprus",0.11],["UAE",0.07]] } },
+    { id:"a23", name:"Jad Nassif", gender:"male", quality_score:0.83, photo:FACE.karim,
+      instagram_followers:23000, tiktok_followers:41000,
+      socials:{ instagram:"https://instagram.com/jadnassif", tiktok:"https://tiktok.com/@jadnassif", other:null },
+      reputation:{ score:8.6, nights:11, shows:10, noShows:1, strikes:0, withYou:2 },
+      audience:{ female:0.44, countries:[["Lebanon",0.70],["UAE",0.15],["France",0.08]] } },
+    { id:"a24", name:"Marc Abboud", gender:"male", quality_score:0.77, photo:FACE.rami,
+      instagram_followers:13000, tiktok_followers:18000,
+      socials:{ instagram:"https://instagram.com/marcabboud", tiktok:"https://tiktok.com/@marcabboud", other:null },
+      reputation:{ score:8.3, nights:6, shows:6, noShows:0, strikes:0, withYou:1 },
+      audience:{ female:0.43, countries:[["Lebanon",0.74],["Qatar",0.10],["UAE",0.08]] } },
+    { id:"a25", name:"Rami Saliba", gender:"male", quality_score:0.85, photo:FACE.karim,
+      instagram_followers:30000, tiktok_followers:52000,
+      socials:{ instagram:"https://instagram.com/ramisaliba", tiktok:"https://tiktok.com/@ramisaliba", other:null },
+      reputation:{ score:8.8, nights:14, shows:13, noShows:1, strikes:0, withYou:2 },
+      audience:{ female:0.46, countries:[["Lebanon",0.67],["UAE",0.17],["KSA",0.09]] } },
+    { id:"a26", name:"Elie Tannous", gender:"male", quality_score:0.73, photo:FACE.rami,
+      instagram_followers:9000, tiktok_followers:0,
+      socials:{ instagram:"https://instagram.com/elietannous", tiktok:null, other:null },
+      reputation:{ score:8.0, nights:3, shows:3, noShows:0, strikes:0, withYou:0 },
+      audience:{ female:0.38, countries:[["Lebanon",0.79],["Cyprus",0.09],["UAE",0.06]] } },
+  ].map((applicant, index) => ({
+    ...applicant,
+    insights: applicant.insights || makeCompactDemoInsights(applicant, index),
+  }));
+
+  const applicantById = Object.fromEntries(APPLICANTS.map(a => [a.id, a]));
+
+  // ---- demo world events ----
+  // canonical today = Sun 25 May
+  const SEED_EVENTS = [
+    // 1. Pool Day – stage:locked (today, 18 confirmed + 1 picked + 2 waitlist)
+    (() => {
+      const guests = [
+        makeGuest("a3",  GS.confirmed, { code:"LST-2A", inAt:null, rating:null }),
+        makeGuest("a4",  GS.confirmed, { code:"LST-2B", inAt:null, rating:null }),
+        makeGuest("a5",  GS.confirmed, { code:"LST-2C", inAt:null, rating:null }),
+        makeGuest("a6",  GS.confirmed, { code:"LST-2D", inAt:null, rating:null }),
+        makeGuest("a8",  GS.confirmed, { code:"LST-2E", inAt:null, rating:null }),
+        makeGuest("a9",  GS.confirmed, { code:"LST-2F", inAt:null, rating:null }),
+        makeGuest("a11", GS.confirmed, { code:"LST-2G", inAt:null, rating:null }),
+        makeGuest("a12", GS.confirmed, { code:"LST-2H", inAt:null, rating:null }),
+        makeGuest("a13", GS.confirmed, { code:"LST-2J", inAt:null, rating:null }),
+        makeGuest("a14", GS.confirmed, { code:"LST-2K", inAt:null, rating:null }),
+        makeGuest("a15", GS.confirmed, { code:"LST-2L", inAt:null, rating:null }),
+        makeGuest("a16", GS.confirmed, { code:"LST-2M", inAt:null, rating:null }),
+        makeGuest("a17", GS.confirmed, { code:"LST-2N", inAt:null, rating:null }),
+        makeGuest("a18", GS.confirmed, { code:"LST-2P", inAt:null, rating:null }),
+        makeGuest("a19", GS.confirmed, { code:"LST-2R", inAt:null, rating:null }),
+        makeGuest("a20", GS.confirmed, { code:"LST-2S", inAt:null, rating:null }),
+        makeGuest("a21", GS.confirmed, { code:"LST-2T", inAt:null, rating:null }),
+        // Sara Capriotti – code MUST be LST-4F
+        makeGuest("a1",  GS.confirmed, { code:"LST-4F", inAt:null, rating:null }),
+        // expired – Maya Rahme, code LST-9Q (expired-pick demo – T7 seed flip)
+        makeGuest("a10", GS.expired, { code:"LST-9Q" }),
+        // 2 waitlist
+        makeGuest("a22", GS.waitlist),
+        makeGuest("a23", GS.waitlist),
+      ];
+      return {
+        ...makeEvent({ id:"pool", title:"Pool Day", type:"Beach", date:"Sun · 25 May", time:"14:00",
+          mix:{girls:15,guys:5}, seats:20, exchange:"1 Story + venue tag",
+          heroImage:{ src:IMG.beachClub, scale:1, x:0, y:0 } }),
+        stage: STAGE.locked,
+        status: stageToStatus(STAGE.locked),
+        closesAt: "Sat · 24 May · 20:00",
+        bundle: { name:"The twenty", price:700 },
+        brief: { arrival:"14:00 – 15:00", dress:"Beach chic", meeting:"Host stand – ask for Rami", rules:"1 Story + venue tag during the event" },
+        appliedTotal: 137,
+        guests,
+      };
+    })(),
+
+    // 2. Late Lounge – stage:open (24 applied, Sara among them)
+    (() => {
+      const guests = [
+        makeGuest("a1",  GS.applied),
+        makeGuest("a2",  GS.applied),
+        makeGuest("a3",  GS.applied),
+        makeGuest("a4",  GS.applied),
+        makeGuest("a5",  GS.applied),
+        makeGuest("a6",  GS.applied),
+        makeGuest("a7",  GS.applied),
+        makeGuest("a8",  GS.applied),
+        makeGuest("a9",  GS.applied),
+        makeGuest("a11", GS.applied),
+        makeGuest("a12", GS.applied),
+        makeGuest("a13", GS.applied),
+        makeGuest("a14", GS.applied),
+        makeGuest("a15", GS.applied),
+        makeGuest("a16", GS.applied),
+        makeGuest("a17", GS.applied),
+        makeGuest("a18", GS.applied),
+        makeGuest("a19", GS.applied),
+        makeGuest("a20", GS.applied),
+        makeGuest("a21", GS.applied),
+        makeGuest("a22", GS.applied),
+        makeGuest("a23", GS.applied),
+        makeGuest("a24", GS.applied),
+        makeGuest("a25", GS.applied),
+      ];
+      return {
+        ...makeEvent({ id:"lounge", title:"Late Lounge", type:"Lounge", date:"Fri · 30 May", time:"22:00",
+          mix:{girls:15,guys:5}, seats:20, exchange:"1 Story + venue tag",
+          heroImage:{ src:IMG.lounge, scale:1, x:0, y:0 } }),
+        stage: STAGE.open,
+        status: stageToStatus(STAGE.open),
+        closesAt: "Fri · 30 May · 20:00",
+        bundle: { name:"The twenty", price:700 },
+        brief: { arrival:"21:30 – 22:30", dress:"Smart dark", meeting:"Door host", rules:"1 Story + venue tag during the event" },
+        appliedTotal: 137,
+        guests,
+      };
+    })(),
+
+    // 3. Rooftop Session – stage:draft (no guests, no bundle yet)
+    (() => {
+      return {
+        ...makeEvent({ id:"roof", title:"Rooftop Session", type:"Club", date:"Sat · 31 May", time:"21:00",
+          mix:null, seats:30, exchange:"1 Story + venue tag",
+          heroImage:{ src:IMG.rooftop, scale:1, x:0, y:0 } }),
+        stage: STAGE.draft,
+        status: stageToStatus(STAGE.draft),
+        bundle: null,
+        brief: null,
+        guests: [],
+      };
+    })(),
+
+    // 4. Sound Bath – stage:past (last night, story windows still open)
+    (() => {
+      // 18 checked_in: 14 verified, 1 review, 3 due – Sara is checked_in + story "due"
+      const guests = [
+        makeGuest("a3",  GS.checkedIn, { inAt:"19:04", rating:8.8, story:SS.verified }),
+        makeGuest("a4",  GS.checkedIn, { inAt:"19:07", rating:8.5, story:SS.verified }),
+        makeGuest("a5",  GS.checkedIn, { inAt:"19:09", rating:8.9, story:SS.verified }),
+        makeGuest("a6",  GS.checkedIn, { inAt:"19:11", rating:9.0, story:SS.verified }),
+        makeGuest("a8",  GS.checkedIn, { inAt:"19:14", rating:8.7, story:SS.verified }),
+        makeGuest("a9",  GS.checkedIn, { inAt:"19:16", rating:8.4, story:SS.verified }),
+        makeGuest("a11", GS.checkedIn, { inAt:"19:19", rating:8.6, story:SS.verified }),
+        makeGuest("a12", GS.checkedIn, { inAt:"19:21", rating:8.8, story:SS.verified }),
+        makeGuest("a13", GS.checkedIn, { inAt:"19:24", rating:8.5, story:SS.verified }),
+        makeGuest("a14", GS.checkedIn, { inAt:"19:28", story:SS.review }),
+        makeGuest("a15", GS.checkedIn, { inAt:"19:31", rating:8.6, story:SS.verified }),
+        makeGuest("a16", GS.checkedIn, { inAt:"19:33", rating:8.7, story:SS.verified }),
+        makeGuest("a17", GS.checkedIn, { inAt:"19:36", story:SS.due }),
+        makeGuest("a18", GS.checkedIn, { inAt:"19:39", story:SS.due }),
+        // Sara – story "due" (member-side upload demo)
+        makeGuest("a1",  GS.checkedIn, { inAt:"19:08", story:SS.due }),
+        makeGuest("a20", GS.checkedIn, { inAt:"19:43", rating:8.9, story:SS.verified }),
+        makeGuest("a21", GS.checkedIn, { inAt:"19:45", rating:8.5, story:SS.verified }),
+        makeGuest("a22", GS.checkedIn, { inAt:"19:47", rating:8.6, story:SS.verified }),
+        makeGuest("a2",  GS.noShow),
+        makeGuest("a7",  GS.noShow),
+      ];
+      return {
+        ...makeEvent({ id:"bath", title:"Sound Bath", type:"Gym", date:"Sat · 24 May", time:"19:00",
+          mix:{girls:15,guys:5}, seats:20, exchange:"1 Story + venue tag",
+          heroImage:{ src:IMG.gym, scale:1, x:0, y:0 } }),
+        stage: STAGE.past,
+        status: stageToStatus(STAGE.past),
+        bundle: { name:"The twenty", price:700 },
+        brief: { arrival:"18:30 – 19:00", dress:"Comfortable active", meeting:"Front desk", rules:"1 Story + venue tag during the event" },
+        guests,
+        recap: { confirmed:20, showed:18, noShows:2, avgRating:8.6 }, // reach is DERIVED on the recap screen (sum of verified guests' followers) – never stored
+        invoice: { bundle:"The twenty", price:700, status:"due" },
+        endedAt: 2,
+      };
+    })(),
+
+    // 5. Vinyl Night – stage:past (two weeks ago, invoiced+paid)
+    (() => {
+      // 12 checked_in: 10 verified + 2 "missed" (story string literal)
+      // Sara is checked_in + story verified with a verdict
+      const guests = [
+        makeGuest("a3",  GS.checkedIn, { inAt:"21:10", rating:8.9, story:SS.verified }),
+        makeGuest("a4",  GS.checkedIn, { inAt:"21:14", rating:8.7, story:SS.verified }),
+        makeGuest("a5",  GS.checkedIn, { inAt:"21:17", rating:9.0, story:SS.verified }),
+        makeGuest("a6",  GS.checkedIn, { inAt:"21:20", rating:9.1, story:SS.verified }),
+        makeGuest("a8",  GS.checkedIn, { inAt:"21:24", rating:8.8, story:SS.verified }),
+        makeGuest("a9",  GS.checkedIn, { inAt:"21:27", rating:8.6, story:SS.verified }),
+        makeGuest("a11", GS.checkedIn, { inAt:"21:31", rating:8.9, story:SS.verified }),
+        makeGuest("a12", GS.checkedIn, { inAt:"21:35", rating:8.7, story:SS.verified }),
+        makeGuest("a14", GS.checkedIn, { inAt:"21:38", story:SS.missed }),
+        makeGuest("a16", GS.checkedIn, { inAt:"21:41", story:SS.missed }),
+        makeGuest("a18", GS.checkedIn, { inAt:"21:44", rating:8.8, story:SS.verified }),
+        // Sara – checked_in + story verified with verdict
+        { ...makeGuest("a1", GS.checkedIn, { inAt:"21:22", rating:9.2, story:SS.verified }),
+          verdict: { score:92, reason:"Tag visible, posted in window" } },
+      ];
+      return {
+        ...makeEvent({ id:"vinyl", title:"Vinyl Night", type:"Lounge", date:"Sun · 11 May", time:"21:00",
+          mix:{girls:10,guys:2}, seats:12, exchange:"1 Story + venue tag",
+          heroImage:{ src:IMG.lounge, scale:1, x:0, y:0 } }),
+        stage: STAGE.past,
+        status: stageToStatus(STAGE.past),
+        bundle: { name:"The ten", price:400 },
+        brief: { arrival:"21:00 – 22:00", dress:"Smart casual", meeting:"Host at door", rules:"1 Story + venue tag during the event" },
+        guests,
+        recap: { confirmed:12, showed:12, noShows:0, avgRating:8.9 },
+        invoice: { bundle:"The ten", price:400, status:"paid" },
+        endedAt: 1,
+      };
+    })(),
+
+    // 6. Harbor Club Night – stage:cancelled (6 guests all cancelled)
+    (() => {
+      const guests = [
+        makeGuest("a2",  GS.cancelled),
+        makeGuest("a7",  GS.cancelled),
+        makeGuest("a21", GS.cancelled),
+        makeGuest("a23", GS.cancelled),
+        makeGuest("a24", GS.cancelled),
+        makeGuest("a25", GS.cancelled),
+      ];
+      return {
+        ...makeEvent({ id:"harbor", title:"Harbor Club Night", type:"Club", date:"Thu · 22 May", time:"22:00",
+          mix:{girls:15,guys:5}, seats:20, exchange:"1 Story + venue tag",
+          heroImage:{ src:IMG.club, scale:1, x:0, y:0 } }),
+        stage: STAGE.cancelled,
+        status: stageToStatus(STAGE.cancelled),
+        bundle: { name:"The twenty", price:700 },
+        brief: null,
+        guests,
+      };
+    })(),
+  ];
+
+  const isNumber = (value) => typeof value === "number" && Number.isFinite(value);
+  const fmtK = (n) => !isNumber(n) ? "Not available" : n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+"k" : ""+n;
+  const fmtPct = (n, digits=0) => !isNumber(n) ? "Not available" : (n*100).toFixed(digits)+"%";
+  const fmtCount = (n) => !isNumber(n) ? "Not available" : n.toLocaleString("en-US");
+  const quality10 = (q) => !isNumber(q) ? "Not available" : (q*10).toFixed(1);   // 0.94 -> "9.4"
+
+  /* Demo seed – lets Will (or a venue in a pitch) see the whole desk with zero
+     typing. Entered via "Preview the desk" on the intro screen. */
+  const DEMO_VENUE = makeVenue({
+    name: "Cyan Beach Club", type: "Beach", area: "Jiyeh",
+    description: "Daybeds, shallow pool, golden-hour sets. Jiyeh's calmest room.",
+    heroImage: { src: IMG.beachClub, scale: 1, x: 0, y: 0 },
+    images: [
+      { src: IMG.pool,     scale: 1, x: 0, y: 0 },
+      { src: IMG.cocktail, scale: 1, x: 0, y: 0 },
+      { src: IMG.lounge,   scale: 1, x: 0, y: 0 },
+      { src: IMG.rooftop,  scale: 1, x: 0, y: 0 },
+    ],
+  });
+
+  /* ========== shared atoms – same vocabulary as index.html ========== */
+  // Timers: tighter dimmed colons, digits carry the weight.
+  function Countdown({ value, className="", style={} }){
+    const parts = String(value).split(":");
+    return (
+      <span className={"font-mono "+className} style={style}>
+        {parts.map((p,i)=>(
+          <React.Fragment key={i}>
+            {i>0 && <span style={{opacity:.4, margin:"0 .06em"}}>:</span>}
+            {p}
+          </React.Fragment>
+        ))}
+      </span>
+    );
+  }
+
+  function StatusPill({ label, tone="neutral", dot=false }){
+    const style = tone==="ice" ? {background:"var(--ice)", color:"var(--ice-ink)"}
+      : tone==="outline" ? {border:"1px solid var(--line-2)", color:"var(--ink)"}
+      : {background:"var(--bg-elev2)", color:"var(--ink)"};
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium" style={style}>
+        {dot && <span className="w-1.5 h-1.5 rounded-full" style={{background: tone==="ice" ? "var(--ice-ink)" : "var(--ice)"}}/>}
+        {label}
+      </span>
+    );
+  }
+
+  function DateChip({ day, sub, tone="neutral" }){
+    const style = tone==="ice" ? {background:"var(--ice)", color:"var(--ice-ink)"} : {background:"var(--bg-elev2)", color:"var(--ink)"};
+    return (
+      <div className="rounded-[12px] flex flex-col items-center justify-center shrink-0" style={{ width:48, height:54, ...style }}>
+        <div className="font-black font-mono text-[20px] leading-none">{day}</div>
+        <div className="text-[9px] mt-0.5" style={{opacity:.8}}>{sub}</div>
+      </div>
+    );
+  }
+
+  function SectionHead({ label, right, className="" }){
+    return (
+      <div className={"px-5 flex items-center justify-between "+className}>
+        <div className="flex items-center gap-2.5">
+          <span className="rounded-full" style={{ width:3, height:15, background:"var(--ice)" }}/>
+          <span className="section-label">{label}</span>
+        </div>
+        {right != null && (
+          <span className="text-[10px] font-medium px-2.5 py-1 rounded-full" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>{right}</span>
+        )}
+      </div>
+    );
+  }
+
+  function Segmented({ items, value, onChange }){
+    return (
+      <div className="flex gap-1 p-1 rounded-full" style={{ background:"var(--bg-elev)", border:"1px solid var(--line)" }}>
+        {items.map(it=>{
+          const on = it.id===value;
+          return (
+            <button key={it.id} onClick={()=>onChange(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[10px] font-medium"
+              style={on ? {background:"var(--ink)", color:"var(--bg)"} : {color:"var(--ink)", opacity:.6}}>
+              <span>{it.label}</span>
+              {it.count != null && <span style={{opacity:.65}}>{it.count}</span>}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  /* TSS-style widget stat tile: big number top, small label under.
+     Ice only on the one number that matters per screen. */
+  function StatTile({ n, label, ice=false, onClick }){
+    const cls = "card rounded-[16px] p-4 text-left w-full" + (onClick ? " press" : "");
+    const body = (
+      <>
+        <div className="font-black font-mono text-[26px] leading-none" style={ice?{color:"var(--ice)"}:undefined}>{n}</div>
+        <div className="stamp mt-1.5" style={{opacity:.75}}>{label}</div>
+      </>
+    );
+    return onClick
+      ? <button onClick={onClick} className={cls}>{body}</button>
+      : <div className={cls}>{body}</div>;
+  }
+
+  /* ========== ScreenVenueIntro – business splash ========== */
+  function ScreenVenueIntro({ onList, onLogin, onDemo }){
+    return (
+      <div className="absolute inset-0 anim-fade" style={{background:"#000000", color:"#F7F6F3"}}>
+        {/* Static dark background – no video assets needed */}
+        <div className="absolute inset-0 grain" style={{background:"#000000"}}/>
+        {/* Radial vignette */}
+        <div className="absolute inset-0 pointer-events-none" style={{boxShadow:"inset 0 0 170px 46px rgba(0,0,0,.82)"}}/>
+        {/* Top + bottom scrims */}
+        <div className="absolute inset-0 pointer-events-none" style={{background:"linear-gradient(180deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,0) 24%, rgba(0,0,0,0) 46%, rgba(0,0,0,.92) 100%)"}}/>
+
+
+
+        <div className="absolute inset-0 z-10 flex flex-col px-7 app-safe-top app-safe-bottom app-form-scroll">
+          {/* Centered wordmark lockup – large serif, brand name keeps its capitals */}
+          <div className="flex-1 flex flex-col items-center justify-center text-center -mt-6">
+            <div className="anim-fade stamp" style={{color:"rgba(247,246,243,.78)"}}>Est. MMXXVI · Beirut</div>
+            <div className="font-black font-display-l anim-up" style={{fontSize:66, lineHeight:.92, marginTop:14, textShadow:"0 2px 40px rgba(0,0,0,.6)"}}>The<br/>List</div>
+            <div className="anim-up" style={{marginTop:18, fontSize:12, letterSpacing:".02em", color:"rgba(247,246,243,.82)"}}>For the rooms that matter</div>
+          </div>
+
+          {/* Bottom actions */}
+          <div className="flex flex-col gap-3 anim-up">
+            <button onClick={onList} className="press glow-primary w-full h-[58px] rounded-full font-semibold text-[14px] flex items-center justify-center gap-2" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+              List your venue <Icon name="arrow-right" size={16} stroke={1.8}/>
+            </button>
+            <button onClick={onLogin} className="press w-full h-[58px] rounded-full font-medium text-[13px]" style={{background:"transparent", color:"#F7F6F3", border:"1px solid rgba(247,246,243,.32)"}}>
+              Business login
+            </button>
+          </div>
+
+          {/* Member link + zero-typing demo path */}
+          <div className="text-center mt-4 anim-up flex flex-col gap-2">
+            <button onClick={()=>{ window.location.href = "/"; }} className="press" style={{color:"rgba(247,246,243,.5)", fontSize:12, letterSpacing:".02em", background:"transparent", border:"none"}}>
+              I'm a member
+            </button>
+            <button onClick={onDemo} className="press" style={{color:"var(--ice)", fontSize:12, letterSpacing:".02em", background:"transparent", border:"none"}}>
+              Preview the desk · demo data
+            </button>
+          </div>
+        </div>
+
+
+      </div>
+    );
+  }
+
+  /* ========== ScreenVenueLogin – founder-created venue email OTP ========== */
+  function ScreenVenueLogin({ onDone }){
+    const [email, setEmail] = useState("");
+    const [otp, setOtp] = useState("");
+    const [sent, setSent] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState("");
+    const canSubmit = sent ? otp.length === 6 : email.includes("@");
+    const submit = async () => {
+      if (!canSubmit || busy) return;
+      setBusy(true); setError("");
+      try {
+        if (!sent) {
+          const { error } = await supabaseClient.auth.signInWithOtp({
+            email: email.trim(), options: { shouldCreateUser: false },
+          });
+          if (error) throw error;
+          setSent(true);
+        } else {
+          const { data, error } = await supabaseClient.auth.verifyOtp({
+            email: email.trim(), token: otp, type: "email",
+          });
+          if (error) throw error;
+          await onDone(data.session);
+        }
+      } catch (err) { setError(err.message || "Could not sign in"); }
+      finally { setBusy(false); }
+    };
+
+    return (
+      <div className="absolute inset-0 anim-fade" style={{background:"transparent"}}>
+
+        <div className="absolute inset-0 flex flex-col px-7 app-safe-top app-safe-bottom app-form-scroll">
+          <div className="font-black font-display-l text-[44px] leading-[.95] tracking-tight">Sign in</div>
+          <div className="text-[13px] mt-3" style={{color:"var(--ink-2)"}}>Manage your venue and its drops.</div>
+
+          <div className="mt-10 space-y-5">
+            <div>
+              <div className="stamp mb-2">Work email</div>
+              <input
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                type="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                aria-label="Work email"
+                placeholder="you@yourvenue.com"
+                className="w-full h-12 px-3 rounded-[12px] text-[16px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+            {sent && <div>
+              <div className="stamp mb-2">Six-digit code</div>
+              <input
+                value={otp}
+                onChange={e => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                aria-label="Six-digit code"
+                placeholder="000000"
+                className="w-full h-12 px-3 rounded-[12px] text-[16px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>}
+            {error && <div className="text-[12px]">{error}</div>}
+          </div>
+
+          <div className="flex-1"/>
+
+          <button
+            onClick={submit}
+            disabled={!canSubmit}
+            className={"press w-full h-[58px] rounded-full font-semibold text-[14px] flex items-center justify-center gap-2 "+(canSubmit ? "glow-primary" : "")}
+            style={{
+              background: canSubmit ? "var(--ice)" : "var(--bg-elev2)",
+              color: canSubmit ? "var(--ice-ink)" : "var(--ink-mute)"
+            }}
+          >
+            {busy ? "Working…" : sent ? "Verify code" : "Email me a code"} <Icon name="arrow-right" size={16} stroke={1.8}/>
+          </button>
+          <div className="text-center text-[11px] mt-3" style={{color:"var(--ink-mute)"}}>Venue accounts are created by The List.</div>
+        </div>
+
+      </div>
+    );
+  }
+
+  /* ========== ScreenOnboardGroup – optional group registration ========== */
+  function ScreenOnboardGroup({ group, setGroup, onNext }){
+    const [name, setName] = useState(group?.name || "");
+    const [logo, setLogo] = useState(group?.logo || null);
+    const [editingLogo, setEditingLogo] = useState(false);
+    const canCreate = name.length >= 2;
+
+    return (
+      <div className="absolute inset-0 anim-fade" style={{background:"transparent"}}>
+
+        <div className="absolute inset-0 flex flex-col" style={{paddingTop:"env(safe-area-inset-top, 0px)"}}>
+          {/* Header */}
+          <div className="px-6 pt-6 pb-2 shrink-0">
+            <div className="font-black font-display-l" style={{fontSize:44,lineHeight:.95,letterSpacing:"-.02em",color:"var(--ink)"}}>Group</div>
+            <div className="text-[13px] mt-3" style={{color:"var(--ink-2)"}}>Run more than one venue? Group them. Otherwise skip.</div>
+          </div>
+
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto noscroll px-6 pt-4 pb-4">
+            {/* Group name field */}
+            <div className="mb-5">
+              <div className="stamp mb-2">Group name</div>
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                type="text"
+                placeholder="e.g. Skyline Hospitality"
+                className="w-full h-12 px-3 rounded-[12px] text-[16px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+
+            {/* Logo field */}
+            <div className="mb-6">
+              <div className="stamp mb-2">Group logo</div>
+              {editingLogo ? (
+                <ImageCropper
+                  ratio="1/1"
+                  value={logo}
+                  label="Group logo"
+                  onChange={(v) => { setLogo(v); setEditingLogo(false); }}
+                  onCancel={() => setEditingLogo(false)}
+                />
+              ) : logo ? (
+                <div className="flex items-center gap-3">
+                  <FramedImage value={logo} ratio="1/1" className="w-20 h-20"/>
+                  <button
+                    onClick={() => setEditingLogo(true)}
+                    className="press text-[12px] font-medium"
+                    style={{color:"var(--ice)", background:"transparent", border:"none"}}
+                  >Replace</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setEditingLogo(true)}
+                  className="press w-20 h-20 rounded-[14px] flex items-center justify-center"
+                  style={{border:"1px dashed var(--line-2)", background:"transparent", color:"var(--ink-mute)"}}
+                >
+                  <span className="stamp">+ Logo</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom actions */}
+          <div className="shrink-0 px-6 app-safe-bottom flex flex-col gap-3">
+            <button
+              onClick={() => { if(canCreate){ setGroup({ id:"grp-1", name, logo }); onNext(); } }}
+              disabled={!canCreate}
+              className={"press w-full h-[52px] rounded-full font-semibold text-[14px] "+(canCreate?"glow-primary":"")}
+              style={{
+                background: canCreate ? "var(--ice)" : "var(--bg-elev2)",
+                color: canCreate ? "var(--ice-ink)" : "var(--ink-mute)"
+              }}
+            >Create group</button>
+            <button
+              onClick={() => { setGroup(null); onNext(); }}
+              className="press w-full h-[48px] rounded-full text-[12px] font-medium"
+              style={{background:"transparent", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+            >I'm independent · skip</button>
+          </div>
+        </div>
+
+      </div>
+    );
+  }
+
+  /* ========== ScreenOnboardVenue – register venue assets ========== */
+  function ScreenOnboardVenue({ venue, setVenue, group, onDone }){
+    const [editing, setEditing] = useState(null); // null | "hero" | 0..3
+    const [saving, setSaving] = useState(false);
+
+    const canSave = venue.name && venue.name.length >= 2 && venue.heroImage;
+    const handleDone = async () => {
+      if (!canSave || saving) return;
+      setSaving(true);
+      try { await onDone(venue); }
+      catch (_) { /* parent reports the actionable error */ }
+      finally { setSaving(false); }
+    };
+
+    // When editing, show only the cropper full-screen
+    if (editing !== null){
+      if (editing === "hero"){
+        return (
+          <div className="absolute inset-0 anim-fade" style={{background:"transparent"}}>
+
+            <div className="absolute inset-0 flex flex-col px-6 overflow-y-auto noscroll" style={{paddingTop:"calc(env(safe-area-inset-top, 0px) + 16px)", paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 24px)"}}>
+              <ImageCropper
+                ratio="4/5"
+                value={venue.heroImage}
+                label="Venue hero"
+                onChange={(v) => { setVenue(p => ({...p, heroImage:v})); setEditing(null); }}
+                onCancel={() => setEditing(null)}
+              />
+            </div>
+          </div>
+        );
+      } else {
+        const i = editing;
+        return (
+          <div className="absolute inset-0 anim-fade" style={{background:"transparent"}}>
+
+            <div className="absolute inset-0 flex flex-col px-6 overflow-y-auto noscroll" style={{paddingTop:"calc(env(safe-area-inset-top, 0px) + 16px)", paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 24px)"}}>
+              <ImageCropper
+                ratio="4/5"
+                value={venue.images[i]}
+                label={"Photo " + (i + 1)}
+                onChange={(v) => { setVenue(p => ({...p, images: p.images.map((im,idx) => idx===i ? v : im)})); setEditing(null); }}
+                onCancel={() => setEditing(null)}
+              />
+            </div>
+          </div>
+        );
+      }
+    }
+
+    // Normal form view
+    return (
+      <div className="absolute inset-0 anim-fade" style={{background:"transparent"}}>
+
+        <div className="absolute inset-0 flex flex-col" style={{paddingTop:"env(safe-area-inset-top, 0px)"}}>
+          {/* Header */}
+          <div className="px-6 pt-6 pb-2 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="font-black font-display-l" style={{fontSize:44,lineHeight:.95,letterSpacing:"-.02em",color:"var(--ink)"}}>Venue</div>
+              {group && (
+                <div className="stamp px-2.5 py-1 rounded-full" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>
+                  Under {group.name}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Scrollable form */}
+          <div className="flex-1 overflow-y-auto noscroll px-6 pt-4 pb-4 flex flex-col gap-5">
+            {/* Venue name */}
+            <div>
+              <div className="stamp mb-2">Venue name</div>
+              <input
+                value={venue.name}
+                onChange={e => setVenue(v => ({...v, name:e.target.value}))}
+                type="text"
+                placeholder="e.g. Skybar"
+                className="w-full h-12 px-3 rounded-[12px] text-[16px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+
+            {/* Type pills */}
+            <div>
+              <div className="stamp mb-2">Type</div>
+              <div className="flex flex-wrap gap-2">
+                {VENUE_TYPES.map(t => {
+                  const sel = venue.type === t;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setVenue(v => ({...v, type:t}))}
+                      className="press hit px-4 h-9 rounded-full text-[12px] font-medium"
+                      style={{
+                        background: sel ? "var(--ice)" : "transparent",
+                        color: sel ? "var(--ice-ink)" : "var(--ink)",
+                        border: sel ? "none" : "1px solid var(--line-2)"
+                      }}
+                    >{t}</button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Area pills */}
+            <div>
+              <div className="stamp mb-2">Area</div>
+              <div className="flex flex-wrap gap-2">
+                {BEIRUT_AREAS.map(a => {
+                  const sel = venue.area === a;
+                  return (
+                    <button
+                      key={a}
+                      onClick={() => setVenue(v => ({...v, area:a}))}
+                      className="press hit px-3 h-9 rounded-full text-[11px] font-medium"
+                      style={{
+                        background: sel ? "var(--ice)" : "transparent",
+                        color: sel ? "var(--ice-ink)" : "var(--ink)",
+                        border: sel ? "none" : "1px solid var(--line-2)"
+                      }}
+                    >{a}</button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <div className="stamp mb-2">Description</div>
+              <textarea
+                rows={3}
+                value={venue.description}
+                onChange={e => setVenue(v => ({...v, description:e.target.value}))}
+                placeholder="Tell influencers what makes this venue worth posting."
+                className="w-full px-3 py-3 rounded-[12px] text-[16px] resize-none"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+
+            <div>
+              <div className="stamp mb-2">Instagram handle</div>
+              <input
+                value={venue.igHandle || ""}
+                onChange={e => setVenue(v => ({...v, igHandle:e.target.value.replace(/^@/, "")}))}
+                type="text"
+                autoCapitalize="none"
+                autoCorrect="off"
+                placeholder="yourvenue"
+                className="w-full h-12 px-3 rounded-[12px] text-[16px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+              <div className="text-[11px] mt-2" style={{color:"var(--ink-mute)"}}>Used in the member event brief.</div>
+            </div>
+
+            {/* Hero image */}
+            <div>
+              <div className="stamp mb-2">Hero image</div>
+              {venue.heroImage ? (
+                <div>
+                  <FramedImage value={venue.heroImage} ratio="4/5" className="w-full"/>
+                  <button
+                    onClick={() => setEditing("hero")}
+                    className="press mt-2 text-[12px] font-medium"
+                    style={{color:"var(--ice)", background:"transparent", border:"none"}}
+                  >Replace</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setEditing("hero")}
+                  className="press w-full flex items-center justify-center rounded-[14px]"
+                  style={{aspectRatio:"4/5", border:"1px dashed var(--line-2)", background:"transparent", color:"var(--ink-mute)"}}
+                >
+                  <span className="stamp">+ Add hero</span>
+                </button>
+              )}
+            </div>
+
+            {/* Gallery */}
+            <div>
+              <div className="stamp mb-1">Venue photos</div>
+              <div className="text-[12px] mb-3" style={{color:"var(--ink-mute)"}}>Four photos influencers swipe through.</div>
+              <div className="grid grid-cols-2 gap-3">
+                {[0,1,2,3].map(i => (
+                  venue.images[i] ? (
+                    <button
+                      key={i}
+                      onClick={() => setEditing(i)}
+                      className="press rounded-[14px] overflow-hidden"
+                      style={{aspectRatio:"4/5", background:"var(--bg-elev)", border:"none", padding:0}}
+                    >
+                      <FramedImage value={venue.images[i]} ratio="4/5" className="w-full h-full"/>
+                    </button>
+                  ) : (
+                    <button
+                      key={i}
+                      onClick={() => setEditing(i)}
+                      className="press rounded-[14px] flex items-center justify-center"
+                      style={{aspectRatio:"4/5", border:"1px dashed var(--line-2)", background:"transparent", color:"var(--ink-mute)"}}
+                    >
+                      <span className="stamp">+</span>
+                    </button>
+                  )
+                ))}
+              </div>
+            </div>
+
+            {/* bottom spacer so CTA isn't occluded */}
+            <div style={{height:8}}/>
+          </div>
+
+          {/* Primary CTA */}
+          <div className="shrink-0 px-6 app-safe-bottom">
+            <button
+              onClick={handleDone}
+              disabled={!canSave || saving}
+              className={"press w-full h-[52px] rounded-full font-semibold text-[14px] flex items-center justify-center gap-2 "+(canSave?"glow-primary":"")}
+              style={{
+                background: canSave ? "var(--ice)" : "var(--bg-elev2)",
+                color: canSave ? "var(--ice-ink)" : "var(--ink-mute)"
+              }}
+            >{saving ? "Saving…" : "Save venue"} <Icon name="arrow-right" size={16} stroke={1.8}/></button>
+          </div>
+        </div>
+
+      </div>
+    );
+  }
+
+  /* ========== NotifSheet – venue activity feed ========== */
+  /* ========== venueNotifs – derived activity feed (pure, module-level) ========== */
+  function venueNotifs(events){
+    const rows = [];
+    let idSeq = 0;
+    const mkId = () => "notif-" + (++idSeq);
+
+    events.forEach(e => {
+      if (e.stage === STAGE.open) {
+        // Un-swiped applicants
+        const unswiped = (e.guests || []).filter(g => g.state === GS.applied).length;
+        if (unswiped > 0) {
+          rows.push({ id: mkId(), kind:"applicants",
+            text: e.title + " – " + unswiped + " new applicant" + (unswiped !== 1 ? "s" : ""),
+            eventId: e.id, action:"review" });
+        }
+      }
+
+      if (e.stage === STAGE.locked) {
+        const confirmed = (e.guests || []).filter(g => g.state === GS.confirmed);
+        if (confirmed.length > 0) {
+          rows.push({ id: mkId(), kind:"confirmed",
+            text: e.title + " – " + confirmed.length + " confirmed",
+            eventId: e.id, action:"guestlist" });
+        }
+        const expired = (e.guests || []).filter(g => g.state === GS.expired);
+        if (expired.length > 0) {
+          rows.push({ id: mkId(), kind:"expired",
+            text: e.title + " – a pick expired · pick a replacement",
+            eventId: e.id, action:"review" });
+        }
+        const declined = (e.guests || []).filter(g => g.state === GS.declined);
+        if (declined.length > 0) {
+          rows.push({ id: mkId(), kind:"declined",
+            text: e.title + " – a pick declined · pick a replacement",
+            eventId: e.id, action:"review" });
+        }
+      }
+
+      if (e.stage === STAGE.past && e.recap) {
+        const inReview = (e.guests || []).filter(g => g.story === SS.review).length;
+        const due      = (e.guests || []).filter(g => g.story === SS.due).length;
+        const verified = (e.guests || []).filter(g => g.story === SS.verified).length;
+        if (inReview > 0 || due > 0) {
+          rows.push({ id: mkId(), kind:"stories",
+            text: e.title + " – " + verified + " stor" + (verified !== 1 ? "ies" : "y") + " verified · " + (inReview + due) + " pending",
+            eventId: e.id, action:"recap" });
+        }
+        if (e.invoice && e.invoice.status === "due") {
+          rows.push({ id: mkId(), kind:"invoice",
+            text: e.title + " – invoice due · $" + (e.invoice.price || 0),
+            eventId: e.id, action:"recap" });
+        }
+      }
+    });
+
+    return rows;
+  }
+
+  /* ========== NotifSheet – renders venueNotifs() rows ========== */
+  function NotifSheet({ events, rows:liveRows, onClose, onReview, onGuestList, onToast, onRecap, onDoor, onOpenEvent, live=false }){
+    const rows = live ? (liveRows || []) : venueNotifs(events);
+    const handleRow = (r) => {
+      onClose();
+      const evt = r.eventId ? events.find(e => e.id === r.eventId) : null;
+      if (r.action === "review"    && evt) return onReview(evt);
+      if (r.action === "guestlist" && evt) return onGuestList(evt.id);
+      if (r.action === "recap"     && evt) return onRecap(evt.id);
+      if (r.action === "event"     && evt && onOpenEvent) return onOpenEvent(evt);
+      if (r.action === "door"      && evt && onDoor) return onDoor(evt.id);
+      onToast("Nothing to open for this update");
+    };
+    return (
+      <>
+        <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
+        <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
+          <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
+          <div className="flex items-center justify-between mb-5">
+            <div className="font-black text-[22px] leading-none">Activity</div>
+            <button onClick={onClose} aria-label="Close" className="press hit w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+              <Icon name="x" size={14} stroke={1.5}/>
+            </button>
+          </div>
+          <div className="space-y-2">
+            {rows.length === 0 && (
+              <div className="card rounded-[14px] p-4 text-center text-[13px]">No activity yet</div>
+            )}
+            {rows.map((r) => (
+              <button key={r.id} onClick={() => handleRow(r)}
+                className="press card w-full text-left rounded-[14px] p-3.5 flex items-center gap-3">
+                <span className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{background: (r.kind==="applicants"||r.kind==="confirmed") ? "var(--ice)" : "var(--line-2)"}}/>
+                <div className="flex-1 text-[13px] leading-snug">{r.text}</div>
+                <Icon name="arrow-right" size={13} stroke={1.8} className="shrink-0" style={{opacity:.5}}/>
+              </button>
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  /* ========== ScreenDesk – stage-driven venue dashboard (Task 7) ========== */
+  function ScreenDesk({ venue, events, notifications, onReview, onPost, onEditDraft, onGuestList, onToast, onTab, onRecap, onOpenEvent, today=TODAY, live=false, onNotifsOpened, onDoorEvent }){
+    const [notifOpen, setNotifOpen] = useState(false);
+
+    // 1. Tonight card – the locked event dated today (live: real clock; demo keeps
+    //    the loose confirmed-guests fallback so the seed world always has a card)
+    const tonightEvent = events.find(e => e.stage === STAGE.locked && e.date === today)
+      || (live ? null : events.find(e => (e.guests || []).some(g => g.state === GS.confirmed))) || null;
+
+    // 2. Needs attention rows
+    const openWithUnswiped = events.filter(e =>
+      e.stage === STAGE.open && (e.guests || []).some(g => g.state === GS.applied)
+    );
+    const lockedWithExpiredOrDeclined = events.filter(e =>
+      e.stage === STAGE.locked && (e.guests || []).some(g => g.state === GS.expired || g.state === GS.declined)
+    );
+    const attentionRows = [
+      ...openWithUnswiped.map(e => {
+        const n = (e.guests || []).filter(g => g.state === GS.applied).length;
+        return { key:"open-"+e.id, label: e.title + " · " + n + " to review →", action: () => onReview(e) };
+      }),
+      ...lockedWithExpiredOrDeclined.map(e => {
+        const hasExpired  = (e.guests || []).some(g => g.state === GS.expired);
+        const hasDeclined = (e.guests || []).some(g => g.state === GS.declined);
+        const sublabelSuffix = (hasExpired && hasDeclined) ? "picks need replacing"
+          : hasDeclined ? "a pick declined"
+          : "a pick expired";
+        return {
+          key:"locked-"+e.id,
+          label: "Pick a replacement",
+          sublabel: e.title + " – " + sublabelSuffix,
+          action: () => onReview(e),
+        };
+      }),
+    ];
+
+    // 3. Drafts
+    const drafts = events.filter(e => e.stage === STAGE.draft);
+
+    // 4. Last recap teaser – most recent past event with a recap
+    // endedAt: monotonic close ordinal – Close the night (T8) must set endedAt = max(existing)+1
+    const recapEvent = [...events]
+      .filter(e => e.stage === STAGE.past && e.recap)
+      .sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0))[0] || null;
+
+    // 5. Stat tiles – derived from stage
+    const openEvents = events.filter(e => e.stage === STAGE.open);
+    const appliedTotal = openEvents.reduce((s, e) => s + (e.appliedTotal || 0), 0);
+    const toReview     = openEvents.reduce((s, e) => s + (e.guests || []).filter(g => g.state === GS.applied).length, 0);
+    const tonightConfirmed = tonightEvent ? (tonightEvent.guests || []).filter(g => g.state === GS.confirmed).length : 0;
+    const roomsTonight = events.filter(e => e.stage === STAGE.locked && e.date === today).length;
+
+    const firstOpenEvent = openEvents[0] || null;
+
+    // Bell badge – live counts unread only; demo counts derived rows
+    const notifCount = live
+      ? (notifications || []).filter(n => !n.read).length
+      : venueNotifs(events).length;
+
+    // Header date – live shows the real date
+    const now = new Date();
+    const headerDate = live
+      ? now.toLocaleDateString("en-GB", {weekday:"short"}) + " · "
+        + String(now.getDate()).padStart(2,"0") + "." + String(now.getMonth()+1).padStart(2,"0")
+      : "Sun · 25.05";
+
+    // Tonight card sub-line
+    const tonightWaitlistCount = tonightEvent ? (tonightEvent.guests || []).filter(g => g.state === GS.waitlist).length : 0;
+
+    return (
+      <div className="absolute inset-0 flex flex-col" style={{background:"transparent"}}>
+
+        <div className="flex-1 overflow-y-auto noscroll app-dock-space">
+          {/* Header row */}
+          <div className="app-safe-top px-5 flex items-center justify-between">
+            <div className="font-display text-[14px]" style={{opacity:.75}}>The List · Venues</div>
+            <button onClick={()=>{ setNotifOpen(true); if (onNotifsOpened) onNotifsOpened(); }} aria-label="Activity" className="press hit glass w-10 h-10 rounded-full flex items-center justify-center relative">
+              <Icon name="bell" size={17} stroke={1.5}/>
+              {notifCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>{notifCount}</span>
+              )}
+            </button>
+          </div>
+          <div className="px-5 mt-2 flex items-end justify-between">
+            <div>
+              <div className="font-black font-display-l text-[40px] leading-none">Tonight</div>
+              <div className="text-[12px] mt-2 flex items-center gap-1.5" style={{opacity:.75}}>
+                <Icon name="map-pin" size={12} stroke={1.5}/>{venue.name || "Your venue"} · {venue.area}
+              </div>
+            </div>
+            <div className="text-[12px] font-mono pb-1" style={{opacity:.75}}>{headerDate}</div>
+          </div>
+
+          {/* 1. Tonight card – locked event dated TODAY */}
+          {tonightEvent && (
+            <div className="px-5 mt-6">
+              <div className="press card rounded-[18px] overflow-hidden relative grain">
+                {tonightEvent.heroImage && <img src={tonightEvent.heroImage.src} className="absolute inset-0 w-full h-full object-cover" alt=""/>}
+                <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(0,0,0,.22) 0%, rgba(0,0,0,.85) 100%)"}}/>
+                <div className="relative p-4" style={{color:"#F7F6F3"}}>
+                  <div className="flex items-center justify-between">
+                    <StatusPill label="Tonight" tone="ice" dot/>
+                  </div>
+                  <div className="font-black font-display text-[30px] leading-none mt-9">{tonightEvent.title}</div>
+                  <div className="text-[12px] mt-1.5" style={{opacity:.85}}>
+                    {tonightConfirmed} confirmed · {tonightWaitlistCount} waitlist
+                  </div>
+                  <button
+                    onClick={() => { if (onDoorEvent) onDoorEvent(tonightEvent.id); onTab("door"); }}
+                    className="press mt-4 w-full h-12 rounded-full flex items-center justify-center gap-2 text-[12px] font-semibold glow-primary"
+                    style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                    Door <Icon name="arrow-right" size={14} stroke={1.8}/>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 2. Needs attention */}
+          {attentionRows.length > 0 && (
+            <>
+              <SectionHead label="Needs attention" className="pt-7 pb-3"/>
+              <div className="px-5 space-y-2">
+                {attentionRows.map(row => (
+                  <button key={row.key} onClick={row.action}
+                    className="press card w-full text-left rounded-[14px] p-4 flex items-center gap-3">
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:"var(--ice)"}}/>
+                    <div className="flex-1 min-w-0">
+                      {row.sublabel && (
+                        <div className="text-[11px] mb-0.5" style={{color:"var(--ink-mute)"}}>{row.sublabel}</div>
+                      )}
+                      <div className="text-[13px] font-medium leading-snug">{row.label}</div>
+                    </div>
+                    <Icon name="arrow-right" size={14} stroke={1.8} className="shrink-0" style={{opacity:.6}}/>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* 3. Stat tiles */}
+          <SectionHead label="The desk" className="pt-7 pb-3"/>
+          <div className="px-5 grid grid-cols-2 gap-2.5 stagger">
+            <div style={{"--i":0}}>
+              <StatTile n={appliedTotal} label="Applied"
+                onClick={firstOpenEvent ? ()=>onReview(firstOpenEvent) : undefined}/>
+            </div>
+            <div style={{"--i":1}}>
+              <StatTile n={toReview} label="To review"
+                onClick={firstOpenEvent ? ()=>onReview(firstOpenEvent) : undefined}/>
+            </div>
+            <div style={{"--i":2}}>
+              <StatTile n={tonightConfirmed} label="Confirmed" ice
+                onClick={tonightEvent ? ()=>onGuestList(tonightEvent.id) : undefined}/>
+            </div>
+            <div style={{"--i":3}}>
+              <StatTile n={roomsTonight} label="Rooms tonight"/>
+            </div>
+          </div>
+
+          {/* 4. Drafts */}
+          <SectionHead label="Upcoming rooms" right={drafts.length + " draft"} className="pt-8 pb-3"/>
+          <div className="px-5 space-y-2 stagger">
+            {drafts.length===0 && (
+              <div className="card rounded-[14px] p-5 text-center text-[13px]" style={{opacity:.7}}>Nothing scheduled. Post a room.</div>
+            )}
+            {drafts.map((r,i)=>{
+              const m = (r.date.split("·")[1]||"").trim().split(" ");
+              return (
+                <button key={r.id} style={{"--i":i}} onClick={()=>onEditDraft(r)}
+                  className="press card w-full text-left rounded-[14px] p-3 flex items-center gap-3">
+                  <DateChip day={m[0]||"–"} sub={m[1]||""}/>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-display text-[17px] leading-tight truncate">{r.title}</div>
+                    <div className="text-[11px] mt-0.5" style={{opacity:.7}}>{r.time} · {r.seats} seats</div>
+                  </div>
+                  <StatusPill label="Draft" tone="outline"/>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="px-5 mt-5 pb-2">
+            <button onClick={onPost} className="press w-full h-[52px] rounded-full flex items-center justify-center gap-2 text-[12px] font-medium" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+              <Icon name="plus" size={15} stroke={1.8}/> New room
+            </button>
+          </div>
+
+          {/* 5. Last recap teaser */}
+          {recapEvent && (
+            <div className="px-5 mt-4 pb-4">
+              <SectionHead label="Last recap" className="pb-3"/>
+              <button onClick={()=>onRecap(recapEvent.id)}
+                className="press card w-full text-left rounded-[14px] p-4 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="font-display text-[17px] leading-tight truncate">{recapEvent.title}</div>
+                  <div className="text-[12px] mt-1" style={{opacity:.75}}>
+                    {recapEvent.recap.showed} of {recapEvent.recap.confirmed} showed
+                    {" · "}{(recapEvent.guests||[]).filter(g=>g.story===SS.verified).length} stories verified
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-[12px] font-medium" style={{color:"var(--ice)", flexShrink:0}}>
+                  Recap <Icon name="arrow-right" size={13} stroke={1.8}/>
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
+        {notifOpen && (
+          <NotifSheet
+            events={events}
+            rows={notifications}
+            onClose={()=>setNotifOpen(false)}
+            onReview={onReview}
+            onGuestList={(id)=>onGuestList(id)}
+            onToast={onToast}
+            onRecap={onRecap}
+            onDoor={(id)=>{ if (onDoorEvent) onDoorEvent(id); onTab("door"); }}
+            onOpenEvent={onOpenEvent}
+            live={live}
+          />
+        )}
+      </div>
+    );
+  }
+
+  /* ========== ScreenDoor – night-of check-in + scoring ========== */
+  function ScreenDoor({ events, setEvents, askConfirm, onToast, onTab, onCheckIn, onCloseEvent, onNoShow, onRate, eventId=null, today=TODAY, live=false }){
+    const [seg, setSeg] = useState("expected");
+    const [rateFor, setRateFor] = useState(null);      // { applicantId, name, photo, index } | null
+    const [score, setScore] = useState(9);
+    // rating queue: { ids: applicantId[], total: number } | null
+    const [ratingQueue, setRatingQueue] = useState(null);
+    const [queueScore, setQueueScore] = useState(9);
+    const [showClose, setShowClose] = useState(false);   // confirm dialog open
+    // better-ui: row entrances stagger once on mount, not on every guest-state write
+    const [staggerDone, setStaggerDone] = useState(false);
+    useEffect(() => { const t = setTimeout(() => setStaggerDone(true), 2000); return () => clearTimeout(t); }, []);
+
+    // Self-select tonight's locked event. Live: genuinely-tonight only; demo keeps
+    // the loose fallback so the seed world always has a door.
+    const selectedEvent = eventId ? events.find(e => e.id === eventId && e.stage === STAGE.locked) : null;
+    const event = selectedEvent || events.find(e => e.stage === STAGE.locked && e.date === today)
+      || (live ? null : events.find(e => (e.guests || []).some(g => [GS.confirmed, GS.checkedIn, GS.noShow].includes(g.state)))) || null;
+    const guests = event ? (event.guests || []) : [];
+
+    // Derive segments – only confirmed/checked_in/no_show appear at the door
+    const expectedGuests  = guests.filter(g => g.state === GS.confirmed);
+    const checkedInGuests = guests.filter(g => g.state === GS.checkedIn);
+    const noShowGuests    = guests.filter(g => g.state === GS.noShow);
+
+    const list = seg === "expected" ? expectedGuests
+               : seg === "in"       ? checkedInGuests
+               : noShowGuests;
+
+    // Immutable writer helpers
+    const writeGuest = (applicantId, patch) => {
+      setEvents(es => es.map(e => e.id !== event.id ? e : {
+        ...e,
+        guests: (e.guests || []).map(g => g.applicantId === applicantId ? { ...g, ...patch } : g),
+      }));
+    };
+
+    const checkIn = async (g, idx) => {
+      const ap = applicantById[g.applicantId] || {};
+      if (onCheckIn) {
+        // Live: the RPC + rehydrate carry the real checked_in_at – no fabricated clock.
+        try { await onCheckIn(g.applicantId); }
+        catch (error) { onToast(error.message || "Could not check in"); return; }
+        onToast((ap.name || "Guest").split(" ")[0] + " checked in");
+        return;
+      }
+      const inAt = "22:" + String(10 + idx * 3).padStart(2, "0");
+      writeGuest(g.applicantId, { state: GS.checkedIn, inAt });
+      onToast((ap.name || "Guest").split(" ")[0] + " checked in · " + inAt);
+    };
+
+    const markNoShow = async (g) => {
+      const ap = applicantById[g.applicantId] || {};
+      if (onNoShow) {
+        try { await onNoShow(g.applicantId); }
+        catch (error) { onToast(error.message || "Could not mark no-show"); return; }
+        onToast((ap.name || "Guest").split(" ")[0] + " marked no-show");
+        return;
+      }
+      writeGuest(g.applicantId, { state: GS.noShow });
+      onToast((ap.name || "Guest").split(" ")[0] + " marked no-show");
+    };
+
+    // Single-guest rate (from In tab)
+    const submitSingleScore = async () => {
+      if (onRate) {
+        try { await onRate(rateFor.applicantId, score); }
+        catch (error) { onToast(error.message || "Could not save score"); return; }
+        onToast("Scored " + score + " · saved to their event record");
+        setRateFor(null); setScore(9);
+        return;
+      }
+      writeGuest(rateFor.applicantId, { rating: score });
+      onToast("Scored " + score + " · saved to their event record");
+      setRateFor(null); setScore(9);
+    };
+
+    // ---- Close-the-night flow ----
+    const startClose = () => {
+      // Build queue of unrated checked-in guests
+      const unrated = checkedInGuests.filter(g => g.rating == null);
+      if (unrated.length > 0) {
+        const ids = unrated.map(g => g.applicantId);
+        setRatingQueue({ ids, total: ids.length });
+        setQueueScore(9);
+      } else {
+        setShowClose(true);
+      }
+    };
+
+    // Submit a rating inside the queue then advance (live: rate_guest per guest,
+    // close_event fires at the end of the queue via the close confirm)
+    const submitQueueScore = async () => {
+      const currentId = ratingQueue.ids[0];
+      if (onRate) {
+        try { await onRate(currentId, queueScore); }
+        catch (error) { onToast(error.message || "Could not save score"); return; }
+      } else {
+        writeGuest(currentId, { rating: queueScore });
+      }
+      const remaining = ratingQueue.ids.slice(1);
+      if (remaining.length === 0) {
+        setRatingQueue(null);
+        setQueueScore(9);
+        setShowClose(true);
+      } else {
+        setRatingQueue({ ids: remaining, total: ratingQueue.total });
+        setQueueScore(9);
+      }
+    };
+
+    const skipQueueGuest = () => {
+      const remaining = ratingQueue.ids.slice(1);
+      if (remaining.length === 0) {
+        setRatingQueue(null);
+        setQueueScore(9);
+        setShowClose(true);
+      } else {
+        setRatingQueue({ ids: remaining, total: ratingQueue.total });
+        setQueueScore(9);
+      }
+    };
+
+    const doCloseNight = async () => {
+      if (onCloseEvent) {
+        // Live: close_event builds the recap + booking server-side; rehydrate
+        // renders from the bookings row – nothing fabricated locally.
+        try { await onCloseEvent(event.id); }
+        catch (error) { onToast(error.message || "Could not close event"); return; }
+        setShowClose(false);
+        onToast("Recap ready");
+        if (onTab) onTab("desk");
+        return;
+      }
+      setShowClose(false);
+      setEvents(es => {
+        const maxEndedAt = es.reduce((m, e) => Math.max(m, e.endedAt || 0), 0);
+        return es.map(e => {
+          if (e.id !== event.id) return e;
+          const gs = e.guests || [];
+          // snapshot counts before conversion
+          const confirmedCount = gs.filter(g => g.state === GS.confirmed).length;
+          const checkedInCount = gs.filter(g => g.state === GS.checkedIn).length;
+          const noShowCount    = gs.filter(g => g.state === GS.noShow).length;
+          const recapConfirmed = confirmedCount + checkedInCount + noShowCount;
+          // convert remaining confirmed → no_show; checked_in stories → due
+          const newGuests = gs.map(g => {
+            if (g.state === GS.confirmed)  return { ...g, state: GS.noShow };
+            if (g.state === GS.checkedIn)  return { ...g, story: SS.due };
+            return g;
+          });
+          // avg rating
+          const ratings = newGuests.filter(g => g.state === GS.checkedIn && g.rating != null).map(g => g.rating);
+          const avgRating = ratings.length > 0
+            ? Math.round(ratings.reduce((s,r)=>s+r,0) / ratings.length * 10) / 10
+            : null;
+          return {
+            ...e,
+            stage: STAGE.past,
+            status: stageToStatus(STAGE.past),
+            endedAt: maxEndedAt + 1,
+            guests: newGuests,
+            recap: {
+              confirmed: recapConfirmed,
+              showed: checkedInCount,
+              noShows: noShowCount + confirmedCount,  // original no_shows + newly converted
+              avgRating,
+            },
+            invoice: {
+              bundle: e.bundle?.name || "Custom",
+              price:  e.bundle?.price ?? 0,
+              status: "due",
+            },
+          };
+        });
+      });
+      onToast("Recap ready");
+      if (onTab) onTab("desk");
+    };
+
+    // ---- Empty state ----
+    if (!event) {
+      return (
+        <div className="absolute inset-0 flex flex-col" style={{background:"transparent"}}>
+
+          <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
+            <div className="font-black font-display-l text-[40px] leading-none">No room tonight</div>
+            <div className="text-[13px]" style={{color:"var(--ink-2)"}}>Door opens when a confirmed night is on.</div>
+          </div>
+
+        </div>
+      );
+    }
+
+    // ---- Rating queue modal (before close confirm) ----
+    if (ratingQueue && ratingQueue.ids.length > 0) {
+      const remaining = ratingQueue.ids.length;
+      const doneCount = ratingQueue.total - remaining;
+      const queueApId = ratingQueue.ids[0];
+      const queueAp = applicantById[queueApId] || {};
+      return (
+        <div className="absolute inset-0 flex flex-col" style={{background:"transparent"}}>
+
+          <div className="flex-1 overflow-y-auto noscroll app-dock-space">
+            <div className="app-safe-top px-5">
+              <div className="font-black font-display-l text-[40px] leading-none">Rate the night</div>
+              <div className="text-[12px] mt-2" style={{opacity:.75}}>{doneCount + 1} of {ratingQueue.total}</div>
+            </div>
+            <div className="px-5 mt-8">
+              <div className="flex items-center gap-3 mb-6">
+                <img src={queueAp.photo || ""} className="w-14 h-14 rounded-full object-cover shrink-0" alt=""
+                     style={{background:"var(--bg-elev2)"}}/>
+                <div className="flex-1 min-w-0">
+                  <div className="font-black text-[22px] leading-tight truncate">{queueAp.name || "–"}</div>
+                  <div className="text-[11px] mt-0.5" style={{opacity:.7}}>How was the night?</div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {[6,7,8,9,10].map(n=>(
+                  <button key={n} onClick={()=>setQueueScore(n)} className={"press flex-1 h-12 rounded-[12px] font-black font-mono text-[18px] "+(queueScore===n?"glow-ice":"")}
+                    style={queueScore===n ? {background:"var(--ice)", color:"var(--ice-ink)"} : {background:"var(--bg-elev)", border:"1px solid var(--line)"}}>{n}</button>
+                ))}
+              </div>
+              <div className="text-[11px] mt-3" style={{opacity:.7}}>Feeds their reputation. Honest beats nice – it keeps the list good.</div>
+              <button onClick={submitQueueScore} className="press glow-primary w-full h-12 rounded-full mt-5 text-[12px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                Save score →
+              </button>
+              <button onClick={skipQueueGuest} className="press w-full mt-2 py-3.5 text-center text-[11px]" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Skip</button>
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    // ---- Main door view ----
+    return (
+      <div className="absolute inset-0 flex flex-col" style={{background:"transparent"}}>
+
+        <div className="flex-1 overflow-y-auto noscroll app-dock-space">
+          <div className="app-safe-top px-5">
+            <div className="font-black font-display-l text-[40px] leading-none">Door</div>
+            <div className="text-[12px] mt-2" style={{opacity:.75}}>{event.title} · {event.date}</div>
+          </div>
+          <div className="px-5 mt-5">
+            <Segmented value={seg} onChange={setSeg} items={[
+              { id:"expected", label:"Expected", count:expectedGuests.length },
+              { id:"in",       label:"In",       count:checkedInGuests.length },
+              { id:"noshow",   label:"No show",  count:noShowGuests.length },
+            ]}/>
+          </div>
+          <div className={"px-5 mt-4 space-y-2" + (staggerDone ? "" : " stagger")}>
+            {list.length===0 && (
+              <div className="card rounded-[14px] p-6 text-center text-[13px]" style={{opacity:.7}}>
+                {seg==="expected" ? "Everyone's in." : seg==="in" ? "No one's in yet." : "No no-shows. Good night."}
+              </div>
+            )}
+            {list.map((g, i) => {
+              const ap = applicantById[g.applicantId] || {};
+              return (
+                <div key={g.applicantId} style={{"--i":i}} className="card rounded-[14px] p-3 flex items-center gap-3">
+                  <img src={ap.photo || ""} className="w-11 h-11 rounded-full object-cover shrink-0" alt=""
+                       style={{background:"var(--bg-elev2)"}}/>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-[14px] truncate">{ap.name || "–"}</div>
+                    <div className="text-[11px]" style={{opacity:.7}}>
+                      <span className="font-mono">{quality10(ap.quality_score)}</span> rep
+                      {seg==="in" && g.inAt ? " · in " + g.inAt : ""}
+                    </div>
+                  </div>
+                  {/* Pass code – right-aligned, quiet treatment */}
+                  {g.code && seg === "expected" && (
+                    <span className="font-mono text-[11px] shrink-0" style={{color:"var(--ice)", letterSpacing:".04em"}}>{g.code}</span>
+                  )}
+                  {seg==="expected" && (
+                    <>
+                      <button onClick={()=>markNoShow(g)} className="press hit h-9 px-3 rounded-full text-[10px] font-medium shrink-0" style={{border:"1px solid var(--line-2)", opacity:.7}}>No show</button>
+                      <button onClick={()=>checkIn(g, i)} className="press hit h-9 px-3.5 rounded-full text-[10px] font-semibold glow-primary shrink-0" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Check in</button>
+                    </>
+                  )}
+                  {seg==="in" && (
+                    g.rating != null
+                      ? <StatusPill label="Scored" tone="outline"/>
+                      : <button onClick={()=>{ setRateFor(g); setScore(9); }} className="press hit h-9 px-3.5 rounded-full text-[10px] font-medium shrink-0" style={{border:"1px solid var(--line-2)"}}>Rate</button>
+                  )}
+                  {seg==="noshow" && <StatusPill label="No show"/>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Close the night footer */}
+        <div className="absolute bottom-0 left-0 right-0 pb-8 px-5 pt-3" style={{background:"linear-gradient(to top, var(--bg) 70%, transparent)"}}>
+          <button onClick={startClose} className="press glow-primary w-full h-[52px] rounded-full text-[13px] font-semibold flex items-center justify-center gap-2" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+            Close the night <Icon name="arrow-right" size={15} stroke={1.8}/>
+          </button>
+        </div>
+
+        {/* Confirm close dialog */}
+        {showClose && (
+          <ConfirmDialog
+            title="Close the night?"
+            body="Unchecked guests become no-shows. The recap and invoice get built."
+            confirmLabel="Close the night"
+            onConfirm={doCloseNight}
+            onClose={()=>setShowClose(false)}
+          />
+        )}
+
+        {/* Single-guest rate modal (In tab) */}
+        {rateFor && (
+          <>
+            <div onClick={()=>setRateFor(null)} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
+            <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
+              <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
+              <div className="flex items-center gap-3 mb-5">
+                {(() => { const ap = applicantById[rateFor.applicantId] || {}; return (<>
+                  <img src={ap.photo || ""} className="w-11 h-11 rounded-full object-cover" alt=""/>
+                  <div className="flex-1">
+                    <div className="font-black text-[20px] leading-none">{ap.name || "–"}</div>
+                    <div className="text-[11px] mt-1" style={{opacity:.7}}>How was the night?</div>
+                  </div>
+                </>); })()}
+                <button onClick={()=>setRateFor(null)} aria-label="Close" className="press hit w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
+                  <Icon name="x" size={14} stroke={1.5}/>
+                </button>
+              </div>
+              <div className="flex gap-2">
+                {[6,7,8,9,10].map(n=>(
+                  <button key={n} onClick={()=>setScore(n)} className={"press flex-1 h-12 rounded-[12px] font-black font-mono text-[18px] "+(score===n?"glow-ice":"")}
+                    style={score===n ? {background:"var(--ice)", color:"var(--ice-ink)"} : {background:"var(--bg-elev)", border:"1px solid var(--line)"}}>{n}</button>
+                ))}
+              </div>
+              <div className="text-[11px] mt-3" style={{opacity:.7}}>Feeds their reputation. Honest beats nice – it keeps the list good.</div>
+              <button onClick={submitSingleScore} className="press glow-primary w-full h-12 rounded-full mt-5 text-[12px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                Save score
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  /* ========== VenueTabBar – 4-tab frosted bar for the venue shell ========== */
+  function VenueTabBar({ tab, onTab }){
+    const items = [
+      { id:"desk",   icon:"sparkle",             label:"Tonight" },
+      { id:"events", icon:"calendar",            label:"Events" },
+      { id:"door",   icon:"users",               label:"Door" },
+      { id:"venue",  icon:"building-storefront", label:"Venue" },
+    ];
+    return (
+      <div className="tabbar" role="navigation" aria-label="Venue navigation" style={{gridTemplateColumns:"repeat(4,1fr)"}}>
+        {items.map(it => {
+          const active = tab === it.id;
+          return (
+            <button key={it.id} onClick={() => onTab(it.id)} aria-current={active ? "page" : undefined} className={"press " + (active ? "active" : "")}>
+              <Icon name={it.icon} size={18} stroke={1.4}/>
+              <span>{it.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  /* ========== ScreenStub – placeholder for unbuilt tabs ========== */
+  function ScreenStub({ title }){
+    return (
+      <>
+
+        <div className="absolute inset-0 flex items-center justify-center" style={{background:"transparent"}}>
+          <div className="font-black font-display-l text-[40px]" style={{color:"var(--ink-mute)"}}>{title}</div>
+        </div>
+
+      </>
+    );
+  }
+
+  /* ========== ConfirmDialog – generic bottom-sheet confirm (reused by multiple tasks) ========== */
+  function ConfirmDialog({ title, body, confirmLabel, onConfirm, onClose }){
+    return (
+      <>
+        <div onClick={onClose} className="absolute inset-0 z-[60] sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
+        <div className="absolute left-0 right-0 bottom-0 z-[70] sheet rounded-t-[24px] px-5 pt-4 pb-8" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
+          <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
+          <div className="font-black font-display-l text-[26px] leading-tight mb-2">{title}</div>
+          <div className="text-[13px] leading-relaxed mb-6" style={{color:"var(--ink-2)"}}>{body}</div>
+          <div className="flex gap-3">
+            <button onClick={onClose}
+              className="press flex-1 h-[52px] rounded-full text-[13px] font-medium"
+              style={{border:"1px solid var(--line-2)", color:"var(--ink)", background:"transparent"}}>
+              Keep it
+            </button>
+            <button onClick={()=>{ onConfirm(); onClose(); }}
+              className="press glow-primary flex-1 h-[52px] rounded-full text-[13px] font-semibold"
+              style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+              {confirmLabel}
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  /* ========== GuestListSheet – locked event's guest roster ========== */
+  function GuestListSheet({ event, onClose }){
+    const confirmed = (event.guests || []).filter(g => g.state === GS.confirmed);
+    const awaiting  = (event.guests || []).filter(g => g.state === GS.picked || g.state === GS.expired);
+    const waitlist  = (event.guests || []).filter(g => g.state === GS.waitlist);
+    const seats     = event.seats || (event.mix ? event.mix.girls + event.mix.guys : 0);
+
+    function GuestRow({ g, statusText }){
+      const ap = applicantById[g.applicantId] || {};
+      return (
+        <div className="flex items-center gap-3 py-2.5">
+          <img src={ap.photo || ""} alt="" className="w-10 h-10 rounded-full object-cover shrink-0"
+               style={{background:"var(--bg-elev2)"}}/>
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-[14px] truncate">{ap.name || "–"}</div>
+            {statusText && (
+              <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{statusText}</div>
+            )}
+          </div>
+          <div className="shrink-0 flex flex-col items-end gap-0.5">
+            {g.code && (
+              <span className="font-mono text-[11px]" style={{color:"var(--ice)", letterSpacing:".04em"}}>{g.code}</span>
+            )}
+            {ap.quality_score != null && (
+              <span className="text-[10px]" style={{color:"var(--ink-mute)"}}>{quality10(ap.quality_score)}</span>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const Group = ({ label, children, count }) => (
+      <div className="mb-4">
+        <div className="stamp mb-1 flex items-center justify-between">
+          <span>{label}</span>
+          <span style={{color:"var(--ink-mute)"}}>{count}</span>
+        </div>
+        <div style={{borderTop:"1px solid var(--line)"}}>
+          {children}
+        </div>
+      </div>
+    );
+
+    return (
+      <>
+        <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
+        <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-8"
+             style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)", maxHeight:"78%", display:"flex", flexDirection:"column"}}>
+          <div className="w-10 h-1 rounded-full mx-auto mb-5 shrink-0" style={{background:"var(--ink)", opacity:.4}}/>
+          <div className="flex items-start justify-between mb-4 shrink-0">
+            <div>
+              <div className="font-black font-display-l text-[22px] leading-tight">{event.title}</div>
+              <div className="text-[12px] mt-0.5" style={{color:"var(--ink-mute)"}}>
+                <span className="font-mono">{confirmed.length}</span> confirmed of <span className="font-mono">{seats}</span>
+              </div>
+            </div>
+            <button onClick={onClose} aria-label="Close" className="press hit w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{background:"var(--bg-elev)"}}>
+              <Icon name="x" size={14} stroke={1.5}/>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto noscroll">
+            {confirmed.length > 0 && (
+              <Group label="Confirmed" count={confirmed.length}>
+                {confirmed.map((g) => <GuestRow key={g.applicantId} g={g}/>)}
+              </Group>
+            )}
+            {awaiting.length > 0 && (
+              <Group label="Awaiting confirm" count={awaiting.length}>
+                {awaiting.map((g) => <GuestRow key={g.applicantId} g={g} statusText={g.state === GS.expired ? "Pick expired" : "Awaiting confirm"}/>)}
+              </Group>
+            )}
+            {waitlist.length > 0 && (
+              <Group label="Waitlist" count={waitlist.length}>
+                {waitlist.map((g) => <GuestRow key={g.applicantId} g={g} statusText="Still under review"/>)}
+              </Group>
+            )}
+            {confirmed.length === 0 && awaiting.length === 0 && waitlist.length === 0 && (
+              <div className="flex items-center justify-center py-10">
+                <span className="stamp" style={{color:"var(--ink-mute)"}}>No guests yet</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  /* ========== ScreenEvents – Events dashboard (stage-driven, Task 4) ========== */
+  function ScreenEvents({ events, venue, onPost, onOpenEvent, onEditDraft, onGuestList, askConfirm, setEvents, onToast, onRecap, onCancelEvent, onDeleteDraft }){
+    const [seg, setSeg] = useState("open");
+
+    const counts = {
+      open:    events.filter(e => e.stage === STAGE.open).length,
+      locked:  events.filter(e => e.stage === STAGE.locked).length,
+      draft:   events.filter(e => e.stage === STAGE.draft).length,
+      past:    events.filter(e => e.stage === STAGE.past || e.stage === STAGE.cancelled).length,
+    };
+
+    const segments = [
+      { id:"open",   label:"Open",   count: counts.open   },
+      { id:"locked", label:"Locked", count: counts.locked },
+      { id:"draft",  label:"Drafts", count: counts.draft  },
+      { id:"past",   label:"Past",   count: counts.past   },
+    ];
+
+    const visible = events.filter(e => {
+      if (seg === "past") return e.stage === STAGE.past || e.stage === STAGE.cancelled;
+      return e.stage === seg;
+    });
+
+    function StagePill({ stage }){
+      if (stage === STAGE.open)      return <StatusPill label="Open" tone="ice" dot/>;
+      if (stage === STAGE.locked)    return <StatusPill label="Locked" tone="outline"/>;
+      if (stage === STAGE.draft)     return <StatusPill label="Draft" tone="outline"/>;
+      if (stage === STAGE.cancelled) return <StatusPill label="Cancelled"/>;
+      return <StatusPill label="Past"/>;
+    }
+
+    const handleCancel = (event) => {
+      askConfirm({
+        title: "Cancel this event?",
+        body: "Applicants and savers get notified. No charge, no strikes.",
+        confirmLabel: "Cancel event",
+        onConfirm: async () => {
+          if (onCancelEvent) {
+            try { await onCancelEvent(event.id); }
+            catch (error) { onToast(error.message || "Could not cancel event"); return; }
+            onToast("Event cancelled – guests notified");
+            return;
+          }
+          setEvents(es => es.map(e => e.id !== event.id ? e : {
+            ...e,
+            stage: STAGE.cancelled,
+            status: stageToStatus(STAGE.cancelled),
+            guests: (e.guests || []).map(g => ({ ...g, state: GS.cancelled })),
+          }));
+          onToast("Event cancelled – guests notified");
+        },
+      });
+    };
+
+    const handleDeleteDraft = (event) => {
+      askConfirm({
+        title: "Delete this draft?",
+        body: "The draft goes away for good. Nobody was notified about it.",
+        confirmLabel: "Delete draft",
+        onConfirm: async () => {
+          if (onDeleteDraft) {
+            try { await onDeleteDraft(event.id); }
+            catch (error) { onToast(error.message || "Could not delete draft"); return; }
+            onToast("Draft deleted");
+            return;
+          }
+          setEvents(es => es.filter(e => e.id !== event.id));
+          onToast("Draft deleted");
+        },
+      });
+    };
+
+    return (
+      <div className="absolute inset-0 flex flex-col" style={{background:"transparent"}}>
+
+
+        {/* Header */}
+        <div className="shrink-0 px-5 app-safe-top pb-3">
+          <div className="font-black font-display-l text-[40px] leading-none">Events</div>
+        </div>
+        <div className="hr-2 mx-5 mb-4 shrink-0"/>
+
+        {/* Segmented control */}
+        <div className="shrink-0 px-5 mb-4">
+          <Segmented items={segments} value={seg} onChange={setSeg}/>
+        </div>
+
+        {/* Scrollable event list */}
+        <div className="flex-1 overflow-y-auto noscroll px-5 pb-2">
+          {visible.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <span className="stamp" style={{color:"var(--ink-mute)"}}>
+                {seg === "open" ? "No open events" : seg === "locked" ? "No locked events" : seg === "draft" ? "No drafts" : "No past events"}
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {visible.map(event => (
+                <div key={event.id} className="w-full text-left rounded-[14px] overflow-hidden"
+                  style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
+                  {/* Card body – inner thumb radius 8 keeps it concentric inside the 14px card */}
+                  <div className="flex items-start gap-3 p-3">
+                    <FramedImage value={event.heroImage} ratio="4/5" radius={8} className="w-14 shrink-0"/>
+                    <div className="flex-1 min-w-0 py-0.5">
+                      <div className="font-black text-[18px] leading-tight truncate">{event.title || "Untitled"}</div>
+                      <div className="text-[11px] mt-0.5 truncate" style={{color:"var(--ink-mute)"}}>
+                        {event.type}{event.date ? " · " + event.date : ""}{event.time ? " · " + event.time : ""}
+                      </div>
+                      {/* Open-specific meta */}
+                      {event.stage === STAGE.open && event.closesAt && (
+                        <div className="text-[11px] mt-1" style={{color:"var(--ink-mute)"}}>
+                          Closes {event.closesAt}
+                        </div>
+                      )}
+                      {event.stage === STAGE.open && event.appliedTotal != null && (
+                        <div className="text-[11px] mt-0.5" style={{color:"var(--ink-mute)"}}>
+                          <span className="font-mono">{event.appliedTotal}</span> applied
+                        </div>
+                      )}
+                      {/* Mix / seats */}
+                      <div className="text-[10px] mt-1" style={{color:"var(--ink-mute)"}}>
+                        {event.mix
+                          ? "Girls " + event.mix.girls + " · Guys " + event.mix.guys
+                          : event.seats + " seats"}
+                      </div>
+                    </div>
+                    <div className="shrink-0 pt-0.5">
+                      <StagePill stage={event.stage}/>
+                    </div>
+                  </div>
+
+                  {/* Action row */}
+                  <div className="flex items-center justify-between px-3 pb-3 gap-2">
+                    <div className="flex-1">
+                      {event.stage === STAGE.open && (
+                        <button onClick={() => onOpenEvent(event)}
+                          className="press text-[12px] font-semibold flex items-center gap-1"
+                          style={{color:"var(--ice)", background:"transparent", border:"none"}}>
+                          Review applicants <Icon name="arrow-right" size={13} stroke={1.8}/>
+                        </button>
+                      )}
+                      {event.stage === STAGE.locked && (
+                        <button onClick={() => onGuestList(event)}
+                          className="press text-[12px] font-semibold flex items-center gap-1"
+                          style={{color:"var(--ice)", background:"transparent", border:"none"}}>
+                          Guest list <Icon name="arrow-right" size={13} stroke={1.8}/>
+                        </button>
+                      )}
+                      {event.stage === STAGE.draft && (
+                        <button onClick={() => onEditDraft(event)}
+                          className="press text-[12px] font-semibold flex items-center gap-1"
+                          style={{color:"var(--ice)", background:"transparent", border:"none"}}>
+                          Edit <Icon name="arrow-right" size={13} stroke={1.8}/>
+                        </button>
+                      )}
+                      {event.stage === STAGE.past && (
+                        <button onClick={() => onRecap(event.id)}
+                          className="press text-[12px] font-semibold flex items-center gap-1"
+                          style={{color:"var(--ice)", background:"transparent", border:"none"}}>
+                          Recap <Icon name="arrow-right" size={13} stroke={1.8}/>
+                        </button>
+                      )}
+                      {event.stage === STAGE.cancelled && (
+                        <span className="text-[11px]" style={{color:"var(--ink-mute)"}}>Cancelled</span>
+                      )}
+                    </div>
+                    {(event.stage === STAGE.open || event.stage === STAGE.locked) && (
+                      <button onClick={() => handleCancel(event)}
+                        className="press hit text-[11px] py-2"
+                        style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
+                        Cancel event
+                      </button>
+                    )}
+                    {event.stage === STAGE.draft && (
+                      <button onClick={() => handleDeleteDraft(event)}
+                        className="press hit text-[11px] py-2"
+                        style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
+                        Delete draft
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Pinned Post CTA */}
+        <div className="shrink-0 px-5 app-dock-space pt-3">
+          <button onClick={onPost} className="press glow-primary w-full h-[52px] rounded-full font-semibold text-[14px] flex items-center justify-center gap-2"
+            style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+            Post an event <Icon name="arrow-right" size={16} stroke={1.8}/>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // px reserved at card bottom for the social pill row (p-4 + h-9 + mt-3) – keep in sync with SwipeCard's footer
+  const CARD_LINK_ZONE = 80;
+
+  function connectionLabel(status){
+    if (status === "connected") return "Connected";
+    if (status === "estimated") return "Estimated";
+    return "Not available";
+  }
+
+  function applicantLebanon(applicant){
+    const direct = applicant.insights?.audience?.lebanon;
+    if (isNumber(direct)) return direct;
+    const row = (applicant.audience?.countries || []).find(([name]) => name === "Lebanon");
+    return row && isNumber(row[1]) ? row[1] : null;
+  }
+
+  function InsightMetric({ label, value, detail=null }){
+    return (
+      <div className="insight-metric">
+        <div className="text-[10px] font-medium leading-tight mb-1" style={{color:"var(--ink-2)"}}>{label}</div>
+        <div className="font-mono text-[17px] leading-tight break-words">{value}</div>
+        {detail && <div className="text-[10px] leading-snug mt-1" style={{color:"var(--ink-2)"}}>{detail}</div>}
+      </div>
+    );
+  }
+
+  function SheetSection({ title, children }){
+    return (
+      <section className="mb-5">
+        <div className="section-label text-[13px] mb-2">{title}</div>
+        {children}
+      </section>
+    );
+  }
+
+  function MiniTrend({ values, label }){
+    const clean = Array.isArray(values) ? values.filter(isNumber) : [];
+    if (!clean.length) return <div className="text-[12px] py-5" style={{color:"var(--ink-2)"}}>Not available</div>;
+    const min = Math.min(...clean);
+    const max = Math.max(...clean);
+    const range = max-min;
+    return (
+      <div>
+        <div className="h-[78px] flex items-end gap-2 px-1 pt-2" aria-label={label || "Recent trend"}>
+          {clean.map((value, index) => {
+            const height = range === 0 ? 54 : 22 + ((value-min)/range)*50;
+            return <span key={index} className="flex-1 rounded-t-[5px]" style={{height, background:"var(--ice)", opacity:.45 + index/clean.length*.5}}/>;
+          })}
+        </div>
+        {label && <div className="text-[11px] mt-2" style={{color:"var(--ink-2)"}}>{label}</div>}
+      </div>
+    );
+  }
+
+  function BarList({ rows, max=1 }){
+    const clean = Array.isArray(rows) ? rows.filter(row => row && isNumber(row[1])) : [];
+    if (!clean.length) return <div className="text-[12px] py-3" style={{color:"var(--ink-2)"}}>Not available</div>;
+    return (
+      <div className="flex flex-col gap-3">
+        {clean.map(([label,value]) => (
+          <div key={label}>
+            <div className="flex items-center justify-between gap-3 text-[11px] mb-1.5">
+              <span className="truncate">{label}</span>
+              <span className="font-mono shrink-0">{max === 1 ? fmtPct(value) : value.toFixed(2)+"x"}</span>
+            </div>
+            <div className="insight-bar"><span style={{width:`${Math.max(0,Math.min(100,value/max*100))}%`}}/></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  function Donut({ value, label, secondaryLabel }){
+    if (!isNumber(value)) return <div className="text-[12px] py-5" style={{color:"var(--ink-2)"}}>Not available</div>;
+    const pct = Math.max(0,Math.min(100,value*100));
+    return (
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="relative w-[74px] h-[74px] rounded-full shrink-0" role="img" aria-label={`${label} ${Math.round(pct)}%`}
+             style={{background:`conic-gradient(var(--ice) ${pct}%, var(--bg-elev2) 0)`}}>
+          <div className="absolute inset-[9px] rounded-full flex items-center justify-center font-mono text-[13px]" style={{background:"var(--bg)"}}>{Math.round(pct)}%</div>
+        </div>
+        <div className="min-w-0 text-[10px] leading-relaxed">
+          <div className="font-semibold truncate">{label}</div>
+          <div className="truncate" style={{color:"var(--ink-2)"}}>{secondaryLabel} {Math.round(100-pct)}%</div>
+        </div>
+      </div>
+    );
+  }
+
+  function TagList({ values }){
+    if (!Array.isArray(values) || !values.length) return <div className="text-[12px]" style={{color:"var(--ink-2)"}}>Not available</div>;
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {values.map(value => <span key={value} className="px-2.5 py-1 rounded-full text-[10px]" style={{background:"var(--bg-elev2)", border:"1px solid var(--line)"}}>{value}</span>)}
+      </div>
+    );
+  }
+
+  /* ========== SwipeCard - one applicant card ========== */
+  function SwipeCard({ a }){
+    const insights = a.insights || {};
+    const reliability = insights.theList?.reliability;
+    const Social = ({label, href, icon}) => href ? (
+      <a href={href} target="_blank" rel="noreferrer"
+         className="press hit flex items-center gap-1.5 px-3 h-9 rounded-full text-[12px]"
+         style={{border:"1px solid rgba(247,246,243,.32)", color:"#F7F6F3"}}>
+        <Icon name={icon} size={14}/>{label}
+      </a>
+    ) : null;
+    const metrics = [
+      ["Followers",fmtK(a.instagram_followers)],
+      ["Engagement",fmtPct(insights.engagementRate,1)],
+      ["Lebanon",fmtPct(applicantLebanon(a))],
+      ["Reliability",fmtPct(reliability)],
+    ];
+    return (
+      <div className="relative w-full rounded-[18px] overflow-hidden" style={{aspectRatio:"4/5", background:"var(--bg-elev)"}}>
+        {/* same box as the 18px card – matching radius keeps the corners concentric */}
+        <FramedImage
+          value={a.photo ? {src:a.photo, scale:1, x:0, y:0} : null}
+          empty={(a.name || "Member").split(" ").map(part=>part[0]).join("").slice(0,2).toUpperCase()}
+          ratio="4/5" radius={18} className="absolute inset-0"/>
+        <div className="absolute inset-x-0 bottom-0 p-4 pt-24"
+             style={{background:"linear-gradient(to top, rgba(0,0,0,.94) 0%, rgba(0,0,0,.76) 58%, rgba(0,0,0,0) 100%)", color:"#F7F6F3"}}>
+          <div className="flex items-end justify-between gap-3">
+            <div className="font-black font-display-l text-[24px] leading-[1.02] min-w-0">{a.name}</div>
+            <span className="shrink-0 px-2 py-1 rounded-full text-[9px] font-semibold" style={{border:"1px solid rgba(247,246,243,.36)"}}>
+              {connectionLabel(insights.dataStatus)}
+            </span>
+          </div>
+          <div className="grid grid-cols-4 mt-3 py-2.5" style={{borderTop:"1px solid rgba(247,246,243,.22)", borderBottom:"1px solid rgba(247,246,243,.22)"}}>
+            {metrics.map(([label,value], index) => (
+              <div key={label} className="min-w-0 px-2 first:pl-0 last:pr-0" style={index ? {borderLeft:"1px solid rgba(247,246,243,.18)"} : {}}>
+                <div className="font-mono text-[12px] leading-tight truncate">{value}</div>
+                <div className="text-[8px] leading-tight mt-1 truncate">{label}</div>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 mt-3">
+            <Social label="Instagram" href={a.socials?.instagram} icon="instagram"/>
+            <Social label="TikTok" href={a.socials?.tiktok} icon="tiktok"/>
+            <Social label="Link" href={a.socials?.other} icon="link"/>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ========== ApplicantSheet - venue-only analytics for applied members ========== */
+  function ApplicantSheet({ applicant, guest, onDecide, onClose }){
+    const [tab, setTab] = useState("Overview");
+    const scrollRef = useRef(null);
+    useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0; }, [tab]);
+    if (!applicant) return null;
+    const insights = applicant.insights || {};
+    const audience = insights.audience || {};
+    const content = insights.content || {};
+    const list = insights.theList || {};
+    const status = connectionLabel(insights.dataStatus);
+    const localFollowers = insights.overview?.localFollowers;
+    const tabs = ["Overview","Audience","Content","The List"];
+
+    const Overview = () => (
+      <div>
+        <div className="card rounded-[14px] p-4 mb-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>{status}</span>
+            <span className="text-[10px] text-right" style={{color:"var(--ink-2)"}}>{insights.freshness || "Freshness not available"}</span>
+          </div>
+          <div className="text-[11px] font-medium" style={{color:"var(--ink-2)"}}>Estimated local followers</div>
+          <div className="font-black font-display-l text-[42px] leading-none mt-1">{fmtK(localFollowers)}</div>
+          <div className="text-[11px] leading-relaxed mt-2" style={{color:"var(--ink-2)"}}>A quick view of the reachable Lebanon audience before you pick.</div>
+        </div>
+        <SheetSection title="Decision metrics">
+          <div className="insight-grid">
+            <InsightMetric label="Followers" value={fmtK(applicant.instagram_followers)}/>
+            <InsightMetric label="Engagement" value={fmtPct(insights.engagementRate,1)}/>
+            <InsightMetric label="Lebanon audience" value={fmtPct(applicantLebanon(applicant))}/>
+            <InsightMetric label="Reliability" value={fmtPct(list.reliability)}/>
+          </div>
+        </SheetSection>
+        <SheetSection title="Follower trend">
+          <div className="card rounded-[14px] px-3 py-2">
+            <MiniTrend values={insights.overview?.trend} label={insights.overview?.trendLabel}/>
+          </div>
+        </SheetSection>
+      </div>
+    );
+
+    const Audience = () => (
+      <div>
+        <SheetSection title="Audience location">
+          <div className="insight-grid">
+            <div className="insight-metric"><Donut value={audience.lebanon} label="Lebanon" secondaryLabel="International"/></div>
+            <div className="insight-metric"><Donut value={audience.female} label="Female" secondaryLabel="Male"/></div>
+          </div>
+        </SheetSection>
+        <SheetSection title="Top cities"><BarList rows={audience.cities}/></SheetSection>
+        <SheetSection title="Age"><BarList rows={audience.ages}/></SheetSection>
+        <SheetSection title="Audience quality">
+          <div className="insight-grid mb-3">
+            <InsightMetric label="Credibility" value={fmtPct(audience.credibility)}/>
+            <InsightMetric label="Lebanon share" value={fmtPct(audience.lebanon)}/>
+          </div>
+          <div className="text-[11px] font-semibold mb-2">Languages</div>
+          <TagList values={audience.languages}/>
+          <div className="text-[11px] font-semibold mt-4 mb-2">Most active</div>
+          <TagList values={audience.activeHours}/>
+        </SheetSection>
+      </div>
+    );
+
+    const Content = () => (
+      <div>
+        <SheetSection title="Format performance"><BarList rows={content.performance} max={1.5}/></SheetSection>
+        <SheetSection title="Top content">
+          {Array.isArray(content.topContent) && content.topContent.length ? (
+            <div className="grid grid-cols-2 gap-2">
+              {content.topContent.slice(0,4).map((item,index) => (
+                <div key={index} className="analytics-thumb">
+                  <img src={item.thumbnail} alt="" loading="lazy" decoding="async"/>
+                  <div className="absolute inset-x-0 bottom-0 px-2.5 py-2 text-[9px] flex justify-between gap-2" style={{background:"linear-gradient(transparent,rgba(0,0,0,.9))", color:"#F7F6F3"}}>
+                    <span>{item.label || "Post"}</span><span className="font-mono">{fmtK(item.reach)} reach</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : <div className="text-[12px]" style={{color:"var(--ink-2)"}}>Not available</div>}
+        </SheetSection>
+        <SheetSection title="Content metrics">
+          <div className="insight-grid">
+            <InsightMetric label="Average likes" value={fmtCount(content.averageLikes)}/>
+            <InsightMetric label="Average comments" value={fmtCount(content.averageComments)}/>
+            <InsightMetric label="Average views" value={fmtK(content.averageViews)}/>
+            <InsightMetric label="Average Reel views" value={fmtK(content.averageReelsViews)}/>
+            <InsightMetric label="Posting frequency" value={content.postingFrequency || "Not available"}/>
+            <InsightMetric label="Sponsored share" value={fmtPct(content.sponsoredShare)}/>
+          </div>
+        </SheetSection>
+      </div>
+    );
+
+    const TheList = () => (
+      <div>
+        <SheetSection title="Reliability">
+          <div className="insight-grid">
+            <InsightMetric label="Reliability" value={fmtPct(list.reliability)}/>
+            <InsightMetric label="Show-up rate" value={fmtPct(list.showUpRate)}/>
+            <InsightMetric label="Story completion" value={fmtPct(list.storyCompletion)}/>
+            <InsightMetric label="Venue rating" value={isNumber(list.venueRating) ? list.venueRating.toFixed(1)+" / 5" : "Not available"}/>
+            <InsightMetric label="Events" value={fmtCount(list.events)}/>
+            <InsightMetric label="Verified reach" value={fmtK(list.verifiedReach)}/>
+          </div>
+        </SheetSection>
+        <SheetSection title="Accountability">
+          <div className="insight-grid">
+            <InsightMetric label="No-shows" value={fmtCount(list.noShows)} detail="Exact recorded count"/>
+            <InsightMetric label="Strikes" value={fmtCount(list.strikes)} detail="Exact active count"/>
+          </div>
+        </SheetSection>
+        <SheetSection title="Recent event trend">
+          <div className="card rounded-[14px] px-3 py-2">
+            <MiniTrend values={list.trend} label="Completion across the last five events"/>
+          </div>
+        </SheetSection>
+      </div>
+    );
+
+    return (
+      <>
+        <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.62)", backdropFilter:"blur(4px)"}}/>
+        <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-4 pt-3 pb-7"
+             style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)", height:"calc(100% - env(safe-area-inset-top, 0px) - 12px)", display:"flex", flexDirection:"column"}}>
+          <div className="w-10 h-1 rounded-full mx-auto mb-3 shrink-0" style={{background:"var(--ink)", opacity:.4}}/>
+
+          <div className="shrink-0 flex items-center gap-3 mb-3">
+            <div className="w-14 h-14 rounded-[14px] overflow-hidden shrink-0" style={{background:"var(--bg-elev)"}}>
+              <img src={applicant.photo} alt="" className="w-full h-full object-cover"/>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-black font-display text-[19px] leading-tight truncate">{applicant.name}</div>
+              <div className="text-[10px] mt-1 flex items-center gap-2 min-w-0" style={{color:"var(--ink-2)"}}>
+                <span className="truncate">Applied to this event</span>
+                <span aria-hidden="true">/</span>
+                <span className="font-mono shrink-0">{status}</span>
+              </div>
+            </div>
+            <button onClick={onClose} className="press hit w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{border:"1px solid var(--line-2)"}} aria-label="Close applicant details">
+              <Icon name="x" size={17}/>
+            </button>
+          </div>
+
+          <div className="applicant-tabs shrink-0 mb-3" role="tablist" aria-label="Applicant analytics">
+            {tabs.map(name => (
+              <button key={name} className={tab === name ? "active press" : "press"} onClick={() => setTab(name)} role="tab" aria-selected={tab === name}>{name}</button>
+            ))}
+          </div>
+
+          <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto noscroll pr-1" style={{overscrollBehavior:"contain"}}>
+            {tab === "Overview" && <Overview/>}
+            {tab === "Audience" && <Audience/>}
+            {tab === "Content" && <Content/>}
+            {tab === "The List" && <TheList/>}
+          </div>
+
+          {/* Footer decide pills */}
+          <div className="shrink-0 flex gap-3 pt-3" style={{borderTop:"1px solid var(--line)"}}>
+            <button onClick={()=> onDecide(false)}
+              className="press flex-1 h-[52px] rounded-full text-[14px] font-semibold flex items-center justify-center"
+              style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+              <Icon name="x" size={20} className="mr-1.5"/> Pass
+            </button>
+            <button onClick={()=> onDecide(true)}
+              className="press flex-1 h-[52px] rounded-full text-[14px] font-semibold flex items-center justify-center glow-primary"
+              style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+              <Icon name="check" size={20} className="mr-1.5"/> Pick
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  /* ========== ScreenReview – swipe deck (Task 6: serves event guests, undo, close apps, replacements) ========== */
+  function ScreenReview({ eventId, events, setEvents, onClose, askConfirm, onToast, onDecide, onCloseApps }){
+    // Derive live event from events array so guest-state writes show up immediately.
+    const event = events.find(e => e.id === eventId) || null;
+
+    const isLocked = event && event.stage === STAGE.locked;
+
+    // Build the deck pool ONCE at mount (stable snapshot so idx stays in sync).
+    // Open events: guests with state=applied; locked events: state=waitlist.
+    // Guest state writes go to `events` (live), but deck navigation uses this snapshot.
+    const deckPool = useMemo(() => {
+      if (!event) return [];
+      const targetState = isLocked ? GS.waitlist : GS.applied;
+      return (event.guests || [])
+        .filter(g => g.state === targetState)
+        .map(g => ({ guest: { ...g }, applicant: applicantById[g.applicantId] }))
+        .filter(x => x.applicant);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // intentionally stable: computed once at open
+
+    const [idx, setIdx] = useState(0);
+    const [undoEntry, setUndoEntry] = useState(null); // { prevIdx, prevGuestState, applicantId }
+    const [sheetEntry, setSheetEntry] = useState(null); // { applicant, guest } captured together at card-tap time
+
+    // Timers for replacement-mode auto-confirm (locked event picks)
+    const confirmTimers = useRef({});
+    useEffect(() => {
+      return () => {
+        Object.values(confirmTimers.current).forEach(t => clearTimeout(t));
+      };
+    }, []);
+
+    if (!event) return null;
+
+    const done = idx >= deckPool.length;
+    const current = deckPool[idx];
+
+    // Derive mix counters from live event guests
+    const pickedOrConfirmed = (event.guests || []).filter(g => g.state === GS.picked || g.state === GS.confirmed);
+    const mixGirls = pickedOrConfirmed.filter(g => (applicantById[g.applicantId]||{}).gender === "female").length;
+    const mixGuys  = pickedOrConfirmed.filter(g => (applicantById[g.applicantId]||{}).gender === "male").length;
+    const target = event.mix;
+
+    // Generate a unique LST code for replacement picks
+    const genCode = (applicantId) => {
+      const existingCodes = new Set((event.guests || []).map(g => g.code).filter(Boolean));
+      const base = "LST-" + applicantId.replace(/^a/, "").toUpperCase().padStart(2, "0");
+      if (!existingCodes.has(base)) return base;
+      const letters = "ABCDEFGHJKLMNPRSTUVWXY";
+      for (const l of letters) {
+        const candidate = base + l;
+        if (!existingCodes.has(candidate)) return candidate;
+      }
+      return base + Date.now().toString(36).slice(-3).toUpperCase();
+    };
+
+    // Core decide function: mutates guest state on the event and advances the deck.
+    const decide = async (yes) => {
+      if (!current) return;
+      const { guest: entry, applicant: ap } = current;
+      const applicantId = entry.applicantId;
+      const prevState = entry.state;
+      const newState = yes ? GS.picked : GS.notSelected;
+
+      if (onDecide) {
+        try { await onDecide(applicantId, yes); }
+        catch (error) { onToast(error.message || "Could not save decision"); return; }
+      }
+
+      setEvents(es => es.map(e => {
+        if (e.id !== eventId) return e;
+        return {
+          ...e,
+          guests: e.guests.map(g =>
+            g.applicantId === applicantId ? { ...g, state: newState } : g
+          ),
+        };
+      }));
+
+      // For locked events: if picked, start 12s auto-confirm timer
+      if (isLocked && yes && !onDecide) {
+        const code = genCode(applicantId);
+        if (confirmTimers.current[applicantId]) clearTimeout(confirmTimers.current[applicantId]);
+        confirmTimers.current[applicantId] = setTimeout(() => {
+          setEvents(es => es.map(e => {
+            if (e.id !== eventId) return e;
+            return {
+              ...e,
+              guests: e.guests.map(g =>
+                g.applicantId === applicantId && g.state === GS.picked
+                  ? { ...g, state: GS.confirmed, code }
+                  : g
+              ),
+            };
+          }));
+          onToast((ap ? ap.name : applicantId) + " confirmed");
+        }, 12000);
+      }
+
+      // Save undo entry for this decision; cleared on next decide
+      setUndoEntry({ prevIdx: idx, prevGuestState: prevState, applicantId });
+      setIdx(i => i + 1);
+    };
+
+    // Undo last decision
+    const handleUndo = () => {
+      if (!undoEntry) return;
+      const { prevIdx, prevGuestState, applicantId } = undoEntry;
+      // Clear any running auto-confirm timer for this applicant
+      if (confirmTimers.current[applicantId]) {
+        clearTimeout(confirmTimers.current[applicantId]);
+        delete confirmTimers.current[applicantId];
+      }
+      setEvents(es => es.map(e => {
+        if (e.id !== eventId) return e;
+        return {
+          ...e,
+          guests: e.guests.map(g =>
+            g.applicantId === applicantId ? { ...g, state: prevGuestState } : g
+          ),
+        };
+      }));
+      setIdx(prevIdx);
+      setUndoEntry(null);
+    };
+
+    // Close applications: lock the event + flip remaining applied → waitlist.
+    // Live: close_applications does both server-side; rehydrate brings the
+    // locked stage and the waitlist back from the DB.
+    const handleCloseApplications = () => {
+      askConfirm({
+        title: "Close applications?",
+        body: "No new applications. Members get notified. Picks must confirm within 24h – the waitlist stays available for replacements.",
+        confirmLabel: "Close applications",
+        onConfirm: async () => {
+          if (onCloseApps) {
+            try { await onCloseApps(eventId); }
+            catch (error) { onToast(error.message || "Could not close applications"); return; }
+            onToast("Applications closed");
+            onClose();
+            return;
+          }
+          setEvents(es => es.map(e => {
+            if (e.id !== eventId) return e;
+            return {
+              ...e,
+              stage: STAGE.locked,
+              status: stageToStatus(STAGE.locked),
+              guests: e.guests.map(g =>
+                g.state === GS.applied ? { ...g, state: GS.waitlist } : g
+              ),
+            };
+          }));
+          onToast("Applications closed");
+          onClose();
+        },
+      });
+    };
+
+    return (
+      <div className="absolute inset-0 flex flex-col" style={{background:"transparent"}}>
+
+        <div className="flex flex-col px-5 app-safe-top app-safe-bottom flex-1 min-h-0 overflow-y-auto">
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-1 shrink-0">
+            <button onClick={onClose} className="press hit stamp py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Close</button>
+            <div className="stamp text-center" style={{color:"var(--ink-mute)"}}>
+              {isLocked
+                ? "Pick replacements"
+                : event.title}
+            </div>
+            {!isLocked && (
+              <button onClick={handleCloseApplications}
+                className="press hit px-3 h-8 rounded-full text-[11px] font-semibold flex items-center gap-1"
+                style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                Close applications <Icon name="arrow-right" size={12} stroke={2}/>
+              </button>
+            )}
+            {isLocked && <div style={{width:64}}/>}
+          </div>
+
+          {/* Sub-header: applied/waitlist count */}
+          <div className="stamp mb-3 shrink-0" style={{color:"var(--ink-mute)"}}>
+            {isLocked
+              ? `${deckPool.length} on the waitlist`
+              : `${event.appliedTotal != null ? event.appliedTotal : deckPool.length} applied · ${deckPool.length} to review`}
+            {!isLocked && event.closesAt ? ` · Closes ${event.closesAt}` : ""}
+          </div>
+
+          {/* Mix counter */}
+          <div className="shrink-0 mb-3">
+            {target ? (
+              <div className="flex gap-3 text-[12px]">
+                <div className="flex-1 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+                  Girls <span className="font-mono" style={{color:"var(--ice)"}}>{mixGirls}</span> / {target.girls}
+                </div>
+                <div className="flex-1 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+                  Guys <span className="font-mono" style={{color:"var(--ice)"}}>{mixGuys}</span> / {target.guys}
+                </div>
+              </div>
+            ) : (
+              <div className="text-[12px] px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
+                Picked <span className="font-mono" style={{color:"var(--ice)"}}>{pickedOrConfirmed.length}</span> / {event.seats}
+              </div>
+            )}
+          </div>
+
+          {/* Undo chip – live decisions are committed + the member was notified, so no undo */}
+          {undoEntry && !done && !onDecide && (
+            <div className="shrink-0 flex justify-center mb-2">
+              <button onClick={handleUndo}
+                className="press px-4 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+                <Icon name="arrow-left" size={12} stroke={2}/> Undo last
+              </button>
+            </div>
+          )}
+
+          {/* Deck or end-state */}
+          {done ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 px-4">
+              {isLocked ? (
+                <>
+                  <div className="font-black font-display-l text-[26px]">No one left on the waitlist.</div>
+                  <button onClick={onClose} className="press text-[13px] font-medium" style={{color:"var(--ice)", background:"transparent", border:"none"}}>
+                    Close
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="font-black font-display-l text-[26px]">All reviewed</div>
+                  <div className="text-[13px]" style={{color:"var(--ink-2)"}}>
+                    {target
+                      ? `Girls ${mixGirls}/${target.girls} · Guys ${mixGuys}/${target.guys}`
+                      : `Picked ${pickedOrConfirmed.length} of ${event.seats}`}
+                  </div>
+                  <div className="flex flex-col gap-2 w-full mt-2">
+                    <button onClick={handleCloseApplications}
+                      className="press w-full h-[52px] rounded-full text-[13px] font-semibold flex items-center justify-center gap-1.5 glow-primary"
+                      style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                      Close applications <Icon name="arrow-right" size={14} stroke={2}/>
+                    </button>
+                    <button onClick={onClose}
+                      className="press w-full h-[48px] rounded-full text-[13px] font-medium flex items-center justify-center"
+                      style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+                      Keep open
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="shrink-0 flex items-center">
+                {/* Tapping the photo/name area opens ApplicantSheet.
+                    A transparent button covers everything except the ~80px social link row at the bottom,
+                    so the links inside SwipeCard stay tappable. */}
+                <div className="relative w-full">
+                  <SwipeCard a={current.applicant}/>
+                  <button
+                    className="absolute inset-x-0 top-0 z-10"
+                    style={{background:"transparent", border:"none", bottom:CARD_LINK_ZONE}}
+                    onClick={() => setSheetEntry({ applicant: current.applicant, guest: current.guest })}
+                    aria-label={"View " + current.applicant.name}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-center gap-8 mt-4 shrink-0 pb-4">
+                <button onClick={()=>decide(false)} className="press w-16 h-16 rounded-full flex items-center justify-center"
+                        style={{border:"1px solid var(--line-2)"}}><Icon name="x" size={26}/></button>
+                <button onClick={()=>decide(true)} className="press glow-primary w-16 h-16 rounded-full flex items-center justify-center"
+                        style={{background:"var(--ice)", color:"var(--ice-ink)"}}><Icon name="check" size={26}/></button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ApplicantSheet overlay */}
+        {sheetEntry && (
+          <ApplicantSheet
+            applicant={sheetEntry.applicant}
+            guest={sheetEntry.guest}
+            onDecide={(yes) => { setSheetEntry(null); decide(yes); }}
+            onClose={() => setSheetEntry(null)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  /* ========== ScreenVenueProfile – venue tab ========== */
+  /* ========== Demo switchboard (T17) ==========
+     Hidden rig at the bottom of the Venue tab – drives the simulated world
+     during pitches. Plain rows, deliberately not product UI. Member side has
+     its own equivalent (index.html Settings › Demo). ========== */
+  function DemoPanel({ demo }){
+    const [open, setOpen] = useState(false);
+    const Row = ({ label, onTap }) => (
+      <button onClick={onTap} className="press w-full text-left py-2.5 text-[12px]" style={{color:"var(--ink-2)", background:"transparent", border:"none", borderTop:"1px solid var(--line)"}}>{label}</button>
+    );
+    return (
+      <div className="px-5 pt-6 pb-2">
+        <button onClick={()=>setOpen(o=>!o)} className="press w-full flex items-center justify-between py-2 text-[11px]" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
+          <span>Demo</span>
+          <Icon name="arrow-right" size={12} stroke={1.5} className={"chev " + (open ? "rotate-90" : "")}/>
+        </button>
+        {open && (
+          <div>
+            <Row label="New applicants arrive" onTap={()=>demo.newApplicants()}/>
+            <Row label="A pick declines" onTap={()=>demo.pickDeclines()}/>
+            <Row label="Advance to tonight" onTap={()=>demo.advanceToTonight()}/>
+            <Row label="Reset demo" onTap={()=>demo.reset()}/>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function ScreenVenueProfile({ venue, group, onEdit, onLogout, onToast, demo, light, onTheme }){
+    const name = venue.name && venue.name.length > 0 ? venue.name : null;
+    const hasDesc = venue.description && venue.description.length > 0;
+
+    const SettingsRow = ({ label, onTap, muted }) => (
+      <button
+        onClick={onTap}
+        className="press w-full flex items-center justify-between py-4 text-left"
+        style={{ background: "transparent", border: "none" }}
+      >
+        <span className="text-[15px]" style={{ color: muted ? "var(--ink-mute)" : "var(--ink)" }}>{label}</span>
+        <Icon name="arrow-right" size={15} stroke={1.5} style={{ color: "var(--ink-mute)", flexShrink: 0 }}/>
+      </button>
+    );
+
+    return (
+      <div className="absolute inset-0 flex flex-col" style={{ background: "var(--bg)" }}>
+
+
+        {/* Header */}
+        <div className="shrink-0 px-5 app-safe-top pb-3">
+          <div className="font-black font-display-l text-[40px] leading-none">Venue</div>
+        </div>
+        <div className="hr-2 mx-5 mb-0 shrink-0"/>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto noscroll app-dock-space">
+
+          {/* Hero image */}
+          <div className="px-5 pt-5">
+            <FramedImage value={venue.heroImage} ratio="4/5" className="w-full"/>
+          </div>
+
+          {/* Name + type/area + description */}
+          <div className="px-5 pt-4">
+            {name ? (
+              <div className="font-black text-[24px] leading-tight">{name}</div>
+            ) : (
+              <div className="font-black text-[24px] leading-tight" style={{ color: "var(--ink-mute)" }}>Unnamed venue</div>
+            )}
+            <div className="text-[13px] mt-1" style={{ color: "var(--ink-mute)" }}>
+              {venue.type} · {venue.area}
+            </div>
+            {venue.igHandle && (
+              <div className="text-[12px] mt-1" style={{ color:"var(--ink-2)" }}>@{venue.igHandle.replace(/^@/, "")}</div>
+            )}
+            {hasDesc && (
+              <div className="text-[14px] mt-3 leading-relaxed" style={{ color: "var(--ink-2)" }}>
+                {venue.description}
+              </div>
+            )}
+          </div>
+
+          {/* Gallery */}
+          <div className="px-5 pt-6">
+            <div className="stamp mb-3">Photos</div>
+            <div className="grid grid-cols-4 gap-2">
+              {venue.images.map((im, i) => (
+                <FramedImage key={i} value={im} ratio="4/5" className="w-full" empty="–"/>
+              ))}
+            </div>
+          </div>
+
+          {/* Group / Independent */}
+          <div className="px-5 pt-6">
+            {group ? (
+              <div className="flex flex-col gap-3">
+                <span className="stamp px-3 py-1.5 rounded-full self-start" style={{ border: "1px solid var(--line-2)", color: "var(--ink-mute)" }}>
+                  Group · {group.name}
+                </span>
+                <div className="flex items-center justify-between py-3">
+                  <span className="text-[15px]" style={{ color: "var(--ink-mute)", opacity: 0.5 }}>Switch venue</span>
+                  <span className="stamp px-2.5 py-1 rounded-full" style={{ border: "1px solid var(--line)", color: "var(--ink-mute)", opacity: 0.5 }}>Soon</span>
+                </div>
+              </div>
+            ) : (
+              <span className="stamp" style={{ color: "var(--ink-mute)" }}>Independent venue</span>
+            )}
+          </div>
+
+          {/* Settings list */}
+          <div className="px-5 pt-5">
+            <div className="stamp mb-1">Settings</div>
+            <div style={{ borderTop: "1px solid var(--line)" }}>
+              <SettingsRow label="Edit venue" onTap={onEdit}/>
+              <div style={{ height: 1, background: "var(--line)" }}/>
+              <SettingsRow label={light ? "Appearance · Light" : "Appearance · Dark"} onTap={onTheme}/>
+              <div style={{ height: 1, background: "var(--line)" }}/>
+              <SettingsRow label="Switch to member" onTap={() => { window.location.href = "/"; }}/>
+              <div style={{ height: 1, background: "var(--line)" }}/>
+              <SettingsRow label="Log out" onTap={onLogout}/>
+            </div>
+          </div>
+
+          {demo && <DemoPanel demo={demo}/>}
+
+        </div>
+      </div>
+    );
+  }
+
+  /* ========== StepCircles – kit-style numbered step indicator ==========
+     Purely visual: 1-2-3-4 joined by a hairline, current step = accent fill,
+     completed steps keep their outline at full ink. Same steps as before. */
+  function StepCircles({ current, total=6 }){
+    return (
+      <div className="flex items-center mt-3" aria-hidden="true">
+        {Array.from({length:total},(_,i)=>i+1).map((n,i)=>(
+          <React.Fragment key={n}>
+            {i>0 && <span style={{flex:1, height:1, background:"var(--line-2)", minWidth:8}}/>}
+            <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0"
+              style={n===current
+                ? {background:"var(--ice)", color:"var(--ice-ink)"}
+                : n<current
+                  ? {border:"1px solid var(--line-2)", color:"var(--ink)"}
+                  : {border:"1px solid var(--line)", color:"var(--ink-mute)"}}>{n}</span>
+          </React.Fragment>
+        ))}
+      </div>
+    );
+  }
+
+  /* ========== Bundle options ========== */
+  const BUNDLES = [
+    { id:"ten",    name:"The ten",    seats:10, price:400 },
+    { id:"twenty", name:"The twenty", seats:20, price:700 },
+    { id:"forty",  name:"The forty",  seats:40, price:1200 },
+  ];
+
+  /* ========== StepBundle – step 3 of post wizard ========== */
+  function StepBundle({ draft, set, onNext, onBack }){
+    const selected = draft.bundle;
+    const isCustom = selected && selected.name === "Custom";
+    const [customPrice, setCustomPrice] = useState(isCustom ? String(selected.price||"") : "");
+
+    const selectTemplate = (b) => {
+      set({ bundle: { name: b.name, price: b.price }, seats: b.seats });
+    };
+    const canNext = !!selected && !(selected.name === "Custom" && !(selected.price > 0));
+
+    return (
+      <div className="absolute inset-0 flex flex-col px-5 app-safe-top app-safe-bottom" style={{background:"transparent"}}>
+
+        <button onClick={onBack} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
+        <div className="font-black font-display-l text-[40px]">Bundle</div>
+        <StepCircles current={3}/>
+        <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Choose your package</div>
+
+        <div className="mt-5 flex-1 overflow-y-auto noscroll space-y-3">
+          {BUNDLES.map(b => {
+            const sel = selected && selected.name === b.name;
+            return (
+              <button key={b.id} onClick={()=>selectTemplate(b)}
+                className={"press card rounded-[16px] w-full text-left p-4 flex items-center justify-between"+(sel?" glow-ice":"")}
+                style={sel ? {borderColor:"var(--ice)"} : {}}>
+                <div>
+                  <div className="font-semibold text-[15px]">{b.name}</div>
+                  <div className="stamp mt-0.5">{b.seats} seats</div>
+                </div>
+                <div className="font-mono text-[18px]" style={{color: sel?"var(--ice)":"var(--ink-2)"}}>
+                  ${b.price}
+                </div>
+              </button>
+            );
+          })}
+
+          {/* Custom card */}
+          {(() => {
+            const sel = isCustom;
+            return (
+              <button onClick={()=>{ set({ bundle: { name:"Custom", price: customPrice ? parseInt(customPrice,10)||0 : 0 } }); }}
+                className={"press card rounded-[16px] w-full text-left p-4"+(sel?" glow-ice":"")}
+                style={sel ? {borderColor:"var(--ice)"} : {}}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-[15px]">Custom</div>
+                    <div className="stamp mt-0.5">Current seats: {draft.seats}</div>
+                  </div>
+                  {sel && (
+                    <div className="font-mono text-[18px]" style={{color:"var(--ice)"}}>
+                      {customPrice ? "$"+customPrice : "–"}
+                    </div>
+                  )}
+                </div>
+                {sel && (
+                  <div className="mt-3">
+                    <div className="stamp mb-1.5">Price ($)</div>
+                    <input
+                      value={customPrice}
+                      onChange={e => {
+                        const v = e.target.value.replace(/\D/g,"");
+                        setCustomPrice(v);
+                        set({ bundle: { name:"Custom", price: parseInt(v,10)||0 } });
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="e.g. 500"
+                      className="w-full h-11 px-3 rounded-[10px] text-[16px]"
+                      style={{background:"var(--bg-elev2)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+                    />
+                  </div>
+                )}
+              </button>
+            );
+          })()}
+
+          {/* Footer notes */}
+          <div className="pt-2 pb-1 space-y-1">
+            <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Settle after the night · Whish / OMT / USD cash</div>
+            <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>We handle all guest comms.</div>
+          </div>
+        </div>
+
+        <button disabled={!canNext} onClick={canNext ? onNext : undefined}
+          className="press w-full h-[58px] rounded-full text-[14px] font-semibold mt-4 shrink-0"
+          style={{background: canNext?"var(--ice)":"var(--bg-elev2)", color: canNext?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
+      </div>
+    );
+  }
+
+  /* ========== StepBrief – step 4 of post wizard (all optional) ========== */
+  function StepBrief({ draft, set, onNext, onBack }){
+    const brief = draft.brief || {};
+    const setBrief = (patch) => set({ brief: { ...brief, ...patch } });
+
+    const fields = [
+      { key:"arrival",  label:"Arrival window",  placeholder:"21:30 – 22:30" },
+      { key:"dress",    label:"Dress code",       placeholder:"Smart dark" },
+      { key:"meeting",  label:"Meeting point",    placeholder:"Door host" },
+      { key:"rules",    label:"House rules",      placeholder:"1 Story + venue tag during the event" },
+    ];
+
+    return (
+      <div className="absolute inset-0 flex flex-col px-5 app-safe-top app-safe-bottom" style={{background:"transparent"}}>
+
+        <button onClick={onBack} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
+        <div className="font-black font-display-l text-[40px]">Brief</div>
+        <StepCircles current={4}/>
+        <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Guest instructions · all optional</div>
+
+        <div className="mt-5 flex-1 overflow-y-auto noscroll space-y-4">
+          {fields.map(f => (
+            <div key={f.key}>
+              <div className="stamp mb-1.5">{f.label}</div>
+              <input
+                value={brief[f.key] || ""}
+                onChange={e => setBrief({ [f.key]: e.target.value })}
+                type="text"
+                placeholder={f.placeholder}
+                className="w-full h-11 px-3 rounded-[12px] text-[16px]"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            </div>
+          ))}
+          <div>
+            <div className="stamp mb-2">Story window</div>
+            <div className="flex gap-2">
+              {[24,48].map(hours => {
+                const selected = (draft.storyHours || 24) === hours;
+                return <button key={hours} onClick={()=>set({storyHours:hours})}
+                  className="press hit h-9 px-4 rounded-full text-[12px] font-medium"
+                  style={{background:selected?"var(--ice)":"transparent", color:selected?"var(--ice-ink)":"var(--ink)", border:selected?"none":"1px solid var(--line-2)"}}>
+                  {hours} hours
+                </button>;
+              })}
+            </div>
+          </div>
+          <div className="pt-2 text-[11px]" style={{color:"var(--ink-mute)"}}>We handle all guest comms.</div>
+        </div>
+
+        <button onClick={onNext}
+          className="press w-full h-[58px] rounded-full text-[14px] font-semibold mt-4 shrink-0"
+          style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Next</button>
+      </div>
+    );
+  }
+
+  /* ========== StepBasics – step 1 of post wizard ========== */
+  function StepBasics({ draft, set, onNext, onCancel, live=false }){
+    const closesChips = ["24h before doors", "48h before doors", "Custom"];
+    const [customMode, setCustomMode] = useState(() => {
+      const c = draft.closesAt;
+      return !!c && c !== "24h before doors" && c !== "48h before doors";
+    });
+    const currentCloses = draft.closesAt || "24h before doors";
+    const ok = draft.title.length>=2 && draft.date && draft.time &&
+               (!customMode || draft.closesAt.trim() !== "");
+
+    return (
+      <div className="absolute inset-0 flex flex-col px-5 app-safe-top app-safe-bottom" style={{background:"transparent"}}>
+
+        <button onClick={onCancel} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Cancel</button>
+        <div className="font-black font-display-l text-[40px]">Post</div>
+        <StepCircles current={1}/>
+        <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>The basics</div>
+        <div className="mt-5 space-y-4 flex-1 overflow-y-auto noscroll">
+          <div>
+            <div className="stamp mb-1.5">Title</div>
+            <input
+              value={draft.title}
+              onChange={e => set({title:e.target.value})}
+              type="text"
+              placeholder="e.g. Pool Day"
+              className="w-full h-11 px-3 rounded-[12px] text-[16px]"
+              style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+            />
+          </div>
+          <div>
+            <div className="stamp mb-1.5">Type</div>
+            <div className="flex flex-wrap gap-2">
+              {VENUE_TYPES.map(t => {
+                const sel = draft.type === t;
+                return (
+                  <button key={t} onClick={() => set({type:t})}
+                    className="press hit px-4 h-9 rounded-full text-[12px] font-medium"
+                    style={{ background: sel?"var(--ice)":"transparent", color: sel?"var(--ice-ink)":"var(--ink)", border: sel?"none":"1px solid var(--line-2)" }}
+                  >{t}</button>
+                );
+              })}
+            </div>
+          </div>
+          <div>
+            <div className="stamp mb-1.5">Date</div>
+            <input
+              value={draft.date}
+              onChange={e => set({date:e.target.value})}
+              type={live ? "date" : "text"}
+              placeholder={live ? undefined : "Sun · 25 May"}
+              className="w-full h-11 px-3 rounded-[12px] text-[16px]"
+              style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+            />
+          </div>
+          <div>
+            <div className="stamp mb-1.5">Time</div>
+            <input
+              value={draft.time}
+              onChange={e => set({time:e.target.value})}
+              type={live ? "time" : "text"}
+              placeholder={live ? undefined : "22:00"}
+              className="w-full h-11 px-3 rounded-[12px] text-[16px]"
+              style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+            />
+          </div>
+          <div>
+            <div className="stamp mb-1.5">Applications close</div>
+            <div className="flex flex-wrap gap-2">
+              {closesChips.map(chip => {
+                const isThisCustom = chip === "Custom";
+                const sel = isThisCustom ? customMode : (!customMode && currentCloses === chip);
+                return (
+                  <button key={chip}
+                    onClick={() => {
+                      if (isThisCustom) {
+                        setCustomMode(true);
+                        set({ closesAt: "" });
+                      } else {
+                        setCustomMode(false);
+                        set({ closesAt: chip });
+                      }
+                    }}
+                    className="press hit px-3 h-8 rounded-full text-[11px] font-medium"
+                    style={{ background: sel?"var(--ice)":"transparent", color: sel?"var(--ice-ink)":"var(--ink)", border: sel?"none":"1px solid var(--line-2)" }}
+                  >{chip}</button>
+                );
+              })}
+            </div>
+            {customMode && (
+              <input
+                value={draft.closesAt}
+                onChange={e => set({ closesAt: e.target.value })}
+                type="datetime-local"
+                className="w-full h-11 px-3 rounded-[10px] text-[16px] mt-2"
+                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
+              />
+            )}
+          </div>
+        </div>
+        <button disabled={!ok} onClick={ok ? onNext : undefined}
+          className="press w-full h-[58px] rounded-full text-[14px] font-semibold mt-4 shrink-0"
+          style={{background: ok?"var(--ice)":"var(--bg-elev2)", color: ok?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
+      </div>
+    );
+  }
+
+  /* ========== ScreenPostEvent – 6-step post wizard ========== */
+  // Substeps: basics → seats → bundle → brief → image → review
+  // initialDraft: if set, prefills the wizard (edit mode); draftId: id of event being edited
+  function ScreenPostEvent({ venue, onPublish, onSaveDraft, onCancel, initialDraft, draftId, live=false }){
+    const isEdit = !!draftId;
+    const [sub, setSub] = useState("basics");
+    const [savingMode, setSavingMode] = useState(null);
+    const [draft, setDraft] = useState(() => {
+      if (initialDraft) return {
+        ...initialDraft,
+        date: live && initialDraft.startsAt ? toLocalDate(new Date(initialDraft.startsAt)) : initialDraft.date,
+        time: live && initialDraft.startsAt ? toLocalTime(new Date(initialDraft.startsAt)) : initialDraft.time,
+        closesAt: initialDraft.closesInput || initialDraft.closesAt || "24h before doors",
+      };
+      return makeEvent({ venueId: venue.id, heroImage: venue.heroImage, closesAt:"24h before doors" });
+    });
+    const set = (patch) => setDraft(d => ({ ...d, ...patch }));
+    const persist = async (mode) => {
+      if (savingMode) return;
+      setSavingMode(mode);
+      try { await (mode === "publish" ? onPublish : onSaveDraft)(draft, draftId); }
+      catch (_) { /* parent keeps the wizard open and reports the error */ }
+      finally { setSavingMode(null); }
+    };
+
+    if (sub === "basics") {
+      return <StepBasics draft={draft} set={set} onNext={()=>setSub("seats")} onCancel={onCancel} live={live}/>;
+    }
+
+    if (sub === "seats") {
+      const noPref = draft.mix === null;
+      const total = noPref ? draft.seats : (draft.mix.girls + draft.mix.guys);
+      const Stepper = ({label, val, onDelta}) => (
+        <div className="flex items-center justify-between py-3">
+          <div className="text-[15px]">{label}</div>
+          <div className="flex items-center gap-4">
+            <button onClick={()=>onDelta(-1)} className="press hit w-9 h-9 rounded-full" style={{border:"1px solid var(--line-2)"}}>–</button>
+            <div className="font-mono text-[20px] w-8 text-center" style={{color:"var(--ice)"}}>{val}</div>
+            <button onClick={()=>onDelta(1)} className="press hit w-9 h-9 rounded-full" style={{border:"1px solid var(--line-2)"}}>+</button>
+          </div>
+        </div>
+      );
+      return (
+        <div className="absolute inset-0 flex flex-col px-5 app-safe-top app-safe-bottom app-form-scroll" style={{background:"transparent"}}>
+
+          <button onClick={()=>setSub("basics")} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
+          <div className="font-black font-display-l text-[40px]">Seats</div>
+          <StepCircles current={2}/>
+          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Who fills the room</div>
+
+          <div className="flex items-center justify-between mt-6 py-3 border-b" style={{borderColor:"var(--line)"}}>
+            <div className="text-[15px]">Set a gender mix</div>
+            <button onClick={()=> set({ mix: noPref ? {girls:15,guys:5} : null }) }
+              className="press hit px-3 h-8 rounded-full text-[11px] font-medium"
+              style={{background: noPref?"transparent":"var(--ice)", color: noPref?"var(--ink)":"var(--ice-ink)",
+                      border: noPref?"1px solid var(--line-2)":"none"}}>{noPref?"Off":"On"}</button>
+          </div>
+
+          {noPref ? (
+            <Stepper label="Total seats" val={draft.seats} onDelta={d=> set({ seats: Math.max(1, draft.seats+d) })}/>
+          ) : (
+            <>
+              <Stepper label="Girls" val={draft.mix.girls} onDelta={d=> set({ mix: {...draft.mix, girls: Math.max(0, draft.mix.girls+d)} })}/>
+              <Stepper label="Guys"  val={draft.mix.guys}  onDelta={d=> set({ mix: {...draft.mix, guys:  Math.max(0, draft.mix.guys+d)} })}/>
+            </>
+          )}
+
+          <div className="mt-4 stamp" style={{color:"var(--ink-mute)"}}>{total} seats total</div>
+          <div className="flex-1"/>
+          <button disabled={total<1} onClick={()=> { set({ seats: total }); setSub("bundle"); }}
+            className="press w-full h-[58px] rounded-full text-[14px] font-semibold"
+            style={{background: total>=1?"var(--ice)":"var(--bg-elev2)", color: total>=1?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
+        </div>
+      );
+    }
+
+    if (sub === "bundle") {
+      return <StepBundle draft={draft} set={set}
+        onNext={()=>setSub("brief")} onBack={()=>setSub("seats")}/>;
+    }
+
+    if (sub === "brief") {
+      return <StepBrief draft={draft} set={set}
+        onNext={()=>setSub("image")} onBack={()=>setSub("bundle")}/>;
+    }
+
+    if (sub === "image") {
+      return (
+        <div className="absolute inset-0 flex flex-col px-5 app-safe-top app-safe-bottom" style={{background:"transparent"}}>
+
+          <button onClick={()=>setSub("brief")} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
+          <div className="font-black font-display-l text-[40px]">Image</div>
+          <StepCircles current={5}/>
+          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>The event photo</div>
+          <div className="text-[12px] mt-3" style={{color:"var(--ink-mute)"}}>Reuse your venue hero, or choose a new one.</div>
+          <div className="mt-5 flex-1 overflow-y-auto">
+            <ImageCropper
+              ratio="4/5"
+              value={draft.heroImage}
+              label="Event photo"
+              onChange={(v)=>{ set({heroImage:v}); setSub("review"); }}
+              onCancel={()=>setSub("brief")}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // sub === "review"
+    const briefData = draft.brief || {};
+    const briefLines = [
+      briefData.arrival && ["Arrival window", briefData.arrival],
+      briefData.dress   && ["Dress code",     briefData.dress],
+      briefData.meeting && ["Meeting point",  briefData.meeting],
+      briefData.rules   && ["House rules",    briefData.rules],
+    ].filter(Boolean);
+
+    return (
+      <div className="absolute inset-0 flex flex-col px-5 app-safe-top app-safe-bottom" style={{background:"transparent"}}>
+
+        <button onClick={()=>setSub("image")} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
+        <div className="font-black font-display-l text-[40px]">Review</div>
+        <StepCircles current={6}/>
+        <div className="mt-4 flex-1 overflow-y-auto noscroll space-y-4">
+          <FramedImage value={draft.heroImage} ratio="4/5" className="w-full"/>
+          <div>
+            <div className="font-black text-[24px] leading-tight">{draft.title}</div>
+            <div className="text-[13px] mt-1" style={{color:"var(--ink-mute)"}}>{draft.type} · {draft.date} · {draft.time}</div>
+          </div>
+          <div className="text-[13px]" style={{color:"var(--ink-mute)"}}>
+            {draft.mix
+              ? "Girls " + draft.mix.girls + " · Guys " + draft.mix.guys + " · " + draft.seats + " seats"
+              : draft.seats + " seats · no gender preference"}
+          </div>
+          {draft.closesAt && (
+            <div className="text-[13px]" style={{color:"var(--ink-mute)"}}>Applications close · {draft.closesAt}</div>
+          )}
+          {draft.bundle && (
+            <div>
+              <div className="stamp mb-1">Bundle</div>
+              <div className="text-[14px]">{draft.bundle.name} · ${draft.bundle.price}</div>
+            </div>
+          )}
+          <div>
+            <div className="stamp mb-1">The exchange</div>
+            <div className="text-[14px]">{draft.exchange}</div>
+            <div className="text-[12px] mt-1" style={{color:"var(--ink-mute)"}}>{draft.storyHours || 24}-hour Story window</div>
+          </div>
+          {briefLines.length > 0 && (
+            <div>
+              <div className="stamp mb-2">Brief</div>
+              <div className="space-y-1.5">
+                {briefLines.map(([label, val]) => (
+                  <div key={label} className="flex items-start gap-2 text-[13px]">
+                    <span style={{color:"var(--ink-mute)", minWidth:100}}>{label}</span>
+                    <span>{val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="mt-4 shrink-0 flex flex-col gap-2">
+          <button onClick={()=>persist("publish")} disabled={!!savingMode}
+            className="press w-full h-[58px] rounded-full text-[14px] font-semibold flex items-center justify-center gap-2"
+            style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+            {savingMode === "publish" ? "Publishing…" : isEdit ? "Save & publish" : "Publish"} <Icon name="arrow-right" size={16} stroke={1.8}/>
+          </button>
+          <button onClick={()=>persist("draft")} disabled={!!savingMode}
+            className="press w-full h-12 rounded-full text-[12px] font-medium"
+            style={{border:"1px solid var(--line-2)", color:"var(--ink)", background:"transparent"}}>
+            {savingMode === "draft" ? "Saving…" : "Save draft"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ========== ScreenRecap – post-event summary (Task 9) ========== */
+  function ScreenRecap({ eventId, events, onClose }){
+    // Derive live event by id so any future writes propagate
+    const event = events.find(e => e.id === eventId) || null;
+    if (!event) return null;
+
+    const recap   = event.recap   || {};
+    const invoice = event.invoice || null;
+    const guests  = event.guests  || [];
+
+    // Story wall: only checked_in guests
+    const wallGuests = guests.filter(g => g.state === GS.checkedIn);
+
+    // Verified reach: sum of instagram_followers of guests with story === verified
+    const verifiedGuests = wallGuests.filter(g => g.story === SS.verified);
+    const verifiedReach  = verifiedGuests.reduce((sum, g) => {
+      const ap = applicantById[g.applicantId] || {};
+      return sum + (ap.instagram_followers || 0);
+    }, 0);
+
+    function fmtReach(n){
+      return n.toLocaleString("en-US");
+    }
+
+    function StoryRow({ g, i }){
+      const ap = applicantById[g.applicantId] || {};
+      const story = g.story;
+
+      let pill = null;
+      if (story === SS.verified)     pill = <StatusPill label="Verified" tone="ice"/>;
+      else if (story === SS.review)  pill = <StatusPill label="Under review" tone="neutral"/>;
+      else if (story === SS.needsReview) pill = <StatusPill label="Needs review" tone="neutral"/>;
+      else if (story === SS.due)     pill = <StatusPill label="Story due" tone="outline"/>;
+      else if (story === SS.rejected) pill = <StatusPill label="Rejected" tone="neutral"/>;
+      else if (story === SS.missed)  pill = <StatusPill label="Missed" tone="neutral"/>;
+      else                           pill = null;
+
+      return (
+        <div style={{"--i": i}} className="flex items-start gap-3 py-3">
+          {/* Face */}
+          <img src={ap.photo || ""} alt="" className="w-10 h-10 rounded-full object-cover shrink-0"
+               style={{background:"var(--bg-elev2)"}}/>
+          {/* Name + pill + extras */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[14px] font-medium leading-tight">{ap.name || "–"}</span>
+              {pill}
+            </div>
+            {/* Verified proof. Live rows use the submitted story media; demo rows keep their seeded stand-in. */}
+            {story === SS.verified && (
+              <div className="mt-2 flex items-start gap-2">
+                {g.storyMedia ? (
+                  <a href={g.storyMedia} target="_blank" rel="noreferrer" aria-label="Open story proof" className="press shrink-0">
+                    <img src={g.storyMedia} alt="Story proof"
+                         className="w-12 h-12 rounded-[10px] object-cover"
+                         style={{background:"var(--bg-elev2)", border:"1px solid var(--line)"}}/>
+                  </a>
+                ) : (
+                  <img src={ap.photo || ""} alt="Story"
+                       className="w-12 h-12 rounded-[10px] object-cover shrink-0"
+                       style={{background:"var(--bg-elev2)", border:"1px solid var(--line)"}}/>
+                )}
+                {/* Verdict if present */}
+                {g.verdict && (g.verdict.score != null || g.verdict.reason) && (
+                  <div className="text-[11px] leading-snug mt-0.5" style={{color:"var(--ink-mute)"}}>
+                    {g.verdict.score != null && <span className="font-mono">{g.verdict.score}</span>}
+                    {g.verdict.score != null && g.verdict.reason ? " · " : ""}{g.verdict.reason || ""}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="absolute inset-0 flex flex-col anim-fade" style={{background:"transparent"}}>
+
+
+        {/* Header */}
+        <div className="shrink-0 px-5 app-safe-top pb-4">
+          <div className="flex items-center mb-3">
+            <button onClick={onClose} className="press hit stamp flex items-center gap-1 py-2"
+                    style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
+              <Icon name="arrow-left" size={14} stroke={2}/> Back
+            </button>
+          </div>
+          <div className="font-black font-display-l text-[34px] leading-none">{event.title}</div>
+          <div className="stamp mt-2" style={{color:"var(--ink-mute)"}}>{event.date}{event.date && event.time ? " · " : ""}{event.time}</div>
+        </div>
+        <div className="hr mx-5 shrink-0"/>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto noscroll px-5 app-dock-space">
+
+          {/* 1. Stat tiles, two by two */}
+          <div className="grid grid-cols-2 gap-3 mt-5">
+            <StatTile n={recap.confirmed ?? "–"} label="Confirmed"/>
+            <StatTile n={recap.confirmed != null && recap.showed != null
+                          ? recap.showed + " of " + recap.confirmed
+                          : "–"}
+                      label="Showed" ice={true}/>
+            <StatTile n={recap.noShows ?? "–"} label="No-shows"/>
+            <StatTile n={recap.avgRating != null ? recap.avgRating : "–"} label="Avg rating"/>
+          </div>
+
+          {/* 2. Stories section */}
+          {wallGuests.length > 0 && (
+            <>
+              <SectionHead label="Stories" className="mt-6 mb-1"/>
+              <div className="stagger">
+                {wallGuests.map((g, i) => (
+                  <StoryRow key={g.applicantId} g={g} i={i}/>
+                ))}
+              </div>
+              <div className="hr mt-1"/>
+            </>
+          )}
+
+          {/* 3. Verified reach – THE number */}
+          <div className="mt-6 mb-2">
+            <div className="stamp mb-2" style={{color:"var(--ink-mute)"}}>Verified reach</div>
+            {verifiedReach > 0 ? (
+              <div className="font-black font-display-l text-[52px] leading-none" style={{color:"var(--ice)"}}>
+                {fmtReach(verifiedReach)}
+              </div>
+            ) : (
+              <div className="text-[15px]" style={{color:"var(--ink-mute)"}}>No verified stories yet</div>
+            )}
+          </div>
+
+          {/* 4. Invoice block */}
+          {invoice && (
+            <div className="card rounded-[16px] p-4 mt-6">
+              <div className="stamp mb-3" style={{color:"var(--ink-mute)"}}>Invoice</div>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <div className="font-display text-[18px] leading-tight">{invoice.bundle}</div>
+                  <div className="font-mono text-[22px] leading-none mt-1">${invoice.price}</div>
+                </div>
+                <StatusPill
+                  label={invoice.status === "paid" ? "Paid" : invoice.status === "invoiced" ? "Invoiced" : invoice.status === "pending" ? "Pending" : "Due"}
+                  tone={invoice.status === "paid" ? "neutral" : "outline"}
+                />
+              </div>
+              {invoice.status !== "paid" && (
+                <>
+                  <div className="hr mb-3"/>
+                  <div className="text-[12px]" style={{color:"var(--ink-2)"}}>Settle via Whish / OMT / USD cash</div>
+                  <div className="text-[12px] mt-1" style={{color:"var(--ink-mute)"}}>The List will contact you to settle.</div>
+                </>
+              )}
+            </div>
+          )}
+
+        </div>
+
+      </div>
+    );
+  }
+
+  function optionalNumber(value){
+    if (value == null || value === "") return null;
+    const number = typeof value === "number" ? value : Number(value);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  function normalizeBreakdown(value){
+    const labels = { LB:"Lebanon", AE:"UAE", SA:"Saudi Arabia" };
+    if (Array.isArray(value)) {
+      return value.map(row => {
+        if (Array.isArray(row)) return [row[0], optionalNumber(row[1])];
+        if (!row || typeof row !== "object") return null;
+        const label = row.label || row.name || row.country || row.city || row.age || row.code;
+        return label ? [labels[label] || label, optionalNumber(row.pct ?? row.value ?? row.share)] : null;
+      }).filter(row => row && isNumber(row[1]));
+    }
+    if (value && typeof value === "object") {
+      return Object.entries(value).map(([label, share]) => [labels[label] || label, optionalNumber(share)])
+        .filter(row => isNumber(row[1]));
+    }
+    return [];
+  }
+
+  function normalizeConnectionStatus(value){
+    const status = String(value || "").toLowerCase();
+    if (status === "verified" || status.startsWith("connected")) return "connected";
+    if (status === "estimated" || status === "public_estimate") return "estimated";
+    return null;
+  }
+
+  function freshnessLabel(value){
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.valueOf())) return null;
+    const days = Math.max(0, Math.floor((Date.now()-date.valueOf())/(24*60*60*1000)));
+    if (days === 0) return "Synced today";
+    if (days === 1) return "Refreshed yesterday";
+    return `Refreshed ${days} days ago`;
+  }
+
+  function normalizeApplicant(application){
+    const profile = Array.isArray(application.profiles) ? application.profiles[0] : application.profiles || {};
+    const creator = profile.creator_data || {};
+    const creatorInsights = creator.insights || creator.creator_insights || {};
+    const audience = { ...(creator.audience || {}), ...(creatorInsights.audience || {}) };
+    const content = { ...(creator.content_metrics || {}), ...(creatorInsights.content || {}) };
+    const listSource = { ...(creator.the_list || {}), ...(creatorInsights.theList || creatorInsights.the_list || {}) };
+    const reputationSource = profile.reputation || {};
+    const reputation = {
+      score: optionalNumber(reputationSource.score),
+      nights: optionalNumber(reputationSource.nights ?? reputationSource.events),
+      shows: optionalNumber(reputationSource.shows ?? reputationSource.showed),
+      noShows: optionalNumber(reputationSource.noShows ?? reputationSource.no_shows),
+      strikes: optionalNumber(reputationSource.strikes),
+      withYou: optionalNumber(reputationSource.withYou ?? reputationSource.with_you),
+    };
+    const followers = optionalNumber(creator.followers_count);
+    const engagementRate = optionalNumber(creatorInsights.engagementRate ?? creatorInsights.engagement_rate ?? creator.engagement_rate);
+    const countries = normalizeBreakdown(audience.country_split ?? audience.countries);
+    const lebanon = optionalNumber(audience.lebanon) ?? countries.find(([label]) => label === "Lebanon")?.[1] ?? null;
+    const female = optionalNumber(audience.gender_split?.female ?? audience.female);
+    const male = optionalNumber(audience.gender_split?.male ?? audience.male) ?? (isNumber(female) ? 1-female : null);
+    const localFollowers = optionalNumber(creatorInsights.overview?.localFollowers ?? creatorInsights.overview?.local_followers)
+      ?? (isNumber(followers) && isNumber(lebanon) ? Math.round(followers*lebanon) : null);
+    const showUpRate = optionalNumber(listSource.showUpRate ?? listSource.show_up_rate)
+      ?? (isNumber(reputation.shows) && isNumber(reputation.nights) && reputation.nights > 0 ? reputation.shows/reputation.nights : null);
+    const reliability = optionalNumber(listSource.reliability)
+      ?? (isNumber(reputation.score) ? reputation.score/10 : showUpRate);
+    const postingFrequency = content.postingFrequency ?? content.posting_frequency;
+    const topContent = Array.isArray(content.topContent || content.top_content)
+      ? (content.topContent || content.top_content).map(item => ({
+          thumbnail: item?.thumbnail || item?.thumbnail_url || item?.image_url || null,
+          label: item?.label || item?.type || "Post",
+          reach: optionalNumber(item?.reach),
+        })).filter(item => item.thumbnail).slice(0,4)
+      : [];
+    const status = normalizeConnectionStatus(creatorInsights.dataStatus ?? creatorInsights.data_status ?? creator.data_status);
+    const insights = {
+      dataStatus: status,
+      freshness: creatorInsights.freshness || freshnessLabel(creator.fetched_at),
+      engagementRate,
+      overview: {
+        localFollowers,
+        trend: Array.isArray(creatorInsights.overview?.trend) ? creatorInsights.overview.trend.map(optionalNumber).filter(isNumber) : null,
+        trendLabel: creatorInsights.overview?.trendLabel || creatorInsights.overview?.trend_label || null,
+      },
+      audience: {
+        lebanon,
+        cities: normalizeBreakdown(audience.cities ?? audience.city_split),
+        ages: normalizeBreakdown(audience.ages ?? audience.age_split),
+        female,
+        male,
+        credibility: optionalNumber(audience.credibility ?? audience.credibility_score ?? creator.quality_score),
+        languages: Array.isArray(audience.languages) ? audience.languages.map(item => typeof item === "string" ? item : item?.label).filter(Boolean) : null,
+        activeHours: Array.isArray(audience.activeHours || audience.active_hours) ? (audience.activeHours || audience.active_hours).filter(Boolean) : null,
+      },
+      content: {
+        performance: normalizeBreakdown(content.performance),
+        topContent,
+        averageLikes: optionalNumber(content.averageLikes ?? content.average_likes),
+        averageComments: optionalNumber(content.averageComments ?? content.average_comments),
+        averageViews: optionalNumber(content.averageViews ?? content.average_views),
+        averageReelsViews: optionalNumber(content.averageReelsViews ?? content.average_reels_views),
+        postingFrequency: isNumber(optionalNumber(postingFrequency)) ? `${optionalNumber(postingFrequency)} posts / week` : postingFrequency || null,
+        sponsoredShare: optionalNumber(content.sponsoredShare ?? content.sponsored_share),
+      },
+      theList: {
+        reliability,
+        showUpRate,
+        storyCompletion: optionalNumber(listSource.storyCompletion ?? listSource.story_completion ?? reputationSource.storyCompletion ?? reputationSource.story_completion),
+        venueRating: optionalNumber(listSource.venueRating ?? listSource.venue_rating ?? reputationSource.venueRating ?? reputationSource.venue_rating),
+        events: optionalNumber(listSource.events ?? reputation.nights),
+        verifiedReach: optionalNumber(listSource.verifiedReach ?? listSource.verified_reach),
+        noShows: optionalNumber(listSource.noShows ?? listSource.no_shows ?? reputation.noShows),
+        strikes: optionalNumber(listSource.strikes ?? reputation.strikes),
+        trend: Array.isArray(listSource.trend) ? listSource.trend.map(optionalNumber).filter(isNumber) : null,
+      },
+    };
+    return {
+      id: application.id,
+      name: profile.full_name || profile.ig_handle || "Member",
+      gender: creator.gender || null,
+      quality_score: optionalNumber(creator.quality_score),
+      photo: profile.avatar_url || creator.profile_picture_url || null,
+      instagram_followers: followers,
+      tiktok_followers: optionalNumber(creator.tiktok_followers),
+      socials: { instagram: profile.ig_handle ? "https://instagram.com/" + profile.ig_handle.replace(/^@/, "") : null, tiktok:null, other:null },
+      reputation,
+      audience: { female, countries },
+      insights,
+    };
+  }
+
+  function liveEvent(row, applications=[], stories=[], booking=null){
+    const storyByApp = new Map(stories.map(s => [s.application_id, s]));
+    const guests = applications.map(application => {
+      applicantById[application.id] = normalizeApplicant(application);
+      const story = storyByApp.get(application.id);
+      const storyState = !story ? null
+        : story.verdict === "pending" ? (story.media_url ? SS.review : SS.due)
+        : story.verdict === "needs_review" ? SS.needsReview
+        : story.verdict === "rejected" ? SS.rejected
+        : story.verdict === "verified" ? SS.verified
+        : story.verdict;
+      return {
+        applicantId: application.id,
+        state: application.status,
+        code: application.pass_code || null,
+        inAt: application.checked_in_at ? new Date(application.checked_in_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) : null,
+        rating: application.rating ?? null,
+        story: storyState,
+        storyId: story?.id || null,
+        storyMedia: story?.media_url || null,
+        verdict: story ? {score:story.score ?? null, reason:story.reason || null} : null,
+      };
+    });
+    const start = new Date(row.starts_at);
+    const end = new Date(row.ends_at);
+    const closes = row.closes_at ? new Date(row.closes_at) : null;
+    const status = row.status || "draft";
+    const stage = status === "draft" ? STAGE.draft
+      : status === "cancelled" ? STAGE.cancelled
+      : status === "locked" ? STAGE.locked
+      : ["closed","completed","past"].includes(status) || booking ? STAGE.past
+      : STAGE.open;
+    const checked = applications.filter(a => a.status === "checked_in").length;
+    const confirmed = applications.filter(a => ["confirmed","checked_in","no_show"].includes(a.status)).length;
+    const ratings = applications.map(a => a.rating).filter(value => value != null).map(Number).filter(Number.isFinite);
+    const avgRating = ratings.length ? Math.round((ratings.reduce((sum,value)=>sum+value,0)/ratings.length)*10)/10 : null;
+    const mix = row.mix_girls == null || row.mix_guys == null ? null : {girls:Number(row.mix_girls), guys:Number(row.mix_guys)};
+    const bundleName = row.bundle || "Custom";
+    return makeEvent({
+      id: row.id, venueId: row.venue_id, title: row.title || "Untitled", type: row.kind || "Club",
+      date: Number.isNaN(start.valueOf()) ? "" : start.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}).replace(",", " ·"),
+      time: Number.isNaN(start.valueOf()) ? "" : start.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", hour12:false}),
+      startsAt: row.starts_at || null, endsAt: row.ends_at || null,
+      endTime: Number.isNaN(end.valueOf()) ? "" : end.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", hour12:false}),
+      description: row.description || "", closesAt: closes && !Number.isNaN(closes.valueOf()) ? formatEventDateTime(closes) : null,
+      closesInput: closes && !Number.isNaN(closes.valueOf()) ? toLocalDateTime(closes) : null,
+      mix, storyHours:Number(row.story_window_hours || 24), brief:row.brief || null,
+      seats: row.seats ?? 0, heroImage: row.image_url ? {src:row.image_url,scale:1,x:0,y:0,remote:true} : null,
+      exchange: "1 Story + venue tag", stage, status:stageToStatus(stage), guests,
+      appliedTotal: applications.length, bundle:{name:bundleName, price:Number(row.bundle_price || 0)},
+      recap: stage === STAGE.past ? {confirmed, showed:checked, noShows:applications.filter(a=>a.status === "no_show").length, avgRating} : null,
+      invoice: booking ? {id:booking.id, bundle:bundleName, price:Number(booking.bundle_price ?? row.bundle_price ?? 0), status:booking.invoice_status || "pending"} : null,
+    });
+  }
+
+  function toLocalDate(date){
+    if (!date || Number.isNaN(date.valueOf())) return "";
+    return [date.getFullYear(), String(date.getMonth()+1).padStart(2,"0"), String(date.getDate()).padStart(2,"0")].join("-");
+  }
+
+  function toLocalTime(date){
+    if (!date || Number.isNaN(date.valueOf())) return "";
+    return String(date.getHours()).padStart(2,"0") + ":" + String(date.getMinutes()).padStart(2,"0");
+  }
+
+  function toLocalDateTime(date){
+    const day = toLocalDate(date);
+    return day ? day + "T" + toLocalTime(date) : "";
+  }
+
+  function formatEventDateTime(date){
+    return date.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}).replace(",", " ·")
+      + " · " + toLocalTime(date);
+  }
+
+  function eventStart(draft){
+    const clock = /^\d{2}:\d{2}$/.test(draft.time) ? draft.time : "20:00";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(draft.date)) return new Date(draft.date + "T" + clock + ":00");
+    const clean = draft.date.replace(/^[A-Za-z]{3}\s*·\s*/, "").replace(/·/g, " ");
+    return new Date(clean + " " + new Date().getFullYear() + " " + clock);
+  }
+
+  function eventCloses(draft, starts){
+    if (draft.closesAt === "24h before doors") return new Date(starts.getTime() - 24*60*60*1000);
+    if (draft.closesAt === "48h before doors") return new Date(starts.getTime() - 48*60*60*1000);
+    const custom = new Date(draft.closesAt);
+    return Number.isNaN(custom.valueOf()) ? null : custom;
+  }
+
+  function ScreenNoVenue({ onLogout }){
+    return <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center gap-4">
+      <div className="font-black font-display-l text-[34px]">This login has no venue</div>
+      <button onClick={onLogout} className="press h-11 px-6 rounded-full" style={{border:"1px solid var(--line-2)"}}>Sign out</button>
+    </div>;
+  }
+
+  function venueNotificationAction(kind){
+    const targets = {
+      story_submitted:"recap", post_event_report:"recap",
+      invoice_pending:"recap", invoice_invoiced:"recap", invoice_paid:"recap",
+      applications_digest:"review", pick_expired_venue:"review", pick_declined:"review",
+      picked:"review", pick_expired:"review", confirm_reminder:"review",
+      pick_confirmed:"guestlist", pass_ready:"guestlist", no_show:"guestlist",
+      tonight_lineup:"door",
+      event_filled:"event", event_changed:"event", new_drop:"event",
+      list_closed:"event", not_selected:"event", waitlist_promoted:"event",
+      story_due:"recap", story_deadline:"recap", story_missed:"recap", story_verified:"recap",
+      account_paused:"event",
+    };
+    return targets[kind] || "event";
+  }
+
+  /* ========== APP – onboarding state machine ========== */
+  const DEMO_PREVIEW = new URLSearchParams(window.location.search).get("demo") === "1";
+  function App(){
+    const [step, setStep] = useState(DEMO_PREVIEW ? "done" : "intro");
+    const currentStep = useRef(step);
+    useEffect(() => { currentStep.current = step; }, [step]);
+    // intro | login | onboard-group | onboard-venue | done
+    const [light, setLight] = useState(false);
+    const [group, setGroup] = useState(null);          // {id,name,logo} | null (independent)
+    const [venue, setVenue] = useState(DEMO_PREVIEW ? DEMO_VENUE : makeVenue());
+    const [events, setEvents] = useState(SEED_EVENTS); // their drops
+    const [tab, setTab] = useState("desk");            // desk | events | door | venue
+    const [toast, setToast] = useState(null);
+    const toastTimer = useRef(null);
+    const [confirm, setConfirm] = useState(null);      // {title,body,confirmLabel,onConfirm} | null
+    const [guestListEventId, setGuestListEventId] = useState(null); // event id | null
+    const [doorEventId, setDoorEventId] = useState(null);           // manually selected night | null
+    const [editingDraft, setEditingDraft] = useState(null);         // event being edited | null
+    const [recapEventId, setRecapEventId] = useState(null);        // event id for recap screen | null
+    const [session, setSession] = useState(null);
+    const [notifications, setNotifications] = useState([]);
+    const [syncNotice, setSyncNotice] = useState(null);
+    const [roleMismatch, setRoleMismatch] = useState(false);
+
+    const hydrateVenue = async (uid, replaceVenue = false) => {
+      const [profileResult, venueResult, notificationResult] = await Promise.all([
+        supabaseClient.from("profiles").select("*").eq("id", uid).single(),
+        supabaseClient.from("venues").select("*").eq("owner_id", uid).limit(1),
+        supabaseClient.from("notifications").select("*").eq("user_id", uid).order("created_at", {ascending:false}),
+      ]);
+      const firstError = [profileResult, venueResult, notificationResult].find(result => result.error)?.error;
+      if (firstError) throw firstError;
+      if (profileResult.data.role !== "venue" || !(venueResult.data || []).length) {
+        setVenue(makeVenue()); setEvents([]); setNotifications([]);
+        setRoleMismatch(true); setStep("no-venue"); return false;
+      }
+      const venueRow = venueResult.data[0];
+      const eventResult = await supabaseClient.from("events").select("*")
+        .eq("venue_id", venueRow.id).order("starts_at", {ascending:true});
+      if (eventResult.error) throw eventResult.error;
+      const ownRows = eventResult.data || [];
+      const liveEvents = await Promise.all(ownRows.map(async row => {
+        const applicationResult = await supabaseClient.from("applications")
+          .select("*, profiles(full_name, ig_handle, avatar_url, creator_data, reputation)")
+          .eq("event_id", row.id);
+        if (applicationResult.error) throw applicationResult.error;
+        const apps = applicationResult.data || [];
+        const appIds = apps.map(a => a.id);
+        const [storyResult, bookingResult] = await Promise.all([
+          appIds.length ? supabaseClient.from("stories").select("*").in("application_id", appIds) : Promise.resolve({data:[],error:null}),
+          supabaseClient.from("bookings").select("*").eq("event_id", row.id).maybeSingle(),
+        ]);
+        if (storyResult.error) throw storyResult.error;
+        if (bookingResult.error) throw bookingResult.error;
+        return liveEvent(row, apps, storyResult.data || [], bookingResult.data || null);
+      }));
+      const gallery = Array.isArray(venueRow.gallery) ? venueRow.gallery : [];
+      const images = gallery.slice(0,4).map(item => {
+        const src = typeof item === "string" ? item : item?.src;
+        return src ? {src,scale:1,x:0,y:0,remote:true} : null;
+      });
+      while (images.length < 4) images.push(null);
+      const refreshedVenue = makeVenue({
+        id:venueRow.id, name:venueRow.name || "", type:venueRow.kind || venueRow.type || "Club",
+        area:venueRow.area || "", description:venueRow.description || "", igHandle:venueRow.ig_handle || "",
+        heroImage:venueRow.image_url ? {src:venueRow.image_url,scale:1,x:0,y:0,remote:true} : null,
+        images,
+      });
+      // Preserve the venue form's unsaved fields during notification refreshes.
+      if (replaceVenue || currentStep.current !== "onboard-venue") setVenue(refreshedVenue);
+      setEvents(liveEvents);
+      setNotifications((notificationResult.data || []).map(n => ({
+        id:n.id, kind:n.kind, text:[n.title,n.body].filter(Boolean).join(" · "), eventId:n.event_id,
+        action:venueNotificationAction(n.kind), read:n.read === true,
+      })));
+      setGroup(null);
+      setRoleMismatch(false);
+      setSyncNotice(null);
+      return true;
+    };
+
+    const completeLogin = async nextSession => {
+      setSession(nextSession);
+      if (await hydrateVenue(nextSession.user.id)) setStep("done");
+    };
+
+    useEffect(() => {
+      if (DEMO_PREVIEW) return;
+      supabaseClient.auth.getSession().then(({data}) => {
+        if (!data.session) return;
+        setSession(data.session);
+        hydrateVenue(data.session.user.id)
+          .then(loaded => { if (loaded) setStep("done"); })
+          .catch(error => { setStep("login"); showToast(error.message || "Could not load venue"); });
+      });
+    }, []);
+
+    useEffect(() => {
+      // ponytail: use the browser viewport so sheets remain above the keyboard.
+      const viewport = window.visualViewport;
+      if (!viewport) return;
+      const syncViewport = () => {
+        if (viewport.scale !== 1) return;
+        document.documentElement.style.setProperty("--app-height", `${viewport.height}px`);
+        document.documentElement.style.setProperty("--app-offset", `${viewport.offsetTop}px`);
+      };
+      syncViewport();
+      viewport.addEventListener("resize", syncViewport);
+      viewport.addEventListener("scroll", syncViewport);
+      return () => {
+        viewport.removeEventListener("resize", syncViewport);
+        viewport.removeEventListener("scroll", syncViewport);
+      };
+    }, []);
+
+    useEffect(() => {
+      if (!session) return;
+      const channel = supabaseClient.channel("venue-notifications-" + session.user.id)
+        .on("postgres_changes", {event:"INSERT", schema:"public", table:"notifications", filter:"user_id=eq." + session.user.id}, () => {
+          hydrateVenue(session.user.id).catch(() => {});
+        }).subscribe();
+      return () => { supabaseClient.removeChannel(channel); };
+    }, [session?.user?.id]);
+
+    useEffect(() => { document.documentElement.classList.toggle('light', light); }, [light]);
+    // Store event ID (not snapshot) so ScreenReview sees live guest-state writes.
+    const [reviewEventId, setReviewEventId] = useState(null);
+    const showToast = (msg) => { setToast(msg); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(()=>setToast(null), 2200); };
+    const askConfirm = (cfg) => setConfirm(cfg);
+    const liveToday = session ? todayLabel() : TODAY;
+
+    // A failed refresh must never turn a committed write into a retryable save.
+    const refreshAfterMutation = async (savedMessage, replaceVenue = false) => {
+      try {
+        await hydrateVenue(session.user.id, replaceVenue);
+        setSyncNotice(null);
+        return true;
+      } catch (error) {
+        setSyncNotice(savedMessage);
+        return false;
+      }
+    };
+
+    const runRpc = async (name, args) => {
+      const { error } = await supabaseClient.rpc(name, args);
+      if (error) throw error;
+      await refreshAfterMutation("Change saved");
+    };
+
+    const markNotificationsRead = async () => {
+      if (!session) return;
+      const ids = notifications.filter(row => !row.read).map(row => row.id);
+      if (!ids.length) return;
+      setNotifications(rows => rows.map(row => ids.includes(row.id) ? {...row, read:true} : row));
+      const { error } = await supabaseClient.from("notifications").update({read:true})
+        .eq("user_id", session.user.id).in("id", ids);
+      if (error) {
+        showToast("Could not mark activity as read");
+        hydrateVenue(session.user.id).catch(() => {});
+      }
+    };
+
+    const logout = async () => {
+      if (DEMO_PREVIEW) { window.location.href = window.location.pathname; return; }
+      if (session) await supabaseClient.auth.signOut();
+      setSession(null); setRoleMismatch(false); setNotifications([]); setSyncNotice(null);
+      setVenue(makeVenue()); setEvents(SEED_EVENTS); setGroup(null);
+      setGuestListEventId(null); setDoorEventId(null); setReviewEventId(null); setRecapEventId(null);
+      setTab("desk"); setStep("intro");
+    };
+
+    const saveVenue = async venueDraft => {
+      if (!session) { setStep("done"); setTab("desk"); return; }
+      try {
+        const stamp = Date.now();
+        const heroUrl = await uploadCroppedMedia(venueDraft.heroImage, `${session.user.id}/venue-${stamp}.jpg`);
+        const galleryUrls = (await Promise.all((venueDraft.images || []).map((image,index) =>
+          image ? uploadCroppedMedia(image, `${session.user.id}/venue-${stamp}-${index}.jpg`) : null
+        ))).filter(Boolean);
+        const { error } = await supabaseClient.from("venues").update({
+          name:venueDraft.name,
+          kind:venueDraft.type,
+          area:venueDraft.area,
+          description:venueDraft.description || null,
+          image_url:heroUrl,
+          gallery:galleryUrls,
+          ig_handle:(venueDraft.igHandle || "").replace(/^@/, "") || null,
+        }).eq("id", venueDraft.id);
+        if (error) throw error;
+        setStep("done"); setTab("venue"); showToast("Venue saved");
+        await refreshAfterMutation("Venue saved", true);
+      } catch (error) {
+        showToast(error.message || "Could not save venue");
+        throw error;
+      }
+    };
+
+    useEffect(() => {
+      if (guestListEventId && !events.some(event => event.id === guestListEventId)) {
+        setGuestListEventId(null);
+      }
+    }, [guestListEventId, events]);
+
+    // One viewport-sized app surface on phones; a centered column on desktop.
+    const wrap = (node) => (
+      <div className="app-shell">
+        <div className="app-frame"><div className="app-surface">
+          {node}
+          <Toast msg={toast}/>
+          {syncNotice && <div role="status" className="absolute left-3 right-3 z-[60] glass rounded-[14px] px-4 py-2 flex items-center gap-3" style={{top:"calc(env(safe-area-inset-top, 0px) + 12px)"}}>
+            <div className="flex-1 text-[12px]">{syncNotice}. Updates are delayed.</div>
+            <button onClick={()=>refreshAfterMutation(syncNotice)} className="press h-11 px-3 text-[12px] font-semibold">Retry refresh</button>
+          </div>}
+          {confirm && (
+            <ConfirmDialog
+              title={confirm.title}
+              body={confirm.body}
+              confirmLabel={confirm.confirmLabel}
+              onConfirm={confirm.onConfirm}
+              onClose={() => setConfirm(null)}
+            />
+          )}
+          {(() => {
+            const guestListEvent = guestListEventId ? events.find(e => e.id === guestListEventId) : null;
+            return guestListEvent ? <GuestListSheet event={guestListEvent} onClose={() => setGuestListEventId(null)}/> : null;
+          })()}
+        </div></div>
+      </div>
+    );
+
+    if (step === "intro") return wrap(<ScreenVenueIntro onList={()=>setStep("login")} onLogin={()=>setStep("login")}
+      onDemo={()=>{ window.location.href = "?demo=1"; }}/>);
+    if (step === "login") return wrap(<ScreenVenueLogin onDone={completeLogin}/>);
+    if (step === "no-venue" || roleMismatch) return wrap(<ScreenNoVenue onLogout={logout}/>);
+    if (step === "onboard-group") return wrap(<ScreenOnboardGroup group={group} setGroup={setGroup} onNext={()=>setStep("onboard-venue")}/>);
+    if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} setVenue={setVenue} group={group} onDone={saveVenue}/>);
+
+    const openReview = (e) => { setReviewEventId(e.id); setStep("review-deck"); };
+    const openRecap  = (eventId) => { setRecapEventId(eventId); setStep("recap"); };
+
+    // ---- Demo switchboard actions (T17) – the rig behind Venue › Demo ----
+    const genDoorCode = (taken) => {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let code;
+      do { code = "LST-" + chars[Math.floor(Math.random()*chars.length)] + chars[Math.floor(Math.random()*chars.length)]; }
+      while (taken.has(code));
+      taken.add(code);
+      return code;
+    };
+    const demoActions = {
+      newApplicants: () => {
+        const open = events.find(e => e.stage === STAGE.open);
+        if (!open) { showToast("No open event – publish one first"); return; }
+        setEvents(es => es.map(e => {
+          if (e.id !== open.id) return e;
+          const present = new Set(e.guests.map(g => g.applicantId));
+          const fresh = APPLICANTS.filter(a => !present.has(a.id)).slice(0, 6).map(a => makeGuest(a.id, GS.applied));
+          let guests = [...e.guests, ...fresh];
+          let added = fresh.length;
+          if (added < 6) {
+            // pool exhausted – cycle: not-selected applicants re-enter as new applications
+            guests = guests.map(g => (added < 6 && g.state === GS.notSelected) ? (added++, makeGuest(g.applicantId, GS.applied)) : g);
+          }
+          if (!added) return e;
+          return { ...e, guests, appliedTotal: (e.appliedTotal || 0) + added };
+        }));
+        showToast("New applicants · check the deck");
+      },
+      pickDeclines: () => {
+        const pool = events.find(e => e.id === "pool");
+        const victim = pool && pool.guests.find(g => g.state === GS.confirmed && g.code !== "LST-4F");
+        if (!victim) { showToast("No confirmed guest left to decline"); return; }
+        setEvents(es => es.map(e => e.id !== "pool" ? e : {
+          ...e, guests: e.guests.map(g => g === victim ? { ...g, state: GS.declined, code: null } : g),
+        }));
+        const a = APPLICANTS.find(x => x.id === victim.applicantId);
+        showToast((a ? a.name : "A pick") + " declined – pick a replacement");
+      },
+      advanceToTonight: () => {
+        const lounge = events.find(e => e.id === "lounge");
+        if (!lounge || lounge.stage !== STAGE.open) { showToast("Late Lounge already advanced – reset first"); return; }
+        const taken = new Set(events.flatMap(e => e.guests.map(g => g.code)).filter(Boolean));
+        setEvents(es => es.map(e => e.id !== "lounge" ? e : {
+          ...e,
+          stage: STAGE.locked,
+          status: stageToStatus(STAGE.locked),
+          date: TODAY,
+          guests: e.guests.map(g =>
+            g.state === GS.applied ? { ...g, state: GS.waitlist } :
+            g.state === GS.picked  ? { ...g, state: GS.confirmed, code: genDoorCode(taken) } : g),
+        }));
+        setTab("desk");
+        showToast("Late Lounge is tonight's second room");
+      },
+      reset: () => {
+        setEvents(SEED_EVENTS);
+        setTab("desk");
+        showToast("Demo reset");
+      },
+    };
+    // open → review deck; locked → review deck (replacement mode) OR guest list (from ScreenDesk)
+
+    const openEvent = (e) => {
+      if (e.stage === STAGE.open)   return openReview(e);
+      if (e.stage === STAGE.locked) return setGuestListEventId(e.id);
+      if (e.stage === STAGE.draft)  return editDraft(e);
+      if (e.stage === STAGE.past)   return openRecap(e.id);
+      showToast("This event is cancelled");
+    };
+    const editDraft = (event) => {
+      setEditingDraft(event);
+      setStep("post");
+    };
+    const persistEvent = async (draft, draftId, publish) => {
+      if (session) {
+        try {
+          const starts = eventStart(draft);
+          if (Number.isNaN(starts.valueOf())) throw new Error("Use a valid date and time");
+          const closes = eventCloses(draft, starts);
+          if (!closes || Number.isNaN(closes.valueOf())) throw new Error("Use a valid applications-close time");
+          if (closes >= starts) throw new Error("Applications must close before doors");
+          const originalStart = draft.startsAt ? new Date(draft.startsAt) : null;
+          const originalEnd = draft.endsAt ? new Date(draft.endsAt) : null;
+          const originalDuration = originalStart && originalEnd && !Number.isNaN(originalStart.valueOf()) && !Number.isNaN(originalEnd.valueOf())
+            ? Math.max(60*60*1000, originalEnd - originalStart)
+            : 4*60*60*1000;
+          const imageValue = draft.heroImage || venue.heroImage;
+          const imageUrl = imageValue ? await uploadCroppedMedia(imageValue, `${session.user.id}/event-${Date.now()}.jpg`) : null;
+          const args = {
+            p_title:draft.title,
+            p_kind:draft.type,
+            p_description:draft.description || null,
+            p_image:imageUrl,
+            p_starts:starts.toISOString(),
+            p_ends:new Date(starts.getTime() + originalDuration).toISOString(),
+            p_seats:draft.seats,
+            p_price:draft.bundle?.price || 0,
+            p_story_hours:draft.storyHours || 24,
+            p_closes_at:closes.toISOString(),
+            p_mix_girls:draft.mix ? draft.mix.girls : null,
+            p_mix_guys:draft.mix ? draft.mix.guys : null,
+            p_brief:draft.brief || null,
+            p_bundle:draft.bundle?.name || null,
+          };
+          const result = draftId
+            ? await supabaseClient.rpc("update_event", {...args, p_event:draftId, p_publish:publish})
+            : await supabaseClient.rpc("post_event", {...args, p_draft:!publish});
+          if (result.error) throw result.error;
+          setEditingDraft(null); setStep("done"); setTab("events");
+          showToast(publish ? "Event published" : "Draft saved");
+          await refreshAfterMutation(publish ? "Event published" : "Draft saved");
+          return;
+        } catch (error) {
+          showToast(error.message || (publish ? "Could not publish event" : "Could not save draft"));
+          throw error;
+        }
+      }
+      const saved = {
+        ...draft,
+        stage: publish ? STAGE.open : STAGE.draft,
+        status: stageToStatus(publish ? STAGE.open : STAGE.draft),
+        guests: draft.guests || [],
+        appliedTotal: draft.appliedTotal || 0,
+      };
+      if (draftId) {
+        setEvents(es => es.map(e => e.id === draftId ? { ...saved, id: draftId } : e));
+      } else {
+        setEvents(es => [saved, ...es]);
+      }
+      setEditingDraft(null);
+      setStep("done"); setTab("events");
+      showToast(publish ? "Event published" : "Draft saved");
+    };
+    const publishEvent = (draft, draftId) => persistEvent(draft, draftId, true);
+    const saveDraft = (draft, draftId) => persistEvent(draft, draftId, false);
+    const cancelPost = () => {
+      if (editingDraft) {
+        showToast("Draft unchanged");
+        setEditingDraft(null);
+      }
+      setStep("done");
+    };
+    if (step === "post") return wrap(<ScreenPostEvent venue={venue}
+      onCancel={cancelPost}
+      onPublish={publishEvent}
+      onSaveDraft={saveDraft}
+      live={!!session}
+      initialDraft={editingDraft || undefined}
+      draftId={editingDraft ? editingDraft.id : undefined}
+    />);
+    if (step === "done") return wrap(
+      <>
+        {tab === "desk"   && <ScreenDesk venue={venue} events={events} notifications={notifications}
+          onReview={openReview} onPost={()=>setStep("post")} onEditDraft={editDraft}
+          onGuestList={(id)=>setGuestListEventId(id)} onToast={showToast} onTab={setTab}
+          onRecap={openRecap} onOpenEvent={openEvent} onDoorEvent={setDoorEventId}
+          today={liveToday} live={!!session} onNotifsOpened={markNotificationsRead}/>}
+        {tab === "events" && <ScreenEvents events={events} setEvents={setEvents} venue={venue}
+                               onPost={()=>setStep("post")} onOpenEvent={openEvent}
+                               onEditDraft={editDraft} onGuestList={(e) => setGuestListEventId(e.id)}
+                               askConfirm={askConfirm} onToast={showToast} onRecap={openRecap}
+                               onCancelEvent={session ? eventId => runRpc("cancel_event", {p_event:eventId}) : null}
+                               onDeleteDraft={session ? eventId => runRpc("delete_event", {p_event:eventId}) : null}/>}
+        {tab === "door"   && <ScreenDoor events={events} setEvents={setEvents} askConfirm={askConfirm} onToast={showToast} onTab={setTab}
+          eventId={doorEventId} today={liveToday} live={!!session}
+          onCheckIn={session ? appId => runRpc("check_in", {p_app:appId}) : null}
+          onNoShow={session ? appId => runRpc("mark_no_show", {p_app:appId}) : null}
+          onRate={session ? (appId,rating) => runRpc("rate_guest", {p_app:appId,p_rating:rating}) : null}
+          onCloseEvent={session ? async eventId => { await runRpc("close_event", {p_event:eventId}); setDoorEventId(null); } : null}/>}
+        {tab === "venue"  && <ScreenVenueProfile venue={venue} group={group} onEdit={()=>setStep("onboard-venue")} onLogout={logout} onToast={showToast} demo={session ? null : demoActions} light={light} onTheme={()=>setLight(value=>!value)}/>}
+        <VenueTabBar tab={tab} onTab={setTab}/>
+      </>
+    );
+
+    if (step === "review-deck") return wrap(<ScreenReview eventId={reviewEventId} events={events} setEvents={setEvents} askConfirm={askConfirm} onToast={showToast}
+      onDecide={session ? (appId, yes) => runRpc(yes ? "pick_applicant" : "skip_applicant", {p_app:appId}) : null}
+      onCloseApps={session ? eventId => runRpc("close_applications", {p_event:eventId}) : null}
+      onClose={()=>{ setStep("done"); setTab("desk"); }}/>);
+    if (step === "recap") return wrap(<ScreenRecap eventId={recapEventId} events={events} onClose={()=>setStep("done")}/>);
+
+    // Generic fallback for steps not yet built.
+    return wrap(
+      <>
+
+        <div className="absolute inset-0 flex items-center justify-center" style={{background:"transparent"}}>
+          <div className="font-black font-display-l text-[34px]" style={{color:"var(--ink-mute)"}}>{step}</div>
+        </div>
+
+      </>
+    );
+  }
+  createRoot(document.getElementById("root")).render(<App/>);

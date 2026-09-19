@@ -4,6 +4,44 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-09-20 — Publish approval and version-free URLs
+
+Will explicitly approved pushing the completed mobile/React/Capacitor changes. Members now open `/`, venues `/venue`, and shared event teasers `/e?id=...`; the manifest starts at `/`. Root HTML entries bundle the existing source without renaming the internal `v3` source directory. Legacy V1/V2/V3 entry routes redirect to canonical URLs. Local mobile smoke checks pass at both phone sizes. Push and live verification are in progress.
+
+## 2026-09-20 — V3 only; mobile viewport + React/Vite + Capacitor (local, not deployed)
+
+Will approved archiving V1/V2, keeping V3 as the product, fixing the phone-within-a-phone layout,
+and using React with Capacitor instead of continuing the separate SwiftUI port. Ponytail plus
+subagents: preserve the existing glass design and workflows; no new framework UI or redesign.
+
+- Legacy prototypes and their referenced media are preserved in `archive/web/`; `web/index.html`
+  opens V3. Existing `ios/` is paused; the new Capacitor Xcode project is `web/ios/`.
+- Member/venue fill the available phone viewport. Bottom navigation stays anchored; content,
+  onboarding, and sheets scroll. Safe-area padding and visualViewport resizing replace fixed
+  phone dimensions. Demo access is explicit (`?demo=1`); fake device chrome is gone.
+- `web/v3/member.jsx` and `venue.jsx` retain the app; HTML and CSS are separated. React 18,
+  Supabase, Tailwind, and the existing Jakarta font are bundled locally with Vite. Shared public
+  Supabase configuration is in `web/client.js`; no backend schema or production data changed.
+- Fixed nested Home buttons, member/venue navigation URLs, stale event details, missing confirmed
+  event cards, delayed apply results affecting another event, cancelled demo applications being
+  picked later, duplicate confirm/decline clicks, realtime refresh discarding venue edits, and
+  successful writes being reported as failures when their follow-up reads fail. Retry banners
+  only refresh data, avoiding duplicate events or resubmitted mutations.
+- `npm run build` passes source/JSX checks, 13 member failure/navigation cases plus duplicate and
+  cancellation checks, and 15 venue write/refresh failure cases. `npm run test:mobile` passes
+  390x844 and 320x568: tabs, theme switches, apply -> pick -> confirm -> correct pass, wizard
+  navigation, invalid forms, reduced available height, teaser/admin entry, anchored glass dock,
+  no outer scrolling or uncaught page errors. These use demo data and block backend writes.
+- Capacitor 8.4.3 project generated and `cap sync ios` passes. App ID `co.thelist.app`, iPhone,
+  iOS 17+ (matching the web target), portrait, photo/camera purpose strings. Template app icon
+  and splash remain placeholders. Native compilation/signing require a Mac and were not run.
+
+**Next:** review the local build; push/deploy only on explicit approval. Then authenticated
+production walkthrough and real iPhone keyboard, safe areas, authentication, uploads, and links.
+Phyllo, automatic Gemini scoring, payments, and push are still the existing unfinished work.
+
+---
+
 ## 2026-07-18 — Full web functionality wave completed + live backend hardened
 
 Resumed the interrupted Fable wave and finished all four production web surfaces: member

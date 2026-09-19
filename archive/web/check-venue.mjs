@@ -1,7 +1,7 @@
-// Static check for web/venue.html — brackets balanced, one createRoot, required tokens present.
-// Usage: node web/check-venue.mjs <token> <token> ...
+// Static check for archived venue.html — brackets balanced, one createRoot, required tokens present.
+// Usage: node archive/web/check-venue.mjs <token> <token> ...
 import { readFileSync } from "node:fs";
-const file = "web/venue.html";
+const file = new URL("./venue.html", import.meta.url);
 const src = readFileSync(file, "utf8");
 const tokens = process.argv.slice(2);
 const problems = [];

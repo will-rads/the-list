@@ -1,0 +1,425 @@
+/* v3 Frosted glass (2026-07-04 spec) – monochrome glassmorphism over one
+     full-bleed photo ground. No hue anywhere: accent is pure white on dark,
+     dark ink on light. Var names kept (--ice etc.) so call sites don't churn;
+     --ice is just white/ink now. Photo is a PLACEHOLDER (var(--bg-photo)). */
+  :root{
+    --bg:        #000000;
+    --bg-elev:   rgba(255,255,255,0.07);
+    --bg-elev2:  rgba(255,255,255,0.12);
+    /* Will 2026-07-05: no gray text. --ink-2 / --ink-mute collapse to --ink so
+       every label/subline reads full-contrast. --nav-idle keeps ONE functional
+       gray for inactive dock tabs (else the active tab is invisible). */
+    --ink:       #F4F4F6;
+    --ink-2:     #F4F4F6;
+    --ink-mute:  #F4F4F6;
+    --nav-idle:  #8B8C97;
+    --line:      rgba(255,255,255,0.14);
+    --line-2:    rgba(255,255,255,0.28);
+    --ice:       #FFFFFF;
+    --ice-dim:   #D8D9DF;
+    --ice-ink:   #000000;
+    --page:      #000000;
+    /* Will's ground (2026-07-04): bg-3 – blue sky > warm horizon > dark navy.
+       ONE image, both themes; scrims differentiate. */
+    --bg-photo:  url("../assets/bg-3.jpeg");
+  }
+  html.light{
+    --bg:        #F7F6F3;
+    /* light glass must stay see-through over the pastel ground – Will's
+       2026-07-04 note: .62 read as plain white paint */
+    --bg-elev:   rgba(255,255,255,0.34);
+    --bg-elev2:  rgba(255,255,255,0.24);
+    --ink:       #1E1E1E;
+    --ink-2:     #1E1E1E;
+    --ink-mute:  #1E1E1E;
+    --nav-idle:  #6A737D;
+    --line:      rgba(30,30,30,0.12);
+    --line-2:    rgba(30,30,30,0.24);
+    --ice:       #1E1E1E;
+    --ice-dim:   #454B52;
+    --ice-ink:   #FFFFFF;
+    --page:      #F2F0EB;
+  }
+  html, body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none;
+  }
+  /* ONE family (Will's 2026-07-04 ruling): Plus Jakarta Sans everywhere.
+     Display voice = Jakarta 700, tight -0.02em (1c Ultraviolet). Doubled
+     selector (.font-black.font-black) so it beats Tailwind CDN's own
+     .font-black utility, which otherwise forces font-weight:900. */
+  .font-black.font-black,
+  .font-display {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .font-display-l {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  /* glow readout – dark only; light theme keeps clean type */
+  html:not(.light) .font-display-l { text-shadow: 0 0 34px rgba(255,255,255,.22); }
+  /* font-mono = legacy class for numbers/timers. Numbers set in Plus Jakarta
+     Sans 600 with tabular figures so timers don't jitter. Doubled selector
+     (.font-mono.font-mono) so it beats Tailwind CDN's own .font-mono utility,
+     which otherwise forces a system monospace stack. Declared after .font-black
+     so number tiles that carry both classes stay sans. */
+  .font-mono.font-mono {
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+
+  /* Scroll each screen's content while the app and dock stay in place. */
+  .noscroll::-webkit-scrollbar { display:none; }
+  .noscroll { scrollbar-width: none; }
+  .overflow-y-auto { min-height:0; overscroll-behavior-y:contain; }
+  .app-safe-top { padding-top:calc(env(safe-area-inset-top, 0px) + 16px); }
+  .app-safe-bottom { padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 24px); }
+  .app-dock-space { padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 88px); }
+  .app-form-scroll { overflow-y:auto; overscroll-behavior-y:contain; }
+  .app-form-scroll > * { flex-shrink:0; }
+  .app-surface .sheet {
+    max-height:calc(100% - env(safe-area-inset-top, 0px) - 12px);
+    padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 24px);
+    overflow-y:auto;
+    overscroll-behavior-y:contain;
+  }
+  .app-surface input, .app-surface textarea, .app-surface select { font-size:16px; }
+
+  .app-shell {
+    position:fixed; top:var(--app-offset, 0px); left:0; right:0;
+    height:100vh; height:var(--app-height, 100dvh);
+    display:flex; justify-content:center; overflow:hidden;
+  }
+  .app-frame {
+    width:100%; max-width:520px; height:100%; min-height:0;
+    position: relative;
+  }
+  .app-surface {
+    width:100%; height:100%;
+    overflow: hidden; position: relative; background: var(--bg);
+    isolation: isolate;
+  }
+  /* Photo ground – one fixed image layer + theme scrim behind every screen.
+     Replaces the old purple radial washes; the photo is the atmosphere.
+     Swap var(--bg-photo) (in :root) for Will's final image – one-line edit. */
+  .app-surface::before {
+    content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:
+      linear-gradient(rgba(0,0,0,.62), rgba(0,0,0,.62)),
+      var(--bg-photo) center / cover no-repeat;
+  }
+  html.light .app-surface::before {
+    /* same image as dark; white scrim lifts it so dark ink stays readable */
+    background:
+      linear-gradient(rgba(255,255,255,.5), rgba(255,255,255,.5)),
+      var(--bg-photo) center / cover no-repeat;
+  }
+
+  /* full-screen overlay screens (EventDetail, Pass) need to paint their own
+     photo ground so the still-mounted screen beneath doesn't bleed through */
+  .screen-ground { background: linear-gradient(rgba(0,0,0,.62), rgba(0,0,0,.62)), var(--bg-photo) center / cover no-repeat; }
+  html.light .screen-ground { background: linear-gradient(rgba(255,255,255,.5), rgba(255,255,255,.5)), var(--bg-photo) center / cover no-repeat; }
+
+  /* docked-CTA fade (EventDetail "View pass" bar) – theme-aware; the old
+     inline black gradient bled into light mode (Will 2026-07-04) */
+  .dock-fade { background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,.85) 45%, rgba(0,0,0,.96) 85%); }
+  html.light .dock-fade { background: linear-gradient(180deg, transparent 0%, rgba(250,250,250,.88) 45%, rgba(250,250,250,.97) 85%); }
+
+  /* v3 signature – floating glass pill dock (was full-width gradient bar) */
+  .tabbar {
+    position:absolute; left:16px; right:16px; bottom:max(12px, env(safe-area-inset-bottom, 0px)); height:64px;
+    padding: 8px 10px;
+    display:grid; grid-template-columns:repeat(4,1fr); gap: 4px;
+    background: rgba(20,20,24,.55);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    backdrop-filter: blur(22px) saturate(1.4);
+    z-index: 30;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 999px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 30px rgba(255,255,255,.06);
+  }
+  html.light .tabbar {
+    background: rgba(255,255,255,.38);
+    border-color: rgba(30,30,30,.14);
+    box-shadow: 0 12px 34px -18px rgba(30,30,30,.35), 0 0 24px rgba(30,30,30,.06);
+  }
+  .tabbar button {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:5px; color: var(--nav-idle);
+    font-size: 10px; letter-spacing: 0.01em;
+    padding: 4px 0; border-radius: 14px;
+    transition: color .15s, transform .12s ease;
+    background: transparent; border: 0; cursor: pointer;
+  }
+  .tabbar button:active { transform: scale(.96); }
+  .tabbar button.active { color: var(--ink); }
+  .tabbar button.active svg { color: var(--ice); }
+
+  /* v3 signature – dotted rules */
+  .hr { height: 0; border-top: 1px dotted var(--line-2); background: none; }
+  .hr-2 { height: 0; border-top: 1px dotted rgba(255,255,255,.35); background: none; }
+  html.light .hr-2 { border-top-color: rgba(30,30,30,.35); }
+
+  .stamp { font-family:'Plus Jakarta Sans', sans-serif; font-weight: 500; font-size: 10px; letter-spacing: 0.01em; color: var(--ink-mute); text-shadow: 0 1px 8px rgba(0,0,0,.5); }
+  html.light .stamp { text-shadow: 0 1px 8px rgba(247,246,243,.6); }
+  .smallcaps { letter-spacing: 0.01em; font-size: 10px; font-weight: 500; }
+  /* Calmer section marker – sentence case, no tracking.
+     Used for section dividers; .stamp stays for true value labels (When/Doors/Seats). */
+  .section-label { font-family:'Plus Jakarta Sans', ui-sans-serif, system-ui; font-weight: 700; font-size: 14px; letter-spacing: normal; color: var(--ink-2); text-shadow: 0 1px 8px rgba(0,0,0,.5); }
+  html.light .section-label { text-shadow: 0 1px 8px rgba(247,246,243,.6); }
+  /* v3 polish: muted labels/pills that sit directly on the photo scrim (no card
+     underneath) get the same readability lift as .stamp/.section-label. */
+  .on-photo { text-shadow: 0 1px 8px rgba(0,0,0,.5); }
+  html.light .on-photo { text-shadow: 0 1px 8px rgba(247,246,243,.6); }
+  /* Brand mark eyebrows ("The List · No. 048", "The List · invitation") sit in
+     the serif so the wordmark reads as a wordmark. Declared after .stamp so
+     "stamp wordmark" call sites resolve to the serif. */
+  .wordmark { font-family:'Plus Jakarta Sans', ui-sans-serif, system-ui; font-weight: 700; font-size: 13px; letter-spacing: -0.01em; }
+
+  .chip-ice { background: var(--ice); color: var(--ice-ink); box-shadow: 0 0 18px rgba(255,255,255,.28); }
+  html.light .chip-ice { box-shadow: 0 0 14px rgba(30,30,30,.18); }
+  .chip-outline { border: 1px solid var(--line-2); color: var(--ink); }
+
+  .press { transition: transform .12s ease, opacity .12s ease, background .2s, border-color .2s, box-shadow .2s; cursor: pointer; }
+  @media (hover:hover){ .press:hover { opacity: .96; } }
+  .press:active { transform: scale(.97); opacity: .85; }
+
+  .vt { writing-mode: vertical-rl; transform: rotate(180deg); }
+
+  /* film grain */
+  .grain::after {
+    content:""; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 3px 3px; mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  /* v3 glass – body sits on the flat page; the photo fills the app surface. */
+  .page-bg { background: var(--page); }
+
+
+  /* better-ui: ring pulse animates transform/opacity (compositor-friendly),
+     not box-shadow spread. The ring lives on a pseudo-element. */
+  @keyframes pulseIce {
+    0%   { opacity: .55; transform: scale(1); }
+    100% { opacity: 0;   transform: scale(2.1); }
+  }
+  .pulse-ice { position: relative; }
+  .pulse-ice::after {
+    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.35);
+    animation: pulseIce 1.8s cubic-bezier(.4,.2,.2,1) infinite;
+  }
+
+  /* better-ui: extend sub-44px controls to a 44px hit target without any
+     visual change. The pseudo-element participates in hit testing. */
+  .hit { position: relative; }
+  .hit::after {
+    content:""; position:absolute; left:50%; top:50%;
+    transform: translate(-50%,-50%);
+    width: max(100%, 44px); height: max(100%, 44px);
+  }
+
+  /* better-ui: DemoPanel chevron rotates smoothly */
+  .chev { transition: transform .2s ease; }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .anim-up { animation: slideUp .5s cubic-bezier(.2,.7,.2,1); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .anim-fade { animation: fadeIn .35s ease; }
+
+  /* Stagger entrance for list children. Each child sets style={{"--i": index}}. */
+  .stagger > * { opacity: 1; }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes staggerUp {
+      from { transform: translateY(12px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    .stagger > * {
+      animation: staggerUp .45s ease-out both;
+      animation-delay: calc(var(--i, 0) * 60ms);
+    }
+  }
+
+  /* Picked screen – ring scale-in + content stagger */
+  @keyframes ringPop {
+    0%   { transform: scale(.3); opacity: 0; }
+    60%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes pickedFadeUp {
+    from { transform: translateY(14px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .ring-pop { animation: ringPop .8s cubic-bezier(.2,.7,.2,1) backwards; }
+  .picked-stagger { animation: pickedFadeUp .55s ease-out backwards; }
+
+  /* Filter sheet – backdrop dim + sheet slide up */
+  @keyframes sheetIn {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  @keyframes dimIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .sheet-backdrop { animation: dimIn .25s ease; }
+  .sheet {
+    animation: sheetIn .35s cubic-bezier(.2,.7,.2,1);
+    background: rgba(20,20,24,.72);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    backdrop-filter: blur(22px) saturate(1.4);
+  }
+  html.light .sheet { background: rgba(250,250,250,.55); }
+  /* light theme: deeper blur + stronger saturation so the pastel colors
+     visibly pull through the frost (glass, not paint) */
+  html.light .card, html.light .tabbar, html.light .glass, html.light .sheet {
+    -webkit-backdrop-filter: blur(26px) saturate(1.9);
+    backdrop-filter: blur(26px) saturate(1.9);
+  }
+
+  /* Submit spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin .9s linear infinite; }
+
+  /* ===== polish pass: glass depth + quiet neutral shadows (no neon) ===== */
+  /* frosted glass for top controls – tinted to the new palette */
+  .glass {
+    background: rgba(20,20,24,.5) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    backdrop-filter: blur(22px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,.18) !important;
+  }
+  html.light .glass {
+    background: rgba(255,255,255,.35) !important;
+    border-color: rgba(30,30,30,.14) !important;
+  }
+  /* solid cards: 1px hairline border + soft neutral shadow */
+  .card {
+    /* v3 glass: cards are frosted panels floating over the photo ground. */
+    background: var(--bg-elev);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    backdrop-filter: blur(22px) saturate(1.4);
+    border: 1px solid var(--line);
+    box-shadow: 0 16px 36px -24px rgba(0,0,0,.8);
+    transition: border-color .2s, box-shadow .2s, transform .12s;
+  }
+  html.light .card {
+    box-shadow: 0 10px 30px -18px rgba(30,30,30,.25);
+  }
+  @media (hover:hover){ button.card:hover, .card.press:hover { border-color: rgba(255,255,255,.45); } }
+  @media (hover:hover){ html.light button.card:hover, html.light .card.press:hover { border-color: rgba(30,30,30,.3); } }
+  /* selected / active states – white ring on dark, dark-ink ring on light */
+  .glow-ice { box-shadow: 0 0 0 1px rgba(255,255,255,.35), 0 0 22px rgba(255,255,255,.18), 0 10px 24px -18px rgba(0,0,0,.7); }
+  .press.glow-primary:active { box-shadow: 0 14px 28px -14px rgba(0,0,0,.8); }
+  @media (hover:hover){ .glow-primary:hover { box-shadow: 0 12px 26px -14px rgba(0,0,0,.7); } }
+  html.light .glow-ice { box-shadow: 0 0 0 1px rgba(30,30,30,.3), 0 3px 12px -6px rgba(30,30,30,.18); }
+  html.light .press.glow-primary:active { box-shadow: 0 6px 18px -8px rgba(30,30,30,.3); }
+  @media (hover:hover){ html.light .glow-primary:hover { box-shadow: 0 5px 16px -6px rgba(30,30,30,.25); } }
+  /* ornamental texture – only paints outside the app surface */
+  body::before {
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px);
+    background-size: 26px 26px;
+    -webkit-mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
+    mask-image: radial-gradient(120% 90% at 50% 42%, transparent 320px, #000 760px);
+  }
+  html.light body::before { background-image: radial-gradient(rgba(42,45,49,.08) 1px, transparent 1px); }
+
+  /* Will 2026-07-04: hero must MELT into the ground, no hard cut – the image
+     itself fades out via mask; overlays only scrim the top controls. */
+  .profile-hero-img {
+    -webkit-mask-image: linear-gradient(180deg, #000 58%, transparent 97%);
+    mask-image: linear-gradient(180deg, #000 58%, transparent 97%);
+  }
+  .profile-hero-overlay {
+    background: linear-gradient(180deg, rgba(0,0,0,.3) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0) 100%);
+  }
+  html.light .profile-hero-overlay {
+    background: linear-gradient(180deg, rgba(30,30,30,.08) 0%, rgba(30,30,30,0) 28%);
+  }
+  /* #5 – one canonical "floating control over a photo" recipe. Event Detail
+     header buttons and the Profile hero controls share it, so there is a single
+     over-image glass, distinct from .glass (which floats over the app bg). */
+  .glass-over-image, .profile-glass {
+    background: rgba(10,10,12,.5);
+    border: 1px solid rgba(255,255,255,.28);
+    -webkit-backdrop-filter: blur(12px) saturate(1.25);
+    backdrop-filter: blur(12px) saturate(1.25);
+  }
+  html.light .glass-over-image, html.light .profile-glass {
+    background: rgba(255,255,255,.72);
+    border-color: rgba(30,30,30,.12);
+    box-shadow: 0 12px 28px -22px rgba(30,30,30,.35);
+  }
+  /* Profile keeps its own text-color contract on top of the shared glass. */
+  .profile-glass { color: #F7F6F3; }
+  html.light .profile-glass { color: #1E1E1E; }
+  /* Will 2026-07-05: no gray – hero muted text matches the hero title. */
+  .profile-hero-text { color: #F7F6F3; }
+  .profile-hero-muted { color: #F7F6F3; }
+  html.light .profile-hero-text { color: #1E1E1E; }
+  html.light .profile-hero-muted { color: #1E1E1E; }
+  html.light .profile-hero-text .stamp,
+  html.light .profile-hero-text .smallcaps { color: #1E1E1E !important; }
+
+  /* Creator analytics stays dense and legible inside the fixed-height review sheet. */
+  .applicant-tabs {
+    display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:3px;
+    padding:4px; border:1px solid rgba(255,255,255,.18); border-radius:999px;
+    background:rgba(255,255,255,.07);
+    -webkit-backdrop-filter:blur(18px) saturate(1.35);
+    backdrop-filter:blur(18px) saturate(1.35);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .applicant-tabs button {
+    min-width:0; height:34px; padding:0 3px; border:1px solid transparent; border-radius:999px;
+    background:transparent; color:var(--ink); font-size:10px; font-weight:600;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .applicant-tabs button.active {
+    background:rgba(255,255,255,.16); color:var(--ink);
+    border-color:rgba(255,255,255,.28);
+    -webkit-backdrop-filter:blur(14px) saturate(1.45);
+    backdrop-filter:blur(14px) saturate(1.45);
+    box-shadow:0 5px 14px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.15);
+  }
+  .applicant-tabs button:focus-visible {
+    outline:2px solid var(--ice);
+    outline-offset:1px;
+  }
+  html.light .applicant-tabs {
+    background:rgba(255,255,255,.28); border-color:rgba(30,30,30,.14);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.55);
+  }
+  html.light .applicant-tabs button.active {
+    background:rgba(255,255,255,.56); color:var(--ink);
+    border-color:rgba(30,30,30,.16);
+    box-shadow:0 5px 14px rgba(30,30,30,.1), inset 0 1px 0 rgba(255,255,255,.72);
+  }
+  .insight-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .insight-metric {
+    min-width:0; padding:11px; border:1px solid var(--line); border-radius:12px;
+    background:var(--bg-elev);
+  }
+  .insight-bar { height:7px; overflow:hidden; border-radius:999px; background:var(--bg-elev2); }
+  .insight-bar > span { display:block; height:100%; border-radius:inherit; background:var(--ice); }
+  .analytics-thumb { aspect-ratio:1/1; overflow:hidden; border-radius:12px; position:relative; background:var(--bg-elev); }
+  .analytics-thumb img { width:100%; height:100%; object-fit:cover; display:block; }

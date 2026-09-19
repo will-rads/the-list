@@ -1,0 +1,31 @@
+{
+  "name": "the-list",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "npm run check && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "check": "node v3/check-v3.mjs && node check-actions.mjs && node check-venue-actions.mjs",
+    "test:mobile": "node check-mobile.mjs",
+    "ios:sync": "npm run build && cap sync ios",
+    "ios:open": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.4.3",
+    "@capacitor/ios": "8.4.3",
+    "@supabase/supabase-js": "2.110.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.4.3",
+    "autoprefixer": "10.6.1",
+    "esbuild": "0.28.2",
+    "playwright": "1.62.1",
+    "postcss": "8.5.28",
+    "tailwindcss": "3.4.19",
+    "vite": "8.3.0"
+  }
+}

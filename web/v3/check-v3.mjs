@@ -2,7 +2,7 @@
 // v3 scope: member + venue glass clients.
 // Usage: node web/v3/check-v3.mjs
 import { readFileSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { transformSync } from "esbuild";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -73,13 +73,15 @@ let failed = false;
 const only = process.argv[2]; // "index" | "venue" | undefined
 for (const [file, tokens] of Object.entries(REQUIRED)) {
   if (only && !file.startsWith(only)) continue;
-  const src = readFileSync(join(here, file), "utf8");
+  const base = file === "index.html" ? "member" : "venue";
+  const code = readFileSync(join(here, base + ".jsx"), "utf8");
+  const src = readFileSync(join(here, "..", file), "utf8") + code + readFileSync(join(here, base + ".css"), "utf8");
   const problems = [];
   for (const [o, c] of [["{", "}"], ["(", ")"], ["[", "]"]]) {
     const d = balance(src, o, c);
     if (d !== 0) problems.push(`bracket ${o}${c} delta ${d}`);
   }
-  const roots = (src.match(/createRoot/g) || []).length;
+  const roots = (src.match(/createRoot\(/g) || []).length;
   if (roots !== 1) problems.push(`createRoot count ${roots} (want 1)`);
   for (const t of tokens) if (!src.includes(t)) problems.push(`missing token: ${t}`);
   for (const stale of BANNED_STALE) if (src.includes(stale)) problems.push(`stale token present: ${JSON.stringify(stale)}`);
@@ -93,23 +95,9 @@ for (const [file, tokens] of Object.entries(REQUIRED)) {
                         "“", "”", "‘", "’"]) {
     if (src.includes(banned)) problems.push(`banned token present: ${JSON.stringify(banned)}`);
   }
-  // Parse gate: hand the babel script block to esbuild as JSX. Catches what token checks can't
-  // (smart quotes, truncated JSX, mismatched tags). Skips gracefully if esbuild is unavailable.
-  const scriptMatch = src.match(/<script type="text\/babel"[^>]*>([\s\S]*?)<\/script>/);
-  if (!scriptMatch) problems.push("no text/babel script block found");
-  else {
-    try {
-      execSync(`${process.platform === "win32" ? "npx.cmd" : "npx"} -y esbuild --loader=jsx --log-level=error`, {
-        input: scriptMatch[1], stdio: ["pipe", "ignore", "pipe"],
-        env: { ...process.env, NODE_OPTIONS: "--use-system-ca" },
-        timeout: 15000,
-      });
-    } catch (err) {
-      const msg = (err.stderr || "").toString();
-      if (msg.includes("ERROR")) problems.push("JSX parse failed:\n  " + msg.split(/\r?\n/).slice(0, 10).join("\n  "));
-      else problems.push(`JSX parse gate unavailable: ${err.message}`);
-    }
-  }
+  // Parse local source with the pinned dependency, never download a checker at runtime.
+  try { transformSync(code, { loader: "jsx", logLevel: "silent" }); }
+  catch (error) { problems.push(`JSX parse failed: ${error.message}`); }
   if (problems.length) { failed = true; console.error(`FAIL ${file}\n  ` + problems.join("\n  ")); }
   else console.log(`OK   ${file} (${src.split(/\r?\n/).length} lines)`);
 }
@@ -123,7 +111,7 @@ const PLAIN = {
     ".not('media_url', 'is', null)", "row.status === 'locked'",
   ],
   "e.html": [
-    "/v3/?event=", "This one is done. More drops soon.", "This event is gone.",
+    "/?event=", "This one is done. More drops soon.", "This event is gone.",
   ],
 };
 const PLAIN_BANNED = {
@@ -131,18 +119,15 @@ const PLAIN_BANNED = {
 };
 for (const [relative, tokens] of Object.entries(PLAIN)) {
   const file = relative.split("/").at(-1);
-  const src = readFileSync(join(here, relative), "utf8");
+  const code = readFileSync(join(here, relative.replace(/\.html$/, ".js")), "utf8");
+  const src = readFileSync(join(here, "..", file), "utf8") + code;
   const problems = [];
   for (const token of tokens) if (!src.includes(token)) problems.push(`missing token: ${token}`);
   for (const token of PLAIN_BANNED[relative] || []) {
     if (src.includes(token)) problems.push(`banned token present: ${JSON.stringify(token)}`);
   }
-  const scripts = [...src.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]
-    .map(match => match[1]).filter(code => code.trim());
-  if (!scripts.length) problems.push("no JavaScript block found");
-  for (const code of scripts) {
-    try { Function(code); } catch (error) { problems.push(`JavaScript parse failed: ${error.message}`); }
-  }
+  try { transformSync(code, { loader: "js", logLevel: "silent" }); }
+  catch (error) { problems.push(`JavaScript parse failed: ${error.message}`); }
   if (problems.length) { failed = true; console.error(`FAIL ${file}\n  ` + problems.join("\n  ")); }
   else console.log(`OK   ${file} (${src.split(/\r?\n/).length} lines)`);
 }

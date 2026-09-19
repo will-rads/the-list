@@ -1,0 +1,44 @@
+* { box-sizing: border-box; }
+  body { margin: 0; color: #f5f1ea; background: #0a0a0a; font: 14px/1.5 'Plus Jakarta Sans', sans-serif; }
+  main { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 36px 0 72px; }
+  h1 { margin: 0 0 8px; font-size: 30px; } h2 { margin: 0 0 16px; font-size: 18px; }
+  section, .auth { margin-top: 24px; padding: 20px; border: 1px solid #343434; border-radius: 12px; background: #141414; }
+  form { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+  label { display: grid; gap: 6px; min-width: 220px; flex: 1; font-weight: 600; }
+  input, button, select { min-height: 44px; border: 1px solid #555; border-radius: 8px; font: inherit; }
+  input, select { color: #f5f1ea; background: #0a0a0a; font-size: 16px; }
+  input { width: 100%; padding: 0 12px; }
+  select { padding: 0 8px; }
+  button { padding: 0 14px; color: #0a0a0a; background: #f5f1ea; font-weight: 800; cursor: pointer;
+    transition: transform .12s ease; }
+  button:active:not(:disabled) { transform: scale(.96); }
+  button.secondary { color: #f5f1ea; background: transparent; } button:disabled { opacity: .5; cursor: wait; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #f5f1ea; outline-offset: 2px; }
+  .table-wrap { overflow-x: auto; } table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #343434; text-align: left; vertical-align: top; }
+  th { font-size: 12px; } td.actions > div { display: flex; gap: 8px; align-items: center; }
+  .note { margin: 10px 0 0; font-size: 12px; } #status { min-height: 21px; margin: 8px 0 0; }
+  [hidden] { display: none !important; }
+  /* centered login card, fields stacked */
+  #auth:not([hidden]) { position: fixed; inset: 0; margin: auto; height: max-content;
+    width: min(340px, calc(100% - 32px)); }
+  #login-form { flex-direction: column; align-items: stretch; }
+  #login-form label { min-width: 0; }
+  td .ig { position: relative; color: #f5f1ea; text-decoration: underline; }
+  td .ig::after { content: ''; position: absolute; inset: -12px -6px; }
+  .topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+  .topbar-actions { display: flex; gap: 8px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 12px; }
+  .filters label { flex: 0 1 260px; }
+  /* secret pill — rainbow glow halo, bottom center, modest */
+  .secret { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 50;
+    padding: 7px 16px; border-radius: 999px; background: #141414; border: 1px solid #2a2a2a;
+    font-size: 12px; font-weight: 600; letter-spacing: .01em; white-space: nowrap; }
+  @property --halo { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+  .secret::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.6px;
+    background: conic-gradient(from var(--halo), #ff004c, #ff8a00, #ffe600, #00e07a, #00b3ff, #7a5cff, #ff004c);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    opacity: .9; animation: halo 5s linear infinite; }
+  @keyframes halo { to { --halo: 360deg; } }
+  @media (prefers-reduced-motion: reduce) { .secret::before { animation: none; } }

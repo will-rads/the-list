@@ -1,4 +1,49 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/v1",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/v2",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/v3",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/v2/index",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/v3/index",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/v2/venue",
+      "destination": "/venue",
+      "permanent": true
+    },
+    {
+      "source": "/v3/venue",
+      "destination": "/venue",
+      "permanent": true
+    },
+    {
+      "source": "/v3/e",
+      "destination": "/e",
+      "permanent": true
+    }
+  ]
 }

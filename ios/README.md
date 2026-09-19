@@ -1,8 +1,10 @@
 # The List — iOS (SwiftUI)
 
-Track native binding, TestFlight, and submission work in the [App Store launch checklist](../docs/app-store-launch-checklist.md).
+**Paused as of 2026-09-20.** This SwiftUI scaffold is preserved for reference. The active direction uses the existing V3 React UI with Vite and Capacitor; its separate wrapper belongs in `web/ios/`. Do not port new V3 work here or start Supabase binding unless Will explicitly resumes this track.
 
-Backend v1 is live (see `docs/superpowers/plans/2026-07-10-backend-v1-plan.md`); Swift services stay mock until the Mac-day Supabase binding wave.
+Track the active Capacitor, TestFlight, and submission work in the [App Store launch checklist](../docs/app-store-launch-checklist.md). The local refactor is in progress; the last recorded production deployment is 2026-07-18, and the Capacitor app has not been compiled on a Mac.
+
+The notes below describe the historical SwiftUI build. Backend v1 is live, but these Swift services remain mock.
 
 Native port of the v3 glass prototype. Member reference = `web/v3/index.html`; venue reference =
 `web/v3/venue.html`. Mock-first: the whole night loop runs

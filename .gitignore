@@ -93,6 +93,7 @@ research/voice-notes/*.opus
 
 # Entry-screen video assets are required app media — override *.mp4 above so they ship
 !web/assets/*.mp4
+!archive/web/assets/*.mp4
 
 # ─── archives + raw exports + rasterized scratch (keep source PDFs) ──
 *.zip

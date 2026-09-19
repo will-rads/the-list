@@ -2,7 +2,9 @@
 
 A Lebanese clone of *The Secret Society* (Dubai). An invite-only nightlife marketplace where models / influencers / DJs apply to time-boxed events at clubs, restaurants, beach clubs and gyms. Venues swipe through applicants and pick who they want. Limited spots. Heavily discounted or free access in exchange for posting Instagram Stories.
 
-iPhone-first. The member, venue, founder, and teaser web flows are backed by live Supabase. The SwiftUI app is scaffolded and CI-compiled, with Supabase binding still pending.
+iPhone-first. V3 is the only active product: React for the browser and Capacitor for iOS packaging. The existing SwiftUI scaffold is preserved and paused.
+
+**Build, 2026-09-20:** full-screen mobile layout, flow fixes, and the Vite production build pass checks. The Capacitor iOS project is generated and synced. Will approved publishing this build with version-free member `/` and venue `/venue` links. Deployment verification is recorded in `docs/agent/memory.md`. Native compilation and device testing remain pending.
 
 ## How to use this folder
 
@@ -21,13 +23,22 @@ iPhone-first. The member, venue, founder, and teaser web flows are backed by liv
 
 ## Subfolders
 
-- [`web/`](web/) — Live HTML/React app: member + venue in `v3/`, plus founder ops in `admin.html`.
-- [`ios/`](ios/) — SwiftUI app (mock-first, CI green; Supabase binding pending Mac day).
+- [`web/`](web/) – Active V3 React app and Vite build; `v3/member.jsx` + `v3/venue.jsx`, founder ops, and public teaser. Capacitor configuration lives here; its iOS wrapper belongs in `web/ios/`.
+- [`archive/web/`](archive/web/) – Preserved V1/V2 prototypes and their assets. Reference only.
+- [`ios/`](ios/) – Paused SwiftUI scaffold with mock services. No new port or Supabase binding work planned.
 - [`docs/agent/`](docs/agent/) — agent working context: product context, plan, memory, and errors.
 - [`docs/`](docs/) — research and source material (TSS research, transcripts of Radwan's voice notes, plan-breakdown).
 - [`research/`](research/) — raw inputs (TSS app screenshots, voice notes, reference images).
 - [`prompts/`](prompts/) — starter prompts to paste into a fresh Claude or Codex chat.
 - [`.agent/`](.agent/) — shared agent config, launch settings, worktrees, and project skills.
+
+## Local web development
+
+From `web/`: `npm ci`, then `npm run dev`. `npm run build` checks the sources and mutation regressions, then creates `dist/`; `npm run preview` serves that build. Member and venue demos use `/?demo=1` and `/venue?demo=1`.
+
+`npm run test:mobile` checks demo journeys at 390x844 and 320x568 against a server on port 5173 (`BASE_URL` overrides it). Install the test browser with `npx playwright install chromium`, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing Chromium executable. The test blocks backend writes; authenticated production testing is separate.
+
+Capacitor uses the same built web assets: `npm run ios:sync`, then `npm run ios:open` on a Mac. The generated app targets iPhone / iOS 17+ and keeps the existing `co.thelist.app` ID. Its icon and splash are still the template defaults. See the [launch checklist](docs/app-store-launch-checklist.md) for signing, device, and TestFlight work.
 
 ## Founders
 
