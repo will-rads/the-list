@@ -2,7 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { supabaseClient } from '../client.js';
 const { useState, useRef, useEffect, useMemo } = React;
-  
+
 
   // === COPIED VERBATIM from index.html: IMG, Icon + HICONS ===
 

@@ -6,7 +6,7 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ## 2026-09-20 — Publish approval and version-free URLs
 
-Will explicitly approved pushing the completed mobile/React/Capacitor changes. Members now open `/`, venues `/venue`, and shared event teasers `/e?id=...`; the manifest starts at `/`. Root HTML entries bundle the existing source without renaming the internal `v3` source directory. Legacy V1/V2/V3 entry routes redirect to canonical URLs. Local mobile smoke checks pass at both phone sizes. Push and live verification are in progress.
+Will explicitly approved pushing the completed mobile/React/Capacitor changes. Members now open `/`, venues `/venue`, and shared event teasers `/e?id=...`; the manifest starts at `/`. Root HTML entries bundle the existing source without renaming the internal `v3` source directory. Legacy V1/V2/V3 entry routes redirect to canonical URLs. Local mobile smoke checks pass at both phone sizes. Commit `f11f5a7` pushed to `main`; Vercel reported deployment success. Production `/` and `/venue` return HTTP 200 and the new local Vite bundles; old `/v3` and `/v3/venue` return 308 redirects, preserving event query strings. Live mobile smoke checks also pass at 390x844 and 320x568 (demo journeys, forms, teaser/admin, no outer scroll or page errors; backend writes blocked). Capacitor asset sync also passes.
 
 ## 2026-09-20 — V3 only; mobile viewport + React/Vite + Capacitor (local, not deployed)
 

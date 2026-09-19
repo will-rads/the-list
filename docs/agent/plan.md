@@ -6,9 +6,9 @@ Release tracker: [App Store launch checklist](../app-store-launch-checklist.md).
 
 **Phyllo direction (2026-07-11):** preferred provider for the first sandbox trial. Onboarding uses handle-only public estimates with no Instagram login. Members can later use **Connect Instagram** from Profile through either Instagram Direct or the richer professional-account + Facebook Page route. This connection verifies Instagram data; it does not replace Supabase login. Production price, exact fields, IG Direct enablement, and full white-label terms still need written confirmation from Phyllo.
 
-**Phase (2026-09-20): local V3 mobile layout, flow fixes, Vite build, and Capacitor project ready for review.** V3 is the only active version. V1/V2 are preserved in `archive/web/`; SwiftUI in `ios/` is paused. React uses Vite with JSX/local CSS in `web/`, and the generated Capacitor wrapper is in `web/ios/`. No new SwiftUI port is planned.
+**Phase (2026-09-20): mobile layout, flow fixes, and Vite build deployed; Capacitor project ready for native testing.** V3 is the only active version. V1/V2 are preserved in `archive/web/`; SwiftUI in `ios/` is paused. React uses Vite with JSX/local CSS in `web/`, and the generated Capacitor wrapper is in `web/ios/`. No new SwiftUI port is planned.
 
-**Production remains the 2026-07-18 baseline:** Supabase project `zrbakomzpuesifasuamb` powers `the-list-omega.vercel.app` member, venue, public teaser, and founder flows. The local refactor has not been pushed, deployed, or compiled as a native app. A full authenticated production walkthrough is still pending.
+**Production updated on 2026-09-20:** Supabase project `zrbakomzpuesifasuamb` powers `the-list-omega.vercel.app` member, venue, public teaser, and founder flows. The React refactor is pushed and deployed at `/` (member), `/venue`, and `/e`; native compilation remains pending. A full authenticated production walkthrough is still pending.
 
 ```text
 [done]      Voice notes transcribed + plan synthesized

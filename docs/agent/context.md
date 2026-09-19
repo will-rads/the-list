@@ -18,7 +18,7 @@ gets reputation score          builds invite list
 
 iPhone-first. V3 React app with Capacitor for iOS packaging. Beirut only for the first release.
 
-**2026-09-20 local direction:** V3 is the sole active version. V1/V2 are preserved in `archive/web/`; the mock SwiftUI scaffold in `ios/` is paused. Full-screen mobile layout, flow fixes, and the Vite build pass local checks (`web/v3/member.jsx`, `venue.jsx`, local CSS). `web/capacitor.config.json` packages that build; its iOS wrapper is generated and synced in `web/ios/`. Nothing in this refactor is yet pushed, deployed, or native-compiled.
+**2026-09-20 direction:** V3 is the sole active version. V1/V2 are preserved in `archive/web/`; the mock SwiftUI scaffold in `ios/` is paused. Full-screen mobile layout, flow fixes, and the Vite build pass local checks (`web/v3/member.jsx`, `venue.jsx`, local CSS). `web/capacitor.config.json` packages that build; its iOS wrapper is generated and synced in `web/ios/`. The refactor is pushed and deployed with version-free member `/`, venue `/venue`, and teaser `/e` links. Native compilation remains pending.
 
 ## Why now
 

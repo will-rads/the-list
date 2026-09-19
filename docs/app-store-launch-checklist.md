@@ -2,12 +2,12 @@
 
 ## Current status
 
-**Direction, 2026-09-20:** V3 React + Vite, packaged with Capacitor for iOS. V1/V2 are preserved in `archive/web/`; SwiftUI in `ios/` is paused. Mobile demo journeys, regression checks, and the production build pass locally; the Capacitor project is generated and synced. The last recorded production deployment is 2026-07-18; no new deployment or native compile is claimed below.
+**Direction, 2026-09-20:** V3 React + Vite, packaged with Capacitor for iOS. V1/V2 are preserved in `archive/web/`; SwiftUI in `ios/` is paused. Mobile demo journeys, regression checks, and the production build pass locally; the Capacitor project is generated and synced. The web build was pushed and deployed on 2026-09-20; native compilation remains pending.
 
 - [x] Backend v1 is live on Supabase.
-- [x] Member web app is live at `/v3`.
-- [x] Venue web app is live at `/v3/venue`.
-- [x] Public event teaser is live at `/v3/e?id=`.
+- [x] Member web app is live at `/`.
+- [x] Venue web app is live at `/venue`.
+- [x] Public event teaser is live at `/e?id=`.
 - [x] Founder admin is live at `/admin`.
 - [x] Earlier member and venue demo flows passed browser checks; the full authenticated walkthrough remains pending.
 - [x] SwiftUI scaffold and its earlier passing CI results are preserved as history; that track is paused.
