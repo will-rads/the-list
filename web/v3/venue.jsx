@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { supabaseClient } from '../client.js';
-const { useState, useRef, useEffect, useMemo } = React;
+const { useState, useRef, useEffect, useCallback } = React;
 
 
   // === COPIED VERBATIM from index.html: IMG, Icon + HICONS ===
@@ -63,6 +63,7 @@ const { useState, useRef, useEffect, useMemo } = React;
     "instagram": '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/>',
     "sparkles": '<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/>',
     "tiktok": '<path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 1 1-.99-3.467l2.31-.66a2.25 2.25 0 0 0 1.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 0 1-.99-3.467l2.31-.66A2.25 2.25 0 0 0 9 15.553z"/>',
+    "home": '<path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/>',
     "plus": '<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>',
     "magnifying-glass": '<path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>',
     "users": '<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/>',
@@ -81,13 +82,13 @@ const { useState, useRef, useEffect, useMemo } = React;
   // Transient toast inside the app surface.
   // Gives minor controls a visible reply.
   function Toast({ msg }){
-    if(!msg) return null;
+    // The live region stays mounted so screen readers announce each new message.
     return (
-      <div className="absolute left-0 right-0 flex justify-center z-[60] pointer-events-none" style={{bottom:"calc(env(safe-area-inset-bottom, 0px) + 104px)"}}>
-        <div key={msg} className="anim-up px-4 py-2.5 rounded-full glass-over-image text-[12px] flex items-center gap-2" style={{maxWidth:"82%"}}>
+      <div role="status" aria-live="polite" className="absolute left-0 right-0 flex justify-center z-[65] pointer-events-none" style={{bottom:"calc(env(safe-area-inset-bottom, 0px) + 104px)"}}>
+        {msg && <div key={msg} className="anim-up px-4 py-2.5 rounded-full glass-over-image text-[13px] flex items-center gap-2" style={{maxWidth:"82%"}}>
           <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:"var(--ice)"}}/>
-          <span className="truncate">{msg}</span>
-        </div>
+          <span>{msg}</span>
+        </div>}
       </div>
     );
   }
@@ -155,9 +156,9 @@ const { useState, useRef, useEffect, useMemo } = React;
         {src && (
           <div className="flex items-center gap-3">
             <Icon name="magnifying-glass" size={16}/>
-            <input type="range" min="1" max="3" step="0.01" value={scale}
-                   onChange={e=>setScale(parseFloat(e.target.value))} className="flex-1"/>
-            <button onClick={()=>fileRef.current.click()} className="stamp" style={{color:"var(--ice)"}}>Replace</button>
+            <input type="range" min="1" max="3" step="0.01" value={scale} aria-label="Zoom"
+                   onChange={e=>setScale(parseFloat(e.target.value))} className="flex-1 h-11"/>
+            <button onClick={()=>fileRef.current.click()} className="press min-h-[44px] px-4 rounded-full text-[13px] font-medium" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>Choose another photo</button>
           </div>
         )}
         <div className="flex gap-3">
@@ -227,21 +228,22 @@ const { useState, useRef, useEffect, useMemo } = React;
   const BEIRUT_AREAS = ["Mar Mikhael","Gemmayze","Achrafieh","Hamra","Badaro","Saifi","Manara","Jiyeh","Batroun"];
 
   function makeVenue(over={}){ return {
-    id: "venue-1", groupId: null, name: "", type: "Club", area: "Mar Mikhael",
+    id: "venue-1", name: "", type: "Club", area: "Mar Mikhael",
     description: "", igHandle: "", heroImage: null, images: [null,null,null,null], ...over,
   }; }
 
   let _evt = 0;
   function makeEvent(over={}){ return {
     id: "evt-"+(++_evt), venueId: "venue-1", title: "", type: "Club", date: "", time: "",
-    mix: { girls: 15, guys: 5 },   // null === no gender preference
+    mix: null,   // null === any mix
     seats: 20, storyHours: 24, heroImage: null, exchange: "1 Story + venue tag", status: "draft", ...over,
   }; }
 
   const TODAY = "Sun · 25 May"; // canonical demo today – time never advances
   // Live mode derives today from the clock; format matches liveEvent's date field.
-  const todayLabel = () =>
-    new Date().toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}).replace(",", " ·");
+  // "Sun · 25 May", the same shape the demo seeds use.
+  const dayLabel = date => date.toLocaleDateString("en-GB", {weekday:"short"}) + " · " + date.toLocaleDateString("en-GB", {day:"numeric", month:"short"});
+  const todayLabel = () => dayLabel(new Date());
 
   // Event stages
   const STAGE = { draft:"draft", open:"open", locked:"locked", past:"past", cancelled:"cancelled" };
@@ -652,9 +654,7 @@ const { useState, useRef, useEffect, useMemo } = React;
         bundle: { name:"The twenty", price:700 },
         brief: { arrival:"18:30 – 19:00", dress:"Comfortable active", meeting:"Front desk", rules:"1 Story + venue tag during the event" },
         guests,
-        recap: { confirmed:20, showed:18, noShows:2, avgRating:8.6 }, // reach is DERIVED on the recap screen (sum of verified guests' followers) – never stored
-        invoice: { bundle:"The twenty", price:700, status:"due" },
-        endedAt: 2,
+        invoice: { bundle:"The twenty", price:700, status:"pending" },
       };
     })(),
 
@@ -687,9 +687,7 @@ const { useState, useRef, useEffect, useMemo } = React;
         bundle: { name:"The ten", price:400 },
         brief: { arrival:"21:00 – 22:00", dress:"Smart casual", meeting:"Host at door", rules:"1 Story + venue tag during the event" },
         guests,
-        recap: { confirmed:12, showed:12, noShows:0, avgRating:8.9 },
         invoice: { bundle:"The ten", price:400, status:"paid" },
-        endedAt: 1,
       };
     })(),
 
@@ -720,7 +718,6 @@ const { useState, useRef, useEffect, useMemo } = React;
   const fmtK = (n) => !isNumber(n) ? "Not available" : n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+"k" : ""+n;
   const fmtPct = (n, digits=0) => !isNumber(n) ? "Not available" : (n*100).toFixed(digits)+"%";
   const fmtCount = (n) => !isNumber(n) ? "Not available" : n.toLocaleString("en-US");
-  const quality10 = (q) => !isNumber(q) ? "Not available" : (q*10).toFixed(1);   // 0.94 -> "9.4"
 
   /* Demo seed – lets Will (or a venue in a pitch) see the whole desk with zero
      typing. Entered via "Preview the desk" on the intro screen. */
@@ -736,68 +733,1141 @@ const { useState, useRef, useEffect, useMemo } = React;
     ],
   });
 
-  /* ========== shared atoms – same vocabulary as index.html ========== */
-  // Timers: tighter dimmed colons, digits carry the weight.
-  function Countdown({ value, className="", style={} }){
-    const parts = String(value).split(":");
-    return (
-      <span className={"font-mono "+className} style={style}>
-        {parts.map((p,i)=>(
-          <React.Fragment key={i}>
-            {i>0 && <span style={{opacity:.4, margin:"0 .06em"}}>:</span>}
-            {p}
-          </React.Fragment>
-        ))}
-      </span>
-    );
-  }
+  /* ========== shared pieces – the redesign restyles these once ========== */
+  const HOUR = 60*60*1000;
 
-  function StatusPill({ label, tone="neutral", dot=false }){
+  function StatusPill({ label, tone="neutral" }){
     const style = tone==="ice" ? {background:"var(--ice)", color:"var(--ice-ink)"}
       : tone==="outline" ? {border:"1px solid var(--line-2)", color:"var(--ink)"}
       : {background:"var(--bg-elev2)", color:"var(--ink)"};
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium" style={style}>
-        {dot && <span className="w-1.5 h-1.5 rounded-full" style={{background: tone==="ice" ? "var(--ice-ink)" : "var(--ice)"}}/>}
-        {label}
-      </span>
-    );
-  }
-
-  function DateChip({ day, sub, tone="neutral" }){
-    const style = tone==="ice" ? {background:"var(--ice)", color:"var(--ice-ink)"} : {background:"var(--bg-elev2)", color:"var(--ink)"};
-    return (
-      <div className="rounded-[12px] flex flex-col items-center justify-center shrink-0" style={{ width:48, height:54, ...style }}>
-        <div className="font-black font-mono text-[20px] leading-none">{day}</div>
-        <div className="text-[9px] mt-0.5" style={{opacity:.8}}>{sub}</div>
-      </div>
-    );
+    return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap" style={style}>{label}</span>;
   }
 
   function SectionHead({ label, right, className="" }){
     return (
       <div className={"px-5 flex items-center justify-between "+className}>
-        <div className="flex items-center gap-2.5">
+        <h2 className="flex items-center gap-2.5">
           <span className="rounded-full" style={{ width:3, height:15, background:"var(--ice)" }}/>
           <span className="section-label">{label}</span>
+        </h2>
+        {right != null && <span className="text-[12px] font-medium">{right}</span>}
+      </div>
+    );
+  }
+
+  function BackButton({ onClick, label="Back" }){
+    return (
+      <button onClick={onClick} className="press h-11 -ml-2 px-2 inline-flex items-center gap-1.5 text-[14px] font-medium" style={{color:"var(--ink)"}}>
+        <Icon name="arrow-left" size={16} stroke={1.8}/> {label}
+      </button>
+    );
+  }
+
+  function BigButton({ children, onClick, disabled=false, quiet=false, ...rest }){
+    return (
+      <button onClick={onClick} disabled={disabled} {...rest}
+        className={"press w-full min-h-[52px] px-5 rounded-full text-[14px] font-semibold flex items-center justify-center gap-2 text-center" + (quiet || disabled ? "" : " glow-primary")}
+        style={disabled ? {background:"var(--bg-elev2)", color:"var(--ink)", opacity:.6}
+          : quiet ? {border:"1px solid var(--line-2)", color:"var(--ink)", background:"transparent"}
+          : {background:"var(--ice)", color:"var(--ice-ink)"}}>
+        {children}
+      </button>
+    );
+  }
+
+  function Chip({ on, onClick, children, label }){
+    return (
+      <button onClick={onClick} aria-pressed={on} aria-label={label}
+        className="press min-h-[44px] px-4 rounded-full text-[13px] font-medium"
+        style={on ? {background:"var(--ice)", color:"var(--ice-ink)"} : {border:"1px solid var(--line-2)", color:"var(--ink)"}}>
+        {children}
+      </button>
+    );
+  }
+
+  const inputCls = "w-full h-12 px-3 rounded-[12px] text-[16px]";
+  const inputStyle = {background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"};
+
+  function Field({ label, hint, children }){
+    return (
+      <label className="block">
+        <span className="block text-[13px] font-semibold mb-2">{label}</span>
+        {children}
+        {hint && <span className="block text-[12px] mt-2 leading-snug">{hint}</span>}
+      </label>
+    );
+  }
+
+  // Chip rows use a fieldset: a <label> around several buttons would click the first one.
+  function ChoiceGroup({ label, hint, children }){
+    return (
+      <fieldset>
+        <legend className="text-[13px] font-semibold mb-2">{label}</legend>
+        <div className="flex flex-wrap gap-2">{children}</div>
+        {hint && <div className="text-[12px] mt-2 leading-snug">{hint}</div>}
+      </fieldset>
+    );
+  }
+
+  function Stepper({ label, value, onChange, min=0, max=500 }){
+    const word = label.toLowerCase();
+    return (
+      <div className="flex items-center justify-between min-h-[52px]">
+        <span className="text-[15px]">{label}</span>
+        <div className="flex items-center gap-3">
+          <button onClick={()=>onChange(Math.max(min, value-1))} disabled={value<=min} aria-label={"Fewer " + word}
+            className="press w-11 h-11 rounded-full text-[18px]" style={{border:"1px solid var(--line-2)", opacity: value<=min ? .4 : 1}}>–</button>
+          <span className="font-mono text-[18px] w-10 text-center" aria-live="polite">{value}</span>
+          <button onClick={()=>onChange(Math.min(max, value+1))} disabled={value>=max} aria-label={"More " + word}
+            className="press w-11 h-11 rounded-full text-[18px]" style={{border:"1px solid var(--line-2)", opacity: value>=max ? .4 : 1}}>+</button>
         </div>
-        {right != null && (
-          <span className="text-[10px] font-medium px-2.5 py-1 rounded-full" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>{right}</span>
+      </div>
+    );
+  }
+
+  function Switch({ label, hint, on, onChange }){
+    return (
+      <button role="switch" aria-checked={on} onClick={()=>onChange(!on)} className="press w-full min-h-[52px] flex items-center justify-between gap-3 text-left">
+        <span>
+          <span className="block text-[15px]">{label}</span>
+          {hint && <span className="block text-[12px] mt-0.5">{hint}</span>}
+        </span>
+        <span aria-hidden="true" className="shrink-0 w-12 h-7 rounded-full relative" style={{background: on ? "var(--ice)" : "var(--bg-elev2)", border:"1px solid var(--line-2)"}}>
+          <span className="absolute top-[3px] w-5 h-5 rounded-full" style={{left: on ? 23 : 3, background: on ? "var(--ice-ink)" : "var(--ink)", transition:"left .18s ease"}}/>
+        </span>
+      </button>
+    );
+  }
+
+  function Avatar({ ap, size=44 }){
+    const initials = (ap.name || "?").split(" ").map(part => part[0]).join("").slice(0,2).toUpperCase();
+    return ap.photo
+      ? <img src={ap.photo} alt="" className="rounded-full object-cover shrink-0" style={{width:size, height:size, background:"var(--bg-elev2)"}}/>
+      : <span aria-hidden="true" className="rounded-full shrink-0 flex items-center justify-center text-[12px] font-semibold" style={{width:size, height:size, background:"var(--bg-elev2)"}}>{initials}</span>;
+  }
+
+  function CountTile({ n, label }){
+    return (
+      <div className="card rounded-[14px] p-3 min-w-0">
+        <div className="font-black font-mono text-[24px] leading-none">{n}</div>
+        <div className="text-[11px] leading-tight mt-1.5">{label}</div>
+      </div>
+    );
+  }
+
+  function Sheet({ title, onClose, children }){
+    useEffect(() => {
+      const onKey = e => { if (e.key === "Escape") onClose(); };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    });
+    return (
+      <>
+        <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
+        <div role="dialog" aria-modal="true" aria-label={title} className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-3" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
+          <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{background:"var(--ink)", opacity:.4}}/>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="font-black text-[22px] leading-tight min-w-0 truncate">{title}</div>
+            <button onClick={onClose} aria-label="Close" autoFocus className="press w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{background:"var(--bg-elev)"}}>
+              <Icon name="x" size={16}/>
+            </button>
+          </div>
+          {children}
+        </div>
+      </>
+    );
+  }
+
+  // Waits for the save. A failed save keeps the dialog open, says why, and lets the venue retry.
+  // onConfirm rethrows to signal a failure.
+  function ConfirmDialog({ title, body, confirmLabel, cancelLabel="Not now", onConfirm, onClose }){
+    const [busy, setBusy] = useState(false);
+    const [err, setErr] = useState(null);
+    useEffect(() => {
+      const onKey = e => { if (e.key === "Escape" && !busy) onClose(); };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    });
+    const confirm = async () => {
+      if (busy) return;
+      setBusy(true); setErr(null);
+      try { await onConfirm(); onClose(); }
+      catch (error) { setErr(plainError(error, "That didn't save. Try again.")); setBusy(false); }
+    };
+    return (
+      <>
+        <div onClick={busy ? undefined : onClose} className="absolute inset-0 z-[60] sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
+        <div role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-body" className="absolute left-0 right-0 bottom-0 z-[70] sheet rounded-t-[24px] px-5 pt-4" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
+          <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
+          <div id="confirm-title" className="font-black font-display-l text-[26px] leading-tight mb-2">{title}</div>
+          <div id="confirm-body" className="text-[14px] leading-relaxed mb-6">{body}</div>
+          {err && <div role="alert" className="text-[14px] font-semibold mb-4">{err}</div>}
+          <div className="flex gap-3">
+            <button onClick={onClose} disabled={busy} autoFocus className="press flex-1 min-h-[52px] rounded-full text-[14px] font-medium" style={{border:"1px solid var(--line-2)", color:"var(--ink)", background:"transparent"}}>
+              {cancelLabel}
+            </button>
+            <button onClick={confirm} disabled={busy} aria-busy={busy} className="press glow-primary flex-1 min-h-[52px] px-3 rounded-full text-[14px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+              {busy ? "Saving…" : confirmLabel}
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  function Gone({ onBack, text="This event isn't here anymore.", action }){
+    return (
+      <div className="absolute inset-0 flex flex-col px-5 app-safe-top app-safe-bottom">
+        <div><BackButton onClick={onBack}/></div>
+        <div className="flex-1 flex flex-col items-center justify-center text-center gap-5">
+          <div className="text-[16px] font-medium">{text}</div>
+          {action && <div className="w-full"><BigButton onClick={action[1]}>{action[0]}</BigButton></div>}
+        </div>
+      </div>
+    );
+  }
+
+  /* ========== plain words and counts ========== */
+  // ponytail: server errors are short codes; map the ones a venue can hit to plain words.
+  const PLAIN_ERRORS = {
+    "not pickable": "Already decided, maybe on another phone.",
+    "not checkable": "Already checked in, or no longer confirmed. The list is updated.",
+    "not markable": "Only confirmed guests can be marked as didn't come. The list is updated.",
+    "not rateable": "Only guests who came or didn't come can be rated.",
+    "rating 0-10": "That rating isn't allowed.",
+    "lock applications before closing the night": "This event was already closed or cancelled, maybe on another phone.",
+    "the night has not started": "You can close once the event has started.",
+    "not editable": "This event can't be edited anymore.",
+    "not cancellable": "This event can't be cancelled anymore.",
+    "only drafts can be deleted": "Only drafts can be deleted.",
+    "not yours": "This event belongs to another venue.",
+  };
+  const plainError = (error, fallback) => PLAIN_ERRORS[error?.message] || fallback;
+  const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
+  const money = n => "$" + Number(n || 0).toLocaleString("en-US");
+
+  // A pass saves nothing on the server (skip_applicant is a no-op), so this phone remembers it.
+  // ponytail: per-phone memory; another phone still shows passed people. Upgrade: a server column.
+  const demoPassed = new Map();
+  function passedFor(eventId){
+    if (DEMO_PREVIEW) return new Set(demoPassed.get(eventId) || []);
+    try { return new Set(JSON.parse(localStorage.getItem("the-list:passed:" + eventId) || "[]")); }
+    catch (_) { return new Set(); }
+  }
+  function savePassed(eventId, set){
+    if (DEMO_PREVIEW) { demoPassed.set(eventId, [...set]); return; }
+    try { localStorage.setItem("the-list:passed:" + eventId, JSON.stringify([...set])); } catch (_) {}
+  }
+
+  // A pick that dropped out: said no, ran out of time, or cancelled after being picked.
+  const droppedOut = g => g.state === GS.declined || g.state === GS.expired || (g.state === GS.cancelled && !!g.code);
+
+  // Picked, awaiting confirmation and confirmed stay three separate numbers everywhere.
+  function tally(e){
+    const guests = e.guests || [];
+    const n = state => guests.filter(g => g.state === state).length;
+    const passed = passedFor(e.id);
+    const pool = e.stage === STAGE.locked ? GS.waitlist : GS.applied;
+    const awaiting = n(GS.picked), confirmed = n(GS.confirmed), inside = n(GS.checkedIn), noShow = n(GS.noShow);
+    const yes = confirmed + inside + noShow;
+    return {
+      waiting: guests.filter(g => g.state === pool && !passed.has(g.applicantId)).length,
+      passed: guests.filter(g => g.state === pool && passed.has(g.applicantId)).length,
+      waitlist: n(GS.waitlist), awaiting, confirmed, inside, noShow, yes,
+      picked: awaiting + yes,
+      coming: confirmed + inside,
+      dropped: e.stage === STAGE.cancelled ? 0 : guests.filter(droppedOut).length,
+    };
+  }
+  const running = e => e.stage === STAGE.open || e.stage === STAGE.locked;
+  const needsReplacement = (e, t) => running(e) && t.dropped > 0 && t.picked < (e.seats || 0) && t.waiting + t.passed > 0;
+
+  function startOf(e){
+    const d = e.startsAt ? new Date(e.startsAt) : (e.date ? eventStart(e) : null);
+    return d && !Number.isNaN(d.valueOf()) ? d : null;
+  }
+
+  // "today" | "over" | null. Demo mode keeps its frozen TODAY; live mode uses the clock.
+  // "Today" also covers 6 hours before a start just after midnight and 12 hours after any start.
+  function dayOf(e, today, live){
+    if (!running(e)) return null;
+    if (!live) return e.date === today ? "today" : null;
+    const start = startOf(e), now = new Date();
+    if (!start) return null;
+    const since = now - start;
+    if (toLocalDate(start) === toLocalDate(now) || (since > -6*HOUR && since < 12*HOUR)) return "today";
+    return start < now ? "over" : null;
+  }
+
+  function statusLabel(e, day){
+    if (e.stage === STAGE.draft) return "Draft";
+    if (e.stage === STAGE.cancelled) return "Cancelled";
+    if (e.stage === STAGE.past) return "Done";
+    if (day === "today") return "Today";
+    if (day === "over") return "Needs closing";
+    return e.stage === STAGE.open ? "Taking requests" : "Requests closed";
+  }
+
+  function countLine(e, t, day){
+    if (e.stage === STAGE.draft) return plural(e.seats || 0, "person", "people") + (e.bundle?.price ? " · " + money(e.bundle.price) : "");
+    if (e.stage === STAGE.cancelled) return "Guests were told";
+    if (e.stage === STAGE.past) return t.inside + " came · " + t.noShow + " didn't come";
+    if (day) return t.coming + " coming" + (t.inside ? " · " + t.inside + " inside" : "");
+    if (e.stage === STAGE.open) return t.waiting + " waiting";
+    return t.yes + " confirmed of " + (e.seats || 0);
+  }
+
+  function closesLabel(e){
+    if (!e.closesAt) return null;
+    if (/before doors/.test(e.closesAt)) {
+      const start = eventStart(e), closes = eventCloses(e, start);
+      return closes && !Number.isNaN(closes.valueOf()) ? formatEventDateTime(closes) : e.closesAt;
+    }
+    const custom = /^\d{4}-\d{2}-\d{2}T/.test(e.closesAt) ? new Date(e.closesAt) : null;
+    return custom && !Number.isNaN(custom.valueOf()) ? formatEventDateTime(custom) : e.closesAt;
+  }
+
+  function confirmNote(g){
+    if (!g.pickExpiresAt) return "Waiting for them to confirm";
+    const hours = Math.ceil((new Date(g.pickExpiresAt) - Date.now()) / HOUR);
+    return hours > 0 ? plural(hours, "hour", "hours") + " left to confirm" : "Confirm window ended";
+  }
+  const dropNote = g => g.state === GS.declined ? "Said no" : g.state === GS.expired ? "Didn't confirm in time" : "Cancelled";
+
+  // Home is a to-do list: one card per thing to do, most urgent first.
+  function homeTasks(events, today, live){
+    const tasks = [];
+    const add = (rank, e, text, button, go) => tasks.push({ key: go + ":" + e.id, rank, e, text, button, go });
+    for (const e of events) {
+      const t = tally(e), day = dayOf(e, today, live);
+      if (day === "today") add(0, e, e.title + " is today. " + t.coming + " coming.", "Open door list", "door");
+      if (day === "over") add(1, e, e.title + " is over. Close it to get the summary.", "Open door list", "door");
+      if (day !== "over" && needsReplacement(e, t)) add(2, e, plural(t.dropped, "pick", "picks") + " can't make it to " + e.title + ".", "Pick a replacement", "deck");
+      if (running(e) && t.awaiting && !day) add(3, e, plural(t.awaiting, "pick hasn't", "picks haven't") + " confirmed " + e.title + " yet.", "See event", "event");
+      if (e.stage === STAGE.open && t.waiting && day !== "over") add(4, e, plural(t.waiting, "person wants", "people want") + " in to " + e.title + ".", "Start picking", "deck");
+      if (e.stage === STAGE.draft) add(5, e, e.title + " isn't posted yet.", "Finish posting", "post");
+      if (e.stage === STAGE.past) {
+        const inside = (e.guests || []).filter(g => g.state === GS.checkedIn);
+        const verified = inside.filter(g => g.story === SS.verified).length;
+        const storiesOpen = inside.some(g => g.story === SS.due || g.story === SS.review);
+        const unpaid = e.invoice && e.invoice.status !== "paid";
+        if (storiesOpen || unpaid) add(6, e, e.title + " is done. " + verified + " of " + plural(inside.length, "Story", "Stories") + " verified" + (unpaid ? ", bill " + e.invoice.status + "." : "."), "See summary", "summary");
+      }
+    }
+    return tasks.sort((a, b) => a.rank - b.rank);
+  }
+
+  /* ========== Activity (demo rows are derived; live rows come from notifications) ========== */
+  function venueNotifs(events){
+    const rows = [];
+    events.forEach(e => {
+      const t = tally(e);
+      if (e.stage === STAGE.open && t.waiting) rows.push({ id:"n-wait-"+e.id, text: e.title + ": " + plural(t.waiting, "person wants", "people want") + " in", eventId:e.id, action:"review" });
+      if (e.stage === STAGE.locked && t.yes) rows.push({ id:"n-yes-"+e.id, text: e.title + ": " + t.yes + " confirmed", eventId:e.id, action:"event" });
+      if (needsReplacement(e, t)) rows.push({ id:"n-drop-"+e.id, text: e.title + ": " + plural(t.dropped, "pick", "picks") + " can't make it", eventId:e.id, action:"review" });
+      if (e.stage === STAGE.past) {
+        const inside = (e.guests || []).filter(g => g.state === GS.checkedIn);
+        const pending = inside.filter(g => g.story === SS.due || g.story === SS.review).length;
+        if (pending) rows.push({ id:"n-story-"+e.id, text: e.title + ": " + inside.filter(g => g.story === SS.verified).length + " Stories verified, " + pending + " pending", eventId:e.id, action:"recap" });
+        if (e.invoice && e.invoice.status !== "paid") rows.push({ id:"n-bill-"+e.id, text: e.title + ": bill " + e.invoice.status + ", " + money(e.invoice.price), eventId:e.id, action:"recap" });
+      }
+    });
+    return rows;
+  }
+
+  function NotifSheet({ rows, events, onClose, onGo, onToast }){
+    const open = r => {
+      onClose();
+      const evt = r.eventId ? events.find(e => e.id === r.eventId) : null;
+      if (!evt) { onToast("Nothing to open for this update"); return; }
+      onGo(r.action, evt);
+    };
+    return (
+      <Sheet title="Activity" onClose={onClose}>
+        <div className="space-y-2">
+          {rows.length === 0 && <div className="card rounded-[14px] p-4 text-center text-[14px]">No activity yet</div>}
+          {rows.map(r => (
+            <button key={r.id} onClick={() => open(r)} className="press card w-full text-left rounded-[14px] px-4 py-3 min-h-[52px] flex items-center gap-3">
+              {r.read === false && <span className="w-2 h-2 rounded-full shrink-0" style={{background:"var(--ice)"}} aria-label="New"/>}
+              <span className="flex-1 text-[14px] leading-snug">{r.text}</span>
+              <Icon name="arrow-right" size={14} stroke={1.8}/>
+            </button>
+          ))}
+        </div>
+      </Sheet>
+    );
+  }
+
+  /* ========== Home ========== */
+  function TaskCard({ task, onGo }){
+    const photo = task.go === "door" ? task.e.heroImage?.src : null;
+    return (
+      <div className={"card rounded-[18px] overflow-hidden relative" + (photo ? " grain" : "")}>
+        {photo && <>
+          <img src={photo} alt="" className="absolute inset-0 w-full h-full object-cover"/>
+          <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(0,0,0,.2) 0%, rgba(0,0,0,.86) 100%)"}}/>
+        </>}
+        <div className="relative p-4" style={photo ? {color:"#F7F6F3", paddingTop:96} : undefined}>
+          <div className={photo ? "font-black font-display text-[22px] leading-tight" : "text-[16px] font-semibold leading-snug"}>{task.text}</div>
+          <button onClick={onGo} aria-label={task.button + ", " + task.e.title}
+            className="press mt-3 min-h-[44px] px-5 rounded-full text-[14px] font-semibold inline-flex items-center gap-2"
+            style={photo ? {background:"#F7F6F3", color:"#000"} : {background:"var(--ice)", color:"var(--ice-ink)"}}>
+            {task.button} <Icon name="arrow-right" size={14} stroke={1.8}/>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  function ScreenHome({ venue, events, notifications, today, live, onTask, onPost, onGo, onToast, onNotifsOpened }){
+    const [notifOpen, setNotifOpen] = useState(false);
+    const tasks = homeTasks(events, today, live);
+    const rows = live ? (notifications || []) : venueNotifs(events);
+    const unread = live ? rows.filter(n => !n.read).length : rows.length;
+    return (
+      <div className="absolute inset-0 flex flex-col">
+        <div className="flex-1 overflow-y-auto noscroll app-dock-space">
+          <div className="app-safe-top px-5 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[13px] font-medium">Home</div>
+              <h1 className="font-black font-display-l text-[30px] leading-[1.05] mt-1 line-clamp-2 break-words">{venue.name || "Your venue"}</h1>
+            </div>
+            <button onClick={() => setNotifOpen(true)} aria-label={unread > 0 ? "Activity, " + unread + " new" : "Activity"}
+              className="press glass w-11 h-11 rounded-full flex items-center justify-center relative shrink-0">
+              <Icon name="bell" size={18}/>
+              {unread > 0 && <span aria-hidden="true" className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center text-[10px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>{unread}</span>}
+            </button>
+          </div>
+          <div className="px-5 mt-5">
+            <BigButton quiet onClick={onPost}><Icon name="plus" size={16} stroke={1.8}/> New event</BigButton>
+          </div>
+          <SectionHead label="To do" className="pt-7 pb-3"/>
+          <div className="px-5 space-y-3 stagger">
+            {tasks.length === 0 && (
+              <div className="card rounded-[18px] p-5">
+                <div className="text-[16px] font-semibold">Nothing to do right now.</div>
+                <div className="text-[14px] mt-1">Post your next event and people can start asking to come.</div>
+              </div>
+            )}
+            {tasks.map((task, i) => <div key={task.key} style={{"--i":i}}><TaskCard task={task} onGo={() => onTask(task)}/></div>)}
+          </div>
+        </div>
+        {notifOpen && <NotifSheet rows={rows} events={events} onGo={onGo} onToast={onToast}
+          onClose={() => { setNotifOpen(false); if (onNotifsOpened) onNotifsOpened(); }}/>}
+      </div>
+    );
+  }
+
+  /* ========== Events: one list ========== */
+  function ScreenEvents({ events, today, live, onOpen, onPost }){
+    const at = e => startOf(e)?.valueOf() || 0;
+    const upcoming = events.filter(e => e.stage !== STAGE.past && e.stage !== STAGE.cancelled).sort((a, b) => at(a) - at(b));
+    const past = events.filter(e => e.stage === STAGE.past || e.stage === STAGE.cancelled).sort((a, b) => at(b) - at(a));
+    const row = e => {
+      const t = tally(e), day = dayOf(e, today, live), status = statusLabel(e, day), line = countLine(e, t, day);
+      return (
+        <button key={e.id} onClick={() => onOpen(e)} aria-label={(e.title || "Untitled") + ", " + status + ", " + line}
+          className="press card w-full text-left rounded-[16px] p-3 flex items-center gap-3">
+          <FramedImage value={e.heroImage} ratio="4/5" radius={10} className="w-14 shrink-0"/>
+          <div className="flex-1 min-w-0">
+            <div className="font-black text-[17px] leading-tight line-clamp-2 break-words">{e.title || "Untitled"}</div>
+            <div className="text-[12px] mt-1 break-words">{[e.date, e.time].filter(Boolean).join(" · ")}</div>
+            <div className="text-[12px] mt-0.5 break-words">{line}</div>
+          </div>
+          <StatusPill label={status} tone={day === "today" || e.stage === STAGE.open ? "ice" : "outline"}/>
+        </button>
+      );
+    };
+    return (
+      <div className="absolute inset-0 flex flex-col">
+        <div className="shrink-0 px-5 app-safe-top pb-4">
+          <h1 className="font-black font-display-l text-[34px] leading-none">Events</h1>
+        </div>
+        <div className="flex-1 overflow-y-auto noscroll px-5 pb-4">
+          {upcoming.length === 0 && <div className="card rounded-[16px] p-5 text-[14px]">No upcoming events. Post one below.</div>}
+          <div className="space-y-2.5">{upcoming.map(row)}</div>
+          {past.length > 0 && <>
+            <h2 className="section-label mt-7 mb-3">Past</h2>
+            <div className="space-y-2.5">{past.map(row)}</div>
+          </>}
+        </div>
+        <div className="shrink-0 px-5 pt-3 app-dock-space">
+          <BigButton onClick={onPost}><Icon name="plus" size={16} stroke={1.8}/> New event</BigButton>
+        </div>
+      </div>
+    );
+  }
+
+  /* ========== Event page ========== */
+  function GuestGroup({ title, rows, note }){
+    if (!rows.length) return null;
+    return (
+      <section className="mt-6">
+        <div className="flex items-baseline justify-between mb-1">
+          <h2 className="section-label">{title}</h2>
+          <span className="text-[13px]">{rows.length}</span>
+        </div>
+        <ul style={{borderTop:"1px solid var(--line)"}}>
+          {rows.map(g => {
+            const ap = applicantById[g.applicantId] || {};
+            return (
+              <li key={g.applicantId} className="flex items-center gap-3 py-2.5" style={{borderBottom:"1px solid var(--line)"}}>
+                <Avatar ap={ap} size={40}/>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[14px] font-medium truncate">{ap.name || "Guest"}</div>
+                  {note && <div className="text-[12px]">{note(g)}</div>}
+                </div>
+                {g.code && <span className="font-mono text-[12px] shrink-0">{g.code}</span>}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    );
+  }
+
+  function EventDetails({ event }){
+    const b = event.brief || {};
+    const rows = [
+      ["Price", event.bundle?.price ? money(event.bundle.price) + " for " + plural(event.seats || 0, "person", "people") + ", paid after the event" : "Not set"],
+      ["Requests close", closesLabel(event) || "Not set"],
+      ["Arrival", b.arrival || "Not set"],
+      ["Dress code", b.dress], ["Meeting point", b.meeting], ["House rules", b.rules],
+      ["Story", "1 Story and a venue tag within " + (event.storyHours || 24) + " hours of check-in"],
+    ].filter(([, value]) => value);
+    return (
+      <dl className="card rounded-[16px] px-4 mt-6">
+        {rows.map(([label, value], i) => (
+          <div key={label} className="flex justify-between gap-4 py-3" style={i ? {borderTop:"1px solid var(--line)"} : undefined}>
+            <dt className="text-[13px] font-semibold shrink-0">{label}</dt>
+            <dd className="text-[13px] text-right">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    );
+  }
+
+  // Shared by the event page and the deck, so the words never drift apart.
+  function askCloseRequests(askConfirm, act, event, onToast, then){
+    askConfirm({
+      title: "Close requests?",
+      body: "No one new can ask to come. People you haven't picked move to the waitlist, so you can still pick replacements. Picks keep their 24 hours to confirm.",
+      confirmLabel: "Close requests",
+      onConfirm: async () => {
+        try { await act.closeRequests(event.id); }
+        catch (error) { onToast(plainError(error, "Couldn't close requests. Try again.")); throw error; }
+        onToast("Requests closed");
+        if (then) then();
+      },
+    });
+  }
+
+  function ScreenEvent({ event, today, live, act, askConfirm, onToast, onBack, onDeck, onDoor, onSummary, onEdit }){
+    if (!event) return <Gone onBack={onBack}/>;
+    const t = tally(event), day = dayOf(event, today, live), status = statusLabel(event, day);
+    const guests = event.guests || [];
+    const replace = day !== "over" && needsReplacement(event, t);
+    // If everyone left was passed on, the deck is still one tap away.
+    const canPick = event.stage === STAGE.open && day !== "over" && (t.waiting || t.passed);
+    const pickLabel = t.waiting ? "Pick people" : "Look again at the " + plural(t.passed, "person", "people") + " you passed on";
+    const main = event.stage === STAGE.draft ? ["Finish posting", () => onEdit(event)]
+      : event.stage === STAGE.past ? ["See summary", () => onSummary(event.id)]
+      : day ? ["Open door list", () => onDoor(event.id)]
+      : replace ? ["Pick a replacement", () => onDeck(event.id)]
+      : canPick ? [pickLabel, () => onDeck(event.id)]
+      : null;
+    const extra = [
+      replace && main?.[0] !== "Pick a replacement" && ["Pick a replacement", () => onDeck(event.id)],
+      canPick && !replace && main?.[0] !== pickLabel && [pickLabel, () => onDeck(event.id)],
+    ].filter(Boolean);
+    const confirmed = guests.filter(g => [GS.confirmed, GS.checkedIn, GS.noShow].includes(g.state));
+    const yesNote = g => g.state === GS.checkedIn ? "Inside" : g.state === GS.noShow ? "Didn't come" : "Coming";
+    const guarded = (message, run, done, after) => async () => {
+      try { await run(); } catch (error) { onToast(plainError(error, message)); throw error; }
+      onToast(done);
+      if (after) after();
+    };
+    return (
+      <div className="absolute inset-0 flex flex-col">
+        <div className="shrink-0 px-5 app-safe-top"><BackButton onClick={onBack}/></div>
+        <div className="flex-1 min-h-0 overflow-y-auto noscroll px-5" style={{paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 32px)"}}>
+          <div className="flex gap-4 items-start mt-1">
+            <FramedImage value={event.heroImage} ratio="4/5" radius={14} className="w-24 shrink-0"/>
+            <div className="min-w-0 pt-1">
+              <StatusPill label={status} tone={day === "today" || event.stage === STAGE.open ? "ice" : "outline"}/>
+              <h1 className="font-black font-display-l text-[28px] leading-[1.05] mt-2 break-words">{event.title || "Untitled"}</h1>
+              <div className="text-[13px] mt-1">{[event.type, event.date, event.time].filter(Boolean).join(" · ")}</div>
+            </div>
+          </div>
+
+          {event.stage !== STAGE.draft && <>
+            <div className="grid grid-cols-3 gap-2 mt-5">
+              <CountTile n={t.picked} label="Picked"/>
+              <CountTile n={t.awaiting} label="Awaiting confirmation"/>
+              <CountTile n={t.yes} label="Confirmed"/>
+            </div>
+            <div className="text-[13px] mt-2">
+              {t.yes} of {plural(event.seats || 0, "seat", "seats")} confirmed
+              {event.stage === STAGE.open ? " · " + t.waiting + " waiting" : event.stage === STAGE.locked ? " · " + t.waitlist + " on the waitlist" : ""}
+            </div>
+          </>}
+
+          {(main || extra.length > 0) && <div className="mt-5 space-y-2">
+            {main && <BigButton onClick={main[1]}>{main[0]} <Icon name="arrow-right" size={16} stroke={1.8}/></BigButton>}
+            {extra.map(([label, go]) => <BigButton key={label} quiet onClick={go}>{label}</BigButton>)}
+          </div>}
+
+          <GuestGroup title="Confirmed" rows={confirmed} note={yesNote}/>
+          <GuestGroup title="Awaiting confirmation" rows={guests.filter(g => g.state === GS.picked)} note={confirmNote}/>
+          <GuestGroup title={event.stage === STAGE.cancelled ? "Told it's cancelled" : "Can't make it"} rows={guests.filter(droppedOut)} note={dropNote}/>
+
+          <EventDetails event={event}/>
+
+          <div className="mt-6 space-y-2">
+            {(event.stage === STAGE.draft || event.stage === STAGE.open) &&
+              <BigButton quiet onClick={() => onEdit(event)}>Edit event</BigButton>}
+            {event.stage === STAGE.open &&
+              <BigButton quiet onClick={() => askCloseRequests(askConfirm, act, event, onToast)}>Close requests</BigButton>}
+            {running(event) && <BigButton quiet onClick={() => askConfirm({
+              title: "Cancel this event?",
+              body: "Everyone who asked, was picked or confirmed is told it's cancelled. This can't be undone.",
+              confirmLabel: "Cancel event",
+              onConfirm: guarded("Couldn't cancel. Try again.", () => act.cancelEvent(event.id), "Event cancelled. Guests were told."),
+            })}>Cancel event</BigButton>}
+            {event.stage === STAGE.draft && <BigButton quiet onClick={() => askConfirm({
+              title: "Delete this draft?",
+              body: "It's gone for good. No one was told about it.",
+              confirmLabel: "Delete draft",
+              onConfirm: guarded("Couldn't delete. Try again.", () => act.deleteDraft(event.id), "Draft deleted", onBack),
+            })}>Delete draft</BigButton>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ========== Picking: Tinder-style deck ========== */
+  function ScreenReview({ event, act, askConfirm, onToast, onBack }){
+    const isLocked = event.stage === STAGE.locked;
+    const pool = isLocked ? GS.waitlist : GS.applied;
+    const buildDeck = again => {
+      const passed = passedFor(event.id);
+      return (event.guests || [])
+        .filter(g => g.state === pool && passed.has(g.applicantId) === again && applicantById[g.applicantId])
+        .map(g => g.applicantId);
+    };
+    const [again, setAgain] = useState(false);
+    // A snapshot: refreshes never reshuffle the cards under a moving finger.
+    const [deck, setDeck] = useState(() => buildDeck(false));
+    const [idx, setIdx] = useState(0);
+    const [lastPass, setLastPass] = useState(null);   // { idx, id } – only a pass can be undone
+    const [saving, setSaving] = useState(false);
+    const [dx, setDx] = useState(0);
+    const [dragging, setDragging] = useState(false);
+    const [sheetId, setSheetId] = useState(null);
+    const busy = useRef(false), drag = useRef(null), moved = useRef(false), dxRef = useRef(0);
+    const moveTo = x => { dxRef.current = x; setDx(x); };
+
+    const current = deck[idx];
+    const ap = current ? applicantById[current] : null;
+    const name = ap?.name || "this person";
+
+    // One decision at a time. A failed save snaps the card back and keeps the person.
+    const decide = async yes => {
+      if (!current || busy.current) return;
+      busy.current = true; setSaving(true); moveTo(yes ? 150 : -150);
+      try {
+        if (yes) await act.pick(event.id, current);
+        else {
+          await act.pass(event.id, current);
+          const passed = passedFor(event.id); passed.add(current); savePassed(event.id, passed);
+        }
+        setLastPass(yes ? null : { idx, id: current });
+        setIdx(i => i + 1);
+      } catch (error) {
+        onToast(plainError(error, "That didn't save. " + name + " is still here."));
+        if (error?.message === "not pickable") setIdx(i => i + 1);
+      } finally {
+        busy.current = false; setSaving(false); moveTo(0);
+      }
+    };
+
+    // Undo only goes back after a pass, because a pass saved nothing. A pick already told the member.
+    const undo = () => {
+      if (!lastPass || busy.current) return;
+      const passed = passedFor(event.id); passed.delete(lastPass.id); savePassed(event.id, passed);
+      setIdx(lastPass.idx); setLastPass(null);
+    };
+
+    const lookAgain = () => { setAgain(true); setDeck(buildDeck(true)); setIdx(0); setLastPass(null); };
+
+    useEffect(() => {
+      const onKey = e => {
+        // A held key or a browser shortcut (Alt+Arrow is Back/Forward) must never pick anyone.
+        if (e.repeat || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        if (sheetId || e.target.closest?.("input, textarea, select, [role=dialog]")) return;
+        if (e.key === "ArrowRight") { e.preventDefault(); decide(true); }
+        if (e.key === "ArrowLeft") { e.preventDefault(); decide(false); }
+      };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    });
+
+    // Horizontal drags decide; vertical ones are left to the page (touch-action: pan-y).
+    const onDown = e => {
+      if (busy.current || !e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) return;
+      drag.current = { x:e.clientX, y:e.clientY, id:e.pointerId, axis:null };
+      moved.current = false;
+    };
+    const onMove = e => {
+      const d = drag.current;
+      if (!d || d.id !== e.pointerId) return;
+      const mx = e.clientX - d.x, my = e.clientY - d.y;
+      if (!d.axis) {
+        if (Math.abs(mx) < 10 && Math.abs(my) < 10) return;
+        d.axis = Math.abs(mx) > Math.abs(my) ? "x" : "y";
+        moved.current = true;   // any real drag, even a vertical one, must not end in a tap
+        if (d.axis === "y") { drag.current = null; return; }
+        setDragging(true);
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+      moveTo(mx);
+    };
+    const onUp = e => {
+      const d = drag.current;
+      if (d && d.id !== e.pointerId) return;   // a second finger never ends the first finger's drag
+      drag.current = null; setDragging(false);
+      if (!d || d.axis !== "x") return;
+      const line = Math.min(120, e.currentTarget.offsetWidth * 0.28);
+      if (Math.abs(dxRef.current) >= line) decide(dxRef.current > 0); else moveTo(0);
+    };
+    const onCancel = e => { if (drag.current && drag.current.id !== e.pointerId) return; drag.current = null; setDragging(false); if (!busy.current) moveTo(0); };
+    // A drag must never open the profile or follow a social link.
+    const onClickCapture = e => { if (moved.current) { e.preventDefault(); e.stopPropagation(); moved.current = false; } };
+
+    const t = tally(event);
+    // People who asked after this deck opened: offered at the end instead of claiming everyone was seen.
+    const passedNow = passedFor(event.id);
+    const fresh = (event.guests || []).filter(g => g.state === pool && !deck.includes(g.applicantId)
+      && !passedNow.has(g.applicantId) && applicantById[g.applicantId]).map(g => g.applicantId);
+    const picked = (event.guests || []).filter(g => [GS.picked, GS.confirmed, GS.checkedIn, GS.noShow].includes(g.state));
+    const gender = sex => picked.filter(g => applicantById[g.applicantId]?.gender === sex).length;
+    const left = Math.max(0, deck.length - idx);
+    const stamp = { position:"absolute", top:20, zIndex:20, padding:"6px 12px", borderRadius:10, fontSize:20, fontWeight:900, border:"2px solid #F7F6F3", color:"#F7F6F3", background:"rgba(0,0,0,.25)" };
+    const undoButton = lastPass && (
+      <button onClick={undo} aria-label={"Undo pass on " + (applicantById[lastPass.id]?.name || "the last person")}
+        className="press min-h-[44px] px-4 rounded-full text-[13px] font-medium inline-flex items-center gap-2" style={{border:"1px solid var(--line-2)"}}>
+        <Icon name="arrow-left" size={14} stroke={1.8}/> Undo pass
+      </button>
+    );
+
+    return (
+      <div className="absolute inset-0 flex flex-col">
+        <div className="shrink-0 px-5 app-safe-top">
+          <div className="flex items-center justify-between gap-3">
+            <BackButton onClick={onBack}/>
+            {current && <span className="text-[13px]">{left} left to see</span>}
+          </div>
+          <h1 className="font-black font-display-l text-[24px] leading-tight mt-1 truncate">{event.title}</h1>
+          <div className="text-[13px] mt-1">
+            {isLocked ? "Replacements · " : ""}Picked {t.picked} of {event.seats || 0} · {t.yes} confirmed
+            {event.mix ? " · Girls " + gender("female") + " of " + event.mix.girls + " · Guys " + gender("male") + " of " + event.mix.guys : ""}
+          </div>
+        </div>
+
+        <div className="flex-1 min-h-0 overflow-y-auto noscroll px-5 pt-4" style={{paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 20px)"}}>
+          {!ap ? (
+            <div className="flex flex-col items-center text-center gap-3 pt-8">
+              <div className="font-black font-display-l text-[26px] leading-tight">
+                {fresh.length ? plural(fresh.length, "new person wants", "new people want") + " in."
+                  : isLocked && !t.waitlist ? "No one left on the waitlist." : "You've seen everyone."}
+              </div>
+              <div className="text-[14px]">Picked {t.picked} of {event.seats || 0} · {t.yes} confirmed</div>
+              {undoButton}
+              <div className="w-full flex flex-col gap-2 mt-3">
+                {fresh.length > 0 && <BigButton onClick={() => { setAgain(false); setDeck(fresh); setIdx(0); setLastPass(null); }}>See the {plural(fresh.length, "new person", "new people")}</BigButton>}
+                {!again && t.passed > 0 && <BigButton quiet onClick={lookAgain}>Look again at the {plural(t.passed, "person", "people")} you passed on</BigButton>}
+                {event.stage === STAGE.open && <BigButton quiet onClick={() => askCloseRequests(askConfirm, act, event, onToast, onBack)}>Close requests</BigButton>}
+                <BigButton onClick={onBack}>Done</BigButton>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div role="group" aria-roledescription="swipe card" aria-label={name + ", drag right to pick, left to pass"}
+                onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel} onClickCapture={onClickCapture}
+                className="relative select-none mx-auto"
+                // ponytail: shrink the card on short phones so Pass and Pick stay near the fold; 260px keeps it readable.
+                style={{width:"min(100%, max(260px, calc((var(--app-height, 100dvh) - 300px) * .8)))", touchAction:"pan-y",
+                  transform:"translateX(" + dx + "px) rotate(" + (dx / 22) + "deg)", transition: dragging ? "none" : "transform .22s ease"}}>
+                <SwipeCard a={ap}/>
+                <button className="absolute inset-x-0 top-0 z-10" style={{bottom:CARD_LINK_ZONE, background:"transparent", border:"none"}}
+                  onClick={() => { if (!busy.current) setSheetId(current); }} aria-label={"View " + name}/>
+                <span aria-hidden="true" style={{...stamp, left:20, transform:"rotate(-12deg)", opacity:Math.max(0, Math.min(1, dx / 100))}}>PICK</span>
+                <span aria-hidden="true" style={{...stamp, right:20, transform:"rotate(12deg)", opacity:Math.max(0, Math.min(1, -dx / 100))}}>PASS</span>
+                {saving && <span className="absolute inset-x-0 z-20 text-center text-[14px] font-semibold" style={{bottom:CARD_LINK_ZONE + 16, color:"#F7F6F3"}}>Saving…</span>}
+              </div>
+              <div className="flex items-start justify-center gap-12 mt-5">
+                <div className="flex flex-col items-center gap-1.5">
+                  <button onClick={() => decide(false)} aria-disabled={saving} aria-label={"Pass on " + name}
+                    className="press w-16 h-16 rounded-full flex items-center justify-center" style={{border:"1px solid var(--line-2)"}}>
+                    <Icon name="x" size={26}/>
+                  </button>
+                  <span aria-hidden="true" className="text-[13px] font-medium">Pass</span>
+                </div>
+                <div className="flex flex-col items-center gap-1.5">
+                  <button onClick={() => decide(true)} aria-disabled={saving} aria-label={"Pick " + name}
+                    className="press glow-primary w-16 h-16 rounded-full flex items-center justify-center" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                    <Icon name="check" size={26}/>
+                  </button>
+                  <span aria-hidden="true" className="text-[13px] font-medium">Pick</span>
+                </div>
+              </div>
+              {undoButton && <div className="flex justify-center mt-3">{undoButton}</div>}
+              <p className="text-[12px] text-center mt-3 leading-snug">Swipe right to pick, left to pass. A pick tells them right away, so it can't be undone.</p>
+            </>
+          )}
+        </div>
+
+        {sheetId && applicantById[sheetId] && (
+          <ApplicantSheet applicant={applicantById[sheetId]}
+            onDecide={yes => { const shown = sheetId; setSheetId(null); if (shown === current) decide(yes); }}
+            onClose={() => setSheetId(null)}/>
         )}
       </div>
     );
   }
 
-  function Segmented({ items, value, onChange }){
+  /* ========== Door list ========== */
+  function DoorGroup({ title, rows, empty, render }){
+    if (!rows.length && !empty) return null;
     return (
-      <div className="flex gap-1 p-1 rounded-full" style={{ background:"var(--bg-elev)", border:"1px solid var(--line)" }}>
-        {items.map(it=>{
-          const on = it.id===value;
+      <section className="mb-5">
+        <h2 className="section-label mb-1">{title} · {rows.length}</h2>
+        {rows.length === 0 ? <div className="text-[14px] py-3">{empty}</div> : (
+          <ul>
+            {rows.map(g => <li key={g.applicantId} className="flex items-center gap-3 py-2" style={{borderBottom:"1px solid var(--line)"}}>{render(g)}</li>)}
+          </ul>
+        )}
+      </section>
+    );
+  }
+
+  function ScreenDoor({ event, live, act, askConfirm, onToast, onBack, onRefresh, onClosed, onSummary }){
+    const [query, setQuery] = useState("");
+    const [busy, setBusy] = useState({});          // applicantId -> true while its save runs
+    const [sheetFor, setSheetFor] = useState(null);
+    const [closing, setClosing] = useState(false);   // the close dialog lives here so its count follows every poll
+    const countRef = useRef(null);
+    const polling = !!event && running(event);
+
+    // Two phones on one login: realtime only carries notifications, so the list polls while open.
+    // ponytail: 5-second poll of the whole venue. Upgrade: publish applications to realtime.
+    useEffect(() => {
+      if (!onRefresh || !polling) return;
+      const timer = setInterval(onRefresh, 5000);
+      const wake = () => { if (document.visibilityState === "visible") onRefresh(); };
+      document.addEventListener("visibilitychange", wake);
+      return () => { clearInterval(timer); document.removeEventListener("visibilitychange", wake); };
+    }, [onRefresh, polling]);
+
+    if (!event) return <Gone onBack={onBack}/>;
+    if (event.stage === STAGE.past) return <Gone onBack={onBack} text="This event is closed." action={["See summary", () => onSummary(event.id)]}/>;
+    if (event.stage === STAGE.cancelled) return <Gone onBack={onBack} text="This event was cancelled."/>;
+
+    const guests = event.guests || [];
+    const name = g => applicantById[g.applicantId]?.name || "Guest";
+    const first = g => name(g).split(" ")[0];
+    const q = query.trim().toLowerCase();
+    const match = g => !q || (name(g) + " " + (g.code || "")).toLowerCase().includes(q);
+    const az = (a, b) => name(a).localeCompare(name(b));
+    const expected = guests.filter(g => g.state === GS.confirmed).sort(az);
+    const inside = guests.filter(g => g.state === GS.checkedIn).sort(az);
+    const noShows = guests.filter(g => g.state === GS.noShow).sort(az);
+    const awaiting = guests.filter(g => g.state === GS.picked).length;
+    const start = startOf(event);
+    const canClose = !live || (start && start <= new Date());
+
+    const checkIn = async g => {
+      if (busy[g.applicantId]) return;
+      setBusy(b => ({ ...b, [g.applicantId]: true }));
+      try { await act.checkIn(event.id, g.applicantId); onToast(first(g) + " is inside"); }
+      catch (error) { onToast(plainError(error, "That didn't save. Try again.")); if (onRefresh) onRefresh(); }
+      finally {
+        setBusy(b => { const next = { ...b }; delete next[g.applicantId]; return next; });
+        // The row just moved away; keep keyboard and screen reader focus on the page.
+        setTimeout(() => { if (document.activeElement === document.body) countRef.current?.focus(); }, 60);
+      }
+    };
+
+    const markNoShow = g => askConfirm({
+      title: "Mark " + first(g) + " as didn't come?",
+      body: "It goes on their record and can't be undone.",
+      confirmLabel: "Mark as didn't come",
+      onConfirm: async () => {
+        try { await act.noShow(event.id, g.applicantId); }
+        catch (error) { onToast(plainError(error, "That didn't save. Try again.")); if (onRefresh) onRefresh(); throw error; }
+        onToast(first(g) + " marked as didn't come");
+      },
+    });
+
+    const closeEvent = () => { setClosing(true); if (onRefresh) onRefresh(); };
+    const closeBody = (expected.length
+        ? plural(expected.length, "confirmed guest hasn't", "confirmed guests haven't") + " checked in. They'll be marked as didn't come."
+        : "No confirmed guests are left to check in.")
+      + (awaiting ? " " + plural(awaiting, "pick is", "picks are") + " still awaiting confirmation and stay as they are." : "")
+      + (event.stage === STAGE.open ? " Requests close too." : "")
+      + " Stories, optional ratings and the bill are in the summary.";
+    const confirmClose = async () => {
+      try { await act.closeNight(event); }
+      catch (error) { onToast(plainError(error, "Couldn't close the event. Try again.")); if (onRefresh) onRefresh(); throw error; }
+      onToast("Event closed");
+      onClosed(event.id);
+    };
+
+    return (
+      <div className="absolute inset-0 flex flex-col">
+        <div className="shrink-0 px-5 app-safe-top">
+          <BackButton onClick={onBack}/>
+          <h1 className="font-black font-display-l text-[30px] leading-none mt-1">Door list</h1>
+          <div className="text-[13px] mt-1.5 truncate">{[event.title, event.date, event.time].filter(Boolean).join(" · ")}</div>
+          <div ref={countRef} tabIndex={-1} className="text-[16px] font-semibold mt-3" aria-live="polite">{inside.length} of {inside.length + expected.length} inside</div>
+          {awaiting > 0 && <div className="text-[12px] mt-0.5">{plural(awaiting, "pick is", "picks are")} still awaiting confirmation</div>}
+          <input type="search" value={query} onChange={e => setQuery(e.target.value)} aria-label="Search guests"
+            placeholder="Search name or code" className={inputCls + " mt-3"} style={inputStyle}/>
+        </div>
+
+        <div className="flex-1 min-h-0 overflow-y-auto noscroll px-5 pt-4 pb-2">
+          <DoorGroup title="Expected" rows={expected.filter(match)} empty={q ? "No one matches." : "No one left to check in."} render={g => (
+            <>
+              <button onClick={() => setSheetFor(g)} aria-label={"Options for " + name(g)} className="press flex-1 min-w-0 min-h-[44px] flex items-center gap-3 text-left">
+                <Avatar ap={applicantById[g.applicantId] || {}}/>
+                <span className="min-w-0">
+                  <span className="block text-[15px] font-medium truncate">{name(g)}</span>
+                  <span className="block font-mono text-[12px]">{g.code || "No code"}</span>
+                </span>
+              </button>
+              <button onClick={() => checkIn(g)} disabled={!!busy[g.applicantId]} aria-label={"Here, check in " + name(g)}
+                className="press min-h-[44px] min-w-[76px] px-5 rounded-full text-[14px] font-semibold shrink-0" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
+                {busy[g.applicantId] ? "…" : "Here"}
+              </button>
+            </>
+          )}/>
+          <DoorGroup title="Inside" rows={inside.filter(match)} render={g => (
+            <>
+              <Avatar ap={applicantById[g.applicantId] || {}} size={40}/>
+              <span className="flex-1 min-w-0 text-[15px] font-medium truncate">{name(g)}</span>
+              <span className="text-[12px] shrink-0">{g.inAt ? "In at " + g.inAt : "Inside"}</span>
+            </>
+          )}/>
+          <DoorGroup title="Didn't come" rows={noShows.filter(match)} render={g => (
+            <>
+              <Avatar ap={applicantById[g.applicantId] || {}} size={40}/>
+              <span className="flex-1 min-w-0 text-[15px] font-medium truncate">{name(g)}</span>
+            </>
+          )}/>
+        </div>
+
+        <div className="shrink-0 px-5 pt-3" style={{paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 16px)"}}>
+          <BigButton quiet onClick={closeEvent} disabled={!canClose}>Close the event</BigButton>
+          {!canClose && <div className="text-[12px] text-center mt-2">You can close it once it starts{event.time ? " at " + event.time : ""}.</div>}
+        </div>
+
+        {sheetFor && (
+          <Sheet title={name(sheetFor)} onClose={() => setSheetFor(null)}>
+            <div className="text-[14px] mb-4">Pass code <span className="font-mono">{sheetFor.code || "none"}</span></div>
+            <BigButton quiet onClick={() => { const g = sheetFor; setSheetFor(null); markNoShow(g); }}>Mark as didn't come</BigButton>
+          </Sheet>
+        )}
+        {closing && <ConfirmDialog title="Close the event?" body={closeBody} confirmLabel="Close the event"
+          onConfirm={confirmClose} onClose={() => setClosing(false)}/>}
+      </div>
+    );
+  }
+
+  /* ========== Summary: attendance, Stories and the bill together ========== */
+  const RATINGS = [["Great", 9], ["Fine", 6], ["Problem", 3]];
+  const ratingWord = r => r == null ? null : r >= 7.5 ? "Great" : r >= 4.5 ? "Fine" : "Problem";
+  const STORY_WORDS = { [SS.verified]:"Story verified", [SS.review]:"Story under review", [SS.needsReview]:"Story under review",
+    [SS.due]:"Story due", [SS.rejected]:"Story not posted", [SS.missed]:"Story not posted" };
+
+  function ScreenSummary({ event, act, onToast, onBack }){
+    const [busy, setBusy] = useState({});
+    if (!event) return <Gone onBack={onBack}/>;
+    const guests = event.guests || [];
+    const inside = guests.filter(g => g.state === GS.checkedIn);
+    const noShows = guests.filter(g => g.state === GS.noShow);
+    const story = s => inside.filter(g => g.story === s).length;
+    const verified = story(SS.verified), review = story(SS.review) + story(SS.needsReview), due = story(SS.due);
+    const rejected = inside.filter(g => g.story === SS.rejected && g.storyMedia).length;   // posted, turned down in review
+    const notPosted = story(SS.rejected) + story(SS.missed) - rejected;
+    const followers = inside.filter(g => g.story === SS.verified)
+      .reduce((sum, g) => sum + (applicantById[g.applicantId]?.instagram_followers || 0), 0);
+    const invoice = event.invoice || (event.bundle ? { bundle: event.bundle.name, price: event.bundle.price, status: "pending" } : null);
+    const billWord = { pending:"Pending", invoiced:"Invoiced", paid:"Paid" }[invoice?.status] || "Pending";
+
+    // Ratings are optional and can happen any time after the event. Nobody steps through a queue.
+    const rate = async (g, value) => {
+      if (busy[g.applicantId]) return;
+      setBusy(b => ({ ...b, [g.applicantId]: true }));
+      try { await act.rate(event.id, g.applicantId, value); onToast("Rating saved"); }
+      catch (error) { onToast(plainError(error, "Couldn't save the rating. Try again.")); }
+      finally { setBusy(b => { const next = { ...b }; delete next[g.applicantId]; return next; }); }
+    };
+
+    return (
+      <div className="absolute inset-0 flex flex-col">
+        <div className="shrink-0 px-5 app-safe-top">
+          <BackButton onClick={onBack}/>
+          <div className="text-[13px] font-medium mt-1">Summary</div>
+          <h1 className="font-black font-display-l text-[30px] leading-tight break-words">{event.title}</h1>
+          <div className="text-[13px] mt-1">{[event.date, event.time].filter(Boolean).join(" · ")}</div>
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto noscroll px-5 pt-2" style={{paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 32px)"}}>
+          <h2 className="section-label mt-5 mb-3">Attendance</h2>
+          <div className="grid grid-cols-3 gap-2">
+            <CountTile n={inside.length + noShows.length} label="Confirmed"/>
+            <CountTile n={inside.length} label="Came"/>
+            <CountTile n={noShows.length} label="Didn't come"/>
+          </div>
+
+          <h2 className="section-label mt-7 mb-2">Stories</h2>
+          <div className="text-[15px] font-semibold">{verified} of {plural(inside.length, "Story", "Stories")} verified</div>
+          <div className="text-[13px] mt-1">{review} under review · {due} due · {notPosted} not posted{rejected ? " · " + rejected + " rejected" : ""}</div>
+          <div className="card rounded-[16px] p-4 mt-3">
+            <div className="text-[13px] font-semibold">Followers of verified posters</div>
+            <div className="font-black font-mono text-[28px] leading-none mt-2">{fmtCount(followers)}</div>
+            <div className="text-[12px] mt-2">A follower count, not measured reach.</div>
+          </div>
+
+          <h2 className="section-label mt-7 mb-2">Bill</h2>
+          {invoice ? (
+            <div className="card rounded-[16px] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="font-mono text-[24px] leading-none">{money(invoice.price)}</div>
+                  <div className="text-[13px] mt-1.5">{invoice.bundle}</div>
+                </div>
+                <StatusPill label={billWord} tone={invoice.status === "paid" ? "neutral" : "outline"}/>
+              </div>
+              {invoice.status !== "paid" && <div className="text-[13px] mt-3 leading-snug">The List will contact you to settle by Whish, OMT or USD cash.</div>}
+            </div>
+          ) : <div className="text-[14px]">No bill for this event.</div>}
+
+          <h2 className="section-label mt-7">Rate guests (optional)</h2>
+          <div className="text-[13px] mt-1 mb-2 leading-snug">Skip anyone. Guests see their average venue rating.</div>
+          <ul style={{borderTop:"1px solid var(--line)"}}>
+            {[...inside, ...noShows].map(g => {
+              const ap = applicantById[g.applicantId] || {};
+              const current = ratingWord(g.rating);
+              return (
+                <li key={g.applicantId} className="py-3" style={{borderBottom:"1px solid var(--line)"}}>
+                  <div className="flex items-center gap-3">
+                    <Avatar ap={ap} size={40}/>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[14px] font-medium truncate">{ap.name || "Guest"}</div>
+                      <div className="text-[12px]">{g.state === GS.noShow ? "Didn't come" : (g.story === SS.rejected && g.storyMedia ? "Story rejected" : STORY_WORDS[g.story]) || "Came"}</div>
+                    </div>
+                    {g.story === SS.verified && g.storyMedia && (
+                      <a href={g.storyMedia} target="_blank" rel="noreferrer" className="press min-h-[44px] px-3 inline-flex items-center text-[13px] font-medium underline shrink-0">See Story</a>
+                    )}
+                  </div>
+                  <div className="flex gap-2 mt-2" role="group" aria-label={"Rate " + (ap.name || "guest")}>
+                    {RATINGS.map(([word, value]) => (
+                      <Chip key={word} on={current === word} label={word + " for " + (ap.name || "guest")} onClick={() => rate(g, value)}>
+                        {word}
+                      </Chip>
+                    ))}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {inside.length + noShows.length === 0 && <div className="text-[14px] py-3">No one to rate.</div>}
+        </div>
+      </div>
+    );
+  }
+
+  /* ========== Venue tab ========== */
+  function DemoPanel({ demo }){
+    const [open, setOpen] = useState(false);
+    const Row = ({ label, onTap }) => (
+      <button onClick={onTap} className="press w-full text-left min-h-[48px] text-[14px]" style={{borderTop:"1px solid var(--line)"}}>{label}</button>
+    );
+    return (
+      <div className="px-5 pt-6 pb-2">
+        <button onClick={() => setOpen(o => !o)} aria-expanded={open} className="press w-full min-h-[44px] flex items-center justify-between text-[13px] font-medium">
+          <span>Demo controls</span>
+          <Icon name="arrow-right" size={14} stroke={1.5} className={"chev " + (open ? "rotate-90" : "")}/>
+        </button>
+        {open && (
+          <div>
+            <Row label="New people want in" onTap={() => demo.newApplicants()}/>
+            <Row label="A pick drops out" onTap={() => demo.pickDeclines()}/>
+            <Row label="Make Late Lounge today" onTap={() => demo.advanceToTonight()}/>
+            <Row label="Reset demo" onTap={() => demo.reset()}/>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function ScreenVenueProfile({ venue, onEdit, onLogout, demo, light, onTheme }){
+    const handle = (venue.igHandle || "").replace(/^@/, "");
+    const Row = ({ label, onTap }) => (
+      <button onClick={onTap} className="press w-full min-h-[52px] flex items-center justify-between text-left" style={{borderTop:"1px solid var(--line)"}}>
+        <span className="text-[15px]">{label}</span>
+        <Icon name="arrow-right" size={15} stroke={1.5}/>
+      </button>
+    );
+    return (
+      <div className="absolute inset-0 flex flex-col">
+        <div className="shrink-0 px-5 app-safe-top pb-4">
+          <h1 className="font-black font-display-l text-[34px] leading-none">Venue</h1>
+        </div>
+        <div className="flex-1 overflow-y-auto noscroll app-dock-space">
+          <div className="px-5 flex gap-4 items-start">
+            <FramedImage value={venue.heroImage} ratio="4/5" radius={14} className="w-28 shrink-0"/>
+            <div className="min-w-0 pt-1">
+              <div className="font-black text-[22px] leading-tight break-words">{venue.name || "Unnamed venue"}</div>
+              <div className="text-[13px] mt-1">{venue.type} · {venue.area}</div>
+              {handle && <a href={"https://instagram.com/" + handle} target="_blank" rel="noreferrer" className="press inline-flex items-center min-h-[44px] text-[13px] font-medium underline">@{handle}</a>}
+            </div>
+          </div>
+          {venue.description && <p className="px-5 mt-4 text-[14px] leading-relaxed">{venue.description}</p>}
+          <div className="px-5 pt-5">
+            <div className="grid grid-cols-4 gap-2">
+              {venue.images.map((im, i) => <FramedImage key={i} value={im} ratio="4/5" className="w-full" empty="–"/>)}
+            </div>
+          </div>
+          <div className="px-5 pt-6">
+            <h2 className="section-label mb-2">Settings</h2>
+            <Row label="Edit venue" onTap={onEdit}/>
+            <div style={{borderTop:"1px solid var(--line)"}}><Switch label="Dark mode" on={!light} onChange={onTheme}/></div>
+            <Row label="Switch to member" onTap={() => { window.location.href = "/"; }}/>
+            <Row label="Log out" onTap={onLogout}/>
+          </div>
+          {demo && <DemoPanel demo={demo}/>}
+        </div>
+      </div>
+    );
+  }
+
+  /* ========== Three tabs: Home, Events, Venue ========== */
+  function VenueTabBar({ tab, onTab }){
+    const items = [
+      { id:"home",   icon:"home",                label:"Home" },
+      { id:"events", icon:"calendar",            label:"Events" },
+      { id:"venue",  icon:"building-storefront", label:"Venue" },
+    ];
+    return (
+      <div className="tabbar" role="navigation" aria-label="Venue navigation" style={{gridTemplateColumns:"repeat(3,1fr)"}}>
+        {items.map(it => {
+          const active = tab === it.id;
           return (
-            <button key={it.id} onClick={()=>onChange(it.id)} className="press flex-1 h-9 rounded-full flex items-center justify-center gap-1 text-[10px] font-medium"
-              style={on ? {background:"var(--ink)", color:"var(--bg)"} : {color:"var(--ink)", opacity:.6}}>
+            <button key={it.id} onClick={() => onTab(it.id)} aria-current={active ? "page" : undefined} className={"press " + (active ? "active" : "")}>
+              <Icon name={it.icon} size={20} stroke={1.5}/>
               <span>{it.label}</span>
-              {it.count != null && <span style={{opacity:.65}}>{it.count}</span>}
             </button>
           );
         })}
@@ -805,19 +1875,192 @@ const { useState, useRef, useEffect, useMemo } = React;
     );
   }
 
-  /* TSS-style widget stat tile: big number top, small label under.
-     Ice only on the one number that matters per screen. */
-  function StatTile({ n, label, ice=false, onClick }){
-    const cls = "card rounded-[16px] p-4 text-left w-full" + (onClick ? " press" : "");
-    const body = (
-      <>
-        <div className="font-black font-mono text-[26px] leading-none" style={ice?{color:"var(--ice)"}:undefined}>{n}</div>
-        <div className="stamp mt-1.5" style={{opacity:.75}}>{label}</div>
-      </>
+  /* ========== New event: one screen ========== */
+  const BUNDLES = [
+    { id:"ten",    name:"The ten",    seats:10, price:400 },
+    { id:"twenty", name:"The twenty", seats:20, price:700 },
+    { id:"forty",  name:"The forty",  seats:40, price:1200 },
+  ];
+  const CLOSE_CHOICES = [["24h before doors", "1 day before"], ["2h before doors", "2 hours before"]];
+
+  function ScreenPostEvent({ venue, onPublish, onSaveDraft, onCancel, initialDraft, draftId, live=false }){
+    const editingOpen = initialDraft?.stage === STAGE.open;
+    const [saving, setSaving] = useState(null);
+    const [cropping, setCropping] = useState(false);
+    const [draft, setDraft] = useState(() => {
+      if (initialDraft) return {
+        ...initialDraft,
+        date: live && initialDraft.startsAt ? toLocalDate(new Date(initialDraft.startsAt)) : initialDraft.date,
+        time: live && initialDraft.startsAt ? toLocalTime(new Date(initialDraft.startsAt)) : initialDraft.time,
+        closesAt: initialDraft.closesInput || initialDraft.closesAt || "24h before doors",
+        bundle: initialDraft.bundle || { name:"Custom", price:0 },
+        seats: initialDraft.seats || 20,
+      };
+      return makeEvent({ venueId: venue.id, type: venue.type || "Club", heroImage: venue.heroImage,
+        closesAt:"24h before doors", bundle:{ name:"The twenty", price:700 }, seats:20, mix:null });
+    });
+    const set = patch => setDraft(d => ({ ...d, ...patch }));
+    const brief = draft.brief || {};
+    const setBrief = patch => set({ brief: { ...brief, ...patch } });
+    const custom = draft.bundle?.name === "Custom";
+    const customClose = !CLOSE_CHOICES.some(([value]) => value === draft.closesAt);
+    const setSeats = seats => set({ seats, mix: draft.mix ? { girls: Math.min(draft.mix.girls, seats), guys: seats - Math.min(draft.mix.girls, seats) } : null });
+
+    // Real times, so the venue sees exactly when requests close. Live checks them against the clock.
+    const starts = draft.date && draft.time ? eventStart(draft) : null;
+    const startsOk = !!starts && !Number.isNaN(starts.valueOf());
+    const closes = startsOk ? eventCloses(draft, starts) : null;
+    const closesOk = !!closes && !Number.isNaN(closes.valueOf());
+    const now = new Date();
+    const problem = !startsOk ? (draft.date && draft.time ? "Use a real date and time." : null)
+      : !closesOk ? "Pick when requests close."
+      : closes >= starts ? "Requests must close before the event starts."
+      : live && starts <= now ? "That start time has already passed."
+      : live && closes <= now ? "That close time has already passed. Pick 2 hours before, or your own time."
+      : null;
+    const shortNotice = live && startsOk && starts - now < 24*HOUR;
+    const price = draft.bundle?.price || 0;
+    const basics = draft.title.trim().length >= 2 && startsOk;
+    const ready = basics && !problem && draft.seats >= 1 && price > 0;
+
+    const persist = async mode => {
+      if (saving || (mode === "publish" ? !ready : !basics)) return;
+      setSaving(mode);
+      try { await (mode === "publish" ? onPublish : onSaveDraft)(draft, draftId); }
+      catch (_) { /* the app shows why and keeps the form open */ }
+      finally { setSaving(null); }
+    };
+
+    if (cropping) return (
+      <div className="absolute inset-0 flex flex-col px-5 app-form-scroll" style={{paddingTop:"calc(env(safe-area-inset-top, 0px) + 16px)", paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 24px)"}}>
+        <ImageCropper ratio="4/5" value={draft.heroImage} label="Event photo"
+          onChange={value => { set({ heroImage:value }); setCropping(false); }} onCancel={() => setCropping(false)}/>
+      </div>
     );
-    return onClick
-      ? <button onClick={onClick} className={cls}>{body}</button>
-      : <div className={cls}>{body}</div>;
+
+    const check = [
+      ["Price", price ? money(price) + " for " + plural(draft.seats, "person", "people") + ". Paid after the event by Whish, OMT or cash." : "Add a price."],
+      ["Requests close", closesOk ? formatEventDateTime(closes) : "Not set"],
+      ["Arrival", brief.arrival || "Not set. Add it under More details."],
+      ["Story", "Each guest posts 1 Story and tags the venue within " + (draft.storyHours || 24) + " hours of checking in."],
+      ["Confirming", shortNotice ? "People you pick get 24 hours to confirm, even though the event starts sooner. Pick early." : "People you pick get 24 hours to confirm."],
+    ];
+
+    return (
+      <div className="absolute inset-0 flex flex-col">
+        <div className="shrink-0 px-5 app-safe-top pb-2">
+          <BackButton onClick={onCancel} label="Cancel"/>
+          <h1 className="font-black font-display-l text-[30px] leading-none mt-1">{initialDraft ? "Edit event" : "New event"}</h1>
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto noscroll app-form-scroll px-5 pt-3 space-y-6" style={{paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 24px)"}}>
+          <div className="flex items-end gap-4">
+            <FramedImage value={draft.heroImage} ratio="4/5" radius={14} className="w-24 shrink-0" empty="No photo"/>
+            <div className="pb-1">
+              <div className="text-[13px] font-semibold">Photo</div>
+              <div className="text-[12px] mt-0.5">Your venue photo is used unless you change it.</div>
+              <button onClick={() => setCropping(true)} className="press mt-2 min-h-[44px] px-4 rounded-full text-[13px] font-medium" style={{border:"1px solid var(--line-2)"}}>Change photo</button>
+            </div>
+          </div>
+
+          <Field label="Event name">
+            <input value={draft.title} onChange={e => set({ title:e.target.value })} placeholder="e.g. Pool Day" className={inputCls} style={inputStyle}/>
+          </Field>
+
+          <ChoiceGroup label="Type">
+            {VENUE_TYPES.map(type => <Chip key={type} on={draft.type === type} onClick={() => set({ type })}>{type}</Chip>)}
+          </ChoiceGroup>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Date">
+              <input value={draft.date} onChange={e => set({ date:e.target.value })} type={live ? "date" : "text"}
+                placeholder={live ? undefined : "Sun · 25 May"} className={inputCls} style={inputStyle}/>
+            </Field>
+            <Field label="Start time">
+              <input value={draft.time} onChange={e => set({ time:e.target.value })} type={live ? "time" : "text"}
+                placeholder={live ? undefined : "22:00"} className={inputCls} style={inputStyle}/>
+            </Field>
+          </div>
+
+          <div>
+            <ChoiceGroup label="How many people">
+              {BUNDLES.map(b => (
+                <Chip key={b.id} on={draft.bundle?.name === b.name}
+                  onClick={() => { set({ bundle:{ name:b.name, price:b.price } }); setSeats(b.seats); }}>
+                  {b.seats} for {money(b.price)}
+                </Chip>
+              ))}
+              <Chip on={custom} onClick={() => set({ bundle:{ name:"Custom", price: custom ? price : 0 } })}>Custom</Chip>
+            </ChoiceGroup>
+            {custom && <div className="mt-3 card rounded-[16px] px-4 py-2">
+              <Stepper label="Seats" value={draft.seats} min={1} onChange={setSeats}/>
+              <div className="pb-3">
+                <Field label="Price in dollars">
+                  <input value={price || ""} inputMode="numeric" placeholder="e.g. 500" className={inputCls} style={inputStyle}
+                    onChange={e => set({ bundle:{ name:"Custom", price: parseInt(e.target.value.replace(/\D/g, ""), 10) || 0 } })}/>
+                </Field>
+              </div>
+            </div>}
+          </div>
+
+          <div className="card rounded-[16px] px-4">
+            <Switch label="Girls and guys" hint={draft.mix ? "Split set below" : "Off means any mix"} on={!!draft.mix}
+              onChange={on => set({ mix: on ? { girls: Math.round(draft.seats * .75), guys: draft.seats - Math.round(draft.seats * .75) } : null })}/>
+            {draft.mix && <div className="pb-2" style={{borderTop:"1px solid var(--line)"}}>
+              <Stepper label="Girls" value={draft.mix.girls} max={draft.seats} onChange={girls => set({ mix:{ girls, guys: draft.seats - girls } })}/>
+              <div className="text-[14px] pb-2">Guys: {draft.mix.guys}</div>
+            </div>}
+          </div>
+
+          <div>
+            <ChoiceGroup label="Requests close">
+              {CLOSE_CHOICES.map(([value, label]) => <Chip key={value} on={draft.closesAt === value} onClick={() => set({ closesAt:value })}>{label}</Chip>)}
+              <Chip on={customClose} onClick={() => { if (!customClose) set({ closesAt: closesOk ? toLocalDateTime(closes) : "" }); }}>Pick a time</Chip>
+            </ChoiceGroup>
+            {customClose && <div className="mt-3">
+              <Field label="Pick a close time">
+                <input type="datetime-local" value={draft.closesAt} onChange={e => set({ closesAt:e.target.value })} className={inputCls} style={inputStyle}/>
+              </Field>
+            </div>}
+            <div className="text-[13px] mt-2">{closesOk ? "Requests close " + formatEventDateTime(closes) + "." : "Set the date and time to see when requests close."}</div>
+            {problem && <div role="alert" className="text-[13px] font-semibold mt-2">{problem}</div>}
+          </div>
+
+          <details className="card rounded-[16px] px-4">
+            <summary className="min-h-[52px] flex items-center justify-between text-[15px] font-medium cursor-pointer">More details <Icon name="plus" size={16}/></summary>
+            <div className="space-y-4 pb-4">
+              <Field label="Arrival window"><input value={brief.arrival || ""} onChange={e => setBrief({ arrival:e.target.value })} placeholder="21:30 – 22:30" className={inputCls} style={inputStyle}/></Field>
+              <Field label="Dress code"><input value={brief.dress || ""} onChange={e => setBrief({ dress:e.target.value })} placeholder="Smart dark" className={inputCls} style={inputStyle}/></Field>
+              <Field label="Meeting point"><input value={brief.meeting || ""} onChange={e => setBrief({ meeting:e.target.value })} placeholder="Door host" className={inputCls} style={inputStyle}/></Field>
+              <Field label="House rules"><input value={brief.rules || ""} onChange={e => setBrief({ rules:e.target.value })} placeholder="1 Story and a venue tag" className={inputCls} style={inputStyle}/></Field>
+              <ChoiceGroup label="Story window">
+                {[24, 48].map(hours => <Chip key={hours} on={(draft.storyHours || 24) === hours} onClick={() => set({ storyHours:hours })}>{hours} hours</Chip>)}
+              </ChoiceGroup>
+            </div>
+          </details>
+
+          <section className="card rounded-[16px] px-4 py-2" aria-label="Check before posting">
+            <h2 className="text-[15px] font-semibold py-2">Check before posting</h2>
+            <dl>
+              {check.map(([label, value]) => (
+                <div key={label} className="py-2.5" style={{borderTop:"1px solid var(--line)"}}>
+                  <dt className="text-[12px] font-semibold">{label}</dt>
+                  <dd className="text-[14px] mt-0.5 leading-snug">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          <div className="space-y-2">
+            <BigButton onClick={() => persist("publish")} disabled={!ready || !!saving}>
+              {saving === "publish" ? "Posting…" : editingOpen ? "Save changes" : "Post event"}
+            </BigButton>
+            {!editingOpen && <BigButton quiet onClick={() => persist("draft")} disabled={!basics || !!saving}>
+              {saving === "draft" ? "Saving…" : "Save for later"}
+            </BigButton>}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   /* ========== ScreenVenueIntro – business splash ========== */
@@ -853,11 +2096,11 @@ const { useState, useRef, useEffect, useMemo } = React;
 
           {/* Member link + zero-typing demo path */}
           <div className="text-center mt-4 anim-up flex flex-col gap-2">
-            <button onClick={()=>{ window.location.href = "/"; }} className="press" style={{color:"rgba(247,246,243,.5)", fontSize:12, letterSpacing:".02em", background:"transparent", border:"none"}}>
+            <button onClick={()=>{ window.location.href = "/"; }} className="press min-h-[44px]" style={{color:"rgba(247,246,243,.82)", fontSize:13, background:"transparent", border:"none"}}>
               I'm a member
             </button>
-            <button onClick={onDemo} className="press" style={{color:"var(--ice)", fontSize:12, letterSpacing:".02em", background:"transparent", border:"none"}}>
-              Preview the desk · demo data
+            <button onClick={onDemo} className="press min-h-[44px]" style={{color:"#F7F6F3", fontSize:13, fontWeight:600, background:"transparent", border:"none"}}>
+              Try the demo
             </button>
           </div>
         </div>
@@ -901,7 +2144,7 @@ const { useState, useRef, useEffect, useMemo } = React;
 
         <div className="absolute inset-0 flex flex-col px-7 app-safe-top app-safe-bottom app-form-scroll">
           <div className="font-black font-display-l text-[44px] leading-[.95] tracking-tight">Sign in</div>
-          <div className="text-[13px] mt-3" style={{color:"var(--ink-2)"}}>Manage your venue and its drops.</div>
+          <div className="text-[14px] mt-3" style={{color:"var(--ink-2)"}}>Post events, pick who comes, run the door.</div>
 
           <div className="mt-10 space-y-5">
             <div>
@@ -931,7 +2174,7 @@ const { useState, useRef, useEffect, useMemo } = React;
                 style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
               />
             </div>}
-            {error && <div className="text-[12px]">{error}</div>}
+            {error && <div role="alert" className="text-[13px] font-semibold">{error}</div>}
           </div>
 
           <div className="flex-1"/>
@@ -954,99 +2197,13 @@ const { useState, useRef, useEffect, useMemo } = React;
     );
   }
 
-  /* ========== ScreenOnboardGroup – optional group registration ========== */
-  function ScreenOnboardGroup({ group, setGroup, onNext }){
-    const [name, setName] = useState(group?.name || "");
-    const [logo, setLogo] = useState(group?.logo || null);
-    const [editingLogo, setEditingLogo] = useState(false);
-    const canCreate = name.length >= 2;
-
-    return (
-      <div className="absolute inset-0 anim-fade" style={{background:"transparent"}}>
-
-        <div className="absolute inset-0 flex flex-col" style={{paddingTop:"env(safe-area-inset-top, 0px)"}}>
-          {/* Header */}
-          <div className="px-6 pt-6 pb-2 shrink-0">
-            <div className="font-black font-display-l" style={{fontSize:44,lineHeight:.95,letterSpacing:"-.02em",color:"var(--ink)"}}>Group</div>
-            <div className="text-[13px] mt-3" style={{color:"var(--ink-2)"}}>Run more than one venue? Group them. Otherwise skip.</div>
-          </div>
-
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto noscroll px-6 pt-4 pb-4">
-            {/* Group name field */}
-            <div className="mb-5">
-              <div className="stamp mb-2">Group name</div>
-              <input
-                value={name}
-                onChange={e => setName(e.target.value)}
-                type="text"
-                placeholder="e.g. Skyline Hospitality"
-                className="w-full h-12 px-3 rounded-[12px] text-[16px]"
-                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-              />
-            </div>
-
-            {/* Logo field */}
-            <div className="mb-6">
-              <div className="stamp mb-2">Group logo</div>
-              {editingLogo ? (
-                <ImageCropper
-                  ratio="1/1"
-                  value={logo}
-                  label="Group logo"
-                  onChange={(v) => { setLogo(v); setEditingLogo(false); }}
-                  onCancel={() => setEditingLogo(false)}
-                />
-              ) : logo ? (
-                <div className="flex items-center gap-3">
-                  <FramedImage value={logo} ratio="1/1" className="w-20 h-20"/>
-                  <button
-                    onClick={() => setEditingLogo(true)}
-                    className="press text-[12px] font-medium"
-                    style={{color:"var(--ice)", background:"transparent", border:"none"}}
-                  >Replace</button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setEditingLogo(true)}
-                  className="press w-20 h-20 rounded-[14px] flex items-center justify-center"
-                  style={{border:"1px dashed var(--line-2)", background:"transparent", color:"var(--ink-mute)"}}
-                >
-                  <span className="stamp">+ Logo</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Bottom actions */}
-          <div className="shrink-0 px-6 app-safe-bottom flex flex-col gap-3">
-            <button
-              onClick={() => { if(canCreate){ setGroup({ id:"grp-1", name, logo }); onNext(); } }}
-              disabled={!canCreate}
-              className={"press w-full h-[52px] rounded-full font-semibold text-[14px] "+(canCreate?"glow-primary":"")}
-              style={{
-                background: canCreate ? "var(--ice)" : "var(--bg-elev2)",
-                color: canCreate ? "var(--ice-ink)" : "var(--ink-mute)"
-              }}
-            >Create group</button>
-            <button
-              onClick={() => { setGroup(null); onNext(); }}
-              className="press w-full h-[48px] rounded-full text-[12px] font-medium"
-              style={{background:"transparent", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-            >I'm independent · skip</button>
-          </div>
-        </div>
-
-      </div>
-    );
-  }
-
-  /* ========== ScreenOnboardVenue – register venue assets ========== */
-  function ScreenOnboardVenue({ venue, setVenue, group, onDone }){
+  /* ========== ScreenOnboardVenue – edit the venue; nothing changes until Save ========== */
+  function ScreenOnboardVenue({ venue: initial, onDone, onCancel }){
+    const [venue, setVenue] = useState(initial);
     const [editing, setEditing] = useState(null); // null | "hero" | 0..3
     const [saving, setSaving] = useState(false);
 
-    const canSave = venue.name && venue.name.length >= 2 && venue.heroImage;
+    const canSave = venue.name && venue.name.trim().length >= 2 && venue.heroImage;
     const handleDone = async () => {
       if (!canSave || saving) return;
       setSaving(true);
@@ -1055,1239 +2212,90 @@ const { useState, useRef, useEffect, useMemo } = React;
       finally { setSaving(false); }
     };
 
-    // When editing, show only the cropper full-screen
-    if (editing !== null){
-      if (editing === "hero"){
-        return (
-          <div className="absolute inset-0 anim-fade" style={{background:"transparent"}}>
-
-            <div className="absolute inset-0 flex flex-col px-6 overflow-y-auto noscroll" style={{paddingTop:"calc(env(safe-area-inset-top, 0px) + 16px)", paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 24px)"}}>
-              <ImageCropper
-                ratio="4/5"
-                value={venue.heroImage}
-                label="Venue hero"
-                onChange={(v) => { setVenue(p => ({...p, heroImage:v})); setEditing(null); }}
-                onCancel={() => setEditing(null)}
-              />
-            </div>
-          </div>
-        );
-      } else {
-        const i = editing;
-        return (
-          <div className="absolute inset-0 anim-fade" style={{background:"transparent"}}>
-
-            <div className="absolute inset-0 flex flex-col px-6 overflow-y-auto noscroll" style={{paddingTop:"calc(env(safe-area-inset-top, 0px) + 16px)", paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 24px)"}}>
-              <ImageCropper
-                ratio="4/5"
-                value={venue.images[i]}
-                label={"Photo " + (i + 1)}
-                onChange={(v) => { setVenue(p => ({...p, images: p.images.map((im,idx) => idx===i ? v : im)})); setEditing(null); }}
-                onCancel={() => setEditing(null)}
-              />
-            </div>
-          </div>
-        );
-      }
-    }
-
-    // Normal form view
-    return (
-      <div className="absolute inset-0 anim-fade" style={{background:"transparent"}}>
-
-        <div className="absolute inset-0 flex flex-col" style={{paddingTop:"env(safe-area-inset-top, 0px)"}}>
-          {/* Header */}
-          <div className="px-6 pt-6 pb-2 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="font-black font-display-l" style={{fontSize:44,lineHeight:.95,letterSpacing:"-.02em",color:"var(--ink)"}}>Venue</div>
-              {group && (
-                <div className="stamp px-2.5 py-1 rounded-full" style={{border:"1px solid var(--line-2)", color:"var(--ink-mute)"}}>
-                  Under {group.name}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Scrollable form */}
-          <div className="flex-1 overflow-y-auto noscroll px-6 pt-4 pb-4 flex flex-col gap-5">
-            {/* Venue name */}
-            <div>
-              <div className="stamp mb-2">Venue name</div>
-              <input
-                value={venue.name}
-                onChange={e => setVenue(v => ({...v, name:e.target.value}))}
-                type="text"
-                placeholder="e.g. Skybar"
-                className="w-full h-12 px-3 rounded-[12px] text-[16px]"
-                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-              />
-            </div>
-
-            {/* Type pills */}
-            <div>
-              <div className="stamp mb-2">Type</div>
-              <div className="flex flex-wrap gap-2">
-                {VENUE_TYPES.map(t => {
-                  const sel = venue.type === t;
-                  return (
-                    <button
-                      key={t}
-                      onClick={() => setVenue(v => ({...v, type:t}))}
-                      className="press hit px-4 h-9 rounded-full text-[12px] font-medium"
-                      style={{
-                        background: sel ? "var(--ice)" : "transparent",
-                        color: sel ? "var(--ice-ink)" : "var(--ink)",
-                        border: sel ? "none" : "1px solid var(--line-2)"
-                      }}
-                    >{t}</button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Area pills */}
-            <div>
-              <div className="stamp mb-2">Area</div>
-              <div className="flex flex-wrap gap-2">
-                {BEIRUT_AREAS.map(a => {
-                  const sel = venue.area === a;
-                  return (
-                    <button
-                      key={a}
-                      onClick={() => setVenue(v => ({...v, area:a}))}
-                      className="press hit px-3 h-9 rounded-full text-[11px] font-medium"
-                      style={{
-                        background: sel ? "var(--ice)" : "transparent",
-                        color: sel ? "var(--ice-ink)" : "var(--ink)",
-                        border: sel ? "none" : "1px solid var(--line-2)"
-                      }}
-                    >{a}</button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <div className="stamp mb-2">Description</div>
-              <textarea
-                rows={3}
-                value={venue.description}
-                onChange={e => setVenue(v => ({...v, description:e.target.value}))}
-                placeholder="Tell influencers what makes this venue worth posting."
-                className="w-full px-3 py-3 rounded-[12px] text-[16px] resize-none"
-                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-              />
-            </div>
-
-            <div>
-              <div className="stamp mb-2">Instagram handle</div>
-              <input
-                value={venue.igHandle || ""}
-                onChange={e => setVenue(v => ({...v, igHandle:e.target.value.replace(/^@/, "")}))}
-                type="text"
-                autoCapitalize="none"
-                autoCorrect="off"
-                placeholder="yourvenue"
-                className="w-full h-12 px-3 rounded-[12px] text-[16px]"
-                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-              />
-              <div className="text-[11px] mt-2" style={{color:"var(--ink-mute)"}}>Used in the member event brief.</div>
-            </div>
-
-            {/* Hero image */}
-            <div>
-              <div className="stamp mb-2">Hero image</div>
-              {venue.heroImage ? (
-                <div>
-                  <FramedImage value={venue.heroImage} ratio="4/5" className="w-full"/>
-                  <button
-                    onClick={() => setEditing("hero")}
-                    className="press mt-2 text-[12px] font-medium"
-                    style={{color:"var(--ice)", background:"transparent", border:"none"}}
-                  >Replace</button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setEditing("hero")}
-                  className="press w-full flex items-center justify-center rounded-[14px]"
-                  style={{aspectRatio:"4/5", border:"1px dashed var(--line-2)", background:"transparent", color:"var(--ink-mute)"}}
-                >
-                  <span className="stamp">+ Add hero</span>
-                </button>
-              )}
-            </div>
-
-            {/* Gallery */}
-            <div>
-              <div className="stamp mb-1">Venue photos</div>
-              <div className="text-[12px] mb-3" style={{color:"var(--ink-mute)"}}>Four photos influencers swipe through.</div>
-              <div className="grid grid-cols-2 gap-3">
-                {[0,1,2,3].map(i => (
-                  venue.images[i] ? (
-                    <button
-                      key={i}
-                      onClick={() => setEditing(i)}
-                      className="press rounded-[14px] overflow-hidden"
-                      style={{aspectRatio:"4/5", background:"var(--bg-elev)", border:"none", padding:0}}
-                    >
-                      <FramedImage value={venue.images[i]} ratio="4/5" className="w-full h-full"/>
-                    </button>
-                  ) : (
-                    <button
-                      key={i}
-                      onClick={() => setEditing(i)}
-                      className="press rounded-[14px] flex items-center justify-center"
-                      style={{aspectRatio:"4/5", border:"1px dashed var(--line-2)", background:"transparent", color:"var(--ink-mute)"}}
-                    >
-                      <span className="stamp">+</span>
-                    </button>
-                  )
-                ))}
-              </div>
-            </div>
-
-            {/* bottom spacer so CTA isn't occluded */}
-            <div style={{height:8}}/>
-          </div>
-
-          {/* Primary CTA */}
-          <div className="shrink-0 px-6 app-safe-bottom">
-            <button
-              onClick={handleDone}
-              disabled={!canSave || saving}
-              className={"press w-full h-[52px] rounded-full font-semibold text-[14px] flex items-center justify-center gap-2 "+(canSave?"glow-primary":"")}
-              style={{
-                background: canSave ? "var(--ice)" : "var(--bg-elev2)",
-                color: canSave ? "var(--ice-ink)" : "var(--ink-mute)"
-              }}
-            >{saving ? "Saving…" : "Save venue"} <Icon name="arrow-right" size={16} stroke={1.8}/></button>
-          </div>
-        </div>
-
-      </div>
-    );
-  }
-
-  /* ========== NotifSheet – venue activity feed ========== */
-  /* ========== venueNotifs – derived activity feed (pure, module-level) ========== */
-  function venueNotifs(events){
-    const rows = [];
-    let idSeq = 0;
-    const mkId = () => "notif-" + (++idSeq);
-
-    events.forEach(e => {
-      if (e.stage === STAGE.open) {
-        // Un-swiped applicants
-        const unswiped = (e.guests || []).filter(g => g.state === GS.applied).length;
-        if (unswiped > 0) {
-          rows.push({ id: mkId(), kind:"applicants",
-            text: e.title + " – " + unswiped + " new applicant" + (unswiped !== 1 ? "s" : ""),
-            eventId: e.id, action:"review" });
-        }
-      }
-
-      if (e.stage === STAGE.locked) {
-        const confirmed = (e.guests || []).filter(g => g.state === GS.confirmed);
-        if (confirmed.length > 0) {
-          rows.push({ id: mkId(), kind:"confirmed",
-            text: e.title + " – " + confirmed.length + " confirmed",
-            eventId: e.id, action:"guestlist" });
-        }
-        const expired = (e.guests || []).filter(g => g.state === GS.expired);
-        if (expired.length > 0) {
-          rows.push({ id: mkId(), kind:"expired",
-            text: e.title + " – a pick expired · pick a replacement",
-            eventId: e.id, action:"review" });
-        }
-        const declined = (e.guests || []).filter(g => g.state === GS.declined);
-        if (declined.length > 0) {
-          rows.push({ id: mkId(), kind:"declined",
-            text: e.title + " – a pick declined · pick a replacement",
-            eventId: e.id, action:"review" });
-        }
-      }
-
-      if (e.stage === STAGE.past && e.recap) {
-        const inReview = (e.guests || []).filter(g => g.story === SS.review).length;
-        const due      = (e.guests || []).filter(g => g.story === SS.due).length;
-        const verified = (e.guests || []).filter(g => g.story === SS.verified).length;
-        if (inReview > 0 || due > 0) {
-          rows.push({ id: mkId(), kind:"stories",
-            text: e.title + " – " + verified + " stor" + (verified !== 1 ? "ies" : "y") + " verified · " + (inReview + due) + " pending",
-            eventId: e.id, action:"recap" });
-        }
-        if (e.invoice && e.invoice.status === "due") {
-          rows.push({ id: mkId(), kind:"invoice",
-            text: e.title + " – invoice due · $" + (e.invoice.price || 0),
-            eventId: e.id, action:"recap" });
-        }
-      }
-    });
-
-    return rows;
-  }
-
-  /* ========== NotifSheet – renders venueNotifs() rows ========== */
-  function NotifSheet({ events, rows:liveRows, onClose, onReview, onGuestList, onToast, onRecap, onDoor, onOpenEvent, live=false }){
-    const rows = live ? (liveRows || []) : venueNotifs(events);
-    const handleRow = (r) => {
-      onClose();
-      const evt = r.eventId ? events.find(e => e.id === r.eventId) : null;
-      if (r.action === "review"    && evt) return onReview(evt);
-      if (r.action === "guestlist" && evt) return onGuestList(evt.id);
-      if (r.action === "recap"     && evt) return onRecap(evt.id);
-      if (r.action === "event"     && evt && onOpenEvent) return onOpenEvent(evt);
-      if (r.action === "door"      && evt && onDoor) return onDoor(evt.id);
-      onToast("Nothing to open for this update");
-    };
-    return (
-      <>
-        <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
-        <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
-          <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
-          <div className="flex items-center justify-between mb-5">
-            <div className="font-black text-[22px] leading-none">Activity</div>
-            <button onClick={onClose} aria-label="Close" className="press hit w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
-              <Icon name="x" size={14} stroke={1.5}/>
-            </button>
-          </div>
-          <div className="space-y-2">
-            {rows.length === 0 && (
-              <div className="card rounded-[14px] p-4 text-center text-[13px]">No activity yet</div>
-            )}
-            {rows.map((r) => (
-              <button key={r.id} onClick={() => handleRow(r)}
-                className="press card w-full text-left rounded-[14px] p-3.5 flex items-center gap-3">
-                <span className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{background: (r.kind==="applicants"||r.kind==="confirmed") ? "var(--ice)" : "var(--line-2)"}}/>
-                <div className="flex-1 text-[13px] leading-snug">{r.text}</div>
-                <Icon name="arrow-right" size={13} stroke={1.8} className="shrink-0" style={{opacity:.5}}/>
-              </button>
-            ))}
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  /* ========== ScreenDesk – stage-driven venue dashboard (Task 7) ========== */
-  function ScreenDesk({ venue, events, notifications, onReview, onPost, onEditDraft, onGuestList, onToast, onTab, onRecap, onOpenEvent, today=TODAY, live=false, onNotifsOpened, onDoorEvent }){
-    const [notifOpen, setNotifOpen] = useState(false);
-
-    // 1. Tonight card – the locked event dated today (live: real clock; demo keeps
-    //    the loose confirmed-guests fallback so the seed world always has a card)
-    const tonightEvent = events.find(e => e.stage === STAGE.locked && e.date === today)
-      || (live ? null : events.find(e => (e.guests || []).some(g => g.state === GS.confirmed))) || null;
-
-    // 2. Needs attention rows
-    const openWithUnswiped = events.filter(e =>
-      e.stage === STAGE.open && (e.guests || []).some(g => g.state === GS.applied)
-    );
-    const lockedWithExpiredOrDeclined = events.filter(e =>
-      e.stage === STAGE.locked && (e.guests || []).some(g => g.state === GS.expired || g.state === GS.declined)
-    );
-    const attentionRows = [
-      ...openWithUnswiped.map(e => {
-        const n = (e.guests || []).filter(g => g.state === GS.applied).length;
-        return { key:"open-"+e.id, label: e.title + " · " + n + " to review →", action: () => onReview(e) };
-      }),
-      ...lockedWithExpiredOrDeclined.map(e => {
-        const hasExpired  = (e.guests || []).some(g => g.state === GS.expired);
-        const hasDeclined = (e.guests || []).some(g => g.state === GS.declined);
-        const sublabelSuffix = (hasExpired && hasDeclined) ? "picks need replacing"
-          : hasDeclined ? "a pick declined"
-          : "a pick expired";
-        return {
-          key:"locked-"+e.id,
-          label: "Pick a replacement",
-          sublabel: e.title + " – " + sublabelSuffix,
-          action: () => onReview(e),
-        };
-      }),
-    ];
-
-    // 3. Drafts
-    const drafts = events.filter(e => e.stage === STAGE.draft);
-
-    // 4. Last recap teaser – most recent past event with a recap
-    // endedAt: monotonic close ordinal – Close the night (T8) must set endedAt = max(existing)+1
-    const recapEvent = [...events]
-      .filter(e => e.stage === STAGE.past && e.recap)
-      .sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0))[0] || null;
-
-    // 5. Stat tiles – derived from stage
-    const openEvents = events.filter(e => e.stage === STAGE.open);
-    const appliedTotal = openEvents.reduce((s, e) => s + (e.appliedTotal || 0), 0);
-    const toReview     = openEvents.reduce((s, e) => s + (e.guests || []).filter(g => g.state === GS.applied).length, 0);
-    const tonightConfirmed = tonightEvent ? (tonightEvent.guests || []).filter(g => g.state === GS.confirmed).length : 0;
-    const roomsTonight = events.filter(e => e.stage === STAGE.locked && e.date === today).length;
-
-    const firstOpenEvent = openEvents[0] || null;
-
-    // Bell badge – live counts unread only; demo counts derived rows
-    const notifCount = live
-      ? (notifications || []).filter(n => !n.read).length
-      : venueNotifs(events).length;
-
-    // Header date – live shows the real date
-    const now = new Date();
-    const headerDate = live
-      ? now.toLocaleDateString("en-GB", {weekday:"short"}) + " · "
-        + String(now.getDate()).padStart(2,"0") + "." + String(now.getMonth()+1).padStart(2,"0")
-      : "Sun · 25.05";
-
-    // Tonight card sub-line
-    const tonightWaitlistCount = tonightEvent ? (tonightEvent.guests || []).filter(g => g.state === GS.waitlist).length : 0;
-
-    return (
-      <div className="absolute inset-0 flex flex-col" style={{background:"transparent"}}>
-
-        <div className="flex-1 overflow-y-auto noscroll app-dock-space">
-          {/* Header row */}
-          <div className="app-safe-top px-5 flex items-center justify-between">
-            <div className="font-display text-[14px]" style={{opacity:.75}}>The List · Venues</div>
-            <button onClick={()=>{ setNotifOpen(true); if (onNotifsOpened) onNotifsOpened(); }} aria-label="Activity" className="press hit glass w-10 h-10 rounded-full flex items-center justify-center relative">
-              <Icon name="bell" size={17} stroke={1.5}/>
-              {notifCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-medium" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>{notifCount}</span>
-              )}
-            </button>
-          </div>
-          <div className="px-5 mt-2 flex items-end justify-between">
-            <div>
-              <div className="font-black font-display-l text-[40px] leading-none">Tonight</div>
-              <div className="text-[12px] mt-2 flex items-center gap-1.5" style={{opacity:.75}}>
-                <Icon name="map-pin" size={12} stroke={1.5}/>{venue.name || "Your venue"} · {venue.area}
-              </div>
-            </div>
-            <div className="text-[12px] font-mono pb-1" style={{opacity:.75}}>{headerDate}</div>
-          </div>
-
-          {/* 1. Tonight card – locked event dated TODAY */}
-          {tonightEvent && (
-            <div className="px-5 mt-6">
-              <div className="press card rounded-[18px] overflow-hidden relative grain">
-                {tonightEvent.heroImage && <img src={tonightEvent.heroImage.src} className="absolute inset-0 w-full h-full object-cover" alt=""/>}
-                <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(0,0,0,.22) 0%, rgba(0,0,0,.85) 100%)"}}/>
-                <div className="relative p-4" style={{color:"#F7F6F3"}}>
-                  <div className="flex items-center justify-between">
-                    <StatusPill label="Tonight" tone="ice" dot/>
-                  </div>
-                  <div className="font-black font-display text-[30px] leading-none mt-9">{tonightEvent.title}</div>
-                  <div className="text-[12px] mt-1.5" style={{opacity:.85}}>
-                    {tonightConfirmed} confirmed · {tonightWaitlistCount} waitlist
-                  </div>
-                  <button
-                    onClick={() => { if (onDoorEvent) onDoorEvent(tonightEvent.id); onTab("door"); }}
-                    className="press mt-4 w-full h-12 rounded-full flex items-center justify-center gap-2 text-[12px] font-semibold glow-primary"
-                    style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-                    Door <Icon name="arrow-right" size={14} stroke={1.8}/>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 2. Needs attention */}
-          {attentionRows.length > 0 && (
-            <>
-              <SectionHead label="Needs attention" className="pt-7 pb-3"/>
-              <div className="px-5 space-y-2">
-                {attentionRows.map(row => (
-                  <button key={row.key} onClick={row.action}
-                    className="press card w-full text-left rounded-[14px] p-4 flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:"var(--ice)"}}/>
-                    <div className="flex-1 min-w-0">
-                      {row.sublabel && (
-                        <div className="text-[11px] mb-0.5" style={{color:"var(--ink-mute)"}}>{row.sublabel}</div>
-                      )}
-                      <div className="text-[13px] font-medium leading-snug">{row.label}</div>
-                    </div>
-                    <Icon name="arrow-right" size={14} stroke={1.8} className="shrink-0" style={{opacity:.6}}/>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* 3. Stat tiles */}
-          <SectionHead label="The desk" className="pt-7 pb-3"/>
-          <div className="px-5 grid grid-cols-2 gap-2.5 stagger">
-            <div style={{"--i":0}}>
-              <StatTile n={appliedTotal} label="Applied"
-                onClick={firstOpenEvent ? ()=>onReview(firstOpenEvent) : undefined}/>
-            </div>
-            <div style={{"--i":1}}>
-              <StatTile n={toReview} label="To review"
-                onClick={firstOpenEvent ? ()=>onReview(firstOpenEvent) : undefined}/>
-            </div>
-            <div style={{"--i":2}}>
-              <StatTile n={tonightConfirmed} label="Confirmed" ice
-                onClick={tonightEvent ? ()=>onGuestList(tonightEvent.id) : undefined}/>
-            </div>
-            <div style={{"--i":3}}>
-              <StatTile n={roomsTonight} label="Rooms tonight"/>
-            </div>
-          </div>
-
-          {/* 4. Drafts */}
-          <SectionHead label="Upcoming rooms" right={drafts.length + " draft"} className="pt-8 pb-3"/>
-          <div className="px-5 space-y-2 stagger">
-            {drafts.length===0 && (
-              <div className="card rounded-[14px] p-5 text-center text-[13px]" style={{opacity:.7}}>Nothing scheduled. Post a room.</div>
-            )}
-            {drafts.map((r,i)=>{
-              const m = (r.date.split("·")[1]||"").trim().split(" ");
-              return (
-                <button key={r.id} style={{"--i":i}} onClick={()=>onEditDraft(r)}
-                  className="press card w-full text-left rounded-[14px] p-3 flex items-center gap-3">
-                  <DateChip day={m[0]||"–"} sub={m[1]||""}/>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-display text-[17px] leading-tight truncate">{r.title}</div>
-                    <div className="text-[11px] mt-0.5" style={{opacity:.7}}>{r.time} · {r.seats} seats</div>
-                  </div>
-                  <StatusPill label="Draft" tone="outline"/>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="px-5 mt-5 pb-2">
-            <button onClick={onPost} className="press w-full h-[52px] rounded-full flex items-center justify-center gap-2 text-[12px] font-medium" style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
-              <Icon name="plus" size={15} stroke={1.8}/> New room
-            </button>
-          </div>
-
-          {/* 5. Last recap teaser */}
-          {recapEvent && (
-            <div className="px-5 mt-4 pb-4">
-              <SectionHead label="Last recap" className="pb-3"/>
-              <button onClick={()=>onRecap(recapEvent.id)}
-                className="press card w-full text-left rounded-[14px] p-4 flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="font-display text-[17px] leading-tight truncate">{recapEvent.title}</div>
-                  <div className="text-[12px] mt-1" style={{opacity:.75}}>
-                    {recapEvent.recap.showed} of {recapEvent.recap.confirmed} showed
-                    {" · "}{(recapEvent.guests||[]).filter(g=>g.story===SS.verified).length} stories verified
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 text-[12px] font-medium" style={{color:"var(--ice)", flexShrink:0}}>
-                  Recap <Icon name="arrow-right" size={13} stroke={1.8}/>
-                </div>
-              </button>
-            </div>
-          )}
-        </div>
-        {notifOpen && (
-          <NotifSheet
-            events={events}
-            rows={notifications}
-            onClose={()=>setNotifOpen(false)}
-            onReview={onReview}
-            onGuestList={(id)=>onGuestList(id)}
-            onToast={onToast}
-            onRecap={onRecap}
-            onDoor={(id)=>{ if (onDoorEvent) onDoorEvent(id); onTab("door"); }}
-            onOpenEvent={onOpenEvent}
-            live={live}
-          />
-        )}
-      </div>
-    );
-  }
-
-  /* ========== ScreenDoor – night-of check-in + scoring ========== */
-  function ScreenDoor({ events, setEvents, askConfirm, onToast, onTab, onCheckIn, onCloseEvent, onNoShow, onRate, eventId=null, today=TODAY, live=false }){
-    const [seg, setSeg] = useState("expected");
-    const [rateFor, setRateFor] = useState(null);      // { applicantId, name, photo, index } | null
-    const [score, setScore] = useState(9);
-    // rating queue: { ids: applicantId[], total: number } | null
-    const [ratingQueue, setRatingQueue] = useState(null);
-    const [queueScore, setQueueScore] = useState(9);
-    const [showClose, setShowClose] = useState(false);   // confirm dialog open
-    // better-ui: row entrances stagger once on mount, not on every guest-state write
-    const [staggerDone, setStaggerDone] = useState(false);
-    useEffect(() => { const t = setTimeout(() => setStaggerDone(true), 2000); return () => clearTimeout(t); }, []);
-
-    // Self-select tonight's locked event. Live: genuinely-tonight only; demo keeps
-    // the loose fallback so the seed world always has a door.
-    const selectedEvent = eventId ? events.find(e => e.id === eventId && e.stage === STAGE.locked) : null;
-    const event = selectedEvent || events.find(e => e.stage === STAGE.locked && e.date === today)
-      || (live ? null : events.find(e => (e.guests || []).some(g => [GS.confirmed, GS.checkedIn, GS.noShow].includes(g.state)))) || null;
-    const guests = event ? (event.guests || []) : [];
-
-    // Derive segments – only confirmed/checked_in/no_show appear at the door
-    const expectedGuests  = guests.filter(g => g.state === GS.confirmed);
-    const checkedInGuests = guests.filter(g => g.state === GS.checkedIn);
-    const noShowGuests    = guests.filter(g => g.state === GS.noShow);
-
-    const list = seg === "expected" ? expectedGuests
-               : seg === "in"       ? checkedInGuests
-               : noShowGuests;
-
-    // Immutable writer helpers
-    const writeGuest = (applicantId, patch) => {
-      setEvents(es => es.map(e => e.id !== event.id ? e : {
-        ...e,
-        guests: (e.guests || []).map(g => g.applicantId === applicantId ? { ...g, ...patch } : g),
-      }));
-    };
-
-    const checkIn = async (g, idx) => {
-      const ap = applicantById[g.applicantId] || {};
-      if (onCheckIn) {
-        // Live: the RPC + rehydrate carry the real checked_in_at – no fabricated clock.
-        try { await onCheckIn(g.applicantId); }
-        catch (error) { onToast(error.message || "Could not check in"); return; }
-        onToast((ap.name || "Guest").split(" ")[0] + " checked in");
-        return;
-      }
-      const inAt = "22:" + String(10 + idx * 3).padStart(2, "0");
-      writeGuest(g.applicantId, { state: GS.checkedIn, inAt });
-      onToast((ap.name || "Guest").split(" ")[0] + " checked in · " + inAt);
-    };
-
-    const markNoShow = async (g) => {
-      const ap = applicantById[g.applicantId] || {};
-      if (onNoShow) {
-        try { await onNoShow(g.applicantId); }
-        catch (error) { onToast(error.message || "Could not mark no-show"); return; }
-        onToast((ap.name || "Guest").split(" ")[0] + " marked no-show");
-        return;
-      }
-      writeGuest(g.applicantId, { state: GS.noShow });
-      onToast((ap.name || "Guest").split(" ")[0] + " marked no-show");
-    };
-
-    // Single-guest rate (from In tab)
-    const submitSingleScore = async () => {
-      if (onRate) {
-        try { await onRate(rateFor.applicantId, score); }
-        catch (error) { onToast(error.message || "Could not save score"); return; }
-        onToast("Scored " + score + " · saved to their event record");
-        setRateFor(null); setScore(9);
-        return;
-      }
-      writeGuest(rateFor.applicantId, { rating: score });
-      onToast("Scored " + score + " · saved to their event record");
-      setRateFor(null); setScore(9);
-    };
-
-    // ---- Close-the-night flow ----
-    const startClose = () => {
-      // Build queue of unrated checked-in guests
-      const unrated = checkedInGuests.filter(g => g.rating == null);
-      if (unrated.length > 0) {
-        const ids = unrated.map(g => g.applicantId);
-        setRatingQueue({ ids, total: ids.length });
-        setQueueScore(9);
-      } else {
-        setShowClose(true);
-      }
-    };
-
-    // Submit a rating inside the queue then advance (live: rate_guest per guest,
-    // close_event fires at the end of the queue via the close confirm)
-    const submitQueueScore = async () => {
-      const currentId = ratingQueue.ids[0];
-      if (onRate) {
-        try { await onRate(currentId, queueScore); }
-        catch (error) { onToast(error.message || "Could not save score"); return; }
-      } else {
-        writeGuest(currentId, { rating: queueScore });
-      }
-      const remaining = ratingQueue.ids.slice(1);
-      if (remaining.length === 0) {
-        setRatingQueue(null);
-        setQueueScore(9);
-        setShowClose(true);
-      } else {
-        setRatingQueue({ ids: remaining, total: ratingQueue.total });
-        setQueueScore(9);
-      }
-    };
-
-    const skipQueueGuest = () => {
-      const remaining = ratingQueue.ids.slice(1);
-      if (remaining.length === 0) {
-        setRatingQueue(null);
-        setQueueScore(9);
-        setShowClose(true);
-      } else {
-        setRatingQueue({ ids: remaining, total: ratingQueue.total });
-        setQueueScore(9);
-      }
-    };
-
-    const doCloseNight = async () => {
-      if (onCloseEvent) {
-        // Live: close_event builds the recap + booking server-side; rehydrate
-        // renders from the bookings row – nothing fabricated locally.
-        try { await onCloseEvent(event.id); }
-        catch (error) { onToast(error.message || "Could not close event"); return; }
-        setShowClose(false);
-        onToast("Recap ready");
-        if (onTab) onTab("desk");
-        return;
-      }
-      setShowClose(false);
-      setEvents(es => {
-        const maxEndedAt = es.reduce((m, e) => Math.max(m, e.endedAt || 0), 0);
-        return es.map(e => {
-          if (e.id !== event.id) return e;
-          const gs = e.guests || [];
-          // snapshot counts before conversion
-          const confirmedCount = gs.filter(g => g.state === GS.confirmed).length;
-          const checkedInCount = gs.filter(g => g.state === GS.checkedIn).length;
-          const noShowCount    = gs.filter(g => g.state === GS.noShow).length;
-          const recapConfirmed = confirmedCount + checkedInCount + noShowCount;
-          // convert remaining confirmed → no_show; checked_in stories → due
-          const newGuests = gs.map(g => {
-            if (g.state === GS.confirmed)  return { ...g, state: GS.noShow };
-            if (g.state === GS.checkedIn)  return { ...g, story: SS.due };
-            return g;
-          });
-          // avg rating
-          const ratings = newGuests.filter(g => g.state === GS.checkedIn && g.rating != null).map(g => g.rating);
-          const avgRating = ratings.length > 0
-            ? Math.round(ratings.reduce((s,r)=>s+r,0) / ratings.length * 10) / 10
-            : null;
-          return {
-            ...e,
-            stage: STAGE.past,
-            status: stageToStatus(STAGE.past),
-            endedAt: maxEndedAt + 1,
-            guests: newGuests,
-            recap: {
-              confirmed: recapConfirmed,
-              showed: checkedInCount,
-              noShows: noShowCount + confirmedCount,  // original no_shows + newly converted
-              avgRating,
-            },
-            invoice: {
-              bundle: e.bundle?.name || "Custom",
-              price:  e.bundle?.price ?? 0,
-              status: "due",
-            },
-          };
-        });
-      });
-      onToast("Recap ready");
-      if (onTab) onTab("desk");
-    };
-
-    // ---- Empty state ----
-    if (!event) {
+    if (editing !== null) {
+      const hero = editing === "hero";
       return (
-        <div className="absolute inset-0 flex flex-col" style={{background:"transparent"}}>
-
-          <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
-            <div className="font-black font-display-l text-[40px] leading-none">No room tonight</div>
-            <div className="text-[13px]" style={{color:"var(--ink-2)"}}>Door opens when a confirmed night is on.</div>
-          </div>
-
-        </div>
-      );
-    }
-
-    // ---- Rating queue modal (before close confirm) ----
-    if (ratingQueue && ratingQueue.ids.length > 0) {
-      const remaining = ratingQueue.ids.length;
-      const doneCount = ratingQueue.total - remaining;
-      const queueApId = ratingQueue.ids[0];
-      const queueAp = applicantById[queueApId] || {};
-      return (
-        <div className="absolute inset-0 flex flex-col" style={{background:"transparent"}}>
-
-          <div className="flex-1 overflow-y-auto noscroll app-dock-space">
-            <div className="app-safe-top px-5">
-              <div className="font-black font-display-l text-[40px] leading-none">Rate the night</div>
-              <div className="text-[12px] mt-2" style={{opacity:.75}}>{doneCount + 1} of {ratingQueue.total}</div>
-            </div>
-            <div className="px-5 mt-8">
-              <div className="flex items-center gap-3 mb-6">
-                <img src={queueAp.photo || ""} className="w-14 h-14 rounded-full object-cover shrink-0" alt=""
-                     style={{background:"var(--bg-elev2)"}}/>
-                <div className="flex-1 min-w-0">
-                  <div className="font-black text-[22px] leading-tight truncate">{queueAp.name || "–"}</div>
-                  <div className="text-[11px] mt-0.5" style={{opacity:.7}}>How was the night?</div>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                {[6,7,8,9,10].map(n=>(
-                  <button key={n} onClick={()=>setQueueScore(n)} className={"press flex-1 h-12 rounded-[12px] font-black font-mono text-[18px] "+(queueScore===n?"glow-ice":"")}
-                    style={queueScore===n ? {background:"var(--ice)", color:"var(--ice-ink)"} : {background:"var(--bg-elev)", border:"1px solid var(--line)"}}>{n}</button>
-                ))}
-              </div>
-              <div className="text-[11px] mt-3" style={{opacity:.7}}>Feeds their reputation. Honest beats nice – it keeps the list good.</div>
-              <button onClick={submitQueueScore} className="press glow-primary w-full h-12 rounded-full mt-5 text-[12px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-                Save score →
-              </button>
-              <button onClick={skipQueueGuest} className="press w-full mt-2 py-3.5 text-center text-[11px]" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Skip</button>
-            </div>
-          </div>
-
-        </div>
-      );
-    }
-
-    // ---- Main door view ----
-    return (
-      <div className="absolute inset-0 flex flex-col" style={{background:"transparent"}}>
-
-        <div className="flex-1 overflow-y-auto noscroll app-dock-space">
-          <div className="app-safe-top px-5">
-            <div className="font-black font-display-l text-[40px] leading-none">Door</div>
-            <div className="text-[12px] mt-2" style={{opacity:.75}}>{event.title} · {event.date}</div>
-          </div>
-          <div className="px-5 mt-5">
-            <Segmented value={seg} onChange={setSeg} items={[
-              { id:"expected", label:"Expected", count:expectedGuests.length },
-              { id:"in",       label:"In",       count:checkedInGuests.length },
-              { id:"noshow",   label:"No show",  count:noShowGuests.length },
-            ]}/>
-          </div>
-          <div className={"px-5 mt-4 space-y-2" + (staggerDone ? "" : " stagger")}>
-            {list.length===0 && (
-              <div className="card rounded-[14px] p-6 text-center text-[13px]" style={{opacity:.7}}>
-                {seg==="expected" ? "Everyone's in." : seg==="in" ? "No one's in yet." : "No no-shows. Good night."}
-              </div>
-            )}
-            {list.map((g, i) => {
-              const ap = applicantById[g.applicantId] || {};
-              return (
-                <div key={g.applicantId} style={{"--i":i}} className="card rounded-[14px] p-3 flex items-center gap-3">
-                  <img src={ap.photo || ""} className="w-11 h-11 rounded-full object-cover shrink-0" alt=""
-                       style={{background:"var(--bg-elev2)"}}/>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-[14px] truncate">{ap.name || "–"}</div>
-                    <div className="text-[11px]" style={{opacity:.7}}>
-                      <span className="font-mono">{quality10(ap.quality_score)}</span> rep
-                      {seg==="in" && g.inAt ? " · in " + g.inAt : ""}
-                    </div>
-                  </div>
-                  {/* Pass code – right-aligned, quiet treatment */}
-                  {g.code && seg === "expected" && (
-                    <span className="font-mono text-[11px] shrink-0" style={{color:"var(--ice)", letterSpacing:".04em"}}>{g.code}</span>
-                  )}
-                  {seg==="expected" && (
-                    <>
-                      <button onClick={()=>markNoShow(g)} className="press hit h-9 px-3 rounded-full text-[10px] font-medium shrink-0" style={{border:"1px solid var(--line-2)", opacity:.7}}>No show</button>
-                      <button onClick={()=>checkIn(g, i)} className="press hit h-9 px-3.5 rounded-full text-[10px] font-semibold glow-primary shrink-0" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Check in</button>
-                    </>
-                  )}
-                  {seg==="in" && (
-                    g.rating != null
-                      ? <StatusPill label="Scored" tone="outline"/>
-                      : <button onClick={()=>{ setRateFor(g); setScore(9); }} className="press hit h-9 px-3.5 rounded-full text-[10px] font-medium shrink-0" style={{border:"1px solid var(--line-2)"}}>Rate</button>
-                  )}
-                  {seg==="noshow" && <StatusPill label="No show"/>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Close the night footer */}
-        <div className="absolute bottom-0 left-0 right-0 pb-8 px-5 pt-3" style={{background:"linear-gradient(to top, var(--bg) 70%, transparent)"}}>
-          <button onClick={startClose} className="press glow-primary w-full h-[52px] rounded-full text-[13px] font-semibold flex items-center justify-center gap-2" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-            Close the night <Icon name="arrow-right" size={15} stroke={1.8}/>
-          </button>
-        </div>
-
-        {/* Confirm close dialog */}
-        {showClose && (
-          <ConfirmDialog
-            title="Close the night?"
-            body="Unchecked guests become no-shows. The recap and invoice get built."
-            confirmLabel="Close the night"
-            onConfirm={doCloseNight}
-            onClose={()=>setShowClose(false)}
-          />
-        )}
-
-        {/* Single-guest rate modal (In tab) */}
-        {rateFor && (
-          <>
-            <div onClick={()=>setRateFor(null)} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
-            <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-7" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
-              <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
-              <div className="flex items-center gap-3 mb-5">
-                {(() => { const ap = applicantById[rateFor.applicantId] || {}; return (<>
-                  <img src={ap.photo || ""} className="w-11 h-11 rounded-full object-cover" alt=""/>
-                  <div className="flex-1">
-                    <div className="font-black text-[20px] leading-none">{ap.name || "–"}</div>
-                    <div className="text-[11px] mt-1" style={{opacity:.7}}>How was the night?</div>
-                  </div>
-                </>); })()}
-                <button onClick={()=>setRateFor(null)} aria-label="Close" className="press hit w-8 h-8 rounded-full flex items-center justify-center" style={{background:"var(--bg-elev)"}}>
-                  <Icon name="x" size={14} stroke={1.5}/>
-                </button>
-              </div>
-              <div className="flex gap-2">
-                {[6,7,8,9,10].map(n=>(
-                  <button key={n} onClick={()=>setScore(n)} className={"press flex-1 h-12 rounded-[12px] font-black font-mono text-[18px] "+(score===n?"glow-ice":"")}
-                    style={score===n ? {background:"var(--ice)", color:"var(--ice-ink)"} : {background:"var(--bg-elev)", border:"1px solid var(--line)"}}>{n}</button>
-                ))}
-              </div>
-              <div className="text-[11px] mt-3" style={{opacity:.7}}>Feeds their reputation. Honest beats nice – it keeps the list good.</div>
-              <button onClick={submitSingleScore} className="press glow-primary w-full h-12 rounded-full mt-5 text-[12px] font-semibold" style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-                Save score
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    );
-  }
-
-  /* ========== VenueTabBar – 4-tab frosted bar for the venue shell ========== */
-  function VenueTabBar({ tab, onTab }){
-    const items = [
-      { id:"desk",   icon:"sparkle",             label:"Tonight" },
-      { id:"events", icon:"calendar",            label:"Events" },
-      { id:"door",   icon:"users",               label:"Door" },
-      { id:"venue",  icon:"building-storefront", label:"Venue" },
-    ];
-    return (
-      <div className="tabbar" role="navigation" aria-label="Venue navigation" style={{gridTemplateColumns:"repeat(4,1fr)"}}>
-        {items.map(it => {
-          const active = tab === it.id;
-          return (
-            <button key={it.id} onClick={() => onTab(it.id)} aria-current={active ? "page" : undefined} className={"press " + (active ? "active" : "")}>
-              <Icon name={it.icon} size={18} stroke={1.4}/>
-              <span>{it.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
-
-  /* ========== ScreenStub – placeholder for unbuilt tabs ========== */
-  function ScreenStub({ title }){
-    return (
-      <>
-
-        <div className="absolute inset-0 flex items-center justify-center" style={{background:"transparent"}}>
-          <div className="font-black font-display-l text-[40px]" style={{color:"var(--ink-mute)"}}>{title}</div>
-        </div>
-
-      </>
-    );
-  }
-
-  /* ========== ConfirmDialog – generic bottom-sheet confirm (reused by multiple tasks) ========== */
-  function ConfirmDialog({ title, body, confirmLabel, onConfirm, onClose }){
-    return (
-      <>
-        <div onClick={onClose} className="absolute inset-0 z-[60] sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
-        <div className="absolute left-0 right-0 bottom-0 z-[70] sheet rounded-t-[24px] px-5 pt-4 pb-8" style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)"}}>
-          <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{background:"var(--ink)", opacity:.4}}/>
-          <div className="font-black font-display-l text-[26px] leading-tight mb-2">{title}</div>
-          <div className="text-[13px] leading-relaxed mb-6" style={{color:"var(--ink-2)"}}>{body}</div>
-          <div className="flex gap-3">
-            <button onClick={onClose}
-              className="press flex-1 h-[52px] rounded-full text-[13px] font-medium"
-              style={{border:"1px solid var(--line-2)", color:"var(--ink)", background:"transparent"}}>
-              Keep it
-            </button>
-            <button onClick={()=>{ onConfirm(); onClose(); }}
-              className="press glow-primary flex-1 h-[52px] rounded-full text-[13px] font-semibold"
-              style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-              {confirmLabel}
-            </button>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  /* ========== GuestListSheet – locked event's guest roster ========== */
-  function GuestListSheet({ event, onClose }){
-    const confirmed = (event.guests || []).filter(g => g.state === GS.confirmed);
-    const awaiting  = (event.guests || []).filter(g => g.state === GS.picked || g.state === GS.expired);
-    const waitlist  = (event.guests || []).filter(g => g.state === GS.waitlist);
-    const seats     = event.seats || (event.mix ? event.mix.girls + event.mix.guys : 0);
-
-    function GuestRow({ g, statusText }){
-      const ap = applicantById[g.applicantId] || {};
-      return (
-        <div className="flex items-center gap-3 py-2.5">
-          <img src={ap.photo || ""} alt="" className="w-10 h-10 rounded-full object-cover shrink-0"
-               style={{background:"var(--bg-elev2)"}}/>
-          <div className="flex-1 min-w-0">
-            <div className="font-medium text-[14px] truncate">{ap.name || "–"}</div>
-            {statusText && (
-              <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>{statusText}</div>
-            )}
-          </div>
-          <div className="shrink-0 flex flex-col items-end gap-0.5">
-            {g.code && (
-              <span className="font-mono text-[11px]" style={{color:"var(--ice)", letterSpacing:".04em"}}>{g.code}</span>
-            )}
-            {ap.quality_score != null && (
-              <span className="text-[10px]" style={{color:"var(--ink-mute)"}}>{quality10(ap.quality_score)}</span>
-            )}
+        <div className="absolute inset-0 anim-fade">
+          <div className="absolute inset-0 flex flex-col px-6 overflow-y-auto noscroll" style={{paddingTop:"calc(env(safe-area-inset-top, 0px) + 16px)", paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 24px)"}}>
+            <ImageCropper
+              ratio="4/5"
+              value={hero ? venue.heroImage : venue.images[editing]}
+              label={hero ? "Main photo" : "Photo " + (editing + 1)}
+              onChange={(v) => { setVenue(p => hero ? {...p, heroImage:v} : {...p, images: p.images.map((im, idx) => idx === editing ? v : im)}); setEditing(null); }}
+              onCancel={() => setEditing(null)}
+            />
           </div>
         </div>
       );
     }
 
-    const Group = ({ label, children, count }) => (
-      <div className="mb-4">
-        <div className="stamp mb-1 flex items-center justify-between">
-          <span>{label}</span>
-          <span style={{color:"var(--ink-mute)"}}>{count}</span>
-        </div>
-        <div style={{borderTop:"1px solid var(--line)"}}>
-          {children}
-        </div>
-      </div>
-    );
-
     return (
-      <>
-        <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)"}}/>
-        <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-5 pt-4 pb-8"
-             style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)", maxHeight:"78%", display:"flex", flexDirection:"column"}}>
-          <div className="w-10 h-1 rounded-full mx-auto mb-5 shrink-0" style={{background:"var(--ink)", opacity:.4}}/>
-          <div className="flex items-start justify-between mb-4 shrink-0">
-            <div>
-              <div className="font-black font-display-l text-[22px] leading-tight">{event.title}</div>
-              <div className="text-[12px] mt-0.5" style={{color:"var(--ink-mute)"}}>
-                <span className="font-mono">{confirmed.length}</span> confirmed of <span className="font-mono">{seats}</span>
+      <div className="absolute inset-0 anim-fade flex flex-col">
+        <div className="shrink-0 px-5 app-safe-top pb-2">
+          <BackButton onClick={onCancel} label="Cancel"/>
+          <h1 className="font-black font-display-l text-[30px] leading-none mt-1">Edit venue</h1>
+        </div>
+
+        <div className="flex-1 min-h-0 overflow-y-auto noscroll app-form-scroll px-5 pt-3 pb-4 space-y-6">
+          <Field label="Venue name">
+            <input value={venue.name} onChange={e => setVenue(v => ({...v, name:e.target.value}))} placeholder="e.g. Skybar" className={inputCls} style={inputStyle}/>
+          </Field>
+
+          <ChoiceGroup label="Type">
+            {VENUE_TYPES.map(t => <Chip key={t} on={venue.type === t} onClick={() => setVenue(v => ({...v, type:t}))}>{t}</Chip>)}
+          </ChoiceGroup>
+
+          <ChoiceGroup label="Area">
+            {BEIRUT_AREAS.map(a => <Chip key={a} on={venue.area === a} onClick={() => setVenue(v => ({...v, area:a}))}>{a}</Chip>)}
+          </ChoiceGroup>
+
+          <Field label="Description">
+            <textarea rows={3} value={venue.description} onChange={e => setVenue(v => ({...v, description:e.target.value}))}
+              placeholder="Tell guests what makes this venue worth posting."
+              className="w-full px-3 py-3 rounded-[12px] text-[16px] resize-none" style={inputStyle}/>
+          </Field>
+
+          <Field label="Instagram handle" hint="Shown to guests in the event brief.">
+            <input value={venue.igHandle || ""} onChange={e => setVenue(v => ({...v, igHandle:e.target.value.replace(/^@/, "")}))}
+              autoCapitalize="none" autoCorrect="off" placeholder="yourvenue" className={inputCls} style={inputStyle}/>
+          </Field>
+
+          <div>
+            <div className="text-[13px] font-semibold mb-2">Main photo</div>
+            {venue.heroImage ? (
+              <div className="flex items-end gap-4">
+                <FramedImage value={venue.heroImage} ratio="4/5" radius={14} className="w-28 shrink-0"/>
+                <button onClick={() => setEditing("hero")} className="press min-h-[44px] px-4 rounded-full text-[13px] font-medium" style={{border:"1px solid var(--line-2)"}}>Change main photo</button>
               </div>
-            </div>
-            <button onClick={onClose} aria-label="Close" className="press hit w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{background:"var(--bg-elev)"}}>
-              <Icon name="x" size={14} stroke={1.5}/>
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto noscroll">
-            {confirmed.length > 0 && (
-              <Group label="Confirmed" count={confirmed.length}>
-                {confirmed.map((g) => <GuestRow key={g.applicantId} g={g}/>)}
-              </Group>
-            )}
-            {awaiting.length > 0 && (
-              <Group label="Awaiting confirm" count={awaiting.length}>
-                {awaiting.map((g) => <GuestRow key={g.applicantId} g={g} statusText={g.state === GS.expired ? "Pick expired" : "Awaiting confirm"}/>)}
-              </Group>
-            )}
-            {waitlist.length > 0 && (
-              <Group label="Waitlist" count={waitlist.length}>
-                {waitlist.map((g) => <GuestRow key={g.applicantId} g={g} statusText="Still under review"/>)}
-              </Group>
-            )}
-            {confirmed.length === 0 && awaiting.length === 0 && waitlist.length === 0 && (
-              <div className="flex items-center justify-center py-10">
-                <span className="stamp" style={{color:"var(--ink-mute)"}}>No guests yet</span>
-              </div>
+            ) : (
+              <button onClick={() => setEditing("hero")} className="press w-28 flex items-center justify-center rounded-[14px] text-[13px] font-medium"
+                style={{aspectRatio:"4/5", border:"1px dashed var(--line-2)"}}>Add main photo</button>
             )}
           </div>
-        </div>
-      </>
-    );
-  }
 
-  /* ========== ScreenEvents – Events dashboard (stage-driven, Task 4) ========== */
-  function ScreenEvents({ events, venue, onPost, onOpenEvent, onEditDraft, onGuestList, askConfirm, setEvents, onToast, onRecap, onCancelEvent, onDeleteDraft }){
-    const [seg, setSeg] = useState("open");
-
-    const counts = {
-      open:    events.filter(e => e.stage === STAGE.open).length,
-      locked:  events.filter(e => e.stage === STAGE.locked).length,
-      draft:   events.filter(e => e.stage === STAGE.draft).length,
-      past:    events.filter(e => e.stage === STAGE.past || e.stage === STAGE.cancelled).length,
-    };
-
-    const segments = [
-      { id:"open",   label:"Open",   count: counts.open   },
-      { id:"locked", label:"Locked", count: counts.locked },
-      { id:"draft",  label:"Drafts", count: counts.draft  },
-      { id:"past",   label:"Past",   count: counts.past   },
-    ];
-
-    const visible = events.filter(e => {
-      if (seg === "past") return e.stage === STAGE.past || e.stage === STAGE.cancelled;
-      return e.stage === seg;
-    });
-
-    function StagePill({ stage }){
-      if (stage === STAGE.open)      return <StatusPill label="Open" tone="ice" dot/>;
-      if (stage === STAGE.locked)    return <StatusPill label="Locked" tone="outline"/>;
-      if (stage === STAGE.draft)     return <StatusPill label="Draft" tone="outline"/>;
-      if (stage === STAGE.cancelled) return <StatusPill label="Cancelled"/>;
-      return <StatusPill label="Past"/>;
-    }
-
-    const handleCancel = (event) => {
-      askConfirm({
-        title: "Cancel this event?",
-        body: "Applicants and savers get notified. No charge, no strikes.",
-        confirmLabel: "Cancel event",
-        onConfirm: async () => {
-          if (onCancelEvent) {
-            try { await onCancelEvent(event.id); }
-            catch (error) { onToast(error.message || "Could not cancel event"); return; }
-            onToast("Event cancelled – guests notified");
-            return;
-          }
-          setEvents(es => es.map(e => e.id !== event.id ? e : {
-            ...e,
-            stage: STAGE.cancelled,
-            status: stageToStatus(STAGE.cancelled),
-            guests: (e.guests || []).map(g => ({ ...g, state: GS.cancelled })),
-          }));
-          onToast("Event cancelled – guests notified");
-        },
-      });
-    };
-
-    const handleDeleteDraft = (event) => {
-      askConfirm({
-        title: "Delete this draft?",
-        body: "The draft goes away for good. Nobody was notified about it.",
-        confirmLabel: "Delete draft",
-        onConfirm: async () => {
-          if (onDeleteDraft) {
-            try { await onDeleteDraft(event.id); }
-            catch (error) { onToast(error.message || "Could not delete draft"); return; }
-            onToast("Draft deleted");
-            return;
-          }
-          setEvents(es => es.filter(e => e.id !== event.id));
-          onToast("Draft deleted");
-        },
-      });
-    };
-
-    return (
-      <div className="absolute inset-0 flex flex-col" style={{background:"transparent"}}>
-
-
-        {/* Header */}
-        <div className="shrink-0 px-5 app-safe-top pb-3">
-          <div className="font-black font-display-l text-[40px] leading-none">Events</div>
-        </div>
-        <div className="hr-2 mx-5 mb-4 shrink-0"/>
-
-        {/* Segmented control */}
-        <div className="shrink-0 px-5 mb-4">
-          <Segmented items={segments} value={seg} onChange={setSeg}/>
-        </div>
-
-        {/* Scrollable event list */}
-        <div className="flex-1 overflow-y-auto noscroll px-5 pb-2">
-          {visible.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <span className="stamp" style={{color:"var(--ink-mute)"}}>
-                {seg === "open" ? "No open events" : seg === "locked" ? "No locked events" : seg === "draft" ? "No drafts" : "No past events"}
-              </span>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {visible.map(event => (
-                <div key={event.id} className="w-full text-left rounded-[14px] overflow-hidden"
-                  style={{background:"var(--bg-elev)", border:"1px solid var(--line)"}}>
-                  {/* Card body – inner thumb radius 8 keeps it concentric inside the 14px card */}
-                  <div className="flex items-start gap-3 p-3">
-                    <FramedImage value={event.heroImage} ratio="4/5" radius={8} className="w-14 shrink-0"/>
-                    <div className="flex-1 min-w-0 py-0.5">
-                      <div className="font-black text-[18px] leading-tight truncate">{event.title || "Untitled"}</div>
-                      <div className="text-[11px] mt-0.5 truncate" style={{color:"var(--ink-mute)"}}>
-                        {event.type}{event.date ? " · " + event.date : ""}{event.time ? " · " + event.time : ""}
-                      </div>
-                      {/* Open-specific meta */}
-                      {event.stage === STAGE.open && event.closesAt && (
-                        <div className="text-[11px] mt-1" style={{color:"var(--ink-mute)"}}>
-                          Closes {event.closesAt}
-                        </div>
-                      )}
-                      {event.stage === STAGE.open && event.appliedTotal != null && (
-                        <div className="text-[11px] mt-0.5" style={{color:"var(--ink-mute)"}}>
-                          <span className="font-mono">{event.appliedTotal}</span> applied
-                        </div>
-                      )}
-                      {/* Mix / seats */}
-                      <div className="text-[10px] mt-1" style={{color:"var(--ink-mute)"}}>
-                        {event.mix
-                          ? "Girls " + event.mix.girls + " · Guys " + event.mix.guys
-                          : event.seats + " seats"}
-                      </div>
-                    </div>
-                    <div className="shrink-0 pt-0.5">
-                      <StagePill stage={event.stage}/>
-                    </div>
-                  </div>
-
-                  {/* Action row */}
-                  <div className="flex items-center justify-between px-3 pb-3 gap-2">
-                    <div className="flex-1">
-                      {event.stage === STAGE.open && (
-                        <button onClick={() => onOpenEvent(event)}
-                          className="press text-[12px] font-semibold flex items-center gap-1"
-                          style={{color:"var(--ice)", background:"transparent", border:"none"}}>
-                          Review applicants <Icon name="arrow-right" size={13} stroke={1.8}/>
-                        </button>
-                      )}
-                      {event.stage === STAGE.locked && (
-                        <button onClick={() => onGuestList(event)}
-                          className="press text-[12px] font-semibold flex items-center gap-1"
-                          style={{color:"var(--ice)", background:"transparent", border:"none"}}>
-                          Guest list <Icon name="arrow-right" size={13} stroke={1.8}/>
-                        </button>
-                      )}
-                      {event.stage === STAGE.draft && (
-                        <button onClick={() => onEditDraft(event)}
-                          className="press text-[12px] font-semibold flex items-center gap-1"
-                          style={{color:"var(--ice)", background:"transparent", border:"none"}}>
-                          Edit <Icon name="arrow-right" size={13} stroke={1.8}/>
-                        </button>
-                      )}
-                      {event.stage === STAGE.past && (
-                        <button onClick={() => onRecap(event.id)}
-                          className="press text-[12px] font-semibold flex items-center gap-1"
-                          style={{color:"var(--ice)", background:"transparent", border:"none"}}>
-                          Recap <Icon name="arrow-right" size={13} stroke={1.8}/>
-                        </button>
-                      )}
-                      {event.stage === STAGE.cancelled && (
-                        <span className="text-[11px]" style={{color:"var(--ink-mute)"}}>Cancelled</span>
-                      )}
-                    </div>
-                    {(event.stage === STAGE.open || event.stage === STAGE.locked) && (
-                      <button onClick={() => handleCancel(event)}
-                        className="press hit text-[11px] py-2"
-                        style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
-                        Cancel event
-                      </button>
-                    )}
-                    {event.stage === STAGE.draft && (
-                      <button onClick={() => handleDeleteDraft(event)}
-                        className="press hit text-[11px] py-2"
-                        style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
-                        Delete draft
-                      </button>
-                    )}
-                  </div>
-                </div>
+          <div>
+            <div className="text-[13px] font-semibold">More photos</div>
+            <div className="text-[12px] mt-0.5 mb-3">Four photos guests swipe through.</div>
+            <div className="grid grid-cols-4 gap-2">
+              {[0,1,2,3].map(i => (
+                <button key={i} onClick={() => setEditing(i)} aria-label={(venue.images[i] ? "Change photo " : "Add photo ") + (i + 1)}
+                  className="press rounded-[12px] overflow-hidden flex items-center justify-center"
+                  style={{aspectRatio:"4/5", border: venue.images[i] ? "none" : "1px dashed var(--line-2)", padding:0}}>
+                  {venue.images[i] ? <FramedImage value={venue.images[i]} ratio="4/5" radius={12} className="w-full h-full"/> : <Icon name="plus" size={18}/>}
+                </button>
               ))}
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Pinned Post CTA */}
-        <div className="shrink-0 px-5 app-dock-space pt-3">
-          <button onClick={onPost} className="press glow-primary w-full h-[52px] rounded-full font-semibold text-[14px] flex items-center justify-center gap-2"
-            style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-            Post an event <Icon name="arrow-right" size={16} stroke={1.8}/>
-          </button>
+        <div className="shrink-0 px-5 pt-3" style={{paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 16px)"}}>
+          <BigButton onClick={handleDone} disabled={!canSave || saving}>{saving ? "Saving…" : "Save venue"}</BigButton>
+          {!canSave && <div className="text-[12px] text-center mt-2">A name and a main photo are needed.</div>}
         </div>
       </div>
     );
   }
+
 
   // px reserved at card bottom for the social pill row (p-4 + h-9 + mt-3) – keep in sync with SwipeCard's footer
   const CARD_LINK_ZONE = 80;
@@ -2392,7 +2400,7 @@ const { useState, useRef, useEffect, useMemo } = React;
     const insights = a.insights || {};
     const reliability = insights.theList?.reliability;
     const Social = ({label, href, icon}) => href ? (
-      <a href={href} target="_blank" rel="noreferrer"
+      <a href={href} target="_blank" rel="noreferrer" draggable={false}
          className="press hit flex items-center gap-1.5 px-3 h-9 rounded-full text-[12px]"
          style={{border:"1px solid rgba(247,246,243,.32)", color:"#F7F6F3"}}>
         <Icon name={icon} size={14}/>{label}
@@ -2423,7 +2431,7 @@ const { useState, useRef, useEffect, useMemo } = React;
             {metrics.map(([label,value], index) => (
               <div key={label} className="min-w-0 px-2 first:pl-0 last:pr-0" style={index ? {borderLeft:"1px solid rgba(247,246,243,.18)"} : {}}>
                 <div className="font-mono text-[12px] leading-tight truncate">{value}</div>
-                <div className="text-[8px] leading-tight mt-1 truncate">{label}</div>
+                <div className="text-[10px] leading-tight mt-1 truncate">{label}</div>
               </div>
             ))}
           </div>
@@ -2438,10 +2446,15 @@ const { useState, useRef, useEffect, useMemo } = React;
   }
 
   /* ========== ApplicantSheet - venue-only analytics for applied members ========== */
-  function ApplicantSheet({ applicant, guest, onDecide, onClose }){
+  function ApplicantSheet({ applicant, onDecide, onClose }){
     const [tab, setTab] = useState("Overview");
     const scrollRef = useRef(null);
     useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0; }, [tab]);
+    useEffect(() => {
+      const onKey = e => { if (e.key === "Escape") onClose(); };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    });
     if (!applicant) return null;
     const insights = applicant.insights || {};
     const audience = insights.audience || {};
@@ -2511,7 +2524,7 @@ const { useState, useRef, useEffect, useMemo } = React;
                 <div key={index} className="analytics-thumb">
                   <img src={item.thumbnail} alt="" loading="lazy" decoding="async"/>
                   <div className="absolute inset-x-0 bottom-0 px-2.5 py-2 text-[9px] flex justify-between gap-2" style={{background:"linear-gradient(transparent,rgba(0,0,0,.9))", color:"#F7F6F3"}}>
-                    <span>{item.label || "Post"}</span><span className="font-mono">{fmtK(item.reach)} reach</span>
+                    <span>{item.label || "Post"}</span><span className="font-mono">{fmtK(item.reach)} est. reach</span>
                   </div>
                 </div>
               ))}
@@ -2540,7 +2553,7 @@ const { useState, useRef, useEffect, useMemo } = React;
             <InsightMetric label="Story completion" value={fmtPct(list.storyCompletion)}/>
             <InsightMetric label="Venue rating" value={isNumber(list.venueRating) ? list.venueRating.toFixed(1)+" / 5" : "Not available"}/>
             <InsightMetric label="Events" value={fmtCount(list.events)}/>
-            <InsightMetric label="Verified reach" value={fmtK(list.verifiedReach)}/>
+            <InsightMetric label="Estimated Story reach" value={fmtK(list.verifiedReach)} detail="An estimate, not measured"/>
           </div>
         </SheetSection>
         <SheetSection title="Accountability">
@@ -2560,7 +2573,7 @@ const { useState, useRef, useEffect, useMemo } = React;
     return (
       <>
         <div onClick={onClose} className="absolute inset-0 z-40 sheet-backdrop" style={{background:"rgba(0,0,0,.62)", backdropFilter:"blur(4px)"}}/>
-        <div className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-4 pt-3 pb-7"
+        <div role="dialog" aria-modal="true" aria-label={applicant.name + " profile"} className="absolute left-0 right-0 bottom-0 z-50 sheet rounded-t-[24px] px-4 pt-3 pb-7"
              style={{background:"var(--bg)", borderTop:"1px solid var(--line-2)", height:"calc(100% - env(safe-area-inset-top, 0px) - 12px)", display:"flex", flexDirection:"column"}}>
           <div className="w-10 h-1 rounded-full mx-auto mb-3 shrink-0" style={{background:"var(--ink)", opacity:.4}}/>
 
@@ -2576,7 +2589,7 @@ const { useState, useRef, useEffect, useMemo } = React;
                 <span className="font-mono shrink-0">{status}</span>
               </div>
             </div>
-            <button onClick={onClose} className="press hit w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{border:"1px solid var(--line-2)"}} aria-label="Close applicant details">
+            <button onClick={onClose} autoFocus className="press hit w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{border:"1px solid var(--line-2)"}} aria-label="Close applicant details">
               <Icon name="x" size={17}/>
             </button>
           </div>
@@ -2609,1048 +2622,6 @@ const { useState, useRef, useEffect, useMemo } = React;
           </div>
         </div>
       </>
-    );
-  }
-
-  /* ========== ScreenReview – swipe deck (Task 6: serves event guests, undo, close apps, replacements) ========== */
-  function ScreenReview({ eventId, events, setEvents, onClose, askConfirm, onToast, onDecide, onCloseApps }){
-    // Derive live event from events array so guest-state writes show up immediately.
-    const event = events.find(e => e.id === eventId) || null;
-
-    const isLocked = event && event.stage === STAGE.locked;
-
-    // Build the deck pool ONCE at mount (stable snapshot so idx stays in sync).
-    // Open events: guests with state=applied; locked events: state=waitlist.
-    // Guest state writes go to `events` (live), but deck navigation uses this snapshot.
-    const deckPool = useMemo(() => {
-      if (!event) return [];
-      const targetState = isLocked ? GS.waitlist : GS.applied;
-      return (event.guests || [])
-        .filter(g => g.state === targetState)
-        .map(g => ({ guest: { ...g }, applicant: applicantById[g.applicantId] }))
-        .filter(x => x.applicant);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // intentionally stable: computed once at open
-
-    const [idx, setIdx] = useState(0);
-    const [undoEntry, setUndoEntry] = useState(null); // { prevIdx, prevGuestState, applicantId }
-    const [sheetEntry, setSheetEntry] = useState(null); // { applicant, guest } captured together at card-tap time
-
-    // Timers for replacement-mode auto-confirm (locked event picks)
-    const confirmTimers = useRef({});
-    useEffect(() => {
-      return () => {
-        Object.values(confirmTimers.current).forEach(t => clearTimeout(t));
-      };
-    }, []);
-
-    if (!event) return null;
-
-    const done = idx >= deckPool.length;
-    const current = deckPool[idx];
-
-    // Derive mix counters from live event guests
-    const pickedOrConfirmed = (event.guests || []).filter(g => g.state === GS.picked || g.state === GS.confirmed);
-    const mixGirls = pickedOrConfirmed.filter(g => (applicantById[g.applicantId]||{}).gender === "female").length;
-    const mixGuys  = pickedOrConfirmed.filter(g => (applicantById[g.applicantId]||{}).gender === "male").length;
-    const target = event.mix;
-
-    // Generate a unique LST code for replacement picks
-    const genCode = (applicantId) => {
-      const existingCodes = new Set((event.guests || []).map(g => g.code).filter(Boolean));
-      const base = "LST-" + applicantId.replace(/^a/, "").toUpperCase().padStart(2, "0");
-      if (!existingCodes.has(base)) return base;
-      const letters = "ABCDEFGHJKLMNPRSTUVWXY";
-      for (const l of letters) {
-        const candidate = base + l;
-        if (!existingCodes.has(candidate)) return candidate;
-      }
-      return base + Date.now().toString(36).slice(-3).toUpperCase();
-    };
-
-    // Core decide function: mutates guest state on the event and advances the deck.
-    const decide = async (yes) => {
-      if (!current) return;
-      const { guest: entry, applicant: ap } = current;
-      const applicantId = entry.applicantId;
-      const prevState = entry.state;
-      const newState = yes ? GS.picked : GS.notSelected;
-
-      if (onDecide) {
-        try { await onDecide(applicantId, yes); }
-        catch (error) { onToast(error.message || "Could not save decision"); return; }
-      }
-
-      setEvents(es => es.map(e => {
-        if (e.id !== eventId) return e;
-        return {
-          ...e,
-          guests: e.guests.map(g =>
-            g.applicantId === applicantId ? { ...g, state: newState } : g
-          ),
-        };
-      }));
-
-      // For locked events: if picked, start 12s auto-confirm timer
-      if (isLocked && yes && !onDecide) {
-        const code = genCode(applicantId);
-        if (confirmTimers.current[applicantId]) clearTimeout(confirmTimers.current[applicantId]);
-        confirmTimers.current[applicantId] = setTimeout(() => {
-          setEvents(es => es.map(e => {
-            if (e.id !== eventId) return e;
-            return {
-              ...e,
-              guests: e.guests.map(g =>
-                g.applicantId === applicantId && g.state === GS.picked
-                  ? { ...g, state: GS.confirmed, code }
-                  : g
-              ),
-            };
-          }));
-          onToast((ap ? ap.name : applicantId) + " confirmed");
-        }, 12000);
-      }
-
-      // Save undo entry for this decision; cleared on next decide
-      setUndoEntry({ prevIdx: idx, prevGuestState: prevState, applicantId });
-      setIdx(i => i + 1);
-    };
-
-    // Undo last decision
-    const handleUndo = () => {
-      if (!undoEntry) return;
-      const { prevIdx, prevGuestState, applicantId } = undoEntry;
-      // Clear any running auto-confirm timer for this applicant
-      if (confirmTimers.current[applicantId]) {
-        clearTimeout(confirmTimers.current[applicantId]);
-        delete confirmTimers.current[applicantId];
-      }
-      setEvents(es => es.map(e => {
-        if (e.id !== eventId) return e;
-        return {
-          ...e,
-          guests: e.guests.map(g =>
-            g.applicantId === applicantId ? { ...g, state: prevGuestState } : g
-          ),
-        };
-      }));
-      setIdx(prevIdx);
-      setUndoEntry(null);
-    };
-
-    // Close applications: lock the event + flip remaining applied → waitlist.
-    // Live: close_applications does both server-side; rehydrate brings the
-    // locked stage and the waitlist back from the DB.
-    const handleCloseApplications = () => {
-      askConfirm({
-        title: "Close applications?",
-        body: "No new applications. Members get notified. Picks must confirm within 24h – the waitlist stays available for replacements.",
-        confirmLabel: "Close applications",
-        onConfirm: async () => {
-          if (onCloseApps) {
-            try { await onCloseApps(eventId); }
-            catch (error) { onToast(error.message || "Could not close applications"); return; }
-            onToast("Applications closed");
-            onClose();
-            return;
-          }
-          setEvents(es => es.map(e => {
-            if (e.id !== eventId) return e;
-            return {
-              ...e,
-              stage: STAGE.locked,
-              status: stageToStatus(STAGE.locked),
-              guests: e.guests.map(g =>
-                g.state === GS.applied ? { ...g, state: GS.waitlist } : g
-              ),
-            };
-          }));
-          onToast("Applications closed");
-          onClose();
-        },
-      });
-    };
-
-    return (
-      <div className="absolute inset-0 flex flex-col" style={{background:"transparent"}}>
-
-        <div className="flex flex-col px-5 app-safe-top app-safe-bottom flex-1 min-h-0 overflow-y-auto">
-          {/* Header row */}
-          <div className="flex items-center justify-between mb-1 shrink-0">
-            <button onClick={onClose} className="press hit stamp py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Close</button>
-            <div className="stamp text-center" style={{color:"var(--ink-mute)"}}>
-              {isLocked
-                ? "Pick replacements"
-                : event.title}
-            </div>
-            {!isLocked && (
-              <button onClick={handleCloseApplications}
-                className="press hit px-3 h-8 rounded-full text-[11px] font-semibold flex items-center gap-1"
-                style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-                Close applications <Icon name="arrow-right" size={12} stroke={2}/>
-              </button>
-            )}
-            {isLocked && <div style={{width:64}}/>}
-          </div>
-
-          {/* Sub-header: applied/waitlist count */}
-          <div className="stamp mb-3 shrink-0" style={{color:"var(--ink-mute)"}}>
-            {isLocked
-              ? `${deckPool.length} on the waitlist`
-              : `${event.appliedTotal != null ? event.appliedTotal : deckPool.length} applied · ${deckPool.length} to review`}
-            {!isLocked && event.closesAt ? ` · Closes ${event.closesAt}` : ""}
-          </div>
-
-          {/* Mix counter */}
-          <div className="shrink-0 mb-3">
-            {target ? (
-              <div className="flex gap-3 text-[12px]">
-                <div className="flex-1 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
-                  Girls <span className="font-mono" style={{color:"var(--ice)"}}>{mixGirls}</span> / {target.girls}
-                </div>
-                <div className="flex-1 px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
-                  Guys <span className="font-mono" style={{color:"var(--ice)"}}>{mixGuys}</span> / {target.guys}
-                </div>
-              </div>
-            ) : (
-              <div className="text-[12px] px-3 py-2 rounded-[12px]" style={{background:"var(--bg-elev)"}}>
-                Picked <span className="font-mono" style={{color:"var(--ice)"}}>{pickedOrConfirmed.length}</span> / {event.seats}
-              </div>
-            )}
-          </div>
-
-          {/* Undo chip – live decisions are committed + the member was notified, so no undo */}
-          {undoEntry && !done && !onDecide && (
-            <div className="shrink-0 flex justify-center mb-2">
-              <button onClick={handleUndo}
-                className="press px-4 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5"
-                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}>
-                <Icon name="arrow-left" size={12} stroke={2}/> Undo last
-              </button>
-            </div>
-          )}
-
-          {/* Deck or end-state */}
-          {done ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 px-4">
-              {isLocked ? (
-                <>
-                  <div className="font-black font-display-l text-[26px]">No one left on the waitlist.</div>
-                  <button onClick={onClose} className="press text-[13px] font-medium" style={{color:"var(--ice)", background:"transparent", border:"none"}}>
-                    Close
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div className="font-black font-display-l text-[26px]">All reviewed</div>
-                  <div className="text-[13px]" style={{color:"var(--ink-2)"}}>
-                    {target
-                      ? `Girls ${mixGirls}/${target.girls} · Guys ${mixGuys}/${target.guys}`
-                      : `Picked ${pickedOrConfirmed.length} of ${event.seats}`}
-                  </div>
-                  <div className="flex flex-col gap-2 w-full mt-2">
-                    <button onClick={handleCloseApplications}
-                      className="press w-full h-[52px] rounded-full text-[13px] font-semibold flex items-center justify-center gap-1.5 glow-primary"
-                      style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-                      Close applications <Icon name="arrow-right" size={14} stroke={2}/>
-                    </button>
-                    <button onClick={onClose}
-                      className="press w-full h-[48px] rounded-full text-[13px] font-medium flex items-center justify-center"
-                      style={{border:"1px solid var(--line-2)", color:"var(--ink)"}}>
-                      Keep open
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          ) : (
-            <>
-              <div className="shrink-0 flex items-center">
-                {/* Tapping the photo/name area opens ApplicantSheet.
-                    A transparent button covers everything except the ~80px social link row at the bottom,
-                    so the links inside SwipeCard stay tappable. */}
-                <div className="relative w-full">
-                  <SwipeCard a={current.applicant}/>
-                  <button
-                    className="absolute inset-x-0 top-0 z-10"
-                    style={{background:"transparent", border:"none", bottom:CARD_LINK_ZONE}}
-                    onClick={() => setSheetEntry({ applicant: current.applicant, guest: current.guest })}
-                    aria-label={"View " + current.applicant.name}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-center gap-8 mt-4 shrink-0 pb-4">
-                <button onClick={()=>decide(false)} className="press w-16 h-16 rounded-full flex items-center justify-center"
-                        style={{border:"1px solid var(--line-2)"}}><Icon name="x" size={26}/></button>
-                <button onClick={()=>decide(true)} className="press glow-primary w-16 h-16 rounded-full flex items-center justify-center"
-                        style={{background:"var(--ice)", color:"var(--ice-ink)"}}><Icon name="check" size={26}/></button>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* ApplicantSheet overlay */}
-        {sheetEntry && (
-          <ApplicantSheet
-            applicant={sheetEntry.applicant}
-            guest={sheetEntry.guest}
-            onDecide={(yes) => { setSheetEntry(null); decide(yes); }}
-            onClose={() => setSheetEntry(null)}
-          />
-        )}
-      </div>
-    );
-  }
-
-  /* ========== ScreenVenueProfile – venue tab ========== */
-  /* ========== Demo switchboard (T17) ==========
-     Hidden rig at the bottom of the Venue tab – drives the simulated world
-     during pitches. Plain rows, deliberately not product UI. Member side has
-     its own equivalent (index.html Settings › Demo). ========== */
-  function DemoPanel({ demo }){
-    const [open, setOpen] = useState(false);
-    const Row = ({ label, onTap }) => (
-      <button onClick={onTap} className="press w-full text-left py-2.5 text-[12px]" style={{color:"var(--ink-2)", background:"transparent", border:"none", borderTop:"1px solid var(--line)"}}>{label}</button>
-    );
-    return (
-      <div className="px-5 pt-6 pb-2">
-        <button onClick={()=>setOpen(o=>!o)} className="press w-full flex items-center justify-between py-2 text-[11px]" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
-          <span>Demo</span>
-          <Icon name="arrow-right" size={12} stroke={1.5} className={"chev " + (open ? "rotate-90" : "")}/>
-        </button>
-        {open && (
-          <div>
-            <Row label="New applicants arrive" onTap={()=>demo.newApplicants()}/>
-            <Row label="A pick declines" onTap={()=>demo.pickDeclines()}/>
-            <Row label="Advance to tonight" onTap={()=>demo.advanceToTonight()}/>
-            <Row label="Reset demo" onTap={()=>demo.reset()}/>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  function ScreenVenueProfile({ venue, group, onEdit, onLogout, onToast, demo, light, onTheme }){
-    const name = venue.name && venue.name.length > 0 ? venue.name : null;
-    const hasDesc = venue.description && venue.description.length > 0;
-
-    const SettingsRow = ({ label, onTap, muted }) => (
-      <button
-        onClick={onTap}
-        className="press w-full flex items-center justify-between py-4 text-left"
-        style={{ background: "transparent", border: "none" }}
-      >
-        <span className="text-[15px]" style={{ color: muted ? "var(--ink-mute)" : "var(--ink)" }}>{label}</span>
-        <Icon name="arrow-right" size={15} stroke={1.5} style={{ color: "var(--ink-mute)", flexShrink: 0 }}/>
-      </button>
-    );
-
-    return (
-      <div className="absolute inset-0 flex flex-col" style={{ background: "var(--bg)" }}>
-
-
-        {/* Header */}
-        <div className="shrink-0 px-5 app-safe-top pb-3">
-          <div className="font-black font-display-l text-[40px] leading-none">Venue</div>
-        </div>
-        <div className="hr-2 mx-5 mb-0 shrink-0"/>
-
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto noscroll app-dock-space">
-
-          {/* Hero image */}
-          <div className="px-5 pt-5">
-            <FramedImage value={venue.heroImage} ratio="4/5" className="w-full"/>
-          </div>
-
-          {/* Name + type/area + description */}
-          <div className="px-5 pt-4">
-            {name ? (
-              <div className="font-black text-[24px] leading-tight">{name}</div>
-            ) : (
-              <div className="font-black text-[24px] leading-tight" style={{ color: "var(--ink-mute)" }}>Unnamed venue</div>
-            )}
-            <div className="text-[13px] mt-1" style={{ color: "var(--ink-mute)" }}>
-              {venue.type} · {venue.area}
-            </div>
-            {venue.igHandle && (
-              <div className="text-[12px] mt-1" style={{ color:"var(--ink-2)" }}>@{venue.igHandle.replace(/^@/, "")}</div>
-            )}
-            {hasDesc && (
-              <div className="text-[14px] mt-3 leading-relaxed" style={{ color: "var(--ink-2)" }}>
-                {venue.description}
-              </div>
-            )}
-          </div>
-
-          {/* Gallery */}
-          <div className="px-5 pt-6">
-            <div className="stamp mb-3">Photos</div>
-            <div className="grid grid-cols-4 gap-2">
-              {venue.images.map((im, i) => (
-                <FramedImage key={i} value={im} ratio="4/5" className="w-full" empty="–"/>
-              ))}
-            </div>
-          </div>
-
-          {/* Group / Independent */}
-          <div className="px-5 pt-6">
-            {group ? (
-              <div className="flex flex-col gap-3">
-                <span className="stamp px-3 py-1.5 rounded-full self-start" style={{ border: "1px solid var(--line-2)", color: "var(--ink-mute)" }}>
-                  Group · {group.name}
-                </span>
-                <div className="flex items-center justify-between py-3">
-                  <span className="text-[15px]" style={{ color: "var(--ink-mute)", opacity: 0.5 }}>Switch venue</span>
-                  <span className="stamp px-2.5 py-1 rounded-full" style={{ border: "1px solid var(--line)", color: "var(--ink-mute)", opacity: 0.5 }}>Soon</span>
-                </div>
-              </div>
-            ) : (
-              <span className="stamp" style={{ color: "var(--ink-mute)" }}>Independent venue</span>
-            )}
-          </div>
-
-          {/* Settings list */}
-          <div className="px-5 pt-5">
-            <div className="stamp mb-1">Settings</div>
-            <div style={{ borderTop: "1px solid var(--line)" }}>
-              <SettingsRow label="Edit venue" onTap={onEdit}/>
-              <div style={{ height: 1, background: "var(--line)" }}/>
-              <SettingsRow label={light ? "Appearance · Light" : "Appearance · Dark"} onTap={onTheme}/>
-              <div style={{ height: 1, background: "var(--line)" }}/>
-              <SettingsRow label="Switch to member" onTap={() => { window.location.href = "/"; }}/>
-              <div style={{ height: 1, background: "var(--line)" }}/>
-              <SettingsRow label="Log out" onTap={onLogout}/>
-            </div>
-          </div>
-
-          {demo && <DemoPanel demo={demo}/>}
-
-        </div>
-      </div>
-    );
-  }
-
-  /* ========== StepCircles – kit-style numbered step indicator ==========
-     Purely visual: 1-2-3-4 joined by a hairline, current step = accent fill,
-     completed steps keep their outline at full ink. Same steps as before. */
-  function StepCircles({ current, total=6 }){
-    return (
-      <div className="flex items-center mt-3" aria-hidden="true">
-        {Array.from({length:total},(_,i)=>i+1).map((n,i)=>(
-          <React.Fragment key={n}>
-            {i>0 && <span style={{flex:1, height:1, background:"var(--line-2)", minWidth:8}}/>}
-            <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0"
-              style={n===current
-                ? {background:"var(--ice)", color:"var(--ice-ink)"}
-                : n<current
-                  ? {border:"1px solid var(--line-2)", color:"var(--ink)"}
-                  : {border:"1px solid var(--line)", color:"var(--ink-mute)"}}>{n}</span>
-          </React.Fragment>
-        ))}
-      </div>
-    );
-  }
-
-  /* ========== Bundle options ========== */
-  const BUNDLES = [
-    { id:"ten",    name:"The ten",    seats:10, price:400 },
-    { id:"twenty", name:"The twenty", seats:20, price:700 },
-    { id:"forty",  name:"The forty",  seats:40, price:1200 },
-  ];
-
-  /* ========== StepBundle – step 3 of post wizard ========== */
-  function StepBundle({ draft, set, onNext, onBack }){
-    const selected = draft.bundle;
-    const isCustom = selected && selected.name === "Custom";
-    const [customPrice, setCustomPrice] = useState(isCustom ? String(selected.price||"") : "");
-
-    const selectTemplate = (b) => {
-      set({ bundle: { name: b.name, price: b.price }, seats: b.seats });
-    };
-    const canNext = !!selected && !(selected.name === "Custom" && !(selected.price > 0));
-
-    return (
-      <div className="absolute inset-0 flex flex-col px-5 app-safe-top app-safe-bottom" style={{background:"transparent"}}>
-
-        <button onClick={onBack} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
-        <div className="font-black font-display-l text-[40px]">Bundle</div>
-        <StepCircles current={3}/>
-        <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Choose your package</div>
-
-        <div className="mt-5 flex-1 overflow-y-auto noscroll space-y-3">
-          {BUNDLES.map(b => {
-            const sel = selected && selected.name === b.name;
-            return (
-              <button key={b.id} onClick={()=>selectTemplate(b)}
-                className={"press card rounded-[16px] w-full text-left p-4 flex items-center justify-between"+(sel?" glow-ice":"")}
-                style={sel ? {borderColor:"var(--ice)"} : {}}>
-                <div>
-                  <div className="font-semibold text-[15px]">{b.name}</div>
-                  <div className="stamp mt-0.5">{b.seats} seats</div>
-                </div>
-                <div className="font-mono text-[18px]" style={{color: sel?"var(--ice)":"var(--ink-2)"}}>
-                  ${b.price}
-                </div>
-              </button>
-            );
-          })}
-
-          {/* Custom card */}
-          {(() => {
-            const sel = isCustom;
-            return (
-              <button onClick={()=>{ set({ bundle: { name:"Custom", price: customPrice ? parseInt(customPrice,10)||0 : 0 } }); }}
-                className={"press card rounded-[16px] w-full text-left p-4"+(sel?" glow-ice":"")}
-                style={sel ? {borderColor:"var(--ice)"} : {}}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold text-[15px]">Custom</div>
-                    <div className="stamp mt-0.5">Current seats: {draft.seats}</div>
-                  </div>
-                  {sel && (
-                    <div className="font-mono text-[18px]" style={{color:"var(--ice)"}}>
-                      {customPrice ? "$"+customPrice : "–"}
-                    </div>
-                  )}
-                </div>
-                {sel && (
-                  <div className="mt-3">
-                    <div className="stamp mb-1.5">Price ($)</div>
-                    <input
-                      value={customPrice}
-                      onChange={e => {
-                        const v = e.target.value.replace(/\D/g,"");
-                        setCustomPrice(v);
-                        set({ bundle: { name:"Custom", price: parseInt(v,10)||0 } });
-                      }}
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="e.g. 500"
-                      className="w-full h-11 px-3 rounded-[10px] text-[16px]"
-                      style={{background:"var(--bg-elev2)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-                    />
-                  </div>
-                )}
-              </button>
-            );
-          })()}
-
-          {/* Footer notes */}
-          <div className="pt-2 pb-1 space-y-1">
-            <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>Settle after the night · Whish / OMT / USD cash</div>
-            <div className="text-[11px]" style={{color:"var(--ink-mute)"}}>We handle all guest comms.</div>
-          </div>
-        </div>
-
-        <button disabled={!canNext} onClick={canNext ? onNext : undefined}
-          className="press w-full h-[58px] rounded-full text-[14px] font-semibold mt-4 shrink-0"
-          style={{background: canNext?"var(--ice)":"var(--bg-elev2)", color: canNext?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
-      </div>
-    );
-  }
-
-  /* ========== StepBrief – step 4 of post wizard (all optional) ========== */
-  function StepBrief({ draft, set, onNext, onBack }){
-    const brief = draft.brief || {};
-    const setBrief = (patch) => set({ brief: { ...brief, ...patch } });
-
-    const fields = [
-      { key:"arrival",  label:"Arrival window",  placeholder:"21:30 – 22:30" },
-      { key:"dress",    label:"Dress code",       placeholder:"Smart dark" },
-      { key:"meeting",  label:"Meeting point",    placeholder:"Door host" },
-      { key:"rules",    label:"House rules",      placeholder:"1 Story + venue tag during the event" },
-    ];
-
-    return (
-      <div className="absolute inset-0 flex flex-col px-5 app-safe-top app-safe-bottom" style={{background:"transparent"}}>
-
-        <button onClick={onBack} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
-        <div className="font-black font-display-l text-[40px]">Brief</div>
-        <StepCircles current={4}/>
-        <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Guest instructions · all optional</div>
-
-        <div className="mt-5 flex-1 overflow-y-auto noscroll space-y-4">
-          {fields.map(f => (
-            <div key={f.key}>
-              <div className="stamp mb-1.5">{f.label}</div>
-              <input
-                value={brief[f.key] || ""}
-                onChange={e => setBrief({ [f.key]: e.target.value })}
-                type="text"
-                placeholder={f.placeholder}
-                className="w-full h-11 px-3 rounded-[12px] text-[16px]"
-                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-              />
-            </div>
-          ))}
-          <div>
-            <div className="stamp mb-2">Story window</div>
-            <div className="flex gap-2">
-              {[24,48].map(hours => {
-                const selected = (draft.storyHours || 24) === hours;
-                return <button key={hours} onClick={()=>set({storyHours:hours})}
-                  className="press hit h-9 px-4 rounded-full text-[12px] font-medium"
-                  style={{background:selected?"var(--ice)":"transparent", color:selected?"var(--ice-ink)":"var(--ink)", border:selected?"none":"1px solid var(--line-2)"}}>
-                  {hours} hours
-                </button>;
-              })}
-            </div>
-          </div>
-          <div className="pt-2 text-[11px]" style={{color:"var(--ink-mute)"}}>We handle all guest comms.</div>
-        </div>
-
-        <button onClick={onNext}
-          className="press w-full h-[58px] rounded-full text-[14px] font-semibold mt-4 shrink-0"
-          style={{background:"var(--ice)", color:"var(--ice-ink)"}}>Next</button>
-      </div>
-    );
-  }
-
-  /* ========== StepBasics – step 1 of post wizard ========== */
-  function StepBasics({ draft, set, onNext, onCancel, live=false }){
-    const closesChips = ["24h before doors", "48h before doors", "Custom"];
-    const [customMode, setCustomMode] = useState(() => {
-      const c = draft.closesAt;
-      return !!c && c !== "24h before doors" && c !== "48h before doors";
-    });
-    const currentCloses = draft.closesAt || "24h before doors";
-    const ok = draft.title.length>=2 && draft.date && draft.time &&
-               (!customMode || draft.closesAt.trim() !== "");
-
-    return (
-      <div className="absolute inset-0 flex flex-col px-5 app-safe-top app-safe-bottom" style={{background:"transparent"}}>
-
-        <button onClick={onCancel} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Cancel</button>
-        <div className="font-black font-display-l text-[40px]">Post</div>
-        <StepCircles current={1}/>
-        <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>The basics</div>
-        <div className="mt-5 space-y-4 flex-1 overflow-y-auto noscroll">
-          <div>
-            <div className="stamp mb-1.5">Title</div>
-            <input
-              value={draft.title}
-              onChange={e => set({title:e.target.value})}
-              type="text"
-              placeholder="e.g. Pool Day"
-              className="w-full h-11 px-3 rounded-[12px] text-[16px]"
-              style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-            />
-          </div>
-          <div>
-            <div className="stamp mb-1.5">Type</div>
-            <div className="flex flex-wrap gap-2">
-              {VENUE_TYPES.map(t => {
-                const sel = draft.type === t;
-                return (
-                  <button key={t} onClick={() => set({type:t})}
-                    className="press hit px-4 h-9 rounded-full text-[12px] font-medium"
-                    style={{ background: sel?"var(--ice)":"transparent", color: sel?"var(--ice-ink)":"var(--ink)", border: sel?"none":"1px solid var(--line-2)" }}
-                  >{t}</button>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <div className="stamp mb-1.5">Date</div>
-            <input
-              value={draft.date}
-              onChange={e => set({date:e.target.value})}
-              type={live ? "date" : "text"}
-              placeholder={live ? undefined : "Sun · 25 May"}
-              className="w-full h-11 px-3 rounded-[12px] text-[16px]"
-              style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-            />
-          </div>
-          <div>
-            <div className="stamp mb-1.5">Time</div>
-            <input
-              value={draft.time}
-              onChange={e => set({time:e.target.value})}
-              type={live ? "time" : "text"}
-              placeholder={live ? undefined : "22:00"}
-              className="w-full h-11 px-3 rounded-[12px] text-[16px]"
-              style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-            />
-          </div>
-          <div>
-            <div className="stamp mb-1.5">Applications close</div>
-            <div className="flex flex-wrap gap-2">
-              {closesChips.map(chip => {
-                const isThisCustom = chip === "Custom";
-                const sel = isThisCustom ? customMode : (!customMode && currentCloses === chip);
-                return (
-                  <button key={chip}
-                    onClick={() => {
-                      if (isThisCustom) {
-                        setCustomMode(true);
-                        set({ closesAt: "" });
-                      } else {
-                        setCustomMode(false);
-                        set({ closesAt: chip });
-                      }
-                    }}
-                    className="press hit px-3 h-8 rounded-full text-[11px] font-medium"
-                    style={{ background: sel?"var(--ice)":"transparent", color: sel?"var(--ice-ink)":"var(--ink)", border: sel?"none":"1px solid var(--line-2)" }}
-                  >{chip}</button>
-                );
-              })}
-            </div>
-            {customMode && (
-              <input
-                value={draft.closesAt}
-                onChange={e => set({ closesAt: e.target.value })}
-                type="datetime-local"
-                className="w-full h-11 px-3 rounded-[10px] text-[16px] mt-2"
-                style={{background:"var(--bg-elev)", border:"1px solid var(--line-2)", color:"var(--ink)"}}
-              />
-            )}
-          </div>
-        </div>
-        <button disabled={!ok} onClick={ok ? onNext : undefined}
-          className="press w-full h-[58px] rounded-full text-[14px] font-semibold mt-4 shrink-0"
-          style={{background: ok?"var(--ice)":"var(--bg-elev2)", color: ok?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
-      </div>
-    );
-  }
-
-  /* ========== ScreenPostEvent – 6-step post wizard ========== */
-  // Substeps: basics → seats → bundle → brief → image → review
-  // initialDraft: if set, prefills the wizard (edit mode); draftId: id of event being edited
-  function ScreenPostEvent({ venue, onPublish, onSaveDraft, onCancel, initialDraft, draftId, live=false }){
-    const isEdit = !!draftId;
-    const [sub, setSub] = useState("basics");
-    const [savingMode, setSavingMode] = useState(null);
-    const [draft, setDraft] = useState(() => {
-      if (initialDraft) return {
-        ...initialDraft,
-        date: live && initialDraft.startsAt ? toLocalDate(new Date(initialDraft.startsAt)) : initialDraft.date,
-        time: live && initialDraft.startsAt ? toLocalTime(new Date(initialDraft.startsAt)) : initialDraft.time,
-        closesAt: initialDraft.closesInput || initialDraft.closesAt || "24h before doors",
-      };
-      return makeEvent({ venueId: venue.id, heroImage: venue.heroImage, closesAt:"24h before doors" });
-    });
-    const set = (patch) => setDraft(d => ({ ...d, ...patch }));
-    const persist = async (mode) => {
-      if (savingMode) return;
-      setSavingMode(mode);
-      try { await (mode === "publish" ? onPublish : onSaveDraft)(draft, draftId); }
-      catch (_) { /* parent keeps the wizard open and reports the error */ }
-      finally { setSavingMode(null); }
-    };
-
-    if (sub === "basics") {
-      return <StepBasics draft={draft} set={set} onNext={()=>setSub("seats")} onCancel={onCancel} live={live}/>;
-    }
-
-    if (sub === "seats") {
-      const noPref = draft.mix === null;
-      const total = noPref ? draft.seats : (draft.mix.girls + draft.mix.guys);
-      const Stepper = ({label, val, onDelta}) => (
-        <div className="flex items-center justify-between py-3">
-          <div className="text-[15px]">{label}</div>
-          <div className="flex items-center gap-4">
-            <button onClick={()=>onDelta(-1)} className="press hit w-9 h-9 rounded-full" style={{border:"1px solid var(--line-2)"}}>–</button>
-            <div className="font-mono text-[20px] w-8 text-center" style={{color:"var(--ice)"}}>{val}</div>
-            <button onClick={()=>onDelta(1)} className="press hit w-9 h-9 rounded-full" style={{border:"1px solid var(--line-2)"}}>+</button>
-          </div>
-        </div>
-      );
-      return (
-        <div className="absolute inset-0 flex flex-col px-5 app-safe-top app-safe-bottom app-form-scroll" style={{background:"transparent"}}>
-
-          <button onClick={()=>setSub("basics")} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
-          <div className="font-black font-display-l text-[40px]">Seats</div>
-          <StepCircles current={2}/>
-          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>Who fills the room</div>
-
-          <div className="flex items-center justify-between mt-6 py-3 border-b" style={{borderColor:"var(--line)"}}>
-            <div className="text-[15px]">Set a gender mix</div>
-            <button onClick={()=> set({ mix: noPref ? {girls:15,guys:5} : null }) }
-              className="press hit px-3 h-8 rounded-full text-[11px] font-medium"
-              style={{background: noPref?"transparent":"var(--ice)", color: noPref?"var(--ink)":"var(--ice-ink)",
-                      border: noPref?"1px solid var(--line-2)":"none"}}>{noPref?"Off":"On"}</button>
-          </div>
-
-          {noPref ? (
-            <Stepper label="Total seats" val={draft.seats} onDelta={d=> set({ seats: Math.max(1, draft.seats+d) })}/>
-          ) : (
-            <>
-              <Stepper label="Girls" val={draft.mix.girls} onDelta={d=> set({ mix: {...draft.mix, girls: Math.max(0, draft.mix.girls+d)} })}/>
-              <Stepper label="Guys"  val={draft.mix.guys}  onDelta={d=> set({ mix: {...draft.mix, guys:  Math.max(0, draft.mix.guys+d)} })}/>
-            </>
-          )}
-
-          <div className="mt-4 stamp" style={{color:"var(--ink-mute)"}}>{total} seats total</div>
-          <div className="flex-1"/>
-          <button disabled={total<1} onClick={()=> { set({ seats: total }); setSub("bundle"); }}
-            className="press w-full h-[58px] rounded-full text-[14px] font-semibold"
-            style={{background: total>=1?"var(--ice)":"var(--bg-elev2)", color: total>=1?"var(--ice-ink)":"var(--ink-mute)"}}>Next</button>
-        </div>
-      );
-    }
-
-    if (sub === "bundle") {
-      return <StepBundle draft={draft} set={set}
-        onNext={()=>setSub("brief")} onBack={()=>setSub("seats")}/>;
-    }
-
-    if (sub === "brief") {
-      return <StepBrief draft={draft} set={set}
-        onNext={()=>setSub("image")} onBack={()=>setSub("bundle")}/>;
-    }
-
-    if (sub === "image") {
-      return (
-        <div className="absolute inset-0 flex flex-col px-5 app-safe-top app-safe-bottom" style={{background:"transparent"}}>
-
-          <button onClick={()=>setSub("brief")} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
-          <div className="font-black font-display-l text-[40px]">Image</div>
-          <StepCircles current={5}/>
-          <div className="text-[13px] mt-2" style={{color:"var(--ink-2)"}}>The event photo</div>
-          <div className="text-[12px] mt-3" style={{color:"var(--ink-mute)"}}>Reuse your venue hero, or choose a new one.</div>
-          <div className="mt-5 flex-1 overflow-y-auto">
-            <ImageCropper
-              ratio="4/5"
-              value={draft.heroImage}
-              label="Event photo"
-              onChange={(v)=>{ set({heroImage:v}); setSub("review"); }}
-              onCancel={()=>setSub("brief")}
-            />
-          </div>
-        </div>
-      );
-    }
-
-    // sub === "review"
-    const briefData = draft.brief || {};
-    const briefLines = [
-      briefData.arrival && ["Arrival window", briefData.arrival],
-      briefData.dress   && ["Dress code",     briefData.dress],
-      briefData.meeting && ["Meeting point",  briefData.meeting],
-      briefData.rules   && ["House rules",    briefData.rules],
-    ].filter(Boolean);
-
-    return (
-      <div className="absolute inset-0 flex flex-col px-5 app-safe-top app-safe-bottom" style={{background:"transparent"}}>
-
-        <button onClick={()=>setSub("image")} className="press hit stamp text-left mb-2 py-2" style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>Back</button>
-        <div className="font-black font-display-l text-[40px]">Review</div>
-        <StepCircles current={6}/>
-        <div className="mt-4 flex-1 overflow-y-auto noscroll space-y-4">
-          <FramedImage value={draft.heroImage} ratio="4/5" className="w-full"/>
-          <div>
-            <div className="font-black text-[24px] leading-tight">{draft.title}</div>
-            <div className="text-[13px] mt-1" style={{color:"var(--ink-mute)"}}>{draft.type} · {draft.date} · {draft.time}</div>
-          </div>
-          <div className="text-[13px]" style={{color:"var(--ink-mute)"}}>
-            {draft.mix
-              ? "Girls " + draft.mix.girls + " · Guys " + draft.mix.guys + " · " + draft.seats + " seats"
-              : draft.seats + " seats · no gender preference"}
-          </div>
-          {draft.closesAt && (
-            <div className="text-[13px]" style={{color:"var(--ink-mute)"}}>Applications close · {draft.closesAt}</div>
-          )}
-          {draft.bundle && (
-            <div>
-              <div className="stamp mb-1">Bundle</div>
-              <div className="text-[14px]">{draft.bundle.name} · ${draft.bundle.price}</div>
-            </div>
-          )}
-          <div>
-            <div className="stamp mb-1">The exchange</div>
-            <div className="text-[14px]">{draft.exchange}</div>
-            <div className="text-[12px] mt-1" style={{color:"var(--ink-mute)"}}>{draft.storyHours || 24}-hour Story window</div>
-          </div>
-          {briefLines.length > 0 && (
-            <div>
-              <div className="stamp mb-2">Brief</div>
-              <div className="space-y-1.5">
-                {briefLines.map(([label, val]) => (
-                  <div key={label} className="flex items-start gap-2 text-[13px]">
-                    <span style={{color:"var(--ink-mute)", minWidth:100}}>{label}</span>
-                    <span>{val}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="mt-4 shrink-0 flex flex-col gap-2">
-          <button onClick={()=>persist("publish")} disabled={!!savingMode}
-            className="press w-full h-[58px] rounded-full text-[14px] font-semibold flex items-center justify-center gap-2"
-            style={{background:"var(--ice)", color:"var(--ice-ink)"}}>
-            {savingMode === "publish" ? "Publishing…" : isEdit ? "Save & publish" : "Publish"} <Icon name="arrow-right" size={16} stroke={1.8}/>
-          </button>
-          <button onClick={()=>persist("draft")} disabled={!!savingMode}
-            className="press w-full h-12 rounded-full text-[12px] font-medium"
-            style={{border:"1px solid var(--line-2)", color:"var(--ink)", background:"transparent"}}>
-            {savingMode === "draft" ? "Saving…" : "Save draft"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ========== ScreenRecap – post-event summary (Task 9) ========== */
-  function ScreenRecap({ eventId, events, onClose }){
-    // Derive live event by id so any future writes propagate
-    const event = events.find(e => e.id === eventId) || null;
-    if (!event) return null;
-
-    const recap   = event.recap   || {};
-    const invoice = event.invoice || null;
-    const guests  = event.guests  || [];
-
-    // Story wall: only checked_in guests
-    const wallGuests = guests.filter(g => g.state === GS.checkedIn);
-
-    // Verified reach: sum of instagram_followers of guests with story === verified
-    const verifiedGuests = wallGuests.filter(g => g.story === SS.verified);
-    const verifiedReach  = verifiedGuests.reduce((sum, g) => {
-      const ap = applicantById[g.applicantId] || {};
-      return sum + (ap.instagram_followers || 0);
-    }, 0);
-
-    function fmtReach(n){
-      return n.toLocaleString("en-US");
-    }
-
-    function StoryRow({ g, i }){
-      const ap = applicantById[g.applicantId] || {};
-      const story = g.story;
-
-      let pill = null;
-      if (story === SS.verified)     pill = <StatusPill label="Verified" tone="ice"/>;
-      else if (story === SS.review)  pill = <StatusPill label="Under review" tone="neutral"/>;
-      else if (story === SS.needsReview) pill = <StatusPill label="Needs review" tone="neutral"/>;
-      else if (story === SS.due)     pill = <StatusPill label="Story due" tone="outline"/>;
-      else if (story === SS.rejected) pill = <StatusPill label="Rejected" tone="neutral"/>;
-      else if (story === SS.missed)  pill = <StatusPill label="Missed" tone="neutral"/>;
-      else                           pill = null;
-
-      return (
-        <div style={{"--i": i}} className="flex items-start gap-3 py-3">
-          {/* Face */}
-          <img src={ap.photo || ""} alt="" className="w-10 h-10 rounded-full object-cover shrink-0"
-               style={{background:"var(--bg-elev2)"}}/>
-          {/* Name + pill + extras */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[14px] font-medium leading-tight">{ap.name || "–"}</span>
-              {pill}
-            </div>
-            {/* Verified proof. Live rows use the submitted story media; demo rows keep their seeded stand-in. */}
-            {story === SS.verified && (
-              <div className="mt-2 flex items-start gap-2">
-                {g.storyMedia ? (
-                  <a href={g.storyMedia} target="_blank" rel="noreferrer" aria-label="Open story proof" className="press shrink-0">
-                    <img src={g.storyMedia} alt="Story proof"
-                         className="w-12 h-12 rounded-[10px] object-cover"
-                         style={{background:"var(--bg-elev2)", border:"1px solid var(--line)"}}/>
-                  </a>
-                ) : (
-                  <img src={ap.photo || ""} alt="Story"
-                       className="w-12 h-12 rounded-[10px] object-cover shrink-0"
-                       style={{background:"var(--bg-elev2)", border:"1px solid var(--line)"}}/>
-                )}
-                {/* Verdict if present */}
-                {g.verdict && (g.verdict.score != null || g.verdict.reason) && (
-                  <div className="text-[11px] leading-snug mt-0.5" style={{color:"var(--ink-mute)"}}>
-                    {g.verdict.score != null && <span className="font-mono">{g.verdict.score}</span>}
-                    {g.verdict.score != null && g.verdict.reason ? " · " : ""}{g.verdict.reason || ""}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="absolute inset-0 flex flex-col anim-fade" style={{background:"transparent"}}>
-
-
-        {/* Header */}
-        <div className="shrink-0 px-5 app-safe-top pb-4">
-          <div className="flex items-center mb-3">
-            <button onClick={onClose} className="press hit stamp flex items-center gap-1 py-2"
-                    style={{color:"var(--ink-mute)", background:"transparent", border:"none"}}>
-              <Icon name="arrow-left" size={14} stroke={2}/> Back
-            </button>
-          </div>
-          <div className="font-black font-display-l text-[34px] leading-none">{event.title}</div>
-          <div className="stamp mt-2" style={{color:"var(--ink-mute)"}}>{event.date}{event.date && event.time ? " · " : ""}{event.time}</div>
-        </div>
-        <div className="hr mx-5 shrink-0"/>
-
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto noscroll px-5 app-dock-space">
-
-          {/* 1. Stat tiles, two by two */}
-          <div className="grid grid-cols-2 gap-3 mt-5">
-            <StatTile n={recap.confirmed ?? "–"} label="Confirmed"/>
-            <StatTile n={recap.confirmed != null && recap.showed != null
-                          ? recap.showed + " of " + recap.confirmed
-                          : "–"}
-                      label="Showed" ice={true}/>
-            <StatTile n={recap.noShows ?? "–"} label="No-shows"/>
-            <StatTile n={recap.avgRating != null ? recap.avgRating : "–"} label="Avg rating"/>
-          </div>
-
-          {/* 2. Stories section */}
-          {wallGuests.length > 0 && (
-            <>
-              <SectionHead label="Stories" className="mt-6 mb-1"/>
-              <div className="stagger">
-                {wallGuests.map((g, i) => (
-                  <StoryRow key={g.applicantId} g={g} i={i}/>
-                ))}
-              </div>
-              <div className="hr mt-1"/>
-            </>
-          )}
-
-          {/* 3. Verified reach – THE number */}
-          <div className="mt-6 mb-2">
-            <div className="stamp mb-2" style={{color:"var(--ink-mute)"}}>Verified reach</div>
-            {verifiedReach > 0 ? (
-              <div className="font-black font-display-l text-[52px] leading-none" style={{color:"var(--ice)"}}>
-                {fmtReach(verifiedReach)}
-              </div>
-            ) : (
-              <div className="text-[15px]" style={{color:"var(--ink-mute)"}}>No verified stories yet</div>
-            )}
-          </div>
-
-          {/* 4. Invoice block */}
-          {invoice && (
-            <div className="card rounded-[16px] p-4 mt-6">
-              <div className="stamp mb-3" style={{color:"var(--ink-mute)"}}>Invoice</div>
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                  <div className="font-display text-[18px] leading-tight">{invoice.bundle}</div>
-                  <div className="font-mono text-[22px] leading-none mt-1">${invoice.price}</div>
-                </div>
-                <StatusPill
-                  label={invoice.status === "paid" ? "Paid" : invoice.status === "invoiced" ? "Invoiced" : invoice.status === "pending" ? "Pending" : "Due"}
-                  tone={invoice.status === "paid" ? "neutral" : "outline"}
-                />
-              </div>
-              {invoice.status !== "paid" && (
-                <>
-                  <div className="hr mb-3"/>
-                  <div className="text-[12px]" style={{color:"var(--ink-2)"}}>Settle via Whish / OMT / USD cash</div>
-                  <div className="text-[12px] mt-1" style={{color:"var(--ink-mute)"}}>The List will contact you to settle.</div>
-                </>
-              )}
-            </div>
-          )}
-
-        </div>
-
-      </div>
     );
   }
 
@@ -3802,7 +2773,8 @@ const { useState, useRef, useEffect, useMemo } = React;
         applicantId: application.id,
         state: application.status,
         code: application.pass_code || null,
-        inAt: application.checked_in_at ? new Date(application.checked_in_at).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) : null,
+        inAt: application.checked_in_at ? toLocalTime(new Date(application.checked_in_at)) : null,
+        pickExpiresAt: application.pick_expires_at || null,
         rating: application.rating ?? null,
         story: storyState,
         storyId: story?.id || null,
@@ -3819,15 +2791,11 @@ const { useState, useRef, useEffect, useMemo } = React;
       : status === "locked" ? STAGE.locked
       : ["closed","completed","past"].includes(status) || booking ? STAGE.past
       : STAGE.open;
-    const checked = applications.filter(a => a.status === "checked_in").length;
-    const confirmed = applications.filter(a => ["confirmed","checked_in","no_show"].includes(a.status)).length;
-    const ratings = applications.map(a => a.rating).filter(value => value != null).map(Number).filter(Number.isFinite);
-    const avgRating = ratings.length ? Math.round((ratings.reduce((sum,value)=>sum+value,0)/ratings.length)*10)/10 : null;
     const mix = row.mix_girls == null || row.mix_guys == null ? null : {girls:Number(row.mix_girls), guys:Number(row.mix_guys)};
     const bundleName = row.bundle || "Custom";
     return makeEvent({
       id: row.id, venueId: row.venue_id, title: row.title || "Untitled", type: row.kind || "Club",
-      date: Number.isNaN(start.valueOf()) ? "" : start.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}).replace(",", " ·"),
+      date: Number.isNaN(start.valueOf()) ? "" : dayLabel(start),
       time: Number.isNaN(start.valueOf()) ? "" : start.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", hour12:false}),
       startsAt: row.starts_at || null, endsAt: row.ends_at || null,
       endTime: Number.isNaN(end.valueOf()) ? "" : end.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", hour12:false}),
@@ -3837,7 +2805,6 @@ const { useState, useRef, useEffect, useMemo } = React;
       seats: row.seats ?? 0, heroImage: row.image_url ? {src:row.image_url,scale:1,x:0,y:0,remote:true} : null,
       exchange: "1 Story + venue tag", stage, status:stageToStatus(stage), guests,
       appliedTotal: applications.length, bundle:{name:bundleName, price:Number(row.bundle_price || 0)},
-      recap: stage === STAGE.past ? {confirmed, showed:checked, noShows:applications.filter(a=>a.status === "no_show").length, avgRating} : null,
       invoice: booking ? {id:booking.id, bundle:bundleName, price:Number(booking.bundle_price ?? row.bundle_price ?? 0), status:booking.invoice_status || "pending"} : null,
     });
   }
@@ -3858,8 +2825,7 @@ const { useState, useRef, useEffect, useMemo } = React;
   }
 
   function formatEventDateTime(date){
-    return date.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}).replace(",", " ·")
-      + " · " + toLocalTime(date);
+    return dayLabel(date) + " · " + toLocalTime(date);
   }
 
   function eventStart(draft){
@@ -3872,6 +2838,7 @@ const { useState, useRef, useEffect, useMemo } = React;
   function eventCloses(draft, starts){
     if (draft.closesAt === "24h before doors") return new Date(starts.getTime() - 24*60*60*1000);
     if (draft.closesAt === "48h before doors") return new Date(starts.getTime() - 48*60*60*1000);
+    if (draft.closesAt === "2h before doors") return new Date(starts.getTime() - 2*60*60*1000);
     const custom = new Date(draft.closesAt);
     return Number.isNaN(custom.valueOf()) ? null : custom;
   }
@@ -3899,31 +2866,33 @@ const { useState, useRef, useEffect, useMemo } = React;
     return targets[kind] || "event";
   }
 
-  /* ========== APP – onboarding state machine ========== */
+  /* ========== APP ========== */
   const DEMO_PREVIEW = new URLSearchParams(window.location.search).get("demo") === "1";
   function App(){
     const [step, setStep] = useState(DEMO_PREVIEW ? "done" : "intro");
     const currentStep = useRef(step);
     useEffect(() => { currentStep.current = step; }, [step]);
-    // intro | login | onboard-group | onboard-venue | done
+    // intro | login | no-venue | onboard-venue | done | post | event | deck | door | summary
     const [light, setLight] = useState(false);
-    const [group, setGroup] = useState(null);          // {id,name,logo} | null (independent)
     const [venue, setVenue] = useState(DEMO_PREVIEW ? DEMO_VENUE : makeVenue());
-    const [events, setEvents] = useState(SEED_EVENTS); // their drops
-    const [tab, setTab] = useState("desk");            // desk | events | door | venue
+    const [events, setEvents] = useState(SEED_EVENTS);
+    const [tab, setTab] = useState("home");            // home | events | venue
+    const [focusId, setFocusId] = useState(null);      // the event behind event / deck / door / summary
+    const [from, setFrom] = useState("done");          // where Back goes
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
+    const demoTimers = useRef({});
     const [confirm, setConfirm] = useState(null);      // {title,body,confirmLabel,onConfirm} | null
-    const [guestListEventId, setGuestListEventId] = useState(null); // event id | null
-    const [doorEventId, setDoorEventId] = useState(null);           // manually selected night | null
-    const [editingDraft, setEditingDraft] = useState(null);         // event being edited | null
-    const [recapEventId, setRecapEventId] = useState(null);        // event id for recap screen | null
+    const [editingDraft, setEditingDraft] = useState(null);
     const [session, setSession] = useState(null);
     const [notifications, setNotifications] = useState([]);
     const [syncNotice, setSyncNotice] = useState(null);
     const [roleMismatch, setRoleMismatch] = useState(false);
+    // Polls, realtime and saves all refresh. A slow older answer must never overwrite a newer one.
+    const hydrateStarted = useRef(0), hydrateApplied = useRef(0);
 
     const hydrateVenue = async (uid, replaceVenue = false) => {
+      const seq = ++hydrateStarted.current;
       const [profileResult, venueResult, notificationResult] = await Promise.all([
         supabaseClient.from("profiles").select("*").eq("id", uid).single(),
         supabaseClient.from("venues").select("*").eq("owner_id", uid).limit(1),
@@ -3932,6 +2901,8 @@ const { useState, useRef, useEffect, useMemo } = React;
       const firstError = [profileResult, venueResult, notificationResult].find(result => result.error)?.error;
       if (firstError) throw firstError;
       if (profileResult.data.role !== "venue" || !(venueResult.data || []).length) {
+        if (seq < hydrateApplied.current) return false;
+        hydrateApplied.current = seq;
         setVenue(makeVenue()); setEvents([]); setNotifications([]);
         setRoleMismatch(true); setStep("no-venue"); return false;
       }
@@ -3967,14 +2938,14 @@ const { useState, useRef, useEffect, useMemo } = React;
         heroImage:venueRow.image_url ? {src:venueRow.image_url,scale:1,x:0,y:0,remote:true} : null,
         images,
       });
-      // Preserve the venue form's unsaved fields during notification refreshes.
+      if (seq < hydrateApplied.current) return true;   // a newer refresh already landed
+      hydrateApplied.current = seq;
       if (replaceVenue || currentStep.current !== "onboard-venue") setVenue(refreshedVenue);
       setEvents(liveEvents);
       setNotifications((notificationResult.data || []).map(n => ({
         id:n.id, kind:n.kind, text:[n.title,n.body].filter(Boolean).join(" · "), eventId:n.event_id,
         action:venueNotificationAction(n.kind), read:n.read === true,
       })));
-      setGroup(null);
       setRoleMismatch(false);
       setSyncNotice(null);
       return true;
@@ -4023,10 +2994,10 @@ const { useState, useRef, useEffect, useMemo } = React;
       return () => { supabaseClient.removeChannel(channel); };
     }, [session?.user?.id]);
 
-    useEffect(() => { document.documentElement.classList.toggle('light', light); }, [light]);
-    // Store event ID (not snapshot) so ScreenReview sees live guest-state writes.
-    const [reviewEventId, setReviewEventId] = useState(null);
-    const showToast = (msg) => { setToast(msg); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(()=>setToast(null), 2200); };
+    // The door list polls with this while it is open (see ScreenDoor).
+    const refreshDoor = useCallback(() => { if (session) hydrateVenue(session.user.id).catch(() => {}); }, [session]);
+
+    const showToast = (msg) => { setToast(msg); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(()=>setToast(null), 2600); };
     const askConfirm = (cfg) => setConfirm(cfg);
     const liveToday = session ? todayLabel() : TODAY;
 
@@ -4065,13 +3036,12 @@ const { useState, useRef, useEffect, useMemo } = React;
       if (DEMO_PREVIEW) { window.location.href = window.location.pathname; return; }
       if (session) await supabaseClient.auth.signOut();
       setSession(null); setRoleMismatch(false); setNotifications([]); setSyncNotice(null);
-      setVenue(makeVenue()); setEvents(SEED_EVENTS); setGroup(null);
-      setGuestListEventId(null); setDoorEventId(null); setReviewEventId(null); setRecapEventId(null);
-      setTab("desk"); setStep("intro");
+      setVenue(makeVenue()); setEvents(SEED_EVENTS);
+      setFocusId(null); setTab("home"); setStep("intro");
     };
 
     const saveVenue = async venueDraft => {
-      if (!session) { setStep("done"); setTab("desk"); return; }
+      if (!session) { setVenue(venueDraft); setStep("done"); setTab("venue"); showToast("Venue saved"); return; }
       try {
         const stamp = Date.now();
         const heroUrl = await uploadCroppedMedia(venueDraft.heroImage, `${session.user.id}/venue-${stamp}.jpg`);
@@ -4096,13 +3066,64 @@ const { useState, useRef, useEffect, useMemo } = React;
       }
     };
 
-    useEffect(() => {
-      if (guestListEventId && !events.some(event => event.id === guestListEventId)) {
-        setGuestListEventId(null);
-      }
-    }, [guestListEventId, events]);
+    useEffect(() => { document.documentElement.classList.toggle('light', light); }, [light]);
 
-    // One viewport-sized app surface on phones; a centered column on desktop.
+    // Every venue write goes through act. Live calls Supabase; demo changes the seeded world the same way,
+    // so the investor demo behaves like the real thing.
+    const writeGuest = (eventId, appId, patch) => setEvents(es => es.map(e => e.id !== eventId ? e : {
+      ...e, guests: (e.guests || []).map(g => g.applicantId === appId ? { ...g, ...patch } : g),
+    }));
+    const writeEvent = (eventId, change) => setEvents(es => es.map(e => e.id === eventId ? change(e) : e));
+    const act = {
+      pick: async (eventId, appId) => {
+        if (session) return runRpc("pick_applicant", {p_app:appId});
+        writeGuest(eventId, appId, { state: GS.picked, code: "LST-" + appId.replace(/\D/g, "").padStart(2, "0") + "P" });
+        // Demo stand-in for the member tapping confirm, so a pitch shows the whole loop.
+        clearTimeout(demoTimers.current[appId]);
+        demoTimers.current[appId] = setTimeout(() => setEvents(es => es.map(e => e.id !== eventId ? e : {
+          ...e, guests: e.guests.map(g => g.applicantId === appId && g.state === GS.picked ? { ...g, state: GS.confirmed } : g),
+        })), 12000);
+      },
+      pass: async (eventId, appId) => {
+        if (!session) return;
+        // ponytail: skip_applicant saves nothing server-side, so skip the full refresh; this phone remembers the pass.
+        const { error } = await supabaseClient.rpc("skip_applicant", {p_app:appId});
+        if (error) throw error;
+      },
+      checkIn: async (eventId, appId) => session ? runRpc("check_in", {p_app:appId})
+        : writeGuest(eventId, appId, { state: GS.checkedIn, inAt: toLocalTime(new Date()) }),
+      noShow: async (eventId, appId) => session ? runRpc("mark_no_show", {p_app:appId})
+        : writeGuest(eventId, appId, { state: GS.noShow }),
+      rate: async (eventId, appId, rating) => session ? runRpc("rate_guest", {p_app:appId, p_rating:rating})
+        : writeGuest(eventId, appId, { rating }),
+      closeRequests: async eventId => session ? runRpc("close_applications", {p_event:eventId})
+        : writeEvent(eventId, e => ({ ...e, stage: STAGE.locked, status: stageToStatus(STAGE.locked),
+            guests: e.guests.map(g => g.state === GS.applied ? { ...g, state: GS.waitlist } : g) })),
+      cancelEvent: async eventId => session ? runRpc("cancel_event", {p_event:eventId})
+        : writeEvent(eventId, e => ({ ...e, stage: STAGE.cancelled, status: stageToStatus(STAGE.cancelled),
+            guests: e.guests.map(g => [GS.applied, GS.waitlist, GS.picked, GS.confirmed].includes(g.state) ? { ...g, state: GS.cancelled } : g) })),
+      deleteDraft: async eventId => session ? runRpc("delete_event", {p_event:eventId})
+        : setEvents(es => es.filter(e => e.id !== eventId)),
+      closeNight: async event => {
+        if (session) {
+          // close_event needs requests closed first; do both so the door never gets stuck.
+          if (event.stage === STAGE.open) {
+            const { error } = await supabaseClient.rpc("close_applications", {p_event:event.id});
+            if (error) throw error;
+          }
+          try { await runRpc("close_event", {p_event:event.id}); }
+          catch (error) { if (event.stage === STAGE.open) await refreshAfterMutation("Requests closed"); throw error; }
+          return;
+        }
+        writeEvent(event.id, e => ({ ...e, stage: STAGE.past, status: stageToStatus(STAGE.past),
+          guests: e.guests.map(g => [GS.applied, GS.waitlist].includes(g.state) ? { ...g, state: GS.notSelected }
+            : g.state === GS.confirmed ? { ...g, state: GS.noShow }
+            : g.state === GS.checkedIn && !g.story ? { ...g, story: SS.due } : g),
+          invoice: { bundle: e.bundle?.name || "Custom", price: e.bundle?.price ?? 0, status: "pending" } }));
+      },
+    };
+
+    // One wrapper so every screen shares the toast, sync banner and confirm dialog.
     const wrap = (node) => (
       <div className="app-shell">
         <div className="app-frame"><div className="app-surface">
@@ -4111,20 +3132,9 @@ const { useState, useRef, useEffect, useMemo } = React;
           {syncNotice && <div role="status" className="absolute left-3 right-3 z-[60] glass rounded-[14px] px-4 py-2 flex items-center gap-3" style={{top:"calc(env(safe-area-inset-top, 0px) + 12px)"}}>
             <div className="flex-1 text-[12px]">{syncNotice}. Updates are delayed.</div>
             <button onClick={()=>refreshAfterMutation(syncNotice)} className="press h-11 px-3 text-[12px] font-semibold">Retry refresh</button>
+            <button onClick={()=>setSyncNotice(null)} aria-label="Dismiss" className="press w-11 h-11 -mr-2 inline-flex items-center justify-center"><Icon name="x" size={16}/></button>
           </div>}
-          {confirm && (
-            <ConfirmDialog
-              title={confirm.title}
-              body={confirm.body}
-              confirmLabel={confirm.confirmLabel}
-              onConfirm={confirm.onConfirm}
-              onClose={() => setConfirm(null)}
-            />
-          )}
-          {(() => {
-            const guestListEvent = guestListEventId ? events.find(e => e.id === guestListEventId) : null;
-            return guestListEvent ? <GuestListSheet event={guestListEvent} onClose={() => setGuestListEventId(null)}/> : null;
-          })()}
+          {confirm && <ConfirmDialog {...confirm} onClose={() => setConfirm(null)}/>}
         </div></div>
       </div>
     );
@@ -4133,13 +3143,22 @@ const { useState, useRef, useEffect, useMemo } = React;
       onDemo={()=>{ window.location.href = "?demo=1"; }}/>);
     if (step === "login") return wrap(<ScreenVenueLogin onDone={completeLogin}/>);
     if (step === "no-venue" || roleMismatch) return wrap(<ScreenNoVenue onLogout={logout}/>);
-    if (step === "onboard-group") return wrap(<ScreenOnboardGroup group={group} setGroup={setGroup} onNext={()=>setStep("onboard-venue")}/>);
-    if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} setVenue={setVenue} group={group} onDone={saveVenue}/>);
+    if (step === "onboard-venue") return wrap(<ScreenOnboardVenue venue={venue} onDone={saveVenue} onCancel={() => { setStep("done"); setTab("venue"); }}/>);
 
-    const openReview = (e) => { setReviewEventId(e.id); setStep("review-deck"); };
-    const openRecap  = (eventId) => { setRecapEventId(eventId); setStep("recap"); };
+    // Back returns to the event page when that is where the venue came from, else to the tabs.
+    const go = (next, eventId) => { setFrom(step === "event" ? "event" : "done"); if (eventId !== undefined) setFocusId(eventId); setStep(next); };
+    const back = () => setStep(from === "event" && step !== "event" ? "event" : "done");
+    const editDraft = (event) => { setEditingDraft(event); go("post", event.id); };
+    const openEvent = (e) => go("event", e.id);
+    const runTask = (task) => task.go === "post" ? editDraft(task.e) : go(task.go, task.e.id);
+    const openActivity = (action, e) => {
+      if (action === "review" && running(e) && dayOf(e, liveToday, !!session) !== "over") return go("deck", e.id);
+      if (action === "door" && running(e)) return go("door", e.id);
+      if (action === "recap" && e.stage === STAGE.past) return go("summary", e.id);
+      return openEvent(e);
+    };
 
-    // ---- Demo switchboard actions (T17) – the rig behind Venue › Demo ----
+    // ---- Demo switchboard – the rig behind Venue › Demo controls ----
     const genDoorCode = (taken) => {
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       let code;
@@ -4151,35 +3170,26 @@ const { useState, useRef, useEffect, useMemo } = React;
     const demoActions = {
       newApplicants: () => {
         const open = events.find(e => e.stage === STAGE.open);
-        if (!open) { showToast("No open event – publish one first"); return; }
-        setEvents(es => es.map(e => {
-          if (e.id !== open.id) return e;
-          const present = new Set(e.guests.map(g => g.applicantId));
-          const fresh = APPLICANTS.filter(a => !present.has(a.id)).slice(0, 6).map(a => makeGuest(a.id, GS.applied));
-          let guests = [...e.guests, ...fresh];
-          let added = fresh.length;
-          if (added < 6) {
-            // pool exhausted – cycle: not-selected applicants re-enter as new applications
-            guests = guests.map(g => (added < 6 && g.state === GS.notSelected) ? (added++, makeGuest(g.applicantId, GS.applied)) : g);
-          }
-          if (!added) return e;
-          return { ...e, guests, appliedTotal: (e.appliedTotal || 0) + added };
-        }));
-        showToast("New applicants · check the deck");
+        if (!open) { showToast("No event is taking requests. Post one first."); return; }
+        const present = new Set(open.guests.map(g => g.applicantId));
+        const fresh = APPLICANTS.filter(a => !present.has(a.id)).slice(0, 6).map(a => makeGuest(a.id, GS.applied));
+        if (!fresh.length) { showToast("Everyone in the demo has asked already. Reset the demo."); return; }
+        setEvents(es => es.map(e => e.id !== open.id ? e : { ...e, guests: [...e.guests, ...fresh], appliedTotal: (e.appliedTotal || 0) + fresh.length }));
+        showToast(plural(fresh.length, "new person wants", "new people want") + " in to " + open.title);
       },
       pickDeclines: () => {
         const pool = events.find(e => e.id === "pool");
         const victim = pool && pool.guests.find(g => g.state === GS.confirmed && g.code !== "LST-4F");
-        if (!victim) { showToast("No confirmed guest left to decline"); return; }
+        if (!victim) { showToast("No confirmed guest left to drop out"); return; }
         setEvents(es => es.map(e => e.id !== "pool" ? e : {
-          ...e, guests: e.guests.map(g => g === victim ? { ...g, state: GS.declined, code: null } : g),
+          ...e, guests: e.guests.map(g => g === victim ? { ...g, state: GS.declined } : g),
         }));
         const a = APPLICANTS.find(x => x.id === victim.applicantId);
-        showToast((a ? a.name : "A pick") + " declined – pick a replacement");
+        showToast((a ? a.name : "A pick") + " can't make it. Pick a replacement.");
       },
       advanceToTonight: () => {
         const lounge = events.find(e => e.id === "lounge");
-        if (!lounge || lounge.stage !== STAGE.open) { showToast("Late Lounge already advanced – reset first"); return; }
+        if (!lounge || lounge.stage !== STAGE.open) { showToast("Late Lounge is already today. Reset first."); return; }
         const taken = new Set(events.flatMap(e => e.guests.map(g => g.code)).filter(Boolean));
         setEvents(es => es.map(e => e.id !== "lounge" ? e : {
           ...e,
@@ -4188,38 +3198,31 @@ const { useState, useRef, useEffect, useMemo } = React;
           date: TODAY,
           guests: e.guests.map(g =>
             g.state === GS.applied ? { ...g, state: GS.waitlist } :
-            g.state === GS.picked  ? { ...g, state: GS.confirmed, code: genDoorCode(taken) } : g),
+            g.state === GS.picked  ? { ...g, state: GS.confirmed, code: g.code || genDoorCode(taken) } : g),
         }));
-        setTab("desk");
-        showToast("Late Lounge is tonight's second room");
+        setTab("home");
+        showToast("Late Lounge is on today");
       },
       reset: () => {
+        Object.values(demoTimers.current).forEach(clearTimeout);
+        demoPassed.clear();
         setEvents(SEED_EVENTS);
-        setTab("desk");
+        setTab("home");
         showToast("Demo reset");
       },
     };
-    // open → review deck; locked → review deck (replacement mode) OR guest list (from ScreenDesk)
 
-    const openEvent = (e) => {
-      if (e.stage === STAGE.open)   return openReview(e);
-      if (e.stage === STAGE.locked) return setGuestListEventId(e.id);
-      if (e.stage === STAGE.draft)  return editDraft(e);
-      if (e.stage === STAGE.past)   return openRecap(e.id);
-      showToast("This event is cancelled");
-    };
-    const editDraft = (event) => {
-      setEditingDraft(event);
-      setStep("post");
-    };
     const persistEvent = async (draft, draftId, publish) => {
       if (session) {
         try {
           const starts = eventStart(draft);
           if (Number.isNaN(starts.valueOf())) throw new Error("Use a valid date and time");
           const closes = eventCloses(draft, starts);
-          if (!closes || Number.isNaN(closes.valueOf())) throw new Error("Use a valid applications-close time");
-          if (closes >= starts) throw new Error("Applications must close before doors");
+          if (!closes || Number.isNaN(closes.valueOf())) throw new Error("Use a valid time for requests to close");
+          if (closes >= starts) throw new Error("Requests must close before the event starts");
+          // Posting only: a draft may sit with old dates, but a live event must still be ahead of us.
+          if (publish && starts <= new Date()) throw new Error("That start time has already passed");
+          if (publish && closes <= new Date()) throw new Error("That close time has already passed");
           const originalStart = draft.startsAt ? new Date(draft.startsAt) : null;
           const originalEnd = draft.endsAt ? new Date(draft.endsAt) : null;
           const originalDuration = originalStart && originalEnd && !Number.isNaN(originalStart.valueOf()) && !Number.isNaN(originalEnd.valueOf())
@@ -4228,7 +3231,7 @@ const { useState, useRef, useEffect, useMemo } = React;
           const imageValue = draft.heroImage || venue.heroImage;
           const imageUrl = imageValue ? await uploadCroppedMedia(imageValue, `${session.user.id}/event-${Date.now()}.jpg`) : null;
           const args = {
-            p_title:draft.title,
+            p_title:draft.title.trim(),
             p_kind:draft.type,
             p_description:draft.description || null,
             p_image:imageUrl,
@@ -4248,16 +3251,17 @@ const { useState, useRef, useEffect, useMemo } = React;
             : await supabaseClient.rpc("post_event", {...args, p_draft:!publish});
           if (result.error) throw result.error;
           setEditingDraft(null); setStep("done"); setTab("events");
-          showToast(publish ? "Event published" : "Draft saved");
-          await refreshAfterMutation(publish ? "Event published" : "Draft saved");
+          showToast(publish ? "Event posted" : "Saved for later");
+          await refreshAfterMutation(publish ? "Event posted" : "Saved for later");
           return;
         } catch (error) {
-          showToast(error.message || (publish ? "Could not publish event" : "Could not save draft"));
+          showToast(plainError(error, error?.message || (publish ? "Could not post the event" : "Could not save the draft")));
           throw error;
         }
       }
       const saved = {
         ...draft,
+        title: draft.title.trim(),
         stage: publish ? STAGE.open : STAGE.draft,
         status: stageToStatus(publish ? STAGE.open : STAGE.draft),
         guests: draft.guests || [],
@@ -4270,17 +3274,19 @@ const { useState, useRef, useEffect, useMemo } = React;
       }
       setEditingDraft(null);
       setStep("done"); setTab("events");
-      showToast(publish ? "Event published" : "Draft saved");
+      showToast(publish ? "Event posted" : "Saved for later");
     };
     const publishEvent = (draft, draftId) => persistEvent(draft, draftId, true);
     const saveDraft = (draft, draftId) => persistEvent(draft, draftId, false);
     const cancelPost = () => {
-      if (editingDraft) {
-        showToast("Draft unchanged");
-        setEditingDraft(null);
-      }
-      setStep("done");
+      if (editingDraft) showToast("No changes saved");
+      setEditingDraft(null);
+      setStep(editingDraft && from === "event" ? "event" : "done");
     };
+
+    const focused = events.find(e => e.id === focusId) || null;
+    const common = { act, askConfirm, onToast: showToast, onBack: back };
+
     if (step === "post") return wrap(<ScreenPostEvent venue={venue}
       onCancel={cancelPost}
       onPublish={publishEvent}
@@ -4289,45 +3295,34 @@ const { useState, useRef, useEffect, useMemo } = React;
       initialDraft={editingDraft || undefined}
       draftId={editingDraft ? editingDraft.id : undefined}
     />);
+    if (step === "event") return wrap(<ScreenEvent {...common} event={focused} today={liveToday} live={!!session}
+      onDeck={id => go("deck", id)} onDoor={id => go("door", id)} onSummary={id => go("summary", id)} onEdit={editDraft}/>);
+    if (step === "deck") return wrap(focused
+      ? <ScreenReview key={focusId} {...common} event={focused}/>
+      : <Gone onBack={back}/>);
+    if (step === "door") return wrap(<ScreenDoor {...common} event={focused} live={!!session}
+      onRefresh={session ? refreshDoor : null}
+      onClosed={id => { setFocusId(id); setFrom("done"); setStep("summary"); }}
+      onSummary={id => go("summary", id)}/>);
+    if (step === "summary") return wrap(<ScreenSummary {...common} event={focused}/>);
     if (step === "done") return wrap(
       <>
-        {tab === "desk"   && <ScreenDesk venue={venue} events={events} notifications={notifications}
-          onReview={openReview} onPost={()=>setStep("post")} onEditDraft={editDraft}
-          onGuestList={(id)=>setGuestListEventId(id)} onToast={showToast} onTab={setTab}
-          onRecap={openRecap} onOpenEvent={openEvent} onDoorEvent={setDoorEventId}
-          today={liveToday} live={!!session} onNotifsOpened={markNotificationsRead}/>}
-        {tab === "events" && <ScreenEvents events={events} setEvents={setEvents} venue={venue}
-                               onPost={()=>setStep("post")} onOpenEvent={openEvent}
-                               onEditDraft={editDraft} onGuestList={(e) => setGuestListEventId(e.id)}
-                               askConfirm={askConfirm} onToast={showToast} onRecap={openRecap}
-                               onCancelEvent={session ? eventId => runRpc("cancel_event", {p_event:eventId}) : null}
-                               onDeleteDraft={session ? eventId => runRpc("delete_event", {p_event:eventId}) : null}/>}
-        {tab === "door"   && <ScreenDoor events={events} setEvents={setEvents} askConfirm={askConfirm} onToast={showToast} onTab={setTab}
-          eventId={doorEventId} today={liveToday} live={!!session}
-          onCheckIn={session ? appId => runRpc("check_in", {p_app:appId}) : null}
-          onNoShow={session ? appId => runRpc("mark_no_show", {p_app:appId}) : null}
-          onRate={session ? (appId,rating) => runRpc("rate_guest", {p_app:appId,p_rating:rating}) : null}
-          onCloseEvent={session ? async eventId => { await runRpc("close_event", {p_event:eventId}); setDoorEventId(null); } : null}/>}
-        {tab === "venue"  && <ScreenVenueProfile venue={venue} group={group} onEdit={()=>setStep("onboard-venue")} onLogout={logout} onToast={showToast} demo={session ? null : demoActions} light={light} onTheme={()=>setLight(value=>!value)}/>}
+        {tab === "home" && <ScreenHome venue={venue} events={events} notifications={notifications}
+          today={liveToday} live={!!session} onTask={runTask} onPost={() => setStep("post")} onGo={openActivity}
+          onToast={showToast} onNotifsOpened={markNotificationsRead}/>}
+        {tab === "events" && <ScreenEvents events={events} today={liveToday} live={!!session}
+          onOpen={openEvent} onPost={() => setStep("post")}/>}
+        {tab === "venue" && <ScreenVenueProfile venue={venue} onEdit={()=>setStep("onboard-venue")} onLogout={logout}
+          demo={session ? null : demoActions} light={light} onTheme={()=>setLight(value=>!value)}/>}
         <VenueTabBar tab={tab} onTab={setTab}/>
       </>
     );
 
-    if (step === "review-deck") return wrap(<ScreenReview eventId={reviewEventId} events={events} setEvents={setEvents} askConfirm={askConfirm} onToast={showToast}
-      onDecide={session ? (appId, yes) => runRpc(yes ? "pick_applicant" : "skip_applicant", {p_app:appId}) : null}
-      onCloseApps={session ? eventId => runRpc("close_applications", {p_event:eventId}) : null}
-      onClose={()=>{ setStep("done"); setTab("desk"); }}/>);
-    if (step === "recap") return wrap(<ScreenRecap eventId={recapEventId} events={events} onClose={()=>setStep("done")}/>);
-
     // Generic fallback for steps not yet built.
     return wrap(
-      <>
-
-        <div className="absolute inset-0 flex items-center justify-center" style={{background:"transparent"}}>
-          <div className="font-black font-display-l text-[34px]" style={{color:"var(--ink-mute)"}}>{step}</div>
-        </div>
-
-      </>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="font-black font-display-l text-[34px]">{step}</div>
+      </div>
     );
   }
   createRoot(document.getElementById("root")).render(<App/>);

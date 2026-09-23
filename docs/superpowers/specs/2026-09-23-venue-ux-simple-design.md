@@ -29,7 +29,7 @@ Read from the live database on 2026-09-23. The UI must never claim more than thi
 - **Nothing can be undone on the server.** No unpick, un-check-in or un-no-show exists. A pick notifies the member at once.
 - **A pass saves nothing.** `skip_applicant` is a no-op, so passed people stay `applied` and come back next time the deck opens.
 - **Closing requests** (`close_applications`) moves everyone unreviewed to the waitlist. It does not mean the event is full. Replacements come from that waitlist.
-- **Closing the night** (`close_event`) needs requests closed and the start time passed. Confirmed guests who never checked in become no-shows. Unreviewed people become not selected. Picks still awaiting confirmation are left alone.
+- **Closing the event** (`close_event`) needs requests closed and the start time passed. Confirmed guests who never checked in become no-shows. Unreviewed people become not selected. Picks still awaiting confirmation are left alone.
 - **Ratings** (`rate_guest`, 0 to 10) work any time for checked-in or no-show guests, including after the night is closed.
 - **Realtime** only broadcasts notifications. A check-in on one phone does not reach the other phone.
 - **Same-day events:** the server does not validate close times. A close time already in the past gets the event auto-closed within 10 minutes. The 24 hour confirm window can run past the start time.
@@ -126,7 +126,7 @@ Buttons: **Post event** and **Save for later.** Live mode also blocks a start ti
 - The top shows "12 of 20 inside" and how many picks are still awaiting confirmation.
 - Inside and Didn't come groups below. Tapping a confirmed guest offers "Mark as didn't come", with a confirm.
 - **Two phones stay in step:** the list refreshes every 5 seconds and when the phone wakes. If the other phone already checked someone in, the app says so and refreshes.
-- **Close the night** first closes requests if needed. Its confirm states exactly how many confirmed guests will be marked as didn't come, and that picks awaiting confirmation stay as they are. It is disabled before the start time.
+- **Close the event** first closes requests if needed. Its confirm states exactly how many confirmed guests will be marked as didn't come, and that picks awaiting confirmation stay as they are. It is disabled before the start time.
 - No rating queue. Ratings move to the summary and are optional.
 
 ### Summary
@@ -168,7 +168,7 @@ Stat tiles, "The desk", the Events filters, the Door tab, the rating queue, the 
 
 ## Testing
 
-- **Demo path:** update the venue part of `web/check-mobile.mjs`: tabs Home, Events, Venue; post an event; swipe to pick and pass; undo a pass; check someone in; close the night; rate one guest; no page overflow at 390x844 and 320x568.
-- **Live path:** a new `web/check-venue-live.mjs` runs the real live code against a fake Supabase in the browser (no production writes). It covers double taps, a failed pick keeping the person, no live undo after a pick, two phones syncing the door list, the no-show count before closing, optional ratings after closing, and same-day posting.
+- **Demo path:** update the venue part of `web/check-mobile.mjs`: tabs Home, Events, Venue; post an event; swipe to pick and pass; undo a pass; check someone in; close the event; rate one guest; no page overflow at 390x844 and 320x568.
+- **Live path:** a new `web/check-venue-live.mjs` runs the real live code against a fake Supabase in the browser (no production writes). It covers double taps, a failed pick keeping the person, no live undo after a pick, two phones syncing the door list, the no-show count before closing, optional ratings after closing, same-day posting, a held arrow key, and a tap on the card while a save runs.
 - Update `web/v3/check-v3.mjs` and `web/check-venue-actions.mjs` to the new screens and names.
 - `npm run build` passes. Screenshots of each screen go to Will. Nothing gets pushed without Will's say-so.

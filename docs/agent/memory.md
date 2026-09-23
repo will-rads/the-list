@@ -13,6 +13,10 @@ Will finds the venue side complicated and too plain. Decision: rebuild venue UX 
 - Picking must be real Tinder-style drag swipe, with buttons kept as backup.
 - Backend stays the same. Code with the ponytail skill.
 - Radwan and Dima are set aside for now; Will works solo. Goal: an MVP to demo to an investor as a Secret Society rival, starting in Beirut, with Dubai as a later market.
+- Will's corrections (same day): tabs are Home, Events, Venue (pool days and wellness aren't nights); Picked, Awaiting confirmation and Confirmed stay distinct; ratings optional after closing; honest undo; door sync across two phones; Summary holds attendance, Stories and billing; follower totals are never "reach".
+- Built on the branch: one-file rebuild of `web/v3/venue.jsx` (4,333 to about 3,340 lines). Backend unchanged. An adversarial review confirmed 50 findings (about 35 distinct); all fixed, including a profile sheet that could pick the next person mid-save and a held arrow key that picked several people.
+- Tests: `npm run build`, `npm run test:mobile` (demo, both phone sizes) and new `npm run test:venue-live` (11 logged-in scenarios against a fake Supabase, two phones) all pass. Not merged or deployed.
+- Event types stay Club, Restaurant, Beach, Lounge, Gym: the member Explore filters only know these, so new types would hide events there.
 
 ## 2026-09-20 — Publish approval and version-free URLs
 

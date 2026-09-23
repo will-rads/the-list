@@ -156,7 +156,7 @@
   .tabbar button {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:5px; color: var(--nav-idle);
-    font-size: 10px; letter-spacing: 0.01em;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.01em;
     padding: 4px 0; border-radius: 14px;
     transition: color .15s, transform .12s ease;
     background: transparent; border: 0; cursor: pointer;
@@ -390,8 +390,8 @@
     box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
   }
   .applicant-tabs button {
-    min-width:0; height:34px; padding:0 3px; border:1px solid transparent; border-radius:999px;
-    background:transparent; color:var(--ink); font-size:10px; font-weight:600;
+    min-width:0; height:44px; padding:0 3px; border:1px solid transparent; border-radius:999px;
+    background:transparent; color:var(--ink); font-size:12px; font-weight:600;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .applicant-tabs button.active {
@@ -423,3 +423,6 @@
   .insight-bar > span { display:block; height:100%; border-radius:inherit; background:var(--ice); }
   .analytics-thumb { aspect-ratio:1/1; overflow:hidden; border-radius:12px; position:relative; background:var(--bg-elev); }
   .analytics-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+
+  /* Placeholders are hints, not labels, but they still need to be readable on glass in both themes. */
+  .app-surface ::placeholder { color: var(--ink); opacity: .7; }

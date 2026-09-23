@@ -46,6 +46,22 @@ async function dock(page, name, label) {
   await fit(page, label);
 }
 
+// Drag with the mouse: pointer events drive the venue swipe deck.
+async function drag(page, locator, dx, dy) {
+  const box = await locator.boundingBox();
+  const x = box.x + box.width / 2, y = box.y + box.height / 3;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i++) await page.mouse.move(x + dx * i / 8, y + dy * i / 8);
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+}
+
+// SHOTS_DIR=... saves a screenshot of each venue screen for review.
+async function shot(page, viewport, name) {
+  if (process.env.SHOTS_DIR) await page.screenshot({ path: `${process.env.SHOTS_DIR}/${viewport.width}x${viewport.height}-${name}.png` });
+}
+
 async function tabs(page, navigationName, labels) {
   for (const label of labels) {
     const button = page.getByRole("navigation", { name: navigationName, exact: true }).getByRole("button", { name: label, exact: true });
@@ -104,22 +120,91 @@ try {
       await dock(page, "Main navigation", "Member return from detail");
 
       await open("/venue?demo=1");
-      await tabs(page, "Venue navigation", ["Tonight", "Events", "Door", "Venue"]);
-      await page.getByRole("button", { name: "Appearance · Dark", exact: true }).click();
-      await page.getByRole("button", { name: "Appearance · Light", exact: true }).click();
-      await page.getByRole("navigation", { name: "Venue navigation" }).getByRole("button", { name: "Events", exact: true }).click();
-      await page.getByRole("button", { name: "Post an event", exact: true }).click();
-      assert(await page.getByRole("button", { name: "Next", exact: true }).isDisabled(), "Empty wizard advanced");
-      await page.getByPlaceholder("e.g. Pool Day", { exact: true }).fill("Mobile smoke preview");
-      await page.getByPlaceholder("Sun · 25 May", { exact: true }).fill("Sun · 25 May");
-      await page.getByPlaceholder("22:00", { exact: true }).fill("22:00");
-      await page.getByRole("button", { name: "Next", exact: true }).click();
-      await page.getByText("Who fills the room", { exact: true }).waitFor({ state: "visible" });
-      await fit(page, "Venue wizard seats");
+      const venueNav = page.getByRole("navigation", { name: "Venue navigation" });
+      await tabs(page, "Venue navigation", ["Home", "Events", "Venue"]);
+      const dark = page.getByRole("switch", { name: "Dark mode", exact: true });
+      assert.equal(await dark.getAttribute("aria-checked"), "true");
+      await dark.click();
+      assert.equal(await dark.getAttribute("aria-checked"), "false");
+      await dark.click();
+      await venueNav.getByRole("button", { name: "Home", exact: true }).click();
+      await shot(page, viewport, "home");
+
+      // Picking: a real swipe, buttons as backup, and undo only after a pass.
+      await page.getByRole("button", { name: "Start picking, Late Lounge", exact: true }).click();
+      const card = page.getByRole("group", { name: /drag right to pick/ });
+      const who = async () => (await card.getAttribute("aria-label")).split(",")[0];
+      const first = await who();
+      await drag(page, card, 200, 4);
+      await page.getByText(/^Picked 1 of 20/).waitFor();
+      assert.equal(await page.getByRole("button", { name: /^Undo pass/ }).count(), 0, "Undo offered after a pick");
+      const second = await who();
+      assert.notEqual(second, first, "Swipe right did not pick");
+      await drag(page, card, -200, 4);
+      await page.getByRole("button", { name: "Undo pass on " + second, exact: true }).click();
+      assert.equal(await who(), second, "Undo pass did not bring the card back");
+      await drag(page, card, 20, 160);
+      assert.equal(await who(), second, "A vertical drag decided");
+      await drag(page, card, 50, 0);
+      assert.equal(await who(), second, "A short drag decided");
+      await page.getByRole("button", { name: "View " + second, exact: true }).click();
+      await page.getByRole("dialog", { name: second + " profile" }).waitFor();
+      await page.keyboard.press("Escape");
+      await page.getByRole("button", { name: "Pass on " + second, exact: true }).click();
+      await page.getByRole("button", { name: /^Undo pass/ }).waitFor();
+      await fit(page, "Venue picking deck");
+      await shot(page, viewport, "deck");
       await page.getByRole("button", { name: "Back", exact: true }).click();
-      assert.equal(await page.getByPlaceholder("e.g. Pool Day", { exact: true }).inputValue(), "Mobile smoke preview", "Wizard back lost title");
-      await page.getByRole("button", { name: "Cancel", exact: true }).click();
-      await dock(page, "Venue navigation", "Venue wizard cancelled");
+
+      // Door list: one tap from Home, check-in, and the exact no-show count before closing.
+      await page.getByRole("button", { name: "Open door list, Pool Day", exact: true }).click();
+      await page.getByRole("heading", { name: "Door list", exact: true }).waitFor();
+      await page.getByRole("searchbox", { name: "Search guests" }).fill("sara");
+      await page.getByRole("button", { name: "Here, check in Sara Capriotti", exact: true }).click();
+      await page.getByText("1 of 18 inside", { exact: true }).waitFor();
+      await page.getByRole("searchbox", { name: "Search guests" }).fill("");
+      await fit(page, "Venue door list");
+      await shot(page, viewport, "door");
+      await page.getByRole("button", { name: "Close the event", exact: true }).click();
+      const closing = page.getByRole("dialog", { name: "Close the event?" });
+      await closing.getByText(/17 confirmed guests haven't checked in/).waitFor();
+      await shot(page, viewport, "close-confirm");
+      await closing.getByRole("button", { name: "Close the event", exact: true }).click();
+
+      // Summary: attendance, Stories and the bill together; ratings are optional.
+      await page.getByText("Rate guests (optional)", { exact: true }).waitFor();
+      await page.getByText("A follower count, not measured reach.", { exact: true }).waitFor();
+      const great = page.getByRole("button", { name: "Great for Sara Capriotti", exact: true });
+      await great.click();
+      assert.equal(await great.getAttribute("aria-pressed"), "true", "Rating did not stick");
+      await fit(page, "Venue summary");
+      await shot(page, viewport, "summary");
+      await page.getByRole("button", { name: "Back", exact: true }).click();
+
+      // Events: one list, and an event page with three separate counts.
+      await venueNav.getByRole("button", { name: "Events", exact: true }).click();
+      await shot(page, viewport, "events");
+      await page.getByRole("button", { name: /^Late Lounge, Taking requests/ }).click();
+      for (const label of ["Picked", "Awaiting confirmation", "Confirmed"]) await page.getByText(label, { exact: true }).first().waitFor();
+      await fit(page, "Venue event page");
+      await shot(page, viewport, "event");
+      await page.getByRole("button", { name: "Back", exact: true }).click();
+
+      // Posting: one screen, with price, deadlines and arrival shown before posting.
+      await page.getByRole("button", { name: "New event", exact: true }).click();
+      const post = page.getByRole("button", { name: "Post event", exact: true });
+      assert(await post.isDisabled(), "An empty event can be posted");
+      await page.getByLabel("Event name", { exact: true }).fill("Mobile smoke preview");
+      await page.getByLabel("Date", { exact: true }).fill("Sat · 31 May");
+      await page.getByLabel("Start time", { exact: true }).fill("22:00");
+      await page.getByRole("button", { name: "40 for $1,200", exact: true }).click();
+      await page.getByText(/^Requests close .+ 22:00\.$/).waitFor();
+      await page.getByText("$1,200 for 40 people. Paid after the event by Whish, OMT or cash.", { exact: true }).waitFor();
+      await fit(page, "Venue new event");
+      await shot(page, viewport, "post");
+      await post.click();
+      await page.getByRole("button", { name: /^Mobile smoke preview, Taking requests/ }).waitFor();
+      await dock(page, "Venue navigation", "Venue event posted");
 
       await open("/");
       await page.getByRole("button", { name: "Apply for access", exact: true }).click();

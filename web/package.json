@@ -9,6 +9,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "check": "node v3/check-v3.mjs && node check-actions.mjs && node check-venue-actions.mjs",
     "test:mobile": "node check-mobile.mjs",
+    "test:venue-live": "node check-venue-live.mjs",
     "ios:sync": "npm run build && cap sync ios",
     "ios:open": "cap open ios"
   },

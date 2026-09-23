@@ -4,6 +4,22 @@ Things that have already gone wrong, or known traps. New entries on top, dated `
 
 ---
 
+## 2026-09-23 — Venue UX rebuild traps
+
+- **Tailwind resolved from the launch folder.** Starting Vite from outside `web/` produced an unstyled
+  app because Tailwind looked for its config and content globs relative to the current folder.
+  `web/postcss.config.js` now pins the config path and `web/tailwind.config.js` uses `relative: true`
+  with `./v3/**`. Keep the `**`: files in nested folders are otherwise dropped from the CSS.
+- **A mouse drag ends in a click.** A vertical mouse drag on the swipe card fired a click that opened
+  the profile. Any drag past the 10px threshold, in either direction, must swallow the next click.
+- **`skip_applicant` saves nothing.** Passed people stay `applied` on the server and come back when the
+  deck reopens. The phone remembers passes in `localStorage` (`the-list:passed:<eventId>`); demo keeps
+  them in memory. Never show a live Undo for a pick: `pick_applicant` notifies the member at once.
+- **Realtime only carries notifications.** Door actions don't reach a second phone; the door list polls
+  every 5 seconds instead. Test two phones with `web/check-venue-live.mjs`, not by hand.
+- **The desktop preview pane stops drawing when the app window is behind others.** Screenshots time out.
+  Use `SHOTS_DIR=<folder> npm run test:mobile` for headless screenshots instead.
+
 ## 2026-09-20 — Keep committed writes separate from refresh failures
 
 A server write can succeed and its follow-up read fail. Do not keep a creation wizard open and

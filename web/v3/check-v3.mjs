@@ -37,9 +37,9 @@ const REQUIRED = {
     'Deactivate profile', 'Deadline unavailable',
   ],
   "venue.html": [
-    "function ScreenVenueIntro", "function ScreenVenueLogin", "function ScreenDesk",
+    "function ScreenVenueIntro", "function ScreenVenueLogin", "function ScreenHome",
     "function ScreenEvents", "function ScreenDoor", "function ScreenReview",
-    "function ScreenPostEvent", "function ScreenRecap", "function ScreenVenueProfile",
+    "function ScreenPostEvent", "function ScreenSummary", "function ScreenVenueProfile",
     "signInWithOtp", "verifyOtp", "type: \"email\"", "shouldCreateUser: false",
     "from(\"venues\").select(\"*\")", "from(\"events\").select(\"*\")",
     "pick_applicant", "skip_applicant", "check_in", "close_event", "post_event",
@@ -52,9 +52,21 @@ const REQUIRED = {
     'runRpc("cancel_event"', 'runRpc("delete_event"',
     'supabaseClient.rpc("update_event"', 'supabaseClient.storage.from("media")',
     '.eq("owner_id", uid)', 'demo={session ? null : demoActions}',
-    'saved to their event record', 'creator.profile_picture_url || null',
+    'creator.profile_picture_url || null',
+    // Simple venue UX (2026-09-23): three tabs, real swipe, honest undo, door sync, optional ratings.
+    'label:"Home"', 'label:"Events"', 'label:"Venue"', 'repeat(3,1fr)',
+    'touchAction:"pan-y"', "setPointerCapture", "onClickCapture", "busy.current",
+    "Undo pass", "passedFor(", "setInterval(onRefresh, 5000)", "Rate guests (optional)",
+    "Followers of verified posters", "A follower count, not measured reach.",
+    "Awaiting confirmation", "Close requests", "Check before posting", "2h before doors",
   ],
 };
+
+// Venue-only words the simple UX retired. A follower total must never be called reach.
+const BANNED_VENUE = [
+  "Verified reach", "The desk", "Rooms tonight", "Rate the night", "Undo last",
+  "Close applications", "Awaiting confirm\"", "Upcoming rooms",
+];
 
 const BANNED_STALE = [
   "Pass — next build step", "Opening in Maps", "22 km south of city",
@@ -85,6 +97,7 @@ for (const [file, tokens] of Object.entries(REQUIRED)) {
   if (roots !== 1) problems.push(`createRoot count ${roots} (want 1)`);
   for (const t of tokens) if (!src.includes(t)) problems.push(`missing token: ${t}`);
   for (const stale of BANNED_STALE) if (src.includes(stale)) problems.push(`stale token present: ${JSON.stringify(stale)}`);
+  if (base === "venue") for (const stale of BANNED_VENUE) if (code.includes(stale)) problems.push(`retired venue wording present: ${JSON.stringify(stale)}`);
   // Curly/smart quotes inside JS source = Babel SyntaxError = blank app (caught live 2026-06-11, T11).
   // v3 (2026-07-04): Cormorant retired with the Ultraviolet reskin; Space Grotesk
   // (stock 1c's face) never adopted — Jakarta everywhere per Will's ruling.

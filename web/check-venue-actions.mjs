@@ -18,17 +18,17 @@ const handlers = between('  function eventStart', '  function ScreenNoVenue')
   + between('    const persistEvent = async', '    const publishEvent');
 
 const cases = [
-  ['publish', 'persistEvent(draft, null, true)', 'events', 'Event published'],
-  ['draft', 'persistEvent(draft, null, false)', 'events', 'Draft saved'],
-  ['edit', 'persistEvent(draft, "event", true)', 'events', 'Event published'],
+  ['publish', 'persistEvent(draft, null, true)', 'events', 'Event posted'],
+  ['draft', 'persistEvent(draft, null, false)', 'events', 'Saved for later'],
+  ['edit', 'persistEvent(draft, "event", true)', 'events', 'Event posted'],
   ['venue', 'saveVenue(draft)', 'venue', 'Venue saved'],
-  ['rpc', 'runRpc("pick_applicant", {p_app:"application"})', 'desk', 'Change saved'],
+  ['rpc', 'runRpc("pick_applicant", {p_app:"application"})', 'home', 'Change saved'],
 ];
 
 for (const [name, action, expectedTab, savedMessage] of cases) {
   for (const failure of ['refresh', 'write-result', 'write-throw']) {
     const state = {
-      step:name === 'venue' ? 'onboard-venue' : 'post', tab:'desk', editing:'draft',
+      step:name === 'venue' ? 'onboard-venue' : 'post', tab:'home', editing:'draft',
       notice:null, messages:[], writes:0, reads:0, uploads:0, refreshFails:true,
     };
     const write = async () => {
@@ -52,6 +52,7 @@ for (const [name, action, expectedTab, savedMessage] of cases) {
       setEditingDraft:value => { state.editing = value; },
       setSyncNotice:value => { state.notice = value; },
       showToast:message => state.messages.push(message),
+      plainError:(error, fallback) => fallback,
     });
     vm.runInContext(handlers, context);
     const label = `${name}: ${failure}`;
@@ -80,3 +81,33 @@ for (const [name, action, expectedTab, savedMessage] of cases) {
   }
 }
 console.log('PASS venue actions: 15 write/refresh failure cases, including read-only retries.');
+
+// Pure venue rules: three separate counts, replacements, events past midnight, same-day close times.
+const rules = between('  // Event stages', '  function makeGuest')
+  + between('  /* ========== plain words and counts', '  /* ========== Activity')
+  + between('  function toLocalDate', '  function ScreenNoVenue');
+const ctx = vm.createContext({ HOUR:3600000, DEMO_PREVIEW:false, dayLabel:d => d.toDateString(),
+  localStorage:{ getItem:() => null, setItem() {} } });
+vm.runInContext(rules, ctx);
+const run = code => vm.runInContext(code, ctx);
+run(`var locked = { id:"x", title:"X", stage:STAGE.locked, seats:4, guests:[
+  {applicantId:"1", state:"picked"}, {applicantId:"2", state:"confirmed"}, {applicantId:"3", state:"checked_in"},
+  {applicantId:"4", state:"expired", code:"LST-1"}, {applicantId:"5", state:"cancelled", code:null},
+  {applicantId:"6", state:"waitlist"}] }`);
+const t = run('tally(locked)');
+assert.deepEqual([t.picked, t.awaiting, t.yes, t.coming, t.dropped, t.waiting], [3, 1, 2, 2, 1, 1], 'picked, awaiting and confirmed must stay separate');
+assert.equal(run('needsReplacement(locked, tally(locked))'), true, 'an expired pick with a free seat needs a replacement');
+run(`var late = { id:"l", title:"L", stage:STAGE.locked, startsAt:new Date(Date.now() - 2*HOUR).toISOString(), guests:[] }`);
+run(`var old = { id:"o", title:"O", stage:STAGE.locked, startsAt:new Date(Date.now() - 30*HOUR).toISOString(), guests:[] }`);
+assert.equal(run('dayOf(late, "", true)'), 'today', 'an event that started 2 hours ago is still today');
+assert.equal(run('dayOf(old, "", true)'), 'over', 'an unclosed event from yesterday needs closing');
+assert.equal(run('eventCloses({closesAt:"2h before doors"}, new Date(2030, 0, 1, 22)).getHours()'), 20);
+run(`var open = { id:"p", title:"P", stage:STAGE.open, seats:2, startsAt:new Date(Date.now() + 72*HOUR).toISOString(),
+  guests:[{applicantId:"9", state:"applied"}] }`);
+assert.deepEqual([...run('homeTasks([open, locked, late], "", true).map(task => task.go)')], ['door', 'deck', 'event', 'deck'],
+  'Home order: door, replacement, awaiting confirmation, picking');
+run(`var tonight = { id:"t", title:"T", stage:STAGE.open, seats:2, startsAt:new Date(Date.now() + HOUR).toISOString(),
+  guests:[{applicantId:"8", state:"applied"}] }`);
+assert.deepEqual([...run('homeTasks([tonight], "", true).map(task => task.go)')], ['door', 'deck'],
+  'an event later today keeps its picking card next to the door card');
+console.log('PASS venue rules: separate counts, replacements, past-midnight events, same-day close times, Home order.');

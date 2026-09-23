@@ -18,6 +18,7 @@
 - [x] Manual Story screenshot upload, rejected-proof retry, and founder review are implemented.
 - [x] Sensitive RPC grants are hardened; PostgreSQL `PUBLIC` and `anon` execute access are zero.
 - [x] Verify V3 demo journeys, anchored navigation, sheets, and no outer scroll at 390x844 and 320x568; reduced-height forms also checked.
+- [x] Simplify the venue UX (branch `venue-ux-simple`, 2026-09-23): demo walkthrough and live walkthrough against a fake Supabase both pass; waiting for Will's review before merge.
 - [ ] Verify real iPhone keyboard and safe-area behavior.
 - [x] Validate the local Vite production build and Capacitor asset sync.
 
@@ -40,6 +41,7 @@
 - [ ] Turn on Story scoring after Gemini and Meta setup is complete.
 - [ ] Verify existing Supabase authentication, uploads, links, and session persistence inside the Capacitor app.
 - [ ] Add APNs push notifications for the iOS app.
+- [ ] Venue UX gaps found 2026-09-23 (see the spec's "Known gaps"): publish `applications` to realtime so door phones sync without polling; store passes on the server; separate door staff logins; cap the 24-hour confirm window at the start time; decide what `close_event` does with picks still awaiting confirmation; fix the "This one filled up" copy when seats were left.
 
 ## External services still missing
 

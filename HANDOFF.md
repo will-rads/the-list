@@ -9,4 +9,8 @@ Run from `web/`: `npm run dev`, `npm run build`, `npm run test:mobile`, `npm run
 Will approved pushing and publishing on September 20. Canonical production routes are
 `https://the-list-omega.vercel.app/` (venue `/venue`, teaser `/e?id=`, founder `/admin`).
 Old versioned routes redirect to these links. See the latest memory entry for deployment verification.
-Next: authenticated walkthrough, then Mac/device verification.
+Venue UX rebuild (2026-09-23) lives on branch `venue-ux-simple`, not deployed. Spec:
+`docs/superpowers/specs/2026-09-23-venue-ux-simple-design.md`. Tests: `npm run build`,
+`npm run test:mobile` (demo) and `npm run test:venue-live` (logged-in flows against a fake Supabase).
+Next: Will reviews the branch, then merge and deploy on his say-so, then the visual redesign,
+then the authenticated walkthrough and Mac/device verification.

@@ -8,6 +8,8 @@ Release tracker: [App Store launch checklist](../app-store-launch-checklist.md).
 
 **Phase (2026-09-20): mobile layout, flow fixes, and Vite build deployed; Capacitor project ready for native testing.** V3 is the only active version. V1/V2 are preserved in `archive/web/`; SwiftUI in `ios/` is paused. React uses Vite with JSX/local CSS in `web/`, and the generated Capacitor wrapper is in `web/ios/`. No new SwiftUI port is planned.
 
+**Venue UX (2026-09-23):** the venue side is being simplified on branch `venue-ux-simple`: UX first in the current glass look, then one visual redesign for venue and member together. Will is working solo for now; the goal is an MVP to show an investor. Spec: `docs/superpowers/specs/2026-09-23-venue-ux-simple-design.md`.
+
 **Production updated on 2026-09-20:** Supabase project `zrbakomzpuesifasuamb` powers `the-list-omega.vercel.app` member, venue, public teaser, and founder flows. The React refactor is pushed and deployed at `/` (member), `/venue`, and `/e`; native compilation remains pending. A full authenticated production walkthrough is still pending.
 
 ```text
@@ -41,6 +43,9 @@ Release tracker: [App Store launch checklist](../app-store-launch-checklist.md).
 [done]      V3 full-screen layout and flow fixes; 390x844 + 320x568 demo journeys pass locally
 [done]      React + Vite build; local dependencies/fonts/CSS; failure-recovery regression checks
 [done]      Capacitor iOS project generated and synced in web/ios (not native-compiled)
+[done]      Venue UX rebuilt on branch venue-ux-simple (2026-09-23): Home/Events/Venue, swipe deck, door list, summary; demo + fake-live tests pass
+[next]      Will reviews venue-ux-simple; merge and deploy only on his say-so
+[next]      Visual redesign across venue and member (after the venue UX is approved)
 [next]      Validate member + venue flows, mobile layouts, and the production build; record remaining failures
 [next]      Review local V3; push/deploy only after explicit approval
 [next]      Build/sign Capacitor on Mac; verify keyboard, safe areas, uploads and links on real iPhones
