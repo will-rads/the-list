@@ -4,6 +4,16 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-09-23 — Venue UX rebuild: simple first, looks later
+
+Will finds the venue side complicated and too plain. Decision: rebuild venue UX first, keep the current glass look, then do one visual redesign across venue and member. Spec: `docs/superpowers/specs/2026-09-23-venue-ux-simple-design.md`, branch `venue-ux-simple`.
+
+- Venue does three things: post a night, pick who comes, let them in. Tabs become Home, Nights, Venue. Door lives inside tonight's night.
+- The manager posts and picks. A door person checks in on a second phone with the same login.
+- Picking must be real Tinder-style drag swipe, with buttons kept as backup.
+- Backend stays the same. Code with the ponytail skill.
+- Radwan and Dima are set aside for now; Will works solo. Goal: an MVP to demo to an investor as a Secret Society rival, starting in Beirut, with Dubai as a later market.
+
 ## 2026-09-20 — Publish approval and version-free URLs
 
 Will explicitly approved pushing the completed mobile/React/Capacitor changes. Members now open `/`, venues `/venue`, and shared event teasers `/e?id=...`; the manifest starts at `/`. Root HTML entries bundle the existing source without renaming the internal `v3` source directory. Legacy V1/V2/V3 entry routes redirect to canonical URLs. Local mobile smoke checks pass at both phone sizes. Commit `f11f5a7` pushed to `main`; Vercel reported deployment success. Production `/` and `/venue` return HTTP 200 and the new local Vite bundles; old `/v3` and `/v3/venue` return 308 redirects, preserving event query strings. Live mobile smoke checks also pass at 390x844 and 320x568 (demo journeys, forms, teaser/admin, no outer scroll or page errors; backend writes blocked). Capacitor asset sync also passes.
