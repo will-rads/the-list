@@ -1157,7 +1157,9 @@ scenario(17, "Edit during a failed refresh: an event edit keeps guests confirmed
     await UI.button(page, UI.deck.pick(name)).click();
     await until(() => fake.app(name).status === "picked", `${name} picked`);
     await page.getByText("Change saved. Updates are delayed.").waitFor({ timeout: 4000 });
-    await page.getByRole("button", { name: "Dismiss", exact: true }).click();   // the banner covers Back
+    const banner = await page.getByRole('status').filter({hasText:'Updates are delayed'}).boundingBox();
+    const back = await UI.button(page, UI.event.back).boundingBox();
+    assert.ok(banner && back && banner.y + banner.height <= back.y, 'the banner must not cover Back');
     await UI.button(page, UI.event.back).click();
     const row = group(page, "Awaiting confirmation").locator("li").filter({ hasText: name });
     await row.waitFor({ timeout: 3000 });

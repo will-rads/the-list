@@ -38,7 +38,7 @@ function makeApp({ live = true, manual = false, write, server = null } = {}) {
     return {data:'event', error:null};
   };
   const context = vm.createContext({
-    ...refs, shown:false, DEMO_PREVIEW:false, SEED_EVENTS:[{id:'seed'}], demoTimers:{current:{}},
+    ...refs, renderEpoch:0, shown:false, DEMO_PREVIEW:false, SEED_EVENTS:[{id:'seed'}], demoTimers:{current:{}},
     setTimeout:() => 0, clearTimeout() {}, makeVenue:() => ({id:'blank'}),
     session: live ? {user:{id:'owner'}} : null, venue:{heroImage:null},
     draft:{id:'venue', title:'Test event', name:'Test venue', date:'2030-05-25',
@@ -180,6 +180,7 @@ async function twoCheckIns(order) {
   assert.deepEqual(clone(app.state.events), [{id:'seed'}], 'no old venue data after logout');
   assert.equal(app.state.notice, null, 'no banner for the old session');
   assert.deepEqual(app.state.landed, []);
+  app.context.renderEpoch = app.refs.epoch.current; // the next render belongs to the new session
   const next = app.run('hydrateVenue("owner")'); await tick();   // the next session's load still works
   await app.loads[2].ok();
   assert.equal(await next, true);
@@ -192,6 +193,34 @@ async function twoCheckIns(order) {
   assert.equal(await boot, null);
 }
 console.log('PASS venue ordering: overlapping saves, late failures, stale polls, logout mid-load, all out of order.');
+
+// A write (not just its refresh) can still be waiting when the owner signs out.
+for (const action of ['act.checkIn("e", "a")', 'persistEvent(draft, "e", true)', 'saveVenue(draft)']) {
+  let finish;
+  const app = makeApp({ manual:true, server:door(), write:() => new Promise(resolve => { finish = resolve; }) });
+  const save = app.run(action); await tick();
+  assert.ok(finish, 'write reached the server');
+  await app.run('logout()');
+  finish({data:'e', error:null}); await save;
+  assert.equal(app.loads.length, 0, `${action}: old save must not start a new load`);
+  assert.equal(app.state.step, 'intro');
+  assert.equal(app.state.notice, null);
+  assert.deepEqual(clone(app.state.events), [{id:'seed'}]);
+  assert.deepEqual(app.state.messages, []);
+}
+
+// Two successful edits, then reverse-order failed refreshes: never replay the older edit.
+{
+  const app = makeApp({ manual:true, server:door() });
+  const first = app.run('persistEvent({...draft, title:"First"}, "e", true)'); await tick();
+  const second = app.run('persistEvent({...draft, title:"Second"}, "e", true)'); await tick();
+  assert.equal(app.state.events[0].title, 'Second');
+  await app.loads[1].fail(); await second;
+  await app.loads[0].fail(); await first;
+  assert.equal(app.state.events[0].title, 'Second', 'late failure must not replay First');
+  assert.equal(app.guest('e', 'a').state, 'confirmed');
+}
+console.log('PASS venue committed writes: saves pending at logout are dropped; late failures never replay older edits.');
 
 // ---- Local fallbacks never invent data ----
 for (const live of [true, false]) {

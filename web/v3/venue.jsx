@@ -2899,10 +2899,12 @@ const { useState, useRef, useEffect, useCallback } = React;
     // last one that landed. A stale refresh returns null and changes nothing, not even on failure.
     const hydrateStarted = useRef(0), hydrateFloor = useRef(0), hydrateLanded = useRef(0);
     const epoch = useRef(0);   // bumped at logout, so late answers from the old session are dropped
+    const renderEpoch = epoch.current;
 
     const hydrateVenue = async (uid, replaceVenue = false) => {
+      if (renderEpoch !== epoch.current) return null;
       const seq = ++hydrateStarted.current;
-      const stale = () => seq < hydrateFloor.current || seq <= hydrateLanded.current;
+      const stale = () => renderEpoch !== epoch.current || seq < hydrateFloor.current || seq <= hydrateLanded.current;
       try { return await loadVenue(uid, replaceVenue, seq, stale); }
       catch (error) { if (stale()) return null; throw error; }
     };
@@ -2974,6 +2976,7 @@ const { useState, useRef, useEffect, useCallback } = React;
     useEffect(() => {
       if (DEMO_PREVIEW) return;
       supabaseClient.auth.getSession().then(({data}) => {
+        if (renderEpoch !== epoch.current) return;
         if (!data.session) return;
         setSession(data.session);
         hydrateVenue(data.session.user.id)
@@ -3012,13 +3015,14 @@ const { useState, useRef, useEffect, useCallback } = React;
     // The door list polls with this while it is open (see ScreenDoor).
     const refreshDoor = useCallback(() => { if (session) hydrateVenue(session.user.id).catch(() => {}); }, [session]);
 
-    const showToast = (msg) => { setToast(msg); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(()=>setToast(null), 2600); };
+    const showToast = (msg) => { if (renderEpoch !== epoch.current) return; setToast(msg); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(()=>setToast(null), 2600); };
     const askConfirm = (cfg) => setConfirm(cfg);
     const liveToday = session ? todayLabel() : TODAY;
 
     // A failed refresh must never turn a committed write into a retryable save. True when this refresh
     // or a newer one landed, since either carries the write; a late failure after that is ignored.
     const refreshAfterMutation = async (savedMessage, replaceVenue = false) => {
+      if (renderEpoch !== epoch.current) return true;
       const mine = hydrateStarted.current + 1, session0 = epoch.current;   // hydrateVenue takes this number
       try { await hydrateVenue(session.user.id, replaceVenue); } catch (_) {}
       if (epoch.current !== session0 || hydrateLanded.current >= mine) return true;
@@ -3029,12 +3033,17 @@ const { useState, useRef, useEffect, useCallback } = React;
     // A write just committed: every refresh that started before it carries old data and must never land.
     const committed = () => { hydrateFloor.current = hydrateStarted.current + 1; };
 
-    // If the refresh fails, showLocally puts the saved change on screen, so nobody repeats a write that happened.
+    // ponytail: show each committed write once; refresh failures never replay old changes.
     const runRpc = async (name, args, showLocally) => {
-      const { error } = await supabaseClient.rpc(name, args);
+      let result;
+      try { result = await supabaseClient.rpc(name, args); }
+      catch (error) { if (renderEpoch !== epoch.current) return; throw error; }
+      if (renderEpoch !== epoch.current) return;
+      const { error } = result;
       if (error) throw error;
       committed();
-      if (!await refreshAfterMutation("Change saved") && showLocally) showLocally();
+      if (showLocally) showLocally();
+      await refreshAfterMutation("Change saved");
     };
 
     const markNotificationsRead = async () => {
@@ -3044,6 +3053,7 @@ const { useState, useRef, useEffect, useCallback } = React;
       setNotifications(rows => rows.map(row => ids.includes(row.id) ? {...row, read:true} : row));
       const { error } = await supabaseClient.from("notifications").update({read:true})
         .eq("user_id", session.user.id).in("id", ids);
+      if (renderEpoch !== epoch.current) return;
       if (error) {
         showToast("Could not mark activity as read");
         hydrateVenue(session.user.id).catch(() => {});
@@ -3067,6 +3077,7 @@ const { useState, useRef, useEffect, useCallback } = React;
         const galleryUrls = (await Promise.all((venueDraft.images || []).map((image,index) =>
           image ? uploadCroppedMedia(image, `${session.user.id}/venue-${stamp}-${index}.jpg`) : null
         ))).filter(Boolean);
+        if (renderEpoch !== epoch.current) return;
         const { error } = await supabaseClient.from("venues").update({
           name:venueDraft.name,
           kind:venueDraft.type,
@@ -3076,11 +3087,14 @@ const { useState, useRef, useEffect, useCallback } = React;
           gallery:galleryUrls,
           ig_handle:(venueDraft.igHandle || "").replace(/^@/, "") || null,
         }).eq("id", venueDraft.id);
+        if (renderEpoch !== epoch.current) return;
         if (error) throw error;
         committed();
+        setVenue(venueDraft);
         setStep("done"); setTab("venue"); showToast("Venue saved");
-        if (!await refreshAfterMutation("Venue saved", true)) setVenue(venueDraft);
+        await refreshAfterMutation("Venue saved", true);
       } catch (error) {
+        if (renderEpoch !== epoch.current) return;
         showToast(error.message || "Could not save venue");
         throw error;
       }
@@ -3096,7 +3110,7 @@ const { useState, useRef, useEffect, useCallback } = React;
     const writeEvent = (eventId, change) => setEvents(es => es.map(e => e.id === eventId ? change(e) : e));
     const lock = eventId => writeEvent(eventId, e => ({ ...e, stage: STAGE.locked, status: stageToStatus(STAGE.locked),
       guests: e.guests.map(g => g.state === GS.applied ? { ...g, state: GS.waitlist } : g) }));
-    // Live: save on the server, and show the change locally only if the refresh fails. Demo: show it locally.
+    // Live: show the committed change, then refresh server data. Demo: show it locally.
     const write = (name, args, local) => session ? runRpc(name, args, local) : local();
     const act = {
       pick: async (eventId, appId) => {
@@ -3134,12 +3148,15 @@ const { useState, useRef, useEffect, useCallback } = React;
         // close_event needs requests closed first; do both so the door never gets stuck.
         if (event.stage === STAGE.open) {
           const { error } = await supabaseClient.rpc("close_applications", {p_event:event.id});
+          if (renderEpoch !== epoch.current) return;
           if (error) throw error;
           committed();
+          lock(event.id);
         }
         try { await runRpc("close_event", {p_event:event.id}, local); }
         catch (error) {
-          if (event.stage === STAGE.open && !await refreshAfterMutation("Requests closed")) lock(event.id);
+          if (renderEpoch !== epoch.current) return;
+          if (event.stage === STAGE.open) await refreshAfterMutation("Requests closed");
           throw error;
         }
       },
@@ -3148,14 +3165,14 @@ const { useState, useRef, useEffect, useCallback } = React;
     // One wrapper so every screen shares the toast, sync banner and confirm dialog.
     const wrap = (node) => (
       <div className="app-shell">
-        <div className="app-frame"><div className="app-surface">
-          {node}
-          <Toast msg={toast}/>
-          {syncNotice && <div role="status" className="absolute left-3 right-3 z-[60] glass rounded-[14px] px-4 py-2 flex items-center gap-3" style={{top:"calc(env(safe-area-inset-top, 0px) + 12px)"}}>
+        <div className="app-frame"><div className="app-surface flex flex-col">
+          {syncNotice && <div role="status" className="relative shrink-0 mx-3 z-[60] glass rounded-[14px] px-4 py-2 flex items-center gap-3" style={{marginTop:"calc(env(safe-area-inset-top, 0px) + 12px)"}}>
             <div className="flex-1 text-[12px]">{syncNotice}. Updates are delayed.</div>
             <button onClick={()=>refreshAfterMutation(syncNotice)} className="press h-11 px-3 text-[12px] font-semibold">Retry refresh</button>
             <button onClick={()=>setSyncNotice(null)} aria-label="Dismiss" className="press w-11 h-11 -mr-2 inline-flex items-center justify-center"><Icon name="x" size={16}/></button>
           </div>}
+          <div className="relative flex-1 min-h-0">{node}</div>
+          <Toast msg={toast}/>
           {confirm && <ConfirmDialog {...confirm} onClose={() => setConfirm(null)}/>}
         </div></div>
       </div>
@@ -3261,6 +3278,7 @@ const { useState, useRef, useEffect, useCallback } = React;
             : 4*60*60*1000;
           const imageValue = draft.heroImage || venue.heroImage;
           const imageUrl = imageValue ? await uploadCroppedMedia(imageValue, `${session.user.id}/event-${Date.now()}.jpg`) : null;
+          if (renderEpoch !== epoch.current) return;
           const args = {
             p_title:draft.title.trim(),
             p_kind:draft.type,
@@ -3280,16 +3298,16 @@ const { useState, useRef, useEffect, useCallback } = React;
           const result = draftId
             ? await supabaseClient.rpc("update_event", {...args, p_event:draftId, p_publish:publish})
             : await supabaseClient.rpc("post_event", {...args, p_draft:!publish});
+          if (renderEpoch !== epoch.current) return;
           if (result.error) throw result.error;
           committed();
+          saveLocally(draft, draftId || result.data, publish, starts.toISOString());
           setEditingDraft(null); setStep("done"); setTab("events");
           showToast(publish ? "Event posted" : "Saved for later");
-          // Without this, a failed refresh hides the new event and invites a second, duplicate post.
-          if (!await refreshAfterMutation(publish ? "Event posted" : "Saved for later")) {
-            saveLocally(draft, draftId || result.data, publish, starts.toISOString());
-          }
+          await refreshAfterMutation(publish ? "Event posted" : "Saved for later");
           return;
         } catch (error) {
+          if (renderEpoch !== epoch.current) return;
           showToast(plainError(error, error?.message || (publish ? "Could not post the event" : "Could not save the draft")));
           throw error;
         }

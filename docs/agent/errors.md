@@ -4,6 +4,10 @@ Things that have already gone wrong, or known traps. New entries on top, dated `
 
 ---
 
+## 2026-09-25 - Guard writes across logout, not just loads
+
+A save can finish after logout and start a fresh load that bypasses the old load counter. Guard the whole callback with its render's logout epoch. Show committed edits once at server success, not later inside failed-refresh callbacks: two failed refreshes can arrive backwards and replay the older edit. Regression tests must cover pending writes at logout and reverse-order failures for edits to the same event. Sync banners must reserve space instead of covering Back.
+
 ## 2026-09-25 — Answers arrive in any order
 
 "Older than the last applied refresh" is not enough. A refresh that started before a later write can come back first, and a failed refresh can come back after a newer success. Number every refresh, drop anything started before the latest write or logout, and judge a save by whether any refresh at or after its own landed. Local fallbacks must patch the current state, never restore a form's old copy, and never make up server values such as pass codes.

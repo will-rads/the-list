@@ -4,6 +4,13 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-09-25 - Codex follow-up: pending saves, edit ordering, banner
+
+- Venue writes now update the screen once, immediately after server success. Failed refreshes only raise the delayed banner; they never replay older edits. Server refreshes still replace local data.
+- Callbacks from a previous logout epoch cannot start new loads or update the screen after a pending save/upload finishes. Covered check-in, event edit and venue save in the offline regression tests.
+- The delayed banner reserves layout space, so Back stays usable without dismissing it. Browser scenario 17 asserts no overlap and clicks Back with the banner open; also checked at 320x568.
+- Verified: build, all 17 fake-backend browser scenarios, mobile demos at 390x844 and 320x568. No real backend calls, database edits, commit or push. Changes are local on `venue-ux-simple`.
+
 ## 2026-09-25 (later) — Out-of-order saves and refreshes, logout, honest local data
 
 Will: don't merge yet. Fix overlapping saves, stale failure callbacks, edits restoring old guests, invented live pass codes and loads surviving logout. Backend unchanged.
