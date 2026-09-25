@@ -4,6 +4,10 @@ Things that have already gone wrong, or known traps. New entries on top, dated `
 
 ---
 
+## 2026-09-25 — Answers arrive in any order
+
+"Older than the last applied refresh" is not enough. A refresh that started before a later write can come back first, and a failed refresh can come back after a newer success. Number every refresh, drop anything started before the latest write or logout, and judge a save by whether any refresh at or after its own landed. Local fallbacks must patch the current state, never restore a form's old copy, and never make up server values such as pass codes.
+
 ## 2026-09-25 — A banner alone doesn't stop a repeat write
 
 After a save commits and its refresh fails, the screen still shows the old state, so people tap again (a second check-in, a second posted event). Show the committed change locally too, and drop any refresh that started before the write. Also: the live database's base tables and several RPCs (`pick_applicant`, `check_in`, `skip_applicant`, ...) are not in `supabase/migrations/`; read them live (read-only) before assuming what the server does.

@@ -40,7 +40,7 @@ From `web/`: `npm ci`, then `npm run dev`. `npm run build` checks the sources an
 
 `npm run test:mobile` checks demo journeys at 390x844 and 320x568 against a server on port 5173 (`BASE_URL` overrides it). Add `SHOTS_DIR=<folder>` to save a screenshot of each venue screen. Install the test browser with `npx playwright install chromium`, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing Chromium executable. The test blocks backend writes; authenticated production testing is separate.
 
-`npm run test:venue-live` runs the logged-in venue app against a fake Supabase in the browser, with two phones on one account. It covers swiping, double taps, failed saves, failed refreshes after a save, door sync, closing the event, optional ratings, same-day posting, picking from a closed list with empty seats, and needs-review Stories after payment. Nothing reaches the real backend.
+`npm run test:venue-live` runs the logged-in venue app against a fake Supabase in the browser, with two phones on one account. It covers swiping, double taps, failed saves, failed refreshes after a save, door sync, closing the event, optional ratings, same-day posting, picking from a closed list with empty seats, needs-review Stories after payment, and refreshes that answer out of order (including after logout). `npm run check` also settles fake loads out of order against the real refresh code. Nothing reaches the real backend.
 
 Capacitor uses the same built web assets: `npm run ios:sync`, then `npm run ios:open` on a Mac. The generated app targets iPhone / iOS 17+ and keeps the existing `co.thelist.app` ID. Its icon and splash are still the template defaults. See the [launch checklist](docs/app-store-launch-checklist.md) for signing, device, and TestFlight work.
 

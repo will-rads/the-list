@@ -158,6 +158,8 @@ Stat tiles, "The desk", the Events filters, the Door tab, the rating queue, the 
 
 A save can succeed while the refresh after it fails. Then the app shows the saved change on this phone anyway (a check-in leaves the door list, a new event appears, a venue edit shows), with the "Updates are delayed" banner, so nobody repeats a write that already happened. Any refresh that started before a save is ignored when it lands, so an old poll can't bring back stale data.
 
+Refreshes can answer in any order. Each is numbered; one that started before the latest save or logout never lands, and a late failure after newer data changes nothing. Logging out drops every load still running. The local fallback only applies what was saved: an edit keeps the current guests, and a live pick shows no pass code until the server's arrives.
+
 A Story that needs review keeps the event's Home card, even after the bill is paid.
 
 ## Known gaps (backend, not fixed this round)

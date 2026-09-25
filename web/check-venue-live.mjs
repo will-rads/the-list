@@ -342,6 +342,7 @@ class FakeSupabase {
     this.delays = new Map();   // rpc name -> ms
     this.holds = new Map();    // phone -> {promise, release}: REST reads from that phone wait
     this.brokenReads = new Set(); // tables whose REST reads fail (failReads), so the app's refresh fails
+    this.queue = null;             // {table, items}: each read of that table waits until the test releases it
     this.sockets = new Set();
     this.nextBinding = 1;
     this.unhandled = [];       // endpoints the fake does not implement
@@ -367,6 +368,11 @@ class FakeSupabase {
   reads(table) { return this.requests.filter(r => r.method === "GET" && r.path === `/rest/v1/${table}`).length; }
   failNext(name, message) { this.failures.set(name, [...(this.failures.get(name) || []), message]); }
   delay(name, ms) { this.delays.set(name, ms); }
+  // Out of order on purpose: every read of `table` waits; release them in any order, each ok or failed.
+  queueReads(table) { this.queue = { table, items: [] }; }
+  queued() { return this.queue?.items.length || 0; }
+  release(index, ok = true) { this.queue.items[index].resolve(ok); }
+  stopQueue() { const q = this.queue; this.queue = null; q?.items.forEach(item => item.resolve(true)); }
   failReads(table, on = true) { if (on) this.brokenReads.add(table); else this.brokenReads.delete(table); }
   holdReads(phone) {
     if (this.holds.has(phone)) return;
@@ -440,6 +446,10 @@ class FakeSupabase {
     }
     this.requests.push({ phone, method, path, search: url.search });
     const headers = await request.allHeaders();
+    if (isRead && this.queue?.table === path.slice("/rest/v1/".length)) {
+      const ok = await new Promise(resolve => this.queue.items.push({ resolve }));
+      if (!ok) return pgError(400, "FAKE400", "fake supabase: queued read failed on purpose");
+    }
     if (isRead && this.brokenReads.has(path.slice("/rest/v1/".length))) return pgError(400, "FAKE400", "fake supabase: read failed on purpose");
     if (path.startsWith("/rest/v1/rpc/")) return this.rpc(path.slice("/rest/v1/rpc/".length), request.postDataJSON() || {}, phone);
     if (path.startsWith("/rest/v1/")) return this.rest(method, path.slice("/rest/v1/".length), url, request, headers);
@@ -723,6 +733,9 @@ async function insideCount(page) {
   const text = await UI.door.counter(page).innerText();
   return Number(text.match(UI.door.counterPattern)[1]);
 }
+
+// The event page's guest group under a heading such as "Confirmed" or "Awaiting confirmation".
+const group = (page, title) => page.locator("section").filter({ has: page.getByRole("heading", { name: title, exact: true }) });
 
 async function closeNightViaUI(page) {
   await UI.button(page, UI.door.closeNight).click();
@@ -1068,6 +1081,88 @@ scenario(14, "Paid bill: a Story that needs review keeps Sound Bath on Home", as
     await UI.task(page, UI.home.seeSummary, "Sound Bath").click();
     await page.getByText("1 under review", { exact: false }).first().waitFor();
     await page.getByText("Paid", { exact: true }).waitFor();
+  });
+});
+
+scenario(15, "Out of order: two check-ins' refreshes answer newest first, the older one fails late; no banner, both inside", async ({ fake, phone }) => {
+  const { page } = await phone("A");
+  await step("open the E2 door list", () => openDoorFromHome(page));
+  await step("check in Farah, then Gia, while every refresh waits", async () => {
+    fake.queueReads("events");
+    await UI.button(page, UI.door.checkIn("Farah")).click();
+    await until(() => fake.callsOf("check_in").some(call => call.done), "Farah's check_in");
+    await until(() => fake.queued() >= 1, "Farah's refresh waiting");
+    await UI.button(page, UI.door.checkIn("Gia")).click();
+    await until(() => fake.callsOf("check_in").filter(call => call.done).length === 2, "Gia's check_in");
+    await until(() => fake.queued() >= 2, "Gia's refresh waiting");
+  });
+  await step("newest refresh answers first, then the older one fails", async () => {
+    const n = fake.queued();
+    for (let i = n - 1; i >= 1; i--) fake.release(i, true);   // Gia's refresh and any later poll
+    await until(async () => (await insideCount(page)) === 2, "2 inside after the newest refresh", 4000);
+    fake.release(0, false);                                  // Farah's refresh fails, late
+    await sleep(800);
+    fake.stopQueue();
+    assert.equal(await page.getByText("Change saved. Updates are delayed.").count(), 0, "a late failure raised the banner");
+    assert.equal(await insideCount(page), 2);
+    assert.equal(fake.count("check_in"), 2, "no repeated check-in");
+  });
+});
+
+scenario(16, "Out of order: a load still running at logout answers after it and changes nothing", async ({ fake, phone }) => {
+  const { page } = await phone("A");
+  await step("a realtime refresh starts and waits", async () => {
+    fake.queueReads("events");
+    fake.memberConfirms("Jad");
+    await until(() => fake.queued() >= 1, "the realtime refresh waiting");
+  });
+  await step("log out, then the old load answers", async () => {
+    await UI.tab(page, UI.tabs.venue).click();
+    await UI.button(page, "Log out").click();
+    await page.getByText("For the rooms that matter").waitFor();
+    fake.stopQueue();
+    await sleep(1000);
+    await page.getByText("For the rooms that matter").waitFor({ timeout: 1000 });
+    assert.equal(await UI.nav(page).count(), 0, "the old session's load reopened the venue app");
+  });
+});
+
+scenario(17, "Edit during a failed refresh: an event edit keeps guests confirmed since the form opened; a live pick shows no made-up code", async ({ fake, phone }) => {
+  const { page } = await phone("A");
+  await step("open Late Lounge's edit form", async () => {
+    await UI.tab(page, UI.tabs.events).click();
+    await page.getByRole("button", { name: /Late Lounge/ }).first().click();
+    await UI.button(page, UI.event.editEvent).click();
+    await UI.form.name(page).waitFor();
+  });
+  await step("while the form is open, Ana is picked and confirms on another phone", async () => {
+    fake.server("pick_applicant", { p_app: fake.app("Ana").id });
+    fake.memberConfirms("Ana");
+    await sleep(600);
+  });
+  await step("save the edit while refreshes fail", async () => {
+    fake.failReads("applications");
+    await UI.form.name(page).fill("Late Lounge II");
+    await UI.button(page, "Save changes").click();
+    await until(() => fake.count("update_event") === 1 && fake.last("update_event").done, "update_event");
+    await page.getByText("Event posted. Updates are delayed.").waitFor({ timeout: 4000 });
+  });
+  await step("the event shows the new name and Ana still confirmed", async () => {
+    await page.getByRole("button", { name: /Late Lounge II/ }).first().click();
+    await group(page, "Confirmed").getByText("Ana", { exact: true }).waitFor({ timeout: 3000 });
+  });
+  await step("a live pick during a failed refresh shows no pass code", async () => {
+    await UI.button(page, UI.event.pickPeople).click();
+    const name = await topCard(page, ["Bea", "Cara", "Dana", "Eli"]);
+    await UI.button(page, UI.deck.pick(name)).click();
+    await until(() => fake.app(name).status === "picked", `${name} picked`);
+    await page.getByText("Change saved. Updates are delayed.").waitFor({ timeout: 4000 });
+    await page.getByRole("button", { name: "Dismiss", exact: true }).click();   // the banner covers Back
+    await UI.button(page, UI.event.back).click();
+    const row = group(page, "Awaiting confirmation").locator("li").filter({ hasText: name });
+    await row.waitFor({ timeout: 3000 });
+    assert.doesNotMatch(await row.innerText(), /LST-/, "a made-up pass code is on screen");
+    fake.failReads("applications", false);
   });
 });
 

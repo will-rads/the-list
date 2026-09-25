@@ -2894,11 +2894,20 @@ const { useState, useRef, useEffect, useCallback } = React;
     const [notifications, setNotifications] = useState([]);
     const [syncNotice, setSyncNotice] = useState(null);
     const [roleMismatch, setRoleMismatch] = useState(false);
-    // Polls, realtime and saves all refresh. A slow older answer must never overwrite a newer one.
-    const hydrateStarted = useRef(0), hydrateApplied = useRef(0);
+    // Polls, realtime and saves all refresh, and answers can arrive in any order. Each refresh gets a number.
+    // It may land only if it is at least `floor` (started after the last write or logout) and newer than the
+    // last one that landed. A stale refresh returns null and changes nothing, not even on failure.
+    const hydrateStarted = useRef(0), hydrateFloor = useRef(0), hydrateLanded = useRef(0);
+    const epoch = useRef(0);   // bumped at logout, so late answers from the old session are dropped
 
     const hydrateVenue = async (uid, replaceVenue = false) => {
       const seq = ++hydrateStarted.current;
+      const stale = () => seq < hydrateFloor.current || seq <= hydrateLanded.current;
+      try { return await loadVenue(uid, replaceVenue, seq, stale); }
+      catch (error) { if (stale()) return null; throw error; }
+    };
+
+    const loadVenue = async (uid, replaceVenue, seq, stale) => {
       const [profileResult, venueResult, notificationResult] = await Promise.all([
         supabaseClient.from("profiles").select("*").eq("id", uid).single(),
         supabaseClient.from("venues").select("*").eq("owner_id", uid).limit(1),
@@ -2907,8 +2916,8 @@ const { useState, useRef, useEffect, useCallback } = React;
       const firstError = [profileResult, venueResult, notificationResult].find(result => result.error)?.error;
       if (firstError) throw firstError;
       if (profileResult.data.role !== "venue" || !(venueResult.data || []).length) {
-        if (seq < hydrateApplied.current) return false;
-        hydrateApplied.current = seq;
+        if (stale()) return null;
+        hydrateLanded.current = seq;
         setVenue(makeVenue()); setEvents([]); setNotifications([]);
         setRoleMismatch(true); setStep("no-venue"); return false;
       }
@@ -2944,8 +2953,8 @@ const { useState, useRef, useEffect, useCallback } = React;
         heroImage:venueRow.image_url ? {src:venueRow.image_url,scale:1,x:0,y:0,remote:true} : null,
         images,
       });
-      if (seq < hydrateApplied.current) return true;   // a newer refresh already landed
-      hydrateApplied.current = seq;
+      if (stale()) return null;
+      hydrateLanded.current = seq;
       if (replaceVenue || currentStep.current !== "onboard-venue") setVenue(refreshedVenue);
       setEvents(liveEvents);
       setNotifications((notificationResult.data || []).map(n => ({
@@ -2959,7 +2968,7 @@ const { useState, useRef, useEffect, useCallback } = React;
 
     const completeLogin = async nextSession => {
       setSession(nextSession);
-      if (await hydrateVenue(nextSession.user.id)) setStep("done");
+      if (await hydrateVenue(nextSession.user.id) === true) setStep("done");
     };
 
     useEffect(() => {
@@ -2968,7 +2977,7 @@ const { useState, useRef, useEffect, useCallback } = React;
         if (!data.session) return;
         setSession(data.session);
         hydrateVenue(data.session.user.id)
-          .then(loaded => { if (loaded) setStep("done"); })
+          .then(loaded => { if (loaded === true) setStep("done"); })
           .catch(error => { setStep("login"); showToast(error.message || "Could not load venue"); });
       });
     }, []);
@@ -3007,20 +3016,18 @@ const { useState, useRef, useEffect, useCallback } = React;
     const askConfirm = (cfg) => setConfirm(cfg);
     const liveToday = session ? todayLabel() : TODAY;
 
-    // A failed refresh must never turn a committed write into a retryable save.
+    // A failed refresh must never turn a committed write into a retryable save. True when this refresh
+    // or a newer one landed, since either carries the write; a late failure after that is ignored.
     const refreshAfterMutation = async (savedMessage, replaceVenue = false) => {
-      try {
-        await hydrateVenue(session.user.id, replaceVenue);
-        setSyncNotice(null);
-        return true;
-      } catch (error) {
-        setSyncNotice(savedMessage);
-        return false;
-      }
+      const mine = hydrateStarted.current + 1, session0 = epoch.current;   // hydrateVenue takes this number
+      try { await hydrateVenue(session.user.id, replaceVenue); } catch (_) {}
+      if (epoch.current !== session0 || hydrateLanded.current >= mine) return true;
+      setSyncNotice(savedMessage);
+      return false;
     };
 
-    // A write just landed: a poll that started before it carries old data and must never be applied.
-    const committed = () => { hydrateApplied.current = ++hydrateStarted.current; };
+    // A write just committed: every refresh that started before it carries old data and must never land.
+    const committed = () => { hydrateFloor.current = hydrateStarted.current + 1; };
 
     // If the refresh fails, showLocally puts the saved change on screen, so nobody repeats a write that happened.
     const runRpc = async (name, args, showLocally) => {
@@ -3045,6 +3052,7 @@ const { useState, useRef, useEffect, useCallback } = React;
 
     const logout = async () => {
       if (DEMO_PREVIEW) { window.location.href = window.location.pathname; return; }
+      epoch.current++; committed();   // loads still in flight belong to the old session
       if (session) await supabaseClient.auth.signOut();
       setSession(null); setRoleMismatch(false); setNotifications([]); setSyncNotice(null);
       setVenue(makeVenue()); setEvents(SEED_EVENTS);
@@ -3092,9 +3100,9 @@ const { useState, useRef, useEffect, useCallback } = React;
     const write = (name, args, local) => session ? runRpc(name, args, local) : local();
     const act = {
       pick: async (eventId, appId) => {
-        const local = () => writeGuest(eventId, appId, { state: GS.picked, code: "LST-" + appId.replace(/\D/g, "").padStart(2, "0") + "P" });
-        if (session) return runRpc("pick_applicant", {p_app:appId}, local);
-        local();
+        // Live never invents a pass code: the server makes it, and the next refresh brings it.
+        if (session) return runRpc("pick_applicant", {p_app:appId}, () => writeGuest(eventId, appId, { state: GS.picked, code: null }));
+        writeGuest(eventId, appId, { state: GS.picked, code: "LST-" + appId.replace(/\D/g, "").padStart(2, "0") + "P" });
         // Demo stand-in for the member tapping confirm, so a pitch shows the whole loop.
         clearTimeout(demoTimers.current[appId]);
         demoTimers.current[appId] = setTimeout(() => setEvents(es => es.map(e => e.id !== eventId ? e : {
@@ -3226,13 +3234,15 @@ const { useState, useRef, useEffect, useCallback } = React;
       },
     };
 
-    const saveLocally = (draft, id, publish, startsAt = draft.startsAt) => {
-      // An edit keeps its stage (an open event stays open); a new save is open when posted, else a draft.
-      const stage = draft.stage && draft.stage !== STAGE.draft ? draft.stage : publish ? STAGE.open : STAGE.draft;
-      const saved = { ...draft, id, startsAt, title: draft.title.trim(), stage, status: stageToStatus(stage),
-        guests: draft.guests || [], appliedTotal: draft.appliedTotal || 0 };
-      setEvents(es => es.some(e => e.id === id) ? es.map(e => e.id === id ? saved : e) : [saved, ...es]);
-    };
+    // The form only edits event fields. Guests, counts and the bill come from the current event, never from
+    // the copy the form opened with, which can be minutes old.
+    const saveLocally = (draft, id, publish, startsAt = draft.startsAt) => setEvents(es => {
+      const { guests, appliedTotal, stage: _stage, status: _status, invoice, ...fields } = draft;
+      const current = es.find(e => e.id === id);
+      const stage = current && current.stage !== STAGE.draft ? current.stage : publish ? STAGE.open : STAGE.draft;
+      const saved = { guests: [], appliedTotal: 0, ...current, ...fields, id, startsAt, title: draft.title.trim(), stage, status: stageToStatus(stage) };
+      return current ? es.map(e => e.id === id ? saved : e) : [saved, ...es];
+    });
     const persistEvent = async (draft, draftId, publish) => {
       if (session) {
         try {

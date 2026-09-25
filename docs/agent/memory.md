@@ -4,6 +4,17 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-09-25 (later) — Out-of-order saves and refreshes, logout, honest local data
+
+Will: don't merge yet. Fix overlapping saves, stale failure callbacks, edits restoring old guests, invented live pass codes and loads surviving logout. Backend unchanged.
+
+- Every refresh gets a number. It lands only if it started after the last write or logout (`hydrateFloor`) and is newer than the last one that landed (`hydrateLanded`). A stale refresh returns `null` and changes nothing, even when it fails.
+- A save counts as refreshed when its own refresh or any newer one landed. A late failure after that raises no banner and adds no local change.
+- Logout bumps `epoch` and the floor: boot loads, polls and a save's refresh that finish afterwards are dropped (no Home reopening, no old data, no banner).
+- Local fallback for an edit merges only the form's fields into the current event; guests, counts and the bill are never taken from the form's old copy. Live picks shown locally have no pass code; only demo makes one.
+- Tests: `check-venue-actions.mjs` now runs the real ordering code with loads the test settles in any order (overlapping check-ins, late failures, stale polls, logout mid-load, edit merge, pick codes); each fix was broken on purpose and its test failed. `check-venue-live.mjs` adds a queued-read control and scenarios 15-17 (17 of 17 pass twice; 15 and 17 fail on the old code; 16 guards logout, whose old bug was invisible on screen).
+- Not pushed; the preview still shows the earlier commit until Will says to push.
+
 ## 2026-09-25 — Venue refresh fixes, closed-list picking, Vercel preview
 
 Will asked for three fixes on `venue-ux-simple`, tests, docs, and a Vercel preview of that branch only. No merge to `main`, no production data changes.
