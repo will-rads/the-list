@@ -118,6 +118,7 @@ Buttons: **Post event** and **Save for later.** Live mode also blocks a start ti
 - The top shows people waiting, "Picked 8 of 20 · 5 confirmed" and, with a mix, girls and guys against the target.
 - Tap the card for the full profile, as today.
 - Replacement mode uses the waitlist after requests close.
+- **Closed lists with empty seats stay pickable.** After requests close, if fewer people are picked than there are seats, Home says "N seats are still empty" and the event page offers "Pick from the waitlist". `pick_applicant` already accepts waitlist people.
 
 ### Door list
 
@@ -152,6 +153,12 @@ Stat tiles, "The desk", the Events filters, the Door tab, the rating queue, the 
 - Use the ponytail skill: the simplest code that works, no new dependencies.
 - **Ponytail decision:** stay in one file, `web/v3/venue.jsx`. Splitting it would need a shared module and checker rewrites for no user benefit. Old screens get deleted, not left behind. Shared pieces (card button, big button, sheet, labelled field) sit near the top so the redesign changes them once.
 - Swipe uses plain pointer events. No gesture library.
+
+### Saved writes and failed refreshes (added 2026-09-25)
+
+A save can succeed while the refresh after it fails. Then the app shows the saved change on this phone anyway (a check-in leaves the door list, a new event appears, a venue edit shows), with the "Updates are delayed" banner, so nobody repeats a write that already happened. Any refresh that started before a save is ignored when it lands, so an old poll can't bring back stale data.
+
+A Story that needs review keeps the event's Home card, even after the bill is paid.
 
 ## Known gaps (backend, not fixed this round)
 

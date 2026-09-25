@@ -12,5 +12,7 @@ Old versioned routes redirect to these links. See the latest memory entry for de
 Venue UX rebuild (2026-09-23) lives on branch `venue-ux-simple`, not deployed. Spec:
 `docs/superpowers/specs/2026-09-23-venue-ux-simple-design.md`. Tests: `npm run build`,
 `npm run test:mobile` (demo) and `npm run test:venue-live` (logged-in flows against a fake Supabase).
+2026-09-25: refresh fixes, closed-list picking and paid-bill Stories added; branch pushed for a Vercel preview only (see memory).
+Launch blocker: the repo can't rebuild the live database (launch checklist).
 Next: Will reviews the branch, then merge and deploy on his say-so, then the visual redesign,
 then the authenticated walkthrough and Mac/device verification.

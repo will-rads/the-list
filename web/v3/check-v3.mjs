@@ -48,8 +48,8 @@ const REQUIRED = {
     "applicant-tabs", "Applied to this event", "Estimated local followers",
     "Audience location", "Content metrics", "Exact active count", "loading=\"lazy\"",
     // Full-functionality wave (2026-07-18): every live venue action reaches Supabase.
-    'runRpc("mark_no_show"', 'runRpc("rate_guest"', 'runRpc("close_applications"',
-    'runRpc("cancel_event"', 'runRpc("delete_event"',
+    'write("mark_no_show"', 'write("rate_guest"', 'write("close_applications"',
+    'write("cancel_event"', 'write("delete_event"', 'write("check_in"', 'runRpc("close_event"',
     'supabaseClient.rpc("update_event"', 'supabaseClient.storage.from("media")',
     '.eq("owner_id", uid)', 'demo={session ? null : demoActions}',
     'creator.profile_picture_url || null',

@@ -4,6 +4,10 @@ Things that have already gone wrong, or known traps. New entries on top, dated `
 
 ---
 
+## 2026-09-25 — A banner alone doesn't stop a repeat write
+
+After a save commits and its refresh fails, the screen still shows the old state, so people tap again (a second check-in, a second posted event). Show the committed change locally too, and drop any refresh that started before the write. Also: the live database's base tables and several RPCs (`pick_applicant`, `check_in`, `skip_applicant`, ...) are not in `supabase/migrations/`; read them live (read-only) before assuming what the server does.
+
 ## 2026-09-23 — Venue UX rebuild traps
 
 - **Tailwind resolved from the launch folder.** Starting Vite from outside `web/` produced an unstyled

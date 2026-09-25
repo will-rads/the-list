@@ -981,6 +981,8 @@ const { useState, useRef, useEffect, useCallback } = React;
   }
   const running = e => e.stage === STAGE.open || e.stage === STAGE.locked;
   const needsReplacement = (e, t) => running(e) && t.dropped > 0 && t.picked < (e.seats || 0) && t.waiting + t.passed > 0;
+  // Open lists always allow picking; a closed list allows it while seats are empty (pick_applicant takes the waitlist).
+  const canPickMore = (e, t) => running(e) && t.waiting + t.passed > 0 && (e.stage === STAGE.open || t.picked < (e.seats || 0));
 
   function startOf(e){
     const d = e.startsAt ? new Date(e.startsAt) : (e.date ? eventStart(e) : null);
@@ -1044,12 +1046,15 @@ const { useState, useRef, useEffect, useCallback } = React;
       if (day === "over") add(1, e, e.title + " is over. Close it to get the summary.", "Open door list", "door");
       if (day !== "over" && needsReplacement(e, t)) add(2, e, plural(t.dropped, "pick", "picks") + " can't make it to " + e.title + ".", "Pick a replacement", "deck");
       if (running(e) && t.awaiting && !day) add(3, e, plural(t.awaiting, "pick hasn't", "picks haven't") + " confirmed " + e.title + " yet.", "See event", "event");
-      if (e.stage === STAGE.open && t.waiting && day !== "over") add(4, e, plural(t.waiting, "person wants", "people want") + " in to " + e.title + ".", "Start picking", "deck");
+      if (canPickMore(e, t) && t.waiting && day !== "over" && !needsReplacement(e, t)) add(4, e, e.stage === STAGE.open
+        ? plural(t.waiting, "person wants", "people want") + " in to " + e.title + "."
+        : plural((e.seats || 0) - t.picked, "seat is", "seats are") + " still empty at " + e.title + ".", "Start picking", "deck");
       if (e.stage === STAGE.draft) add(5, e, e.title + " isn't posted yet.", "Finish posting", "post");
       if (e.stage === STAGE.past) {
         const inside = (e.guests || []).filter(g => g.state === GS.checkedIn);
         const verified = inside.filter(g => g.story === SS.verified).length;
-        const storiesOpen = inside.some(g => g.story === SS.due || g.story === SS.review);
+        // Needs review is still open for the venue, even once the bill is paid.
+        const storiesOpen = inside.some(g => [SS.due, SS.review, SS.needsReview].includes(g.story));
         const unpaid = e.invoice && e.invoice.status !== "paid";
         if (storiesOpen || unpaid) add(6, e, e.title + " is done. " + verified + " of " + plural(inside.length, "Story", "Stories") + " verified" + (unpaid ? ", bill " + e.invoice.status + "." : "."), "See summary", "summary");
       }
@@ -1067,7 +1072,7 @@ const { useState, useRef, useEffect, useCallback } = React;
       if (needsReplacement(e, t)) rows.push({ id:"n-drop-"+e.id, text: e.title + ": " + plural(t.dropped, "pick", "picks") + " can't make it", eventId:e.id, action:"review" });
       if (e.stage === STAGE.past) {
         const inside = (e.guests || []).filter(g => g.state === GS.checkedIn);
-        const pending = inside.filter(g => g.story === SS.due || g.story === SS.review).length;
+        const pending = inside.filter(g => [SS.due, SS.review, SS.needsReview].includes(g.story)).length;
         if (pending) rows.push({ id:"n-story-"+e.id, text: e.title + ": " + inside.filter(g => g.story === SS.verified).length + " Stories verified, " + pending + " pending", eventId:e.id, action:"recap" });
         if (e.invoice && e.invoice.status !== "paid") rows.push({ id:"n-bill-"+e.id, text: e.title + ": bill " + e.invoice.status + ", " + money(e.invoice.price), eventId:e.id, action:"recap" });
       }
@@ -1268,8 +1273,9 @@ const { useState, useRef, useEffect, useCallback } = React;
     const guests = event.guests || [];
     const replace = day !== "over" && needsReplacement(event, t);
     // If everyone left was passed on, the deck is still one tap away.
-    const canPick = event.stage === STAGE.open && day !== "over" && (t.waiting || t.passed);
-    const pickLabel = t.waiting ? "Pick people" : "Look again at the " + plural(t.passed, "person", "people") + " you passed on";
+    const canPick = day !== "over" && canPickMore(event, t);
+    const pickLabel = !t.waiting ? "Look again at the " + plural(t.passed, "person", "people") + " you passed on"
+      : event.stage === STAGE.locked ? "Pick from the waitlist" : "Pick people";
     const main = event.stage === STAGE.draft ? ["Finish posting", () => onEdit(event)]
       : event.stage === STAGE.past ? ["See summary", () => onSummary(event.id)]
       : day ? ["Open door list", () => onDoor(event.id)]
@@ -1470,7 +1476,7 @@ const { useState, useRef, useEffect, useCallback } = React;
           </div>
           <h1 className="font-black font-display-l text-[24px] leading-tight mt-1 truncate">{event.title}</h1>
           <div className="text-[13px] mt-1">
-            {isLocked ? "Replacements · " : ""}Picked {t.picked} of {event.seats || 0} · {t.yes} confirmed
+            {isLocked ? "From the waitlist · " : ""}Picked {t.picked} of {event.seats || 0} · {t.yes} confirmed
             {event.mix ? " · Girls " + gender("female") + " of " + event.mix.girls + " · Guys " + gender("male") + " of " + event.mix.guys : ""}
           </div>
         </div>
@@ -3013,10 +3019,15 @@ const { useState, useRef, useEffect, useCallback } = React;
       }
     };
 
-    const runRpc = async (name, args) => {
+    // A write just landed: a poll that started before it carries old data and must never be applied.
+    const committed = () => { hydrateApplied.current = ++hydrateStarted.current; };
+
+    // If the refresh fails, showLocally puts the saved change on screen, so nobody repeats a write that happened.
+    const runRpc = async (name, args, showLocally) => {
       const { error } = await supabaseClient.rpc(name, args);
       if (error) throw error;
-      await refreshAfterMutation("Change saved");
+      committed();
+      if (!await refreshAfterMutation("Change saved") && showLocally) showLocally();
     };
 
     const markNotificationsRead = async () => {
@@ -3058,8 +3069,9 @@ const { useState, useRef, useEffect, useCallback } = React;
           ig_handle:(venueDraft.igHandle || "").replace(/^@/, "") || null,
         }).eq("id", venueDraft.id);
         if (error) throw error;
+        committed();
         setStep("done"); setTab("venue"); showToast("Venue saved");
-        await refreshAfterMutation("Venue saved", true);
+        if (!await refreshAfterMutation("Venue saved", true)) setVenue(venueDraft);
       } catch (error) {
         showToast(error.message || "Could not save venue");
         throw error;
@@ -3074,10 +3086,15 @@ const { useState, useRef, useEffect, useCallback } = React;
       ...e, guests: (e.guests || []).map(g => g.applicantId === appId ? { ...g, ...patch } : g),
     }));
     const writeEvent = (eventId, change) => setEvents(es => es.map(e => e.id === eventId ? change(e) : e));
+    const lock = eventId => writeEvent(eventId, e => ({ ...e, stage: STAGE.locked, status: stageToStatus(STAGE.locked),
+      guests: e.guests.map(g => g.state === GS.applied ? { ...g, state: GS.waitlist } : g) }));
+    // Live: save on the server, and show the change locally only if the refresh fails. Demo: show it locally.
+    const write = (name, args, local) => session ? runRpc(name, args, local) : local();
     const act = {
       pick: async (eventId, appId) => {
-        if (session) return runRpc("pick_applicant", {p_app:appId});
-        writeGuest(eventId, appId, { state: GS.picked, code: "LST-" + appId.replace(/\D/g, "").padStart(2, "0") + "P" });
+        const local = () => writeGuest(eventId, appId, { state: GS.picked, code: "LST-" + appId.replace(/\D/g, "").padStart(2, "0") + "P" });
+        if (session) return runRpc("pick_applicant", {p_app:appId}, local);
+        local();
         // Demo stand-in for the member tapping confirm, so a pitch shows the whole loop.
         clearTimeout(demoTimers.current[appId]);
         demoTimers.current[appId] = setTimeout(() => setEvents(es => es.map(e => e.id !== eventId ? e : {
@@ -3090,36 +3107,33 @@ const { useState, useRef, useEffect, useCallback } = React;
         const { error } = await supabaseClient.rpc("skip_applicant", {p_app:appId});
         if (error) throw error;
       },
-      checkIn: async (eventId, appId) => session ? runRpc("check_in", {p_app:appId})
-        : writeGuest(eventId, appId, { state: GS.checkedIn, inAt: toLocalTime(new Date()) }),
-      noShow: async (eventId, appId) => session ? runRpc("mark_no_show", {p_app:appId})
-        : writeGuest(eventId, appId, { state: GS.noShow }),
-      rate: async (eventId, appId, rating) => session ? runRpc("rate_guest", {p_app:appId, p_rating:rating})
-        : writeGuest(eventId, appId, { rating }),
-      closeRequests: async eventId => session ? runRpc("close_applications", {p_event:eventId})
-        : writeEvent(eventId, e => ({ ...e, stage: STAGE.locked, status: stageToStatus(STAGE.locked),
-            guests: e.guests.map(g => g.state === GS.applied ? { ...g, state: GS.waitlist } : g) })),
-      cancelEvent: async eventId => session ? runRpc("cancel_event", {p_event:eventId})
-        : writeEvent(eventId, e => ({ ...e, stage: STAGE.cancelled, status: stageToStatus(STAGE.cancelled),
-            guests: e.guests.map(g => [GS.applied, GS.waitlist, GS.picked, GS.confirmed].includes(g.state) ? { ...g, state: GS.cancelled } : g) })),
-      deleteDraft: async eventId => session ? runRpc("delete_event", {p_event:eventId})
-        : setEvents(es => es.filter(e => e.id !== eventId)),
+      checkIn: async (eventId, appId) => write("check_in", {p_app:appId},
+        () => writeGuest(eventId, appId, { state: GS.checkedIn, inAt: toLocalTime(new Date()) })),
+      noShow: async (eventId, appId) => write("mark_no_show", {p_app:appId}, () => writeGuest(eventId, appId, { state: GS.noShow })),
+      rate: async (eventId, appId, rating) => write("rate_guest", {p_app:appId, p_rating:rating}, () => writeGuest(eventId, appId, { rating })),
+      closeRequests: async eventId => write("close_applications", {p_event:eventId}, () => lock(eventId)),
+      cancelEvent: async eventId => write("cancel_event", {p_event:eventId},
+        () => writeEvent(eventId, e => ({ ...e, stage: STAGE.cancelled, status: stageToStatus(STAGE.cancelled),
+          guests: e.guests.map(g => [GS.applied, GS.waitlist, GS.picked, GS.confirmed].includes(g.state) ? { ...g, state: GS.cancelled } : g) }))),
+      deleteDraft: async eventId => write("delete_event", {p_event:eventId}, () => setEvents(es => es.filter(e => e.id !== eventId))),
       closeNight: async event => {
-        if (session) {
-          // close_event needs requests closed first; do both so the door never gets stuck.
-          if (event.stage === STAGE.open) {
-            const { error } = await supabaseClient.rpc("close_applications", {p_event:event.id});
-            if (error) throw error;
-          }
-          try { await runRpc("close_event", {p_event:event.id}); }
-          catch (error) { if (event.stage === STAGE.open) await refreshAfterMutation("Requests closed"); throw error; }
-          return;
-        }
-        writeEvent(event.id, e => ({ ...e, stage: STAGE.past, status: stageToStatus(STAGE.past),
+        const local = () => writeEvent(event.id, e => ({ ...e, stage: STAGE.past, status: stageToStatus(STAGE.past),
           guests: e.guests.map(g => [GS.applied, GS.waitlist].includes(g.state) ? { ...g, state: GS.notSelected }
             : g.state === GS.confirmed ? { ...g, state: GS.noShow }
             : g.state === GS.checkedIn && !g.story ? { ...g, story: SS.due } : g),
           invoice: { bundle: e.bundle?.name || "Custom", price: e.bundle?.price ?? 0, status: "pending" } }));
+        if (!session) return local();
+        // close_event needs requests closed first; do both so the door never gets stuck.
+        if (event.stage === STAGE.open) {
+          const { error } = await supabaseClient.rpc("close_applications", {p_event:event.id});
+          if (error) throw error;
+          committed();
+        }
+        try { await runRpc("close_event", {p_event:event.id}, local); }
+        catch (error) {
+          if (event.stage === STAGE.open && !await refreshAfterMutation("Requests closed")) lock(event.id);
+          throw error;
+        }
       },
     };
 
@@ -3212,6 +3226,13 @@ const { useState, useRef, useEffect, useCallback } = React;
       },
     };
 
+    const saveLocally = (draft, id, publish, startsAt = draft.startsAt) => {
+      // An edit keeps its stage (an open event stays open); a new save is open when posted, else a draft.
+      const stage = draft.stage && draft.stage !== STAGE.draft ? draft.stage : publish ? STAGE.open : STAGE.draft;
+      const saved = { ...draft, id, startsAt, title: draft.title.trim(), stage, status: stageToStatus(stage),
+        guests: draft.guests || [], appliedTotal: draft.appliedTotal || 0 };
+      setEvents(es => es.some(e => e.id === id) ? es.map(e => e.id === id ? saved : e) : [saved, ...es]);
+    };
     const persistEvent = async (draft, draftId, publish) => {
       if (session) {
         try {
@@ -3250,28 +3271,20 @@ const { useState, useRef, useEffect, useCallback } = React;
             ? await supabaseClient.rpc("update_event", {...args, p_event:draftId, p_publish:publish})
             : await supabaseClient.rpc("post_event", {...args, p_draft:!publish});
           if (result.error) throw result.error;
+          committed();
           setEditingDraft(null); setStep("done"); setTab("events");
           showToast(publish ? "Event posted" : "Saved for later");
-          await refreshAfterMutation(publish ? "Event posted" : "Saved for later");
+          // Without this, a failed refresh hides the new event and invites a second, duplicate post.
+          if (!await refreshAfterMutation(publish ? "Event posted" : "Saved for later")) {
+            saveLocally(draft, draftId || result.data, publish, starts.toISOString());
+          }
           return;
         } catch (error) {
           showToast(plainError(error, error?.message || (publish ? "Could not post the event" : "Could not save the draft")));
           throw error;
         }
       }
-      const saved = {
-        ...draft,
-        title: draft.title.trim(),
-        stage: publish ? STAGE.open : STAGE.draft,
-        status: stageToStatus(publish ? STAGE.open : STAGE.draft),
-        guests: draft.guests || [],
-        appliedTotal: draft.appliedTotal || 0,
-      };
-      if (draftId) {
-        setEvents(es => es.map(e => e.id === draftId ? { ...saved, id: draftId } : e));
-      } else {
-        setEvents(es => [saved, ...es]);
-      }
+      saveLocally(draft, draftId || draft.id, publish);
       setEditingDraft(null);
       setStep("done"); setTab("events");
       showToast(publish ? "Event posted" : "Saved for later");

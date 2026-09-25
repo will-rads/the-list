@@ -15,21 +15,21 @@ function between(start, end) {
 const handlers = between('  function eventStart', '  function ScreenNoVenue')
   + between('    const refreshAfterMutation', '    const markNotificationsRead')
   + between('    const saveVenue = async', '    useEffect(() => {')
-  + between('    const persistEvent = async', '    const publishEvent');
+  + between('    const saveLocally = ', '    const publishEvent');
 
 const cases = [
   ['publish', 'persistEvent(draft, null, true)', 'events', 'Event posted'],
   ['draft', 'persistEvent(draft, null, false)', 'events', 'Saved for later'],
   ['edit', 'persistEvent(draft, "event", true)', 'events', 'Event posted'],
   ['venue', 'saveVenue(draft)', 'venue', 'Venue saved'],
-  ['rpc', 'runRpc("pick_applicant", {p_app:"application"})', 'home', 'Change saved'],
+  ['rpc', 'runRpc("pick_applicant", {p_app:"application"}, () => { shown = true; })', 'home', 'Change saved'],
 ];
 
 for (const [name, action, expectedTab, savedMessage] of cases) {
   for (const failure of ['refresh', 'write-result', 'write-throw']) {
     const state = {
       step:name === 'venue' ? 'onboard-venue' : 'post', tab:'home', editing:'draft',
-      notice:null, messages:[], writes:0, reads:0, uploads:0, refreshFails:true,
+      notice:null, messages:[], writes:0, reads:0, uploads:0, refreshFails:true, events:[], venue:null,
     };
     const write = async () => {
       state.writes++;
@@ -51,6 +51,10 @@ for (const [name, action, expectedTab, savedMessage] of cases) {
       setTab:value => { state.tab = value; },
       setEditingDraft:value => { state.editing = value; },
       setSyncNotice:value => { state.notice = value; },
+      setEvents:change => { state.events = change(state.events); },
+      setVenue:value => { state.venue = value; },
+      hydrateStarted:{current:0}, hydrateApplied:{current:0}, shown:false,
+      STAGE:{draft:'draft', open:'open'}, stageToStatus:stage => stage,
       showToast:message => state.messages.push(message),
       plainError:(error, fallback) => fallback,
     });
@@ -63,6 +67,13 @@ for (const [name, action, expectedTab, savedMessage] of cases) {
       if (name !== 'rpc') assert.equal(state.step, 'done', `${label}: close the save form`);
       if (['publish', 'draft', 'edit'].includes(name)) assert.equal(state.editing, null, label);
       assert.equal(state.reads, 1, label);
+      // The committed change stays on screen, so nobody repeats it.
+      if (name === 'rpc') assert.equal(context.shown, true, `${label}: show the saved change locally`);
+      else if (name === 'venue') assert.equal(state.venue?.name, 'Test venue', `${label}: show the saved venue`);
+      else assert.deepEqual(JSON.parse(JSON.stringify(state.events.map(e => [e.id, e.stage]))), [['event', name === 'draft' ? 'draft' : 'open']],
+        `${label}: show the saved event instead of inviting a duplicate post`);
+      // Any refresh that started before the write is now older than the newest applied one.
+      assert.equal(context.hydrateApplied.current, context.hydrateStarted.current, `${label}: stale polls are dropped`);
       const uploads = state.uploads;
       // The banner retries only the read, even if it fails again.
       await vm.runInContext('refreshAfterMutation("Saved")', context);
@@ -76,11 +87,13 @@ for (const [name, action, expectedTab, savedMessage] of cases) {
       assert.equal(state.step, name === 'venue' ? 'onboard-venue' : 'post', label);
       assert.equal(state.notice, null, `${label}: never claim a rejected write was saved`);
       assert.equal(state.reads, 0, label);
+      assert.ok(!context.shown && !state.events.length && !state.venue, `${label}: a rejected write shows nothing`);
+      assert.equal(context.hydrateApplied.current, 0, `${label}: a rejected write leaves polls alone`);
     }
     assert.equal(state.writes, 1, `${label}: never repeat the write during refresh`);
   }
 }
-console.log('PASS venue actions: 15 write/refresh failure cases, including read-only retries.');
+console.log('PASS venue actions: 15 write/refresh failure cases, local fallbacks, stale polls, read-only retries.');
 
 // Pure venue rules: three separate counts, replacements, events past midnight, same-day close times.
 const rules = between('  // Event stages', '  function makeGuest')
@@ -110,4 +123,21 @@ run(`var tonight = { id:"t", title:"T", stage:STAGE.open, seats:2, startsAt:new 
   guests:[{applicantId:"8", state:"applied"}] }`);
 assert.deepEqual([...run('homeTasks([tonight], "", true).map(task => task.go)')], ['door', 'deck'],
   'an event later today keeps its picking card next to the door card');
-console.log('PASS venue rules: separate counts, replacements, past-midnight events, same-day close times, Home order.');
+
+// A closed list with empty seats can still pick from the waitlist; a full one can't.
+run(`var closed = { id:"c", title:"C", stage:STAGE.locked, seats:4, startsAt:new Date(Date.now() + 72*HOUR).toISOString(), guests:[
+  {applicantId:"a", state:"confirmed"}, {applicantId:"b", state:"picked"}, {applicantId:"w", state:"waitlist"}] }`);
+assert.equal(run('canPickMore(closed, tally(closed))'), true, 'a closed list with 2 empty seats can pick');
+assert.equal(run('needsReplacement(closed, tally(closed))'), false, 'no one dropped out, so it is not a replacement');
+assert.deepEqual([...run('homeTasks([closed], "", true).map(task => task.go)')], ['event', 'deck'], 'Home offers picking for empty seats');
+assert.match(run('homeTasks([closed], "", true)[1].text'), /2 seats are still empty/);
+run(`var full = { ...closed, seats:2 }`);
+assert.equal(run('canPickMore(full, tally(full))'), false, 'a full closed list offers no picking');
+
+// A Story that needs review keeps its Home card after the bill is paid.
+run(`var paid = { id:"d", title:"D", stage:STAGE.past, invoice:{status:"paid"}, guests:[
+  {applicantId:"s1", state:"checked_in", story:SS.verified}, {applicantId:"s2", state:"checked_in", story:SS.needsReview}] }`);
+assert.deepEqual([...run('homeTasks([paid], "", true).map(task => task.go)')], ['summary'], 'needs review stays on Home after payment');
+run(`paid.guests[1].story = SS.verified`);
+assert.deepEqual([...run('homeTasks([paid], "", true)')], [], 'all verified and paid: nothing left to do');
+console.log('PASS venue rules: separate counts, replacements, past-midnight events, same-day close times, Home order, closed-list picking, needs review after payment.');

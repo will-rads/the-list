@@ -4,6 +4,16 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-09-25 — Venue refresh fixes, closed-list picking, Vercel preview
+
+Will asked for three fixes on `venue-ux-simple`, tests, docs, and a Vercel preview of that branch only. No merge to `main`, no production data changes.
+
+- **Saved writes survive failed refreshes.** Every venue write marks older in-flight refreshes as stale, so a poll can't bring back old data. If the refresh after a save fails, the change shows locally (pick, check-in, didn't come, rating, close requests, cancel, delete draft, close the event, posted or edited event, venue edit) with the delayed banner. This stops repeat taps and duplicate event posts.
+- **Needs review Stories stay on Home** after the bill is paid (Home card and activity count).
+- **Closed lists with empty seats stay pickable** from the waitlist: Home "N seats are still empty", event page "Pick from the waitlist". Backend unchanged; live `pick_applicant` already accepts `waitlist` (read-only check).
+- Tests: `check-venue-actions.mjs` adds local-fallback, stale-poll, closed-list and paid-bill rules. `check-venue-live.mjs` adds scenarios 12-14 (all 14 pass; the 3 new ones fail on the old code). `test:mobile` passes at both sizes.
+- **Launch blocker recorded:** the repo's migrations can't rebuild the live database (tables, 17 policies, a trigger, 19 functions missing). List in the launch checklist.
+
 ## 2026-09-23 — Venue UX rebuild: simple first, looks later
 
 Will finds the venue side complicated and too plain. Decision: rebuild venue UX first, keep the current glass look, then do one visual redesign across venue and member. Spec: `docs/superpowers/specs/2026-09-23-venue-ux-simple-design.md`, branch `venue-ux-simple`.

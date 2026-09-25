@@ -341,6 +341,7 @@ class FakeSupabase {
     this.failures = new Map(); // rpc name -> queued error messages (failNext)
     this.delays = new Map();   // rpc name -> ms
     this.holds = new Map();    // phone -> {promise, release}: REST reads from that phone wait
+    this.brokenReads = new Set(); // tables whose REST reads fail (failReads), so the app's refresh fails
     this.sockets = new Set();
     this.nextBinding = 1;
     this.unhandled = [];       // endpoints the fake does not implement
@@ -366,6 +367,7 @@ class FakeSupabase {
   reads(table) { return this.requests.filter(r => r.method === "GET" && r.path === `/rest/v1/${table}`).length; }
   failNext(name, message) { this.failures.set(name, [...(this.failures.get(name) || []), message]); }
   delay(name, ms) { this.delays.set(name, ms); }
+  failReads(table, on = true) { if (on) this.brokenReads.add(table); else this.brokenReads.delete(table); }
   holdReads(phone) {
     if (this.holds.has(phone)) return;
     let release;
@@ -438,6 +440,7 @@ class FakeSupabase {
     }
     this.requests.push({ phone, method, path, search: url.search });
     const headers = await request.allHeaders();
+    if (isRead && this.brokenReads.has(path.slice("/rest/v1/".length))) return pgError(400, "FAKE400", "fake supabase: read failed on purpose");
     if (path.startsWith("/rest/v1/rpc/")) return this.rpc(path.slice("/rest/v1/rpc/".length), request.postDataJSON() || {}, phone);
     if (path.startsWith("/rest/v1/")) return this.rest(method, path.slice("/rest/v1/".length), url, request, headers);
     if (path.startsWith("/storage/v1/")) return this.storage(method, path, phone);
@@ -1005,6 +1008,66 @@ scenario(11, "Mid-save tap: the card can't open a profile while a pass saves, so
     await sleep(400);
     assert.equal(await page.getByRole("dialog").count(), 0, "a profile opened while the pass was saving");
     assert.equal(fake.count("pick_applicant"), 0, "someone was picked");
+  });
+});
+
+scenario(12, "Failed refresh: a saved check-in leaves the door list at once, the banner says so, Retry clears it", async ({ fake, phone }) => {
+  const { page } = await phone("A");
+  await step("open the E2 door list", () => openDoorFromHome(page));
+  await step("check in Farah while every refresh fails", async () => {
+    fake.failReads("applications");
+    await UI.button(page, UI.door.checkIn("Farah")).click();
+    await until(() => fake.app("Farah").status === "checked_in", "Farah checked in on the server");
+    await page.getByText("Change saved. Updates are delayed.").waitFor({ timeout: 4000 });
+    await UI.button(page, UI.door.checkIn("Farah")).waitFor({ state: "hidden", timeout: 3000 });
+    assert.equal(await insideCount(page), 1, "the saved check-in shows even though the refresh failed");
+    await sleep(5600); // a door poll fails too and must not bring Farah back
+    assert.equal(await UI.button(page, UI.door.checkIn("Farah")).count(), 0, "Farah came back after a failed poll");
+    assert.equal(fake.count("check_in"), 1, "one check_in call");
+  });
+  await step("Retry refresh clears the banner once reads work", async () => {
+    fake.failReads("applications", false);
+    await UI.button(page, "Retry refresh").click();
+    await page.getByText("Change saved. Updates are delayed.").waitFor({ state: "hidden", timeout: 4000 });
+    assert.equal(await insideCount(page), 1);
+  });
+});
+
+scenario(13, "Closed list, empty seats: Home offers picking and a waitlist pick saves once", async ({ fake, phone }) => {
+  const E4 = "0e000000-0000-4000-8000-000000000004", now = Date.now();
+  fake.db.events.push({ ...fake.event(E1), id: E4, title: "Garden Brunch", status: "locked", seats: 4,
+    starts_at: iso(now + 3 * D), ends_at: iso(now + 3 * D + 4 * H), closes_at: iso(now - H) });
+  [["Qia", "confirmed"], ["Rana", "confirmed"], ["Sara", "waitlist"], ["Tala", "waitlist"]].forEach(([name, status], i) => {
+    const user = `0c000000-0000-4000-8000-9000000000${i}0`;
+    fake.db.profiles.push({ id: user, role: "member", full_name: name, ig_handle: `${name.toLowerCase()}.test`, avatar_url: null,
+      creator_data: { followers_count: 5000, gender: "female", quality_score: 70 }, reputation: null });
+    fake.db.applications.push({ id: `0d000000-0000-4000-8000-9000000000${i}0`, event_id: E4, user_id: user, status,
+      pass_code: status === "confirmed" ? `LST-Q${i}` : null, pick_expires_at: null, checked_in_at: null, rating: null, created_at: iso(now - D) });
+  });
+  const { page } = await phone("A");
+  await step("Home says 2 seats are empty", async () => {
+    await page.getByText("2 seats are still empty at Garden Brunch.").waitFor();
+    await UI.task(page, UI.home.startPicking, "Garden Brunch").click();
+  });
+  const name = await step("the deck shows the waitlist", async () => {
+    await page.getByText(/^From the waitlist · Picked 2 of 4/).waitFor();
+    return topCard(page, ["Sara", "Tala"]);
+  });
+  await step(`pick ${name}`, async () => {
+    await UI.button(page, UI.deck.pick(name)).click();
+    await until(() => fake.app(name).status === "picked", `${name} picked on the server`);
+    assert.equal(fake.count("pick_applicant"), 1);
+  });
+});
+
+scenario(14, "Paid bill: a Story that needs review keeps Sound Bath on Home", async ({ fake, phone }) => {
+  fake.db.bookings.find(b => b.event_id === E3).invoice_status = "paid";
+  Object.assign(fake.db.stories.find(st => st.application_id === fake.app("Omar").id), { verdict: "needs_review", media_url: MEDIA_URL });
+  const { page } = await phone("A");
+  await step("Home keeps the summary card", async () => {
+    await UI.task(page, UI.home.seeSummary, "Sound Bath").click();
+    await page.getByText("1 under review", { exact: false }).first().waitFor();
+    await page.getByText("Paid", { exact: true }).waitFor();
   });
 });
 

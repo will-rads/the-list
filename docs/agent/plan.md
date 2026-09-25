@@ -44,7 +44,9 @@ Release tracker: [App Store launch checklist](../app-store-launch-checklist.md).
 [done]      React + Vite build; local dependencies/fonts/CSS; failure-recovery regression checks
 [done]      Capacitor iOS project generated and synced in web/ios (not native-compiled)
 [done]      Venue UX rebuilt on branch venue-ux-simple (2026-09-23): Home/Events/Venue, swipe deck, door list, summary; demo + fake-live tests pass
-[next]      Will reviews venue-ux-simple; merge and deploy only on his say-so
+[done]      Venue refresh fixes, closed-list picking, paid-bill Stories (2026-09-25); branch pushed for a Vercel preview only
+[next]      Will reviews venue-ux-simple on the preview; merge and deploy only on his say-so
+[next]      Launch blocker: export the live Supabase schema into supabase/migrations (see launch checklist)
 [next]      Visual redesign across venue and member (after the venue UX is approved)
 [next]      Validate member + venue flows, mobile layouts, and the production build; record remaining failures
 [next]      Review local V3; push/deploy only after explicit approval

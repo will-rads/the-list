@@ -18,12 +18,13 @@
 - [x] Manual Story screenshot upload, rejected-proof retry, and founder review are implemented.
 - [x] Sensitive RPC grants are hardened; PostgreSQL `PUBLIC` and `anon` execute access are zero.
 - [x] Verify V3 demo journeys, anchored navigation, sheets, and no outer scroll at 390x844 and 320x568; reduced-height forms also checked.
-- [x] Simplify the venue UX (branch `venue-ux-simple`, 2026-09-23): demo walkthrough and live walkthrough against a fake Supabase both pass; waiting for Will's review before merge.
+- [x] Simplify the venue UX (branch `venue-ux-simple`, 2026-09-23): demo walkthrough and live walkthrough against a fake Supabase both pass; waiting for Will's review before merge. 2026-09-25: saved writes survive failed refreshes, closed lists with empty seats stay pickable, and needs-review Stories stay on Home after payment; Vercel preview only.
 - [ ] Verify real iPhone keyboard and safe-area behavior.
 - [x] Validate the local Vite production build and Capacitor asset sync.
 
 ## Backend work still missing
 
+- [ ] **Launch blocker: the repo can't rebuild the database.** Checked against live Supabase on 2026-09-25 (read-only). `supabase/migrations/` holds only the 2026-07-18 changes. Missing: all 9 tables (`profiles`, `venues`, `events`, `applications`, `stories`, `bookings`, `notifications`, `saves`, `invite_codes`); 17 of 18 table policies (only `venues_update_own` is in the repo); the `events.trg_event_notify` trigger; and 19 functions: `apply_to_event`, `approve_member`, `cancel_application`, `check_in`, `confirm_pick`, `create_invite_codes`, `create_venue`, `decline_pick`, `handle_new_user`, `is_founder`, `my_role`, `my_venue_ids`, `override_story`, `pick_applicant`, `promote_waitlists`, `redeem_invite`, `reject_member`, `skip_applicant`, `toggle_save`. Cron jobs and Edge Functions were not checked. Fix: export a baseline schema into the repo before staging or launch.
 - [ ] Click-test the full production web loop and log any failures.
 - [ ] Export the live Supabase schema, migrations, RPCs, cron jobs, triggers, and Edge Functions into the repo.
 - [ ] Create a separate staging Supabase project for testing changes before production.
