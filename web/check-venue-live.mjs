@@ -58,6 +58,15 @@ const UI = {
     anyUndo: page => page.getByRole("button", { name: /^Undo/ }),
     end: "You've seen everyone.",
     done: "Done",
+    // A card metric cell is the value above its label.
+    value: async (card, label) => (await card.getByText(label, { exact: true }).locator("xpath=..").innerText()).split("\n")[0],
+  },
+  sheet: {
+    dialog: (page, name) => page.getByRole("dialog", { name: `${name} profile`, exact: true }),
+    tab: (dialog, name) => dialog.getByRole("tab", { name, exact: true }),
+    // A metric tile is its label, then its value.
+    value: async (dialog, label) => (await dialog.locator(".insight-metric")
+      .filter({ has: dialog.page().getByText(label, { exact: true }) }).innerText()).split("\n")[1],
   },
   door: {
     title: page => page.getByText("Door list", { exact: true }).first(),
@@ -121,7 +130,7 @@ function seedDb(now = Date.now()) {
     const user = `0c000000-0000-4000-8000-${tail}`, app = `0d000000-0000-4000-8000-${tail}`;
     db.profiles.push({ id: user, role: "member", full_name: name, ig_handle: `${name.toLowerCase()}.test`, avatar_url: null,
       creator_data: { followers_count: 4000 + n * 1370, gender, quality_score: 60 + n }, reputation: null });
-    db.applications.push({ id: app, event_id: eventId, user_id: user, status, pass_code: null, pick_expires_at: null,
+    db.applications.push({ id: app, event_id: eventId, member_id: user, status, pass_code: null, pick_expires_at: null,
       checked_in_at: null, rating: null, created_at: iso(now - 5 * D + n * MIN), ...extra });
     return app;
   };
@@ -239,11 +248,24 @@ const RPCS = {
     fake.db.bookings.push({ id: randomUUID(), event_id: event.id, venue_id: event.venue_id, bundle_price: event.bundle_price,
       invoice_status: "pending", created_at: iso(Date.now()) });
   },
+  // The live counts over all of a member's applications. Access (simplified): members who applied to this venue.
+  member_records(fake, a) {
+    const ours = new Set(fake.db.events.filter(e => e.venue_id === VID).map(e => e.id));
+    return [...new Set(a.p_members)].filter(id => fake.db.applications.some(x => x.member_id === id && ours.has(x.event_id))).map(id => {
+      const apps = fake.db.applications.filter(x => x.member_id === id);
+      const statuses = apps.map(x => x.status), ratings = apps.map(x => x.rating).filter(r => r != null);
+      const verdicts = fake.db.stories.filter(s => apps.some(x => x.id === s.application_id)).map(s => s.verdict);
+      const count = (list, value) => list.filter(item => item === value).length;
+      return { member_id: id, record: { applications: apps.length, attended: count(statuses, "checked_in"), no_shows: count(statuses, "no_show"),
+        avg_rating: ratings.length ? Math.round(ratings.reduce((sum, r) => sum + r, 0) / ratings.length * 10) / 10 : null,
+        stories_verified: count(verdicts, "verified"), stories_missed: count(verdicts, "rejected") } };
+    });
+  },
 };
 
 // Embeds the app may request: table -> embed -> [one|many, key, target table].
 const RELATIONS = {
-  applications: { profiles: ["one", "user_id", "profiles"], events: ["one", "event_id", "events"], stories: ["many", "application_id", "stories"] },
+  applications: { profiles: ["one", "member_id", "profiles"], events: ["one", "event_id", "events"], stories: ["many", "application_id", "stories"] },
   events: { venues: ["one", "venue_id", "venues"], applications: ["many", "event_id", "applications"], bookings: ["many", "event_id", "bookings"] },
   stories: { applications: ["one", "application_id", "applications"] },
   bookings: { events: ["one", "event_id", "events"], venues: ["one", "venue_id", "venues"] },
@@ -357,16 +379,18 @@ class FakeSupabase {
   appsOf(eventId) { return this.db.applications.filter(row => row.event_id === eventId); }
   app(name) {
     const profile = this.db.profiles.find(row => row.full_name === name);
-    const app = profile && this.db.applications.find(row => row.user_id === profile.id);
+    const app = profile && this.db.applications.find(row => row.member_id === profile.id);
     assert(app, `seed has no application for ${name}`);
     return app;
   }
-  nameOf(appId) { return this.db.profiles.find(row => row.id === this.application(appId)?.user_id)?.full_name; }
+  nameOf(appId) { return this.db.profiles.find(row => row.id === this.application(appId)?.member_id)?.full_name; }
   count(name) { return this.calls.filter(call => call.name === name).length; }
   callsOf(name) { return this.calls.filter(call => call.name === name); }
   last(name) { return this.callsOf(name).at(-1); }
   reads(table) { return this.requests.filter(r => r.method === "GET" && r.path === `/rest/v1/${table}`).length; }
-  failNext(name, message) { this.failures.set(name, [...(this.failures.get(name) || []), message]); }
+  failNext(name, message, times = 1) { this.failures.set(name, [...(this.failures.get(name) || []), ...Array(times).fill(message)]); }
+  // RPC calls that change data. member_records is a read that every load and poll makes.
+  writes() { return this.calls.filter(call => call.name !== "member_records"); }
   delay(name, ms) { this.delays.set(name, ms); }
   // Out of order on purpose: every read of `table` waits; release them in any order, each ok or failed.
   queueReads(table) { this.queue = { table, items: [] }; }
@@ -793,11 +817,11 @@ scenario(2, "Swipe: drag right picks once, drag left passes, Undo pass restores 
     await UI.deck.undoPass(page).waitFor();
   });
   await step("Undo pass brings the same card back with no RPC", async () => {
-    const before = fake.calls.length;
+    const before = fake.writes().length;
     await UI.deck.undoPass(page).click();
     await UI.deck.cardOf(page, second).waitFor();
     await sleep(600);
-    assert.equal(fake.calls.length, before, `Undo pass made RPC calls: ${fake.calls.slice(before).map(c => c.name)}`);
+    assert.equal(fake.writes().length, before, `Undo pass made RPC calls: ${fake.writes().slice(before).map(c => c.name)}`);
     assert.equal(fake.app(second).status, "applied");
   });
 });
@@ -842,10 +866,10 @@ scenario(5, "Vertical drag: a mostly vertical drag on the card makes no decision
   const { page } = await phone("A");
   const name = await step("open the E1 deck from Home", () => openDeckFromHome(page));
   await step("drag down", async () => {
-    const before = fake.calls.length;
+    const before = fake.writes().length;
     await dragCard(page, 24, 200);
     await sleep(800);
-    assert.equal(fake.calls.length, before, `vertical drag made RPC calls: ${fake.calls.slice(before).map(c => c.name)}`);
+    assert.equal(fake.writes().length, before, `vertical drag made RPC calls: ${fake.writes().slice(before).map(c => c.name)}`);
     assert.equal(await topCard(page, DECK_E1), name, "the same card is still on top");
     assert.equal(fake.app(name).status, "applied");
   });
@@ -1054,7 +1078,7 @@ scenario(13, "Closed list, empty seats: Home offers picking and a waitlist pick 
     const user = `0c000000-0000-4000-8000-9000000000${i}0`;
     fake.db.profiles.push({ id: user, role: "member", full_name: name, ig_handle: `${name.toLowerCase()}.test`, avatar_url: null,
       creator_data: { followers_count: 5000, gender: "female", quality_score: 70 }, reputation: null });
-    fake.db.applications.push({ id: `0d000000-0000-4000-8000-9000000000${i}0`, event_id: E4, user_id: user, status,
+    fake.db.applications.push({ id: `0d000000-0000-4000-8000-9000000000${i}0`, event_id: E4, member_id: user, status,
       pass_code: status === "confirmed" ? `LST-Q${i}` : null, pick_expires_at: null, checked_in_at: null, rating: null, created_at: iso(now - D) });
   });
   const { page } = await phone("A");
@@ -1165,6 +1189,47 @@ scenario(17, "Edit during a failed refresh: an event edit keeps guests confirmed
     await row.waitFor({ timeout: 3000 });
     assert.doesNotMatch(await row.innerText(), /LST-/, "a made-up pass code is on screen");
     fake.failReads("applications", false);
+  });
+});
+
+scenario(18, "Score: the card and profile show Ana's member_records score; with member_records failing the venue still loads and picks", async ({ fake, phone }) => {
+  // Ana's nights at another venue: 3 attended (rated 9, 9, 6; Stories verified, verified, rejected) and 1 no-show.
+  // memberScore: show-up 3/4 = 7.5, Stories 2/3 = 6.67, rating 8.0 -> 7.4.
+  const ana = fake.app("Ana").member_id;
+  [["checked_in", 9, "verified"], ["checked_in", 9, "verified"], ["checked_in", 6, "rejected"], ["no_show", null, null]].forEach(([status, rating, verdict], i) => {
+    const id = `0d000000-0000-4000-8000-8000000000${i}0`;
+    fake.db.applications.push({ id, event_id: "0e000000-0000-4000-8000-0000000000ff", member_id: ana, status, pass_code: null,
+      pick_expires_at: null, checked_in_at: null, rating, created_at: iso(Date.now() - 30 * D) });
+    if (verdict) fake.db.stories.push({ id: randomUUID(), application_id: id, verdict, media_url: MEDIA_URL, due_at: null, score: null, reason: null, created_at: iso(Date.now() - 29 * D) });
+  });
+  const A = await phone("A");
+  await step("the load asks member_records once for each applicant", async () => {
+    const { args } = await until(() => fake.callsOf("member_records")[0], "a member_records call");
+    const ours = fake.db.applications.filter(x => fake.event(x.event_id)?.venue_id === VID).map(x => x.member_id);
+    assert.deepEqual([...args.p_members].sort(), [...new Set(ours)].sort());
+  });
+  await step("Ana's card shows Score 7.4", async () => {
+    assert.equal(await openDeckFromHome(A.page), "Ana");
+    assert.equal(await UI.deck.value(UI.deck.cardOf(A.page, "Ana"), "Score"), "7.4");
+  });
+  await step("Ana's profile shows the score and its parts", async () => {
+    await UI.button(A.page, UI.deck.view("Ana")).click();
+    const dialog = UI.sheet.dialog(A.page, "Ana");
+    await UI.sheet.tab(dialog, "The List").click();
+    const shown = {};
+    for (const label of ["Score", "Show-up rate", "Story completion", "Average venue rating", "Events attended", "No-shows"]) shown[label] = await UI.sheet.value(dialog, label);
+    assert.deepEqual(shown, { "Score": "7.4 / 10", "Show-up rate": "75%", "Story completion": "67%", "Average venue rating": "8.0 / 10", "Events attended": "3", "No-shows": "1" });
+    await A.page.keyboard.press("Escape");
+  });
+  await step("member_records fails: phone B still loads, shows no score and picks", async () => {
+    fake.failNext("member_records", "connection lost", 99);
+    const B = await phone("B");
+    const name = await openDeckFromHome(B.page);
+    assert(fake.callsOf("member_records").some(call => call.phone === "B" && call.error === "connection lost"), "B's member_records call did not fail");
+    assert.equal(await UI.deck.value(UI.deck.cardOf(B.page, name), "Score"), "Not available");
+    await UI.button(B.page, UI.deck.pick(name)).click();
+    await until(() => fake.app(name).status === "picked", `${name} picked on the server`);
+    assert.equal(fake.count("pick_applicant"), 1);
   });
 });
 

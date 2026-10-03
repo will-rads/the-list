@@ -4,6 +4,21 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-10-03 — One member score on the Profile and the venue screens; member reload fixes
+
+Will: member side first. Bring back scoring in the Profile and keep it in sync with the venue backend. Ponytail, with Opus and Sonnet helpers. Branch `member-score`, stacked on `venue-ux-simple`, not pushed.
+
+- **What was wrong.** The score left the Profile hero on 2026-07-11 and moved into The List tab. Live, it read `profiles.reputation`, an integer that only counts verified Stories (default 0; only the old `override_story` adds to it), so real members saw "0.0 / 10". Venues read the same column as an object, so every live card said "Not available". Ratings are saved 0-10, but some screens said "/ 5".
+- **One formula.** `web/v3/score.js` `memberScore(record)` is the average of show-up rate, Story completion and average venue rating, out of 10 with one decimal; null shows "No score yet". Equal weights (ponytail: tune once real nights exist). The member Profile, the venue card and sheet, and both demos all use it.
+- **Backend (Will approved).** New read-only `member_records(uuid[])` (security definer, stable) returns each member's counts to the member, to founders, and to venues the member applied to. Execute is granted to `authenticated` only. Checked on live with simulated logins: a member gets only their own row, the venue only its applicants, no login nothing. `member_record()` stays for the deployed 2026-09-20 build. Repo copy: `supabase/migrations/20261003_member_records.sql`.
+- **Member.** A 48px Score button under the hero opens The List. The List shows Score, show-up rate, Story completion, average venue rating out of 10, events attended, Stories verified and no-shows, with one render path for live and demo. The record reloads every time the Profile opens and whenever a reload lands; the newest request wins; a failed load keeps the last record, and The List offers Try again.
+- **Venue.** The card column and the profile sheet say Score and show the same number. One `member_records` call per load; if it fails the venue still loads and scores read "Not available" ("New" and "No score yet" only mean no data). Estimated Story reach, Strikes and the trend chart left the applicant's The List tab (no live source); the section is now "Track record".
+- **Demo sync.** Sara is 17 attended, 1 no-show, 16 Stories verified, 1 missed, rating 9.2 → 9.4 on both sides. The other venue applicants keep their old scores, now built from counts.
+- **Member reloads** now follow the venue design: numbered reloads (`hydrateFloor`, `hydrateLanded`), and a logout epoch that drops late loads, record loads, realtime callbacks, approval polls, toasts and saves. A write whose refresh fails shows the saved change plus the banner (now also Story upload and settings). The intro skip happens in whichever reload lands first, because a stale boot load used to leave the member stuck on the intro. Same fix on the venue side (intro or login → done on the first landed refresh), and the venue now maps notifications before marking a refresh landed.
+- **Tests.** `npm run check`: score asserts, member ordering, record and landing suites, and a venue "boot load overtaken" case that fails without the fix. `test:venue-live` 18 of 18 (new 18: Ana's score from the fake database, and a failing lookup still loads and picks). `test:mobile` passes at 390x844 and 320x568 (score visible, at least 44px, clear of the name, opens The List with 9.2 / 10). Build passes. The member helper's 34 deliberate breakages were all caught.
+- `profiles.reputation` is now unused by both apps; founder admin still lists it as "reputation".
+- Helper setup: `.claude/agents/ponytail-opus.md` (Opus, medium effort) and `ponytail-sonnet.md` (Sonnet, high effort) load the ponytail skill. They work after an app restart; this round used standard helpers on the same models.
+
 ## 2026-09-25 - Codex follow-up: pending saves, edit ordering, banner
 
 - Venue writes now update the screen once, immediately after server success. Failed refreshes only raise the delayed banner; they never replay older edits. Server refreshes still replace local data.

@@ -27,10 +27,10 @@ const REQUIRED = {
     "--bg-photo", "backdrop-filter",
     // Profile analytics dashboard (2026-07-11): four tabs, truthful data modes, charts, lazy media.
     "profile-tabs", "Average Story reach", "Lebanon audience", "Top content",
-    "Reliability score", "7 days", "90 days", "loading=\"lazy\"", "Not available",
+    "No score yet", "memberScore(", "7 days", "90 days", "loading=\"lazy\"", "Not available",
     "DEMO_PREVIEW", "new URLSearchParams(window.location.search)",
     // Full-functionality wave (2026-07-18): live settings, proof, records, counts and deep links.
-    'supabaseClient.rpc("submit_story"', 'supabaseClient.rpc("member_record"',
+    'supabaseClient.rpc("submit_story"', 'supabaseClient.rpc("member_records"',
     'supabaseClient.rpc("delete_account"', 'supabaseClient.rpc("event_stats"',
     'supabaseClient.storage.from("media")', 'type:"text/calendar',
     'https://maps.google.com/?q=', 'sessionStorage.setItem("pending-event"',
@@ -46,7 +46,7 @@ const REQUIRED = {
     "venue-notifications-", "--bg-photo", "backdrop-filter",
     // Applied-member analytics: fast swipe summary plus full tabbed applicant sheet.
     "applicant-tabs", "Applied to this event", "Estimated local followers",
-    "Audience location", "Content metrics", "Exact active count", "loading=\"lazy\"",
+    "Audience location", "Content metrics", "Exact recorded count", "loading=\"lazy\"",
     // Full-functionality wave (2026-07-18): every live venue action reaches Supabase.
     'write("mark_no_show"', 'write("rate_guest"', 'write("close_applications"',
     'write("cancel_event"', 'write("delete_event"', 'write("check_in"', 'runRpc("close_event"',
@@ -59,6 +59,8 @@ const REQUIRED = {
     "Undo pass", "passedFor(", "setInterval(onRefresh, 5000)", "Rate guests (optional)",
     "Followers of verified posters", "A follower count, not measured reach.",
     "Awaiting confirmation", "Close requests", "Check before posting", "2h before doors",
+    // One member score (2026-10-03): member_records + score.js, the same number as the member Profile.
+    'supabaseClient.rpc("member_records"', "memberScore(", "No score yet", "No ratings yet",
   ],
 };
 
@@ -66,6 +68,8 @@ const REQUIRED = {
 const BANNED_VENUE = [
   "Verified reach", "The desk", "Rooms tonight", "Rate the night", "Undo last",
   "Close applications", "Awaiting confirm\"", "Upcoming rooms",
+  // The score is called Score; profiles.reputation is a Story count, not a record.
+  "Reliability", "reputation",
 ];
 
 const BANNED_STALE = [

@@ -59,7 +59,7 @@ function makeApp({ live = true, manual = false, write, server = null } = {}) {
         ok:async () => { resolve(land()); await tick(); }, fail:async () => { reject(new Error('Refresh failed')); await tick(); } }));
       return state.refreshFails ? Promise.reject(new Error('Refresh failed')) : Promise.resolve(land());
     },
-    setStep:value => { state.step = value; }, setTab:value => { state.tab = value; },
+    setStep:value => { state.step = typeof value === 'function' ? value(state.step) : value; }, setTab:value => { state.tab = value; },
     setEditingDraft:value => { state.editing = value; }, setSyncNotice:value => { state.notice = value; },
     setEvents:change => { state.events = typeof change === 'function' ? change(state.events) : change; },
     setVenue:value => { state.venue = value; }, setSession() {}, setRoleMismatch() {}, setNotifications() {}, setFocusId() {},
@@ -191,6 +191,16 @@ async function twoCheckIns(order) {
   await app.run('logout()');
   await app.loads[0].fail();
   assert.equal(await boot, null);
+}
+{ // A boot load overtaken by a newer refresh (a notification arriving mid-boot) still opens the app.
+  const app = makeApp({ manual:true, server:door() });
+  app.state.step = 'intro';
+  const boot = app.run('hydrateVenue("owner")'); await tick();
+  const poke = app.run('hydrateVenue("owner")'); await tick();
+  await app.loads[1].ok(); await app.loads[0].ok();
+  assert.equal(await poke, true);
+  assert.equal(await boot, null, 'the overtaken boot load is stale');
+  assert.equal(app.state.step, 'done', 'whichever load lands first opens the app');
 }
 console.log('PASS venue ordering: overlapping saves, late failures, stale polls, logout mid-load, all out of order.');
 

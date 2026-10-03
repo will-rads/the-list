@@ -49,6 +49,7 @@ Read from the live database on 2026-09-23. The UI must never claim more than thi
 | Recap | Summary |
 | Bundle | Price |
 | Verified reach (a follower total) | Followers of verified posters |
+| Reliability | Score, the same number the member sees on their Profile (added 2026-10-03) |
 | The desk, stat tiles | Removed |
 
 Three counts stay distinct everywhere: **Picked** (every active pick), **Awaiting confirmation** (picked, not yet confirmed), **Confirmed**.

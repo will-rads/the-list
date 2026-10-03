@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { supabaseClient } from '../client.js';
+import { memberScore } from './score.js';
 const { useState, useEffect, useRef, useMemo } = React;
 
 const DEMO_PREVIEW = new URLSearchParams(window.location.search).get("demo") === "1";
@@ -104,17 +105,8 @@ const DEMO_PROFILE_ANALYTICS = {
       "90": {averages:{views:20700, likes:1690, comments:81, saves:211, shares:139}, posts_per_week:4.3, sponsored_pct:0.21},
     },
   },
-  the_list: {
-    reliability_score: 9.4,
-    show_up_rate: 0.94,
-    story_completion: 0.92,
-    average_venue_rating: 4.7,
-    events_attended: 18,
-    total_verified_reach: 154800,
-    no_shows: 1,
-    active_strikes: 0,
-    last_six: [8.8, 9.1, 9.3, 9.0, 9.5, 9.7],
-  },
+  // Same keys as the member_records database function; memberScore() turns them into 9.4 for Sara.
+  the_list: {attended:17, no_shows:1, stories_verified:16, stories_missed:1, avg_rating:9.2},
 };
 
 /* ========== Creator data — mock response shape ==========
@@ -2018,25 +2010,6 @@ function ProfileTrendChart({ rows }){
   );
 }
 
-function ProfileSparkline({ values }){
-  const safe = Array.isArray(values) ? values.filter(hasProfileMetric).map(Number) : [];
-  if (safe.length < 2) return <div className="h-[112px] flex items-center justify-center text-[12px]">Not available</div>;
-  const min = Math.min(...safe);
-  const spread = Math.max(...safe) - min || 1;
-  const pointRows = safe.map((value, index) => {
-    const x = 12 + index * (296 / Math.max(1, safe.length - 1));
-    const y = 96 - ((value - min) / spread) * 70;
-    return {x:x.toFixed(1), y:y.toFixed(1)};
-  });
-  return (
-    <svg viewBox="0 0 320 112" className="w-full h-[112px]" role="img" aria-label="Last six event performance">
-      {[26,61,96].map(y => <line key={y} x1="10" x2="310" y1={y} y2={y} className="profile-chart-grid"/>)}
-      <polyline points={pointRows.map(point => point.x+","+point.y).join(" ")} className="profile-chart-line"/>
-      {pointRows.map((point, index) => <circle key={index} cx={point.x} cy={point.y} r="3.5" fill="var(--ice)"/>)}
-    </svg>
-  );
-}
-
 function ProfileContentThumb({ item, index }){
   const [failed, setFailed] = useState(false);
   const available = item && item.image_url && !failed;
@@ -2198,101 +2171,59 @@ function ProfileContent({ analytics, period }){
   );
 }
 
-function ProfileListRecord({ analytics, live, record, profile, loading }){
-  if (live) {
-    if (loading) return (
-      <div className="px-5 py-16 text-center anim-fade">
+function ProfileListRecord({ live, record, onRetry }){
+  // Live: record is undefined while it loads and null when the load failed. Demo: the seed record, same screen.
+  if (live && !record) return (
+    <div className="px-5 py-16 text-center anim-fade">
+      {record === null ? (<>
+        <div className="section-label">Record not available</div>
+        <button onClick={onRetry} className="press h-11 px-4 mt-2 text-[12px] font-semibold">Try again</button>
+      </>) : (<>
         <span className="spin inline-block w-6 h-6 rounded-full" style={{border:"2px solid var(--line-2)", borderTopColor:"var(--ice)"}}/>
         <div className="text-[12px] mt-3">Loading your record</div>
-      </div>
-    );
-    const applications = Number(record?.applications || 0);
-    if (!applications) return (
-      <div className="px-5 py-16 text-center anim-fade">
-        <div className="section-label">No record yet</div>
-        <div className="text-[13px] mt-2">Your attendance and Story record starts after your first application.</div>
-      </div>
-    );
-    const attended = Number(record?.attended || 0);
-    const noShows = Number(record?.no_shows || 0);
-    const verifiedStories = Number(record?.stories_verified || 0);
-    const missedStories = Number(record?.stories_missed || 0);
-    const attendanceOutcomes = attended + noShows;
-    const storyOutcomes = verifiedStories + missedStories;
-    const showUpRate = attendanceOutcomes ? attended / attendanceOutcomes : null;
-    const storyCompletion = storyOutcomes ? verifiedStories / storyOutcomes : null;
-    const derivedReliability = [showUpRate, storyCompletion].filter(hasProfileMetric);
-    const reliabilityNumber = hasProfileMetric(profile?.reputation)
-      ? Number(profile.reputation)
-      : derivedReliability.length ? (derivedReliability.reduce((sum,value)=>sum+Number(value),0) / derivedReliability.length) * 10 : null;
-    const reliability = hasProfileMetric(reliabilityNumber) ? formatProfileNumber(reliabilityNumber, {decimals:1}) + " / 10" : "New record";
-    const rating = hasProfileMetric(record?.avg_rating) ? formatProfileNumber(record.avg_rating, {decimals:1}) + " / 10" : "No ratings yet";
-    return (
-      <div className="px-5 pt-5 pb-5 space-y-7 anim-fade">
-        <div className="card rounded-[14px] p-5">
-          <div className="text-[11px] font-semibold">Reliability score</div>
-          <div className={"font-black font-display-l mt-5 break-words "+(hasProfileMetric(reliabilityNumber) ? "text-[42px] leading-none" : "text-[20px]")}>{reliability}</div>
-          <div className="text-[10px] mt-3">Based on {applications} application{applications === 1 ? "" : "s"}</div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <ProfileMetricBox value={showUpRate === null ? "No completed nights" : formatProfilePercent(showUpRate)} label="Show-up rate"/>
-          <ProfileMetricBox value={storyCompletion === null ? "No stories due" : formatProfilePercent(storyCompletion)} label="Story completion"/>
-          <ProfileMetricBox value={rating} label="Average venue rating"/>
-          <ProfileMetricBox value={formatProfileNumber(attended)} label="Events attended"/>
-          <ProfileMetricBox value={formatProfileNumber(verifiedStories)} label="Stories verified"/>
-          <ProfileMetricBox value={formatProfileNumber(noShows)} label="Exact no-shows"/>
-        </div>
-      </div>
-    );
-  }
-  const demoRecord = analytics?.the_list || {};
-  const reliability = hasProfileMetric(demoRecord.reliability_score)
-    ? formatProfileNumber(demoRecord.reliability_score, {decimals:1})+" / 10"
-    : "Not available";
-  const venueRating = hasProfileMetric(demoRecord.average_venue_rating)
-    ? formatProfileNumber(demoRecord.average_venue_rating, {decimals:1})+" / 5"
-    : "Not available";
-
+      </>)}
+    </div>
+  );
+  if (live && !Number(record.applications)) return (
+    <div className="px-5 py-16 text-center anim-fade">
+      <div className="section-label">No record yet</div>
+      <div className="text-[13px] mt-2">Your attendance and Story record starts after your first application.</div>
+    </div>
+  );
+  const { score, showUp, stories, rating } = memberScore(record);
+  const count = key => formatProfileNumber(Number(record?.[key]) || 0);
   return (
     <div className="px-5 pt-5 pb-5 space-y-7 anim-fade">
       <div className="card rounded-[14px] p-5">
-        <div className="text-[11px] font-semibold">Reliability score</div>
-        <div className={"font-black font-display-l mt-5 break-words "+(reliability === "Not available" ? "text-[18px]" : "text-[42px] leading-none")}>{reliability}</div>
-        <div className="text-[10px] mt-3">All-time member record</div>
+        <div className="text-[11px] font-semibold">Score</div>
+        <div className={"font-black font-display-l mt-5 break-words "+(score == null ? "text-[20px]" : "text-[42px] leading-none")}>{score == null ? "No score yet" : formatProfileNumber(score, {decimals:1})+" / 10"}</div>
+        <div className="text-[10px] mt-3">Average of show-up rate, Story completion and venue rating.</div>
       </div>
-
       <div className="grid grid-cols-2 gap-2">
-        <ProfileMetricBox value={formatProfilePercent(demoRecord.show_up_rate)} label="Show-up rate"/>
-        <ProfileMetricBox value={formatProfilePercent(demoRecord.story_completion)} label="Story completion"/>
-        <ProfileMetricBox value={venueRating} label="Average venue rating"/>
-        <ProfileMetricBox value={formatProfileNumber(demoRecord.events_attended)} label="Events attended"/>
-        <ProfileMetricBox value={formatProfileNumber(demoRecord.total_verified_reach, {compact:true})} label="Total verified reach"/>
-        <ProfileMetricBox value={formatProfileNumber(demoRecord.no_shows)} label="Exact no-shows"/>
-        <ProfileMetricBox value={formatProfileNumber(demoRecord.active_strikes)} label="Active strikes" className="col-span-2"/>
-      </div>
-
-      <div>
-        <SectionHead label="Last six events" right="Performance" className="!px-0 pb-3"/>
-        <div className="card rounded-[14px] p-4">
-          <ProfileSparkline values={demoRecord.last_six}/>
-          {Array.isArray(demoRecord.last_six) && demoRecord.last_six.length >= 2 && (
-            <div className="flex justify-between text-[9px] mt-1"><span>Six events ago</span><span>Latest event</span></div>
-          )}
-        </div>
+        <ProfileMetricBox value={showUp == null ? "No completed nights" : formatProfilePercent(showUp)} label="Show-up rate"/>
+        <ProfileMetricBox value={stories == null ? "No stories due" : formatProfilePercent(stories)} label="Story completion"/>
+        <ProfileMetricBox value={rating == null ? "No ratings yet" : formatProfileNumber(rating, {decimals:1})+" / 10"} label="Average venue rating"/>
+        <ProfileMetricBox value={count("attended")} label="Events attended"/>
+        <ProfileMetricBox value={count("stories_verified")} label="Stories verified"/>
+        <ProfileMetricBox value={count("no_shows")} label="No-shows"/>
       </div>
     </div>
   );
 }
 
-function ScreenProfile({ tab, onTab, profile, onSettings, onVerify, live, memberRecord, memberRecordLoading, onLoadRecord }){
+function ScreenProfile({ tab, onTab, profile, onSettings, onVerify, live, memberRecord, onLoadRecord }){
   const p = profile || (!live ? SEED_PROFILE : {});
   const analytics = p.analytics || null;
   const verified = p.data_status === "verified";
   const [profileTab, setProfileTab] = useState("overview");
   const [period, setPeriod] = useState("30");
-  useEffect(() => {
-    if (profileTab === "list" && live && !memberRecord && !memberRecordLoading && onLoadRecord) onLoadRecord();
-  }, [profileTab, live, memberRecord, memberRecordLoading]);
+  // The score sits on the main Profile: reload its counts whenever the Profile opens or new server data lands.
+  useEffect(() => { if (live) onLoadRecord(); }, [live, profile]);
+  const record = live ? memberRecord : analytics?.the_list;
+  const { score } = memberScore(record);
+  // Live: undefined while the record loads, null when the load failed.
+  const scoreNote = !live || record ? "No score yet" : record === null ? "Score not available" : "Loading score";
+  const scoreLabel = score == null ? scoreNote : "Score " + score.toFixed(1) + " out of 10";
   const fullName = p.full_name || "Member profile";
   const nameParts = fullName.trim().split(/\s+/);
   const firstName = nameParts[0] || "Member";
@@ -2312,7 +2243,7 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify, live, member
   ];
   const changeProfileTab = (event, nextTab) => {
     setProfileTab(nextTab);
-    if (nextTab === "list" && live && !memberRecord && onLoadRecord) onLoadRecord();
+    if (nextTab === "list" && live && memberRecord === null) onLoadRecord(); // retry a failed load
     const scroller = event.currentTarget.closest(".noscroll.overflow-y-auto");
     if (scroller && scroller.scrollTop > 300) scroller.scrollTo({top:246, behavior:"smooth"});
   };
@@ -2351,6 +2282,17 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify, live, member
             <span className="text-[11px] truncate">{handle ? "@"+handle : "Handle not available"}</span>
           </div>
         </div>
+      </div>
+
+      <div className="px-5 pt-1">
+        <button onClick={event=>changeProfileTab(event, "list")} aria-label={scoreLabel+". Open The List."} className="card press w-full h-12 px-4 rounded-[14px] flex items-center gap-3 text-left">
+          {score == null ? <span className="text-[13px] font-semibold">{scoreNote}</span> : <>
+            <span className="text-[11px] font-semibold">Score</span>
+            <span className="font-black font-display-l text-[24px] leading-none">{score.toFixed(1)}</span>
+            <span className="text-[11px]">/ 10</span>
+          </>}
+          <Icon name="arrow-right" size={14} stroke={1.6} className="ml-auto"/>
+        </button>
       </div>
 
       <div className="profile-tabs-shell">
@@ -2396,7 +2338,7 @@ function ScreenProfile({ tab, onTab, profile, onSettings, onVerify, live, member
       {profileTab === "overview" && <ProfileOverview profile={p} analytics={analytics} period={period} verified={verified}/>}
       {profileTab === "audience" && <ProfileAudience profile={p} analytics={analytics}/>}
       {profileTab === "content" && <ProfileContent analytics={analytics} period={period}/>}
-      {profileTab === "list" && <ProfileListRecord analytics={analytics} live={live} record={memberRecord} profile={p} loading={memberRecordLoading}/>}
+      {profileTab === "list" && <ProfileListRecord live={live} record={record} onRetry={onLoadRecord}/>}
 
       <div className="h-8"/>
     </PhoneScreen>
@@ -2635,7 +2577,7 @@ function Steps({ current, total=3, dark=false, className="" }){
   );
 }
 
-function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenticated, onLogout, sessionUserId, profile }){
+function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenticated, onLogout, sessionUserId, profile, epoch }){
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [handle, setHandle] = useState("");
@@ -2663,8 +2605,9 @@ function ScreenOnboard({ step, setStep, onComplete, onProfileFetched, onAuthenti
     const uid = queueUserId || sessionUserId;
     if (step !== "queue" || !uid) return;
     let active = true;
+    const born = epoch.current;   // an answer that arrives after logout belongs to the old session
     const acceptApproval = row => {
-      if (!active || row?.status !== "approved") return;
+      if (!active || epoch.current !== born || row?.status !== "approved") return;
       const creatorData = row.creator_data || {};
       const merged = {...row, ...creatorData, handle:creatorData.handle || row.ig_handle};
       setTierSuggestion(creatorData.tier_suggestion || 1);
@@ -3000,8 +2943,7 @@ function App(){
   const [shareEvent, setShareEvent] = useState(null); // event being shared (null = sheet closed)
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);  // Activity sheet (bell on Home)
-  const [memberRecord, setMemberRecord] = useState(null);
-  const [memberRecordLoading, setMemberRecordLoading] = useState(false);
+  const [memberRecord, setMemberRecord] = useState(); // the score's counts: undefined while loading, null when the load failed
   const [toast, setToast] = useState(null);
   const [syncNotice, setSyncNotice] = useState(null);
   const toastTimer = useRef(null);
@@ -3011,7 +2953,23 @@ function App(){
   const verdictTimersRef = useRef({});
   const pickActionRef = useRef(false);
 
-  const hydrateMember = async (uid, gate=false) => {
+  // Reloads, saves and polls all finish in any order, so each reload gets a number. It lands only if it started
+  // after the last write or logout (hydrateFloor) and is newer than the last one that landed (hydrateLanded). A
+  // stale reload returns null and changes nothing, not even on failure. Logout bumps epoch, so every load, record
+  // load, realtime callback, poll and save still running for the old session is dropped when it finishes.
+  const hydrateStarted = useRef(0), hydrateFloor = useRef(0), hydrateLanded = useRef(0);
+  const epoch = useRef(0), recordSeq = useRef(0);
+  const renderEpoch = epoch.current;
+
+  const hydrateMember = async (uid) => {
+    if (renderEpoch !== epoch.current) return null;
+    const seq = ++hydrateStarted.current;
+    const stale = () => renderEpoch !== epoch.current || seq < hydrateFloor.current || seq <= hydrateLanded.current;
+    try { return await loadMember(uid, seq, stale); }
+    catch (error) { if (stale()) return null; throw error; }
+  };
+
+  const loadMember = async (uid, seq, stale) => {
     const [profileResult, eventResult, applicationResult, saveResult, notificationResult, eventStatsResult] = await Promise.all([
       supabaseClient.from("profiles").select("*").eq("id", uid).single(),
       supabaseClient.from("events").select("*, venues(name,area,ig_handle)").in("status", ["published","locked","closed"]).order("starts_at", {ascending:true}),
@@ -3051,14 +3009,20 @@ function App(){
       handle:profileRow.ig_handle || creatorData.handle,
       profile_picture_url:profileRow.avatar_url || creatorData.profile_picture_url,
     };
+    const rows = applications.map(row => mapApplication(row, storyByApplication.get(row.id)));
+    const savedIds = (saveResult.data || []).map(row => row.event_id);
+    const notifications = (notificationResult.data || []).map(mapNotification);
+    // Everything that can throw is above this line: once a reload is marked landed, an error would look stale.
+    if (stale()) return null;
+    hydrateLanded.current = seq;
     setProfile(liveProfile);
     setEvents(liveEvents);
-    setMyEvents(applications.map(row => mapApplication(row, storyByApplication.get(row.id))));
-    setSaved((saveResult.data || []).map(row => row.event_id));
-    setNotifs((notificationResult.data || []).map(mapNotification));
-    setMemberRecord(null);
+    setMyEvents(rows);
+    setSaved(savedIds);
+    setNotifs(notifications);
     setSyncNotice(null);
-    if (gate) setOnboardStep(profileRow.status === "approved" ? "done" : "queue");
+    // A session found at start-up skips the intro, whichever reload lands first.
+    setOnboardStep(step => step === "intro" ? (profileRow.status === "approved" ? "done" : "queue") : step);
     try {
       const pendingId = sessionStorage.getItem("pending-event");
       const pendingEvent = pendingId ? liveEvents.find(event => String(event.id) === String(pendingId)) : null;
@@ -3069,28 +3033,36 @@ function App(){
         setScreen("detail");
       }
     } catch (e) {}
-    return profileRow;
+    return true;
   };
 
-  // A failed read must not undo a mutation already accepted by the server.
+  // A failed read must not undo a mutation already accepted by the server. True when this reload or a newer one
+  // landed, since either carries the write; a late failure after that is ignored.
   const refreshAfterMutation = async (savedMessage) => {
-    try {
-      await hydrateMember(session.user.id);
-      return true;
-    } catch (error) {
-      setSyncNotice(savedMessage);
-      return false;
-    }
+    if (renderEpoch !== epoch.current) return true;
+    const mine = hydrateStarted.current + 1, session0 = epoch.current;   // hydrateMember takes this number
+    try { await hydrateMember(session.user.id); } catch (_) {}
+    if (epoch.current !== session0 || hydrateLanded.current >= mine) return true;
+    setSyncNotice(savedMessage);
+    return false;
   };
 
+  // A write just committed: every reload that started before it carries old data and must never land.
+  const committed = () => { hydrateFloor.current = hydrateStarted.current + 1; };
+
+  // The score's counts load on their own, every time the Profile opens. Only the newest request may land.
   const loadMemberRecord = async () => {
-    if (!session || memberRecordLoading) return null;
-    setMemberRecordLoading(true);
-    const {data, error} = await supabaseClient.rpc("member_record");
-    setMemberRecordLoading(false);
-    if (error) { showToast(error.message); return null; }
-    setMemberRecord(data || {});
-    return data;
+    if (!session || renderEpoch !== epoch.current) return null;
+    const mine = ++recordSeq.current;
+    let result;
+    try { result = await supabaseClient.rpc("member_records", {p_members:[session.user.id]}); }
+    catch (error) { result = {error}; }
+    if (renderEpoch !== epoch.current || mine !== recordSeq.current) return null;
+    const {data, error} = result;
+    if (error) { setMemberRecord(current => current || null); showToast(error.message || "Could not load your score"); return null; }
+    const record = data?.[0]?.record || {};
+    setMemberRecord(record);
+    return record;
   };
 
   const completeAuth = async (nextSession) => {
@@ -3104,14 +3076,14 @@ function App(){
   };
 
   const resetToIntro = () => {
+    epoch.current++; committed();   // whatever is still running belongs to the old session
     setSession(null);
     setProfile(null);
     setEvents(SEED_EVENTS);
     setMyEvents(MY_EVENTS);
     setNotifs(SEED_NOTIFS);
     setSaved([]);
-    setMemberRecord(null);
-    setMemberRecordLoading(false);
+    setMemberRecord(undefined);
     setCurrentEvent(null);
     setPickedEventId(null);
     setPassEventId(null);
@@ -3154,12 +3126,17 @@ function App(){
       notif_picks:notifPicks,
       notif_drops:notifDrops,
     }).eq("id", session.user.id);
+    if (renderEpoch !== epoch.current) return false;
     if (error) { showToast(error.message); return false; }
+    committed();
+    // Show the saved fields now; the refresh brings the server's own copy.
+    setProfile(current => ({...current, full_name:name, ig_handle:handle, handle, phone:phone || null, notif_picks:notifPicks, notif_drops:notifDrops}));
     if (handle !== previousHandle) {
       const refresh = await supabaseClient.functions.invoke("creator-data", {body:{handle}});
+      if (renderEpoch !== epoch.current) return false;
       if (refresh.error) showToast("Profile saved. Instagram data will refresh later.");
     }
-    await hydrateMember(session.user.id);
+    await refreshAfterMutation("Settings saved");
     showToast("Settings saved");
     return true;
   };
@@ -3176,9 +3153,9 @@ function App(){
   useEffect(() => {
     if (DEMO_PREVIEW) return;
     supabaseClient.auth.getSession().then(async ({data}) => {
-      if (!data.session) return;
+      if (renderEpoch !== epoch.current || !data.session) return;
       setSession(data.session);
-      try { await hydrateMember(data.session.user.id, true); }
+      try { await hydrateMember(data.session.user.id); }
       catch (error) {
         setOnboardStep("error");
         showToast(error.message || "Could not load your account");
@@ -3190,6 +3167,7 @@ function App(){
     if (!session) return;
     const channel = supabaseClient.channel("member-notifications-" + session.user.id)
       .on("postgres_changes", {event:"INSERT", schema:"public", table:"notifications", filter:"user_id=eq." + session.user.id}, payload => {
+        if (renderEpoch !== epoch.current) return;
         setNotifs(current => [mapNotification(payload.new), ...current]);
         // a notification always means server state moved — refresh so statuses stay truthful
         hydrateMember(session.user.id).catch(() => {});
@@ -3253,7 +3231,9 @@ function App(){
       let submitted = false;
       try {
         const {data, error} = await supabaseClient.rpc("apply_to_event", {p_event:eventId});
+        if (renderEpoch !== epoch.current) return;   // signed out while waiting: nothing from the old session lands
         if (error) throw error;
+        committed();
         submitted = true;
         const state = data === "waitlist" ? GS.waitlist : GS.applied;
         setMyEvents(current => current.some(row => row.eventId === eventId)
@@ -3265,7 +3245,7 @@ function App(){
       } catch (error) {
         showToast(error.message || "Could not send your application. Try again.");
       } finally {
-        if (currentEventRef.current?.id === eventId) setApplyState(submitted ? "submitted" : "idle");
+        if (renderEpoch === epoch.current && currentEventRef.current?.id === eventId) setApplyState(submitted ? "submitted" : "idle");
       }
       return;
     }
@@ -3310,7 +3290,9 @@ function App(){
     if (!row?.applicationId) { showToast("Refresh your application before cancelling"); return; }
     try {
       const {error} = await supabaseClient.rpc("cancel_application", {p_app:row.applicationId});
+      if (renderEpoch !== epoch.current) return;
       if (error) throw error;
+      committed();
       setMyEvents(current => current.map(item => item.eventId === row.eventId ? {...item, state:GS.withdrawn} : item));
       setApplyState("idle");
       showToast("Application cancelled");
@@ -3358,13 +3340,18 @@ function App(){
           upsert:true,
           contentType:blob.type || "image/jpeg",
         });
+        if (renderEpoch !== epoch.current) return false;
         if (uploadError) throw uploadError;
         const publicUrl = supabaseClient.storage.from("media").getPublicUrl(path).data.publicUrl;
         const {error:submitError} = await supabaseClient.rpc("submit_story", {p_app:row.applicationId, p_media:publicUrl});
+        if (renderEpoch !== epoch.current) return false;
         if (submitError) throw submitError;
-        await hydrateMember(session.user.id);
+        committed();
+        // Show the sent Story as under review now; the refresh brings the server's own state.
+        setMyEvents(current => current.map(item => item.eventId === eventId ? {...item, story:SS.review, storyMediaUrl:publicUrl, verdict:undefined} : item));
         setStoryEventId(null);
         showToast("Under review · we check within a few hours");
+        await refreshAfterMutation("Story sent");
         return true;
       } catch (error) {
         showToast(error.message || "Could not upload your Story");
@@ -3466,7 +3453,9 @@ function App(){
       pickActionRef.current = true;
       try {
         const {error} = await supabaseClient.rpc("confirm_pick", {p_app:row.applicationId});
+        if (renderEpoch !== epoch.current) return;
         if (error) throw error;
+        committed();
         setMyEvents(current => current.map(item => item.eventId === pickedEventId ? {...item, state:GS.confirmed, pickedAt:undefined} : item));
         showToast("Seat confirmed");
         setPickedEventId(null); setScreen("mylist"); setTab("mylist");
@@ -3500,7 +3489,9 @@ function App(){
       pickActionRef.current = true;
       try {
         const {error} = await supabaseClient.rpc("decline_pick", {p_app:row.applicationId});
+        if (renderEpoch !== epoch.current) return;
         if (error) throw error;
+        committed();
         setMyEvents(current => current.map(item => item.eventId === pickedEventId ? {...item, state:GS.declined, pickedAt:undefined} : item));
         showToast("Seat released");
         setPickedEventId(null); setScreen(tab === "explore" ? "explore" : "home");
@@ -3526,6 +3517,7 @@ function App(){
   };
 
   const showToast = (msg) => {
+    if (renderEpoch !== epoch.current) return;
     setToast(msg);
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 2200);
@@ -3535,6 +3527,7 @@ function App(){
     const wasSaved = saved.includes(id);
     if (session) {
       const {error} = await supabaseClient.rpc("toggle_save", {p_event:id});
+      if (renderEpoch !== epoch.current) return;
       if (error) { showToast(error.message); return; }
       setSaved(current => wasSaved ? current.filter(eventId => eventId !== id) : [...current, id]);
       showToast(wasSaved ? "Removed from saved" : "Saved to your list");
@@ -3579,12 +3572,12 @@ function App(){
     <main className="app-shell" aria-label="The List member app">
       <div className="app-frame">
         <div className="app-surface">
-          {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={finishOnboarding} onProfileFetched={setProfile} onAuthenticated={completeAuth} onLogout={logout} sessionUserId={session?.user?.id} profile={profile}/>}
+          {onboardActive && <ScreenOnboard step={onboardStep} setStep={setOnboardStep} onComplete={finishOnboarding} onProfileFetched={setProfile} onAuthenticated={completeAuth} onLogout={logout} sessionUserId={session?.user?.id} profile={profile} epoch={epoch}/>}
           {!onboardActive && screen === "home"    && <ScreenHome    tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} myEvents={myEvents} onBell={()=>setNotifOpen(true)} unreadCount={unreadCount} onOpenPass={openPass} events={events} live={!!session}/>}
           {!onboardActive && screen === "explore" && <ScreenExplore tab={tab} onTab={goTab} onPickEvent={pickEvent} saved={saved} onToggleSave={toggleSave} onToast={showToast} events={events} live={!!session}/>}
           {!onboardActive && screen === "detail"  && <ScreenEventDetail event={activeEvent} applyState={applyState} onBack={()=>setScreen(tab==="explore"?"explore":"home")} onApply={onApply} onCancel={onCancelApplication} onShare={()=>setShareEvent(activeEvent)} saved={saved} onToggleSave={toggleSave} onToast={showToast} myEvents={myEvents} onOpenPicked={openPickedTakeover} onOpenPass={openPass} live={!!session}/>}
           {!onboardActive && screen === "mylist"  && <ScreenMyEvents tab={tab} onTab={goTab} myEvents={myEvents} savedEvents={savedEvents} onToggleSave={toggleSave} onPickEvent={pickEvent} onToast={showToast} onOpenPass={openPass} onOpenPicked={openPickedTakeover} onOpenStory={setStoryEventId} initialSeg={mylistSeg} events={events}/>}
-          {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab} profile={profile} onSettings={()=>setSettingsOpen(true)} onVerify={onVerify} live={!!session} memberRecord={memberRecord} memberRecordLoading={memberRecordLoading} onLoadRecord={loadMemberRecord}/>}
+          {!onboardActive && screen === "profile" && <ScreenProfile tab={tab} onTab={goTab} profile={profile} onSettings={()=>setSettingsOpen(true)} onVerify={onVerify} live={!!session} memberRecord={memberRecord} onLoadRecord={loadMemberRecord}/>}
           {!onboardActive && screen === "picked"  && <ScreenPicked event={activeEvent} pickedAt={pickedAt} pickExpiresAt={pickExpiresAt} onConfirm={onConfirmPick} onDecline={onDeclinePick} live={!!session}/>}
 
           {/* Pass — full-screen overlay above screens, below sheets */}

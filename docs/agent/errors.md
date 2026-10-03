@@ -4,6 +4,10 @@ Things that have already gone wrong, or known traps. New entries on top, dated `
 
 ---
 
+## 2026-10-03 - A column name is not a contract
+
+`profiles.reputation` looked like a member score but is an integer that counts verified Stories (default 0). The member app showed it as the score, so real members saw "0.0 / 10", and the venue read it as an object, so its cards always said "Not available". Before showing a field, read its live type and every function that writes it. Related: when a newer refresh can land before the boot load, leave the intro in whichever refresh lands first, not only in the boot call's own result, or the app can stay stuck on the intro.
+
 ## 2026-09-25 - Guard writes across logout, not just loads
 
 A save can finish after logout and start a fresh load that bypasses the old load counter. Guard the whole callback with its render's logout epoch. Show committed edits once at server success, not later inside failed-refresh callbacks: two failed refreshes can arrive backwards and replay the older edit. Regression tests must cover pending writes at logout and reverse-order failures for edits to the same event. Sync banners must reserve space instead of covering Back.

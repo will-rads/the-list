@@ -6,6 +6,8 @@ iPhone-first. V3 is the only active product: React for the browser and Capacitor
 
 **Venue UX, 2026-09-23 (branch `venue-ux-simple`, not deployed):** the venue side was rebuilt around three jobs (post an event, pick who comes, let them in) with Home, Events and Venue tabs, a real swipe deck, a door list and a summary. Spec: [`docs/superpowers/specs/2026-09-23-venue-ux-simple-design.md`](docs/superpowers/specs/2026-09-23-venue-ux-simple-design.md).
 
+**Member score, 2026-10-03 (branch `member-score`, not deployed):** one score out of 10 (show-up rate, Story completion and venue rating) sits at the top of the member Profile and on the venue's swipe card and profile sheet. Both sides compute it with `web/v3/score.js` from the live read-only `member_records` RPC, so they always show the same number.
+
 **Build, 2026-09-20:** full-screen mobile layout, flow fixes, and the Vite production build pass checks. The Capacitor iOS project is generated and synced. Will approved publishing this build with version-free member `/` and venue `/venue` links. Deployment verification is recorded in `docs/agent/memory.md`. Native compilation and device testing remain pending.
 
 ## How to use this folder
@@ -40,7 +42,7 @@ From `web/`: `npm ci`, then `npm run dev`. `npm run build` checks the sources an
 
 `npm run test:mobile` checks demo journeys at 390x844 and 320x568 against a server on port 5173 (`BASE_URL` overrides it). Add `SHOTS_DIR=<folder>` to save a screenshot of each venue screen. Install the test browser with `npx playwright install chromium`, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing Chromium executable. The test blocks backend writes; authenticated production testing is separate.
 
-`npm run test:venue-live` runs the logged-in venue app against a fake Supabase in the browser, with two phones on one account. It covers swiping, double taps, failed saves, failed refreshes after a save, door sync, closing the event, optional ratings, same-day posting, picking from a closed list with empty seats, needs-review Stories after payment, and refreshes that answer out of order (including after logout). `npm run check` also settles fake loads out of order against the real refresh code. Nothing reaches the real backend.
+`npm run test:venue-live` runs the logged-in venue app against a fake Supabase in the browser, with two phones on one account. It covers swiping, double taps, failed saves, failed refreshes after a save, door sync, closing the event, optional ratings, same-day posting, picking from a closed list with empty seats, needs-review Stories after payment, refreshes that answer out of order (including after logout), and the member score (including a failed score lookup). `npm run check` also tests the score formula and settles fake member and venue loads out of order against the real refresh code. Nothing reaches the real backend.
 
 Capacitor uses the same built web assets: `npm run ios:sync`, then `npm run ios:open` on a Mac. The generated app targets iPhone / iOS 17+ and keeps the existing `co.thelist.app` ID. Its icon and splash are still the template defaults. See the [launch checklist](docs/app-store-launch-checklist.md) for signing, device, and TestFlight work.
 

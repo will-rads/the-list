@@ -92,6 +92,19 @@ try {
     const open = async path => { await page.goto(new URL(path, base).href, { waitUntil: "domcontentloaded" }); };
     try {
       await open("/?demo=1");
+      // The score sits at the top of the Profile: whole, clear of the name, and tapping it opens The List.
+      const score = page.getByRole("button", { name: "Score 9.4 out of 10. Open The List.", exact: true });
+      await score.getByText("9.4", { exact: true }).waitFor({ state: "visible" });
+      const [scoreBox, nameBox, navBox] = await Promise.all([score.boundingBox(), page.getByText(/Capriotti/).boundingBox(),
+        page.getByRole("navigation", { name: "Main navigation" }).boundingBox()]);
+      assert(scoreBox.height >= 44, `Score is only ${scoreBox.height}px tall`);
+      assert(scoreBox.y >= 0 && scoreBox.y + scoreBox.height <= navBox.y, "Score is off screen or behind the navigation");
+      assert(scoreBox.y >= nameBox.y + nameBox.height || scoreBox.y + scoreBox.height <= nameBox.y, "Score overlaps the name");
+      await fit(page, "Member Profile score");
+      await score.click();
+      await page.getByText("9.2 / 10", { exact: true }).waitFor({ state: "visible" });
+      assert.equal(await page.getByRole("tab", { name: "The List", exact: true }).getAttribute("aria-selected"), "true", "Score did not open The List");
+      await fit(page, "Member The List tab");
       await tabs(page, "Main navigation", ["Home", "Explore", "Invites", "Profile"]);
       await page.getByRole("button", { name: "Settings", exact: true }).click();
       const theme = page.getByText("Light theme", { exact: true }).locator("..").getByRole("switch");

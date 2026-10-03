@@ -12,7 +12,10 @@ Old versioned routes redirect to these links. See the latest memory entry for de
 Venue UX rebuild (2026-09-23) lives on branch `venue-ux-simple`, not deployed. Spec:
 `docs/superpowers/specs/2026-09-23-venue-ux-simple-design.md`. Tests: `npm run build`,
 `npm run test:mobile` (demo) and `npm run test:venue-live` (logged-in flows against a fake Supabase).
-2026-09-25: refresh fixes, closed-list picking and paid-bill Stories added; branch pushed for a Vercel preview only (see memory). Later the same day: out-of-order refresh, logout and local-data fixes, committed but not pushed.
+2026-09-25: refresh fixes, closed-list picking and paid-bill Stories added; out-of-order refresh, logout and local-data fixes followed. All of it is pushed to `origin/venue-ux-simple` (not `main`).
+2026-10-03: branch `member-score` (on top of `venue-ux-simple`, not pushed) brings one member score back to the
+Profile and onto the venue card and sheet (`web/v3/score.js` + the live read-only `member_records` RPC), and gives
+the member app the venue's reload ordering. See the newest memory entry.
 Launch blocker: the repo can't rebuild the live database (launch checklist).
-Next: Will reviews the branch, then merge and deploy on his say-so, then the visual redesign,
+Next: Will reviews both branches, then merge and deploy on his say-so, then the visual redesign,
 then the authenticated walkthrough and Mac/device verification.

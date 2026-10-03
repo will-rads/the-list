@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { supabaseClient } from '../client.js';
+import { memberScore } from './score.js';
 const { useState, useRef, useEffect, useCallback } = React;
 
 
@@ -307,24 +308,10 @@ const { useState, useRef, useEffect, useCallback } = React;
       postingFrequency: "4.2 posts / week",
       sponsoredShare: 0.12,
     },
-    theList: {
-      reliability: 0.94,
-      showUpRate: 17/18,
-      storyCompletion: 0.94,
-      venueRating: 4.8,
-      events: 18,
-      verifiedReach: 342000,
-      noShows: 1,
-      strikes: 0,
-      trend: [0.82,0.90,0.88,0.96,1],
-    },
   };
 
   function makeCompactDemoInsights(applicant, index){
     const lebanon = (applicant.audience?.countries || []).find(([name]) => name === "Lebanon")?.[1] ?? null;
-    const reliability = applicant.reputation?.nights > 0
-      ? applicant.reputation.shows / applicant.reputation.nights
-      : null;
     const followers = applicant.instagram_followers;
     const engagementRate = [0.041,0.052,0.048,0.039,0.063,0.046][index % 6];
     const female = applicant.audience?.female ?? null;
@@ -362,154 +349,144 @@ const { useState, useRef, useEffect, useCallback } = React;
         postingFrequency: `${3 + (index % 3)} posts / week`,
         sponsoredShare: [0.08,0.12,0.16][index % 3],
       },
-      theList: {
-        reliability,
-        showUpRate: reliability,
-        storyCompletion: reliability == null ? null : Math.max(0, reliability-.03),
-        venueRating: 4.4 + (index % 5)*.1,
-        events: applicant.reputation?.nights ?? null,
-        verifiedReach: followers == null || reliability == null ? null : Math.round(followers*reliability*2.8),
-        noShows: applicant.reputation?.noShows ?? null,
-        strikes: applicant.reputation?.strikes ?? null,
-        trend: [0.72,0.84,0.80,0.92,reliability].filter(v => v != null),
-      },
     };
   }
 
   // Applicants for the swipe deck (vendor-neutral; mirrors a normalized provider row).
   const APPLICANTS = [
-    // ---- original 8 (kept exactly, with added reputation + audience) ----
+    // ---- original 8 (kept exactly, with added record + audience) ----
+    // record: the member_records keys, so memberScore() gives the same score as the member demo (Sara 9.4).
     { id:"a1", name:"Sara Capriotti", gender:"female", quality_score:0.94, photo:FACE.sara,
       instagram_followers:28400, tiktok_followers:51200,
       socials:{ instagram:"https://instagram.com/capriottisara", tiktok:"https://tiktok.com/@capriottisara", other:null },
-      reputation:{ score:9.1, nights:18, shows:17, noShows:1, strikes:0, withYou:3 },
+      record:{ attended:17, no_shows:1, stories_verified:16, stories_missed:1, avg_rating:9.2 },
       audience:{ female:0.68, countries:[["Lebanon",0.72],["UAE",0.12],["France",0.08]] },
       insights:SARA_INSIGHTS },
     { id:"a2", name:"Karim Haddad", gender:"male", quality_score:0.88, photo:FACE.karim,
       instagram_followers:14200, tiktok_followers:9800,
       socials:{ instagram:"https://instagram.com/karim", tiktok:"https://tiktok.com/@karim", other:null },
-      reputation:{ score:8.7, nights:12, shows:11, noShows:1, strikes:0, withYou:2 },
+      record:{ attended:11, no_shows:1, stories_verified:9, stories_missed:2, avg_rating:8.7 },
       audience:{ female:0.42, countries:[["Lebanon",0.70],["UAE",0.14],["KSA",0.06]] } },
     { id:"a3", name:"Lea Nassar", gender:"female", quality_score:0.91, photo:FACE.lina,
       instagram_followers:46100, tiktok_followers:120300,
       socials:{ instagram:"https://instagram.com/lea", tiktok:null, other:"https://leanassar.com" },
-      reputation:{ score:9.4, nights:22, shows:22, noShows:0, strikes:0, withYou:4 },
+      record:{ attended:22, no_shows:0, stories_verified:20, stories_missed:2, avg_rating:9.2 },
       audience:{ female:0.71, countries:[["Lebanon",0.65],["UAE",0.18],["KSA",0.07]] } },
     { id:"a4", name:"Tariq Bou", gender:"male", quality_score:0.79, photo:FACE.rami,
       instagram_followers:8200, tiktok_followers:21000,
       socials:{ instagram:"https://instagram.com/tariq", tiktok:"https://tiktok.com/@tariq", other:null },
-      reputation:{ score:8.2, nights:7, shows:6, noShows:1, strikes:0, withYou:1 },
+      record:{ attended:6, no_shows:1, stories_verified:5, stories_missed:1, avg_rating:7.8 },
       audience:{ female:0.38, countries:[["Lebanon",0.74],["Cyprus",0.10],["UAE",0.08]] } },
     { id:"a5", name:"Nour Khoury", gender:"female", quality_score:0.86, photo:FACE.nour,
       instagram_followers:33000, tiktok_followers:5400,
       socials:{ instagram:"https://instagram.com/nour", tiktok:"https://tiktok.com/@nour", other:null },
-      reputation:{ score:8.9, nights:14, shows:13, noShows:1, strikes:0, withYou:2 },
+      record:{ attended:13, no_shows:1, stories_verified:11, stories_missed:2, avg_rating:8.9 },
       audience:{ female:0.64, countries:[["Lebanon",0.70],["UAE",0.14],["KSA",0.06]] } },
     { id:"a6", name:"Maya Fares", gender:"female", quality_score:0.97, photo:FACE.maya,
       instagram_followers:88000, tiktok_followers:240000,
       socials:{ instagram:"https://instagram.com/maya", tiktok:"https://tiktok.com/@maya", other:null },
-      reputation:{ score:9.6, nights:24, shows:24, noShows:0, strikes:0, withYou:4 },
+      record:{ attended:24, no_shows:0, stories_verified:23, stories_missed:1, avg_rating:9.3 },
       audience:{ female:0.78, countries:[["Lebanon",0.60],["UAE",0.20],["France",0.08]] } },
     { id:"a7", name:"Jad Aoun", gender:"male", quality_score:0.72, photo:FACE.karim,
       instagram_followers:5100, tiktok_followers:3200,
       socials:{ instagram:"https://instagram.com/jad", tiktok:null, other:null },
-      reputation:{ score:7.9, nights:5, shows:4, noShows:1, strikes:1, withYou:0 },
+      record:{ attended:4, no_shows:1, stories_verified:3, stories_missed:1, avg_rating:8.1 },
       audience:{ female:0.41, countries:[["Lebanon",0.80],["Cyprus",0.09],["Qatar",0.05]] } },
     { id:"a8", name:"Yara Saad", gender:"female", quality_score:0.83, photo:FACE.yasmine,
       instagram_followers:19500, tiktok_followers:42000,
       socials:{ instagram:"https://instagram.com/yara", tiktok:"https://tiktok.com/@yara", other:null },
-      reputation:{ score:8.6, nights:10, shows:10, noShows:0, strikes:0, withYou:2 },
+      record:{ attended:10, no_shows:0, stories_verified:7, stories_missed:3, avg_rating:8.7 },
       audience:{ female:0.66, countries:[["Lebanon",0.68],["UAE",0.16],["KSA",0.08]] } },
     // ---- 18 new applicants (female first, then male) ----
     { id:"a9", name:"Lea Khoury", gender:"female", quality_score:0.82, photo:FACE.sara,
       instagram_followers:22000, tiktok_followers:38000,
       socials:{ instagram:"https://instagram.com/leakhoury", tiktok:"https://tiktok.com/@leakhoury", other:null },
-      reputation:{ score:8.8, nights:9, shows:9, noShows:0, strikes:0, withYou:1 },
+      record:{ attended:9, no_shows:0, stories_verified:7, stories_missed:2, avg_rating:8.7 },
       audience:{ female:0.65, countries:[["Lebanon",0.71],["UAE",0.13],["KSA",0.07]] } },
     { id:"a10", name:"Maya Rahme", gender:"female", quality_score:0.87, photo:FACE.maya,
       instagram_followers:34000, tiktok_followers:61000,
       socials:{ instagram:"https://instagram.com/mayarahme", tiktok:"https://tiktok.com/@mayarahme", other:null },
-      reputation:{ score:9.0, nights:11, shows:11, noShows:0, strikes:0, withYou:2 },
+      record:{ attended:11, no_shows:0, stories_verified:9, stories_missed:2, avg_rating:8.9 },
       audience:{ female:0.70, countries:[["Lebanon",0.66],["UAE",0.17],["France",0.09]] } },
     { id:"a11", name:"Nour Saab", gender:"female", quality_score:0.79, photo:FACE.nour,
       instagram_followers:15000, tiktok_followers:27000,
       socials:{ instagram:"https://instagram.com/noursaab", tiktok:"https://tiktok.com/@noursaab", other:null },
-      reputation:{ score:8.3, nights:6, shows:6, noShows:0, strikes:0, withYou:1 },
+      record:{ attended:6, no_shows:0, stories_verified:4, stories_missed:2, avg_rating:8.3 },
       audience:{ female:0.62, countries:[["Lebanon",0.75],["UAE",0.12],["Qatar",0.06]] } },
     { id:"a12", name:"Yara Chami", gender:"female", quality_score:0.84, photo:FACE.yasmine,
       instagram_followers:27000, tiktok_followers:45000,
       socials:{ instagram:"https://instagram.com/yarachami", tiktok:"https://tiktok.com/@yarachami", other:null },
-      reputation:{ score:8.7, nights:13, shows:12, noShows:1, strikes:0, withYou:2 },
+      record:{ attended:12, no_shows:1, stories_verified:10, stories_missed:2, avg_rating:8.6 },
       audience:{ female:0.67, countries:[["Lebanon",0.69],["UAE",0.15],["KSA",0.07]] } },
     { id:"a13", name:"Tala Aoun", gender:"female", quality_score:0.76, photo:FACE.tala,
       instagram_followers:12000, tiktok_followers:19000,
       socials:{ instagram:"https://instagram.com/talaaoun", tiktok:"https://tiktok.com/@talaaoun", other:null },
-      reputation:{ score:8.1, nights:5, shows:5, noShows:0, strikes:0, withYou:0 },
+      record:{ attended:5, no_shows:0, stories_verified:3, stories_missed:2, avg_rating:8.2 },
       audience:{ female:0.63, countries:[["Lebanon",0.76],["Cyprus",0.10],["UAE",0.07]] } },
     { id:"a14", name:"Rita Sleiman", gender:"female", quality_score:0.88, photo:FACE.sara,
       instagram_followers:41000, tiktok_followers:78000,
       socials:{ instagram:"https://instagram.com/ritasleiman", tiktok:"https://tiktok.com/@ritasleiman", other:null },
-      reputation:{ score:9.2, nights:19, shows:18, noShows:1, strikes:0, withYou:3 },
+      record:{ attended:18, no_shows:1, stories_verified:16, stories_missed:2, avg_rating:9.2 },
       audience:{ female:0.72, countries:[["Lebanon",0.64],["UAE",0.18],["France",0.10]] } },
     { id:"a15", name:"Dana Fakhry", gender:"female", quality_score:0.81, photo:FACE.lina,
       instagram_followers:18000, tiktok_followers:30000,
       socials:{ instagram:"https://instagram.com/danafakhry", tiktok:"https://tiktok.com/@danafakhry", other:null },
-      reputation:{ score:8.5, nights:8, shows:8, noShows:0, strikes:0, withYou:1 },
+      record:{ attended:8, no_shows:0, stories_verified:6, stories_missed:2, avg_rating:8.1 },
       audience:{ female:0.66, countries:[["Lebanon",0.72],["UAE",0.14],["Qatar",0.07]] } },
     { id:"a16", name:"Lana Matar", gender:"female", quality_score:0.92, photo:FACE.maya,
       instagram_followers:55000, tiktok_followers:92000,
       socials:{ instagram:"https://instagram.com/lanamatar", tiktok:"https://tiktok.com/@lanamatar", other:null },
-      reputation:{ score:9.3, nights:20, shows:20, noShows:0, strikes:0, withYou:4 },
+      record:{ attended:20, no_shows:0, stories_verified:17, stories_missed:3, avg_rating:9.3 },
       audience:{ female:0.75, countries:[["Lebanon",0.62],["UAE",0.20],["KSA",0.09]] } },
     { id:"a17", name:"Cyrine Nassar", gender:"female", quality_score:0.78, photo:FACE.nour,
       instagram_followers:11000, tiktok_followers:16000,
       socials:{ instagram:"https://instagram.com/cyrinenassar", tiktok:"https://tiktok.com/@cyrinenassar", other:null },
-      reputation:{ score:8.2, nights:4, shows:4, noShows:0, strikes:0, withYou:0 },
+      record:{ attended:4, no_shows:0, stories_verified:3, stories_missed:1, avg_rating:7.2 },
       audience:{ female:0.61, countries:[["Lebanon",0.78],["Cyprus",0.08],["UAE",0.07]] } },
     { id:"a18", name:"Joelle Abou Jaoude", gender:"female", quality_score:0.85, photo:FACE.yasmine,
       instagram_followers:31000, tiktok_followers:54000,
       socials:{ instagram:"https://instagram.com/joelleaj", tiktok:"https://tiktok.com/@joelleaj", other:null },
-      reputation:{ score:8.9, nights:15, shows:14, noShows:1, strikes:0, withYou:2 },
+      record:{ attended:14, no_shows:1, stories_verified:12, stories_missed:2, avg_rating:8.9 },
       audience:{ female:0.68, countries:[["Lebanon",0.68],["UAE",0.16],["France",0.08]] } },
     { id:"a19", name:"Karen Daou", gender:"female", quality_score:0.71, photo:FACE.tala,
       instagram_followers:9000, tiktok_followers:12000,
       socials:{ instagram:"https://instagram.com/karendaou", tiktok:"https://tiktok.com/@karendaou", other:null },
-      reputation:{ score:8.0, nights:3, shows:3, noShows:0, strikes:0, withYou:0 },
+      record:{ attended:3, no_shows:0, stories_verified:2, stories_missed:1, avg_rating:7.4 },
       audience:{ female:0.60, countries:[["Lebanon",0.80],["UAE",0.10],["Qatar",0.05]] } },
     { id:"a20", name:"Mira Haddad", gender:"female", quality_score:0.89, photo:FACE.lina,
       instagram_followers:47000, tiktok_followers:88000,
       socials:{ instagram:"https://instagram.com/mirahaddad", tiktok:"https://tiktok.com/@mirahaddad", other:null },
-      reputation:{ score:9.1, nights:16, shows:16, noShows:0, strikes:0, withYou:3 },
+      record:{ attended:16, no_shows:0, stories_verified:13, stories_missed:3, avg_rating:9.1 },
       audience:{ female:0.73, countries:[["Lebanon",0.65],["UAE",0.19],["KSA",0.08]] } },
     { id:"a21", name:"Omar Khalil", gender:"male", quality_score:0.80, photo:FACE.karim,
       instagram_followers:17000, tiktok_followers:25000,
       socials:{ instagram:"https://instagram.com/omarkhalil", tiktok:"https://tiktok.com/@omarkhalil", other:null },
-      reputation:{ score:8.4, nights:8, shows:7, noShows:1, strikes:0, withYou:1 },
+      record:{ attended:7, no_shows:1, stories_verified:6, stories_missed:1, avg_rating:8.0 },
       audience:{ female:0.40, countries:[["Lebanon",0.73],["UAE",0.14],["KSA",0.06]] } },
     { id:"a22", name:"Ziad Karam", gender:"male", quality_score:0.75, photo:FACE.rami,
       instagram_followers:10000, tiktok_followers:0,
       socials:{ instagram:"https://instagram.com/ziadkaram", tiktok:null, other:null },
-      reputation:{ score:8.1, nights:4, shows:4, noShows:0, strikes:0, withYou:0 },
+      record:{ attended:4, no_shows:0, stories_verified:3, stories_missed:1, avg_rating:6.9 },
       audience:{ female:0.39, countries:[["Lebanon",0.77],["Cyprus",0.11],["UAE",0.07]] } },
     { id:"a23", name:"Jad Nassif", gender:"male", quality_score:0.83, photo:FACE.karim,
       instagram_followers:23000, tiktok_followers:41000,
       socials:{ instagram:"https://instagram.com/jadnassif", tiktok:"https://tiktok.com/@jadnassif", other:null },
-      reputation:{ score:8.6, nights:11, shows:10, noShows:1, strikes:0, withYou:2 },
+      record:{ attended:10, no_shows:1, stories_verified:8, stories_missed:2, avg_rating:8.6 },
       audience:{ female:0.44, countries:[["Lebanon",0.70],["UAE",0.15],["France",0.08]] } },
     { id:"a24", name:"Marc Abboud", gender:"male", quality_score:0.77, photo:FACE.rami,
       instagram_followers:13000, tiktok_followers:18000,
       socials:{ instagram:"https://instagram.com/marcabboud", tiktok:"https://tiktok.com/@marcabboud", other:null },
-      reputation:{ score:8.3, nights:6, shows:6, noShows:0, strikes:0, withYou:1 },
+      record:{ attended:6, no_shows:0, stories_verified:4, stories_missed:2, avg_rating:8.3 },
       audience:{ female:0.43, countries:[["Lebanon",0.74],["Qatar",0.10],["UAE",0.08]] } },
     { id:"a25", name:"Rami Saliba", gender:"male", quality_score:0.85, photo:FACE.karim,
       instagram_followers:30000, tiktok_followers:52000,
       socials:{ instagram:"https://instagram.com/ramisaliba", tiktok:"https://tiktok.com/@ramisaliba", other:null },
-      reputation:{ score:8.8, nights:14, shows:13, noShows:1, strikes:0, withYou:2 },
+      record:{ attended:13, no_shows:1, stories_verified:11, stories_missed:2, avg_rating:8.8 },
       audience:{ female:0.46, countries:[["Lebanon",0.67],["UAE",0.17],["KSA",0.09]] } },
     { id:"a26", name:"Elie Tannous", gender:"male", quality_score:0.73, photo:FACE.rami,
       instagram_followers:9000, tiktok_followers:0,
       socials:{ instagram:"https://instagram.com/elietannous", tiktok:null, other:null },
-      reputation:{ score:8.0, nights:3, shows:3, noShows:0, strikes:0, withYou:0 },
+      record:{ attended:3, no_shows:0, stories_verified:2, stories_missed:1, avg_rating:7.4 },
       audience:{ female:0.38, countries:[["Lebanon",0.79],["Cyprus",0.09],["UAE",0.06]] } },
   ].map((applicant, index) => ({
     ...applicant,
@@ -2404,7 +2381,7 @@ const { useState, useRef, useEffect, useCallback } = React;
   /* ========== SwipeCard - one applicant card ========== */
   function SwipeCard({ a }){
     const insights = a.insights || {};
-    const reliability = insights.theList?.reliability;
+    const { score } = memberScore(a.record);
     const Social = ({label, href, icon}) => href ? (
       <a href={href} target="_blank" rel="noreferrer" draggable={false}
          className="press hit flex items-center gap-1.5 px-3 h-9 rounded-full text-[12px]"
@@ -2416,7 +2393,8 @@ const { useState, useRef, useEffect, useCallback } = React;
       ["Followers",fmtK(a.instagram_followers)],
       ["Engagement",fmtPct(insights.engagementRate,1)],
       ["Lebanon",fmtPct(applicantLebanon(a))],
-      ["Reliability",fmtPct(reliability)],
+      // No record = the lookup failed, not a new member.
+      ["Score",!a.record ? "Not available" : isNumber(score) ? score.toFixed(1) : "New"],
     ];
     return (
       <div className="relative w-full rounded-[18px] overflow-hidden" style={{aspectRatio:"4/5", background:"var(--bg-elev)"}}>
@@ -2465,7 +2443,9 @@ const { useState, useRef, useEffect, useCallback } = React;
     const insights = applicant.insights || {};
     const audience = insights.audience || {};
     const content = insights.content || {};
-    const list = insights.theList || {};
+    const record = applicant.record;
+    const { score, showUp, stories, rating } = memberScore(record);
+    const outOfTen = (value, empty) => !record ? "Not available" : isNumber(value) ? value.toFixed(1)+" / 10" : empty;
     const status = connectionLabel(insights.dataStatus);
     const localFollowers = insights.overview?.localFollowers;
     const tabs = ["Overview","Audience","Content","The List"];
@@ -2486,7 +2466,7 @@ const { useState, useRef, useEffect, useCallback } = React;
             <InsightMetric label="Followers" value={fmtK(applicant.instagram_followers)}/>
             <InsightMetric label="Engagement" value={fmtPct(insights.engagementRate,1)}/>
             <InsightMetric label="Lebanon audience" value={fmtPct(applicantLebanon(applicant))}/>
-            <InsightMetric label="Reliability" value={fmtPct(list.reliability)}/>
+            <InsightMetric label="Score" value={outOfTen(score, "No score yet")}/>
           </div>
         </SheetSection>
         <SheetSection title="Follower trend">
@@ -2552,25 +2532,15 @@ const { useState, useRef, useEffect, useCallback } = React;
 
     const TheList = () => (
       <div>
-        <SheetSection title="Reliability">
+        {/* ponytail: only what member_records counts. Story reach, strikes and the trend had no live source. */}
+        <SheetSection title="Track record">
           <div className="insight-grid">
-            <InsightMetric label="Reliability" value={fmtPct(list.reliability)}/>
-            <InsightMetric label="Show-up rate" value={fmtPct(list.showUpRate)}/>
-            <InsightMetric label="Story completion" value={fmtPct(list.storyCompletion)}/>
-            <InsightMetric label="Venue rating" value={isNumber(list.venueRating) ? list.venueRating.toFixed(1)+" / 5" : "Not available"}/>
-            <InsightMetric label="Events" value={fmtCount(list.events)}/>
-            <InsightMetric label="Estimated Story reach" value={fmtK(list.verifiedReach)} detail="An estimate, not measured"/>
-          </div>
-        </SheetSection>
-        <SheetSection title="Accountability">
-          <div className="insight-grid">
-            <InsightMetric label="No-shows" value={fmtCount(list.noShows)} detail="Exact recorded count"/>
-            <InsightMetric label="Strikes" value={fmtCount(list.strikes)} detail="Exact active count"/>
-          </div>
-        </SheetSection>
-        <SheetSection title="Recent event trend">
-          <div className="card rounded-[14px] px-3 py-2">
-            <MiniTrend values={list.trend} label="Completion across the last five events"/>
+            <InsightMetric label="Score" value={outOfTen(score, "No score yet")}/>
+            <InsightMetric label="Show-up rate" value={fmtPct(showUp)}/>
+            <InsightMetric label="Story completion" value={fmtPct(stories)}/>
+            <InsightMetric label="Average venue rating" value={outOfTen(rating, "No ratings yet")}/>
+            <InsightMetric label="Events attended" value={fmtCount(record?.attended)}/>
+            <InsightMetric label="No-shows" value={fmtCount(record?.no_shows)} detail="Exact recorded count"/>
           </div>
         </SheetSection>
       </div>
@@ -2671,22 +2641,13 @@ const { useState, useRef, useEffect, useCallback } = React;
     return `Refreshed ${days} days ago`;
   }
 
-  function normalizeApplicant(application){
+  // record: this member's member_records row, or null when the lookup failed.
+  function normalizeApplicant(application, record = null){
     const profile = Array.isArray(application.profiles) ? application.profiles[0] : application.profiles || {};
     const creator = profile.creator_data || {};
     const creatorInsights = creator.insights || creator.creator_insights || {};
     const audience = { ...(creator.audience || {}), ...(creatorInsights.audience || {}) };
     const content = { ...(creator.content_metrics || {}), ...(creatorInsights.content || {}) };
-    const listSource = { ...(creator.the_list || {}), ...(creatorInsights.theList || creatorInsights.the_list || {}) };
-    const reputationSource = profile.reputation || {};
-    const reputation = {
-      score: optionalNumber(reputationSource.score),
-      nights: optionalNumber(reputationSource.nights ?? reputationSource.events),
-      shows: optionalNumber(reputationSource.shows ?? reputationSource.showed),
-      noShows: optionalNumber(reputationSource.noShows ?? reputationSource.no_shows),
-      strikes: optionalNumber(reputationSource.strikes),
-      withYou: optionalNumber(reputationSource.withYou ?? reputationSource.with_you),
-    };
     const followers = optionalNumber(creator.followers_count);
     const engagementRate = optionalNumber(creatorInsights.engagementRate ?? creatorInsights.engagement_rate ?? creator.engagement_rate);
     const countries = normalizeBreakdown(audience.country_split ?? audience.countries);
@@ -2695,10 +2656,6 @@ const { useState, useRef, useEffect, useCallback } = React;
     const male = optionalNumber(audience.gender_split?.male ?? audience.male) ?? (isNumber(female) ? 1-female : null);
     const localFollowers = optionalNumber(creatorInsights.overview?.localFollowers ?? creatorInsights.overview?.local_followers)
       ?? (isNumber(followers) && isNumber(lebanon) ? Math.round(followers*lebanon) : null);
-    const showUpRate = optionalNumber(listSource.showUpRate ?? listSource.show_up_rate)
-      ?? (isNumber(reputation.shows) && isNumber(reputation.nights) && reputation.nights > 0 ? reputation.shows/reputation.nights : null);
-    const reliability = optionalNumber(listSource.reliability)
-      ?? (isNumber(reputation.score) ? reputation.score/10 : showUpRate);
     const postingFrequency = content.postingFrequency ?? content.posting_frequency;
     const topContent = Array.isArray(content.topContent || content.top_content)
       ? (content.topContent || content.top_content).map(item => ({
@@ -2737,17 +2694,6 @@ const { useState, useRef, useEffect, useCallback } = React;
         postingFrequency: isNumber(optionalNumber(postingFrequency)) ? `${optionalNumber(postingFrequency)} posts / week` : postingFrequency || null,
         sponsoredShare: optionalNumber(content.sponsoredShare ?? content.sponsored_share),
       },
-      theList: {
-        reliability,
-        showUpRate,
-        storyCompletion: optionalNumber(listSource.storyCompletion ?? listSource.story_completion ?? reputationSource.storyCompletion ?? reputationSource.story_completion),
-        venueRating: optionalNumber(listSource.venueRating ?? listSource.venue_rating ?? reputationSource.venueRating ?? reputationSource.venue_rating),
-        events: optionalNumber(listSource.events ?? reputation.nights),
-        verifiedReach: optionalNumber(listSource.verifiedReach ?? listSource.verified_reach),
-        noShows: optionalNumber(listSource.noShows ?? listSource.no_shows ?? reputation.noShows),
-        strikes: optionalNumber(listSource.strikes ?? reputation.strikes),
-        trend: Array.isArray(listSource.trend) ? listSource.trend.map(optionalNumber).filter(isNumber) : null,
-      },
     };
     return {
       id: application.id,
@@ -2758,16 +2704,16 @@ const { useState, useRef, useEffect, useCallback } = React;
       instagram_followers: followers,
       tiktok_followers: optionalNumber(creator.tiktok_followers),
       socials: { instagram: profile.ig_handle ? "https://instagram.com/" + profile.ig_handle.replace(/^@/, "") : null, tiktok:null, other:null },
-      reputation,
+      record,
       audience: { female, countries },
       insights,
     };
   }
 
-  function liveEvent(row, applications=[], stories=[], booking=null){
+  function liveEvent(row, applications=[], stories=[], booking=null, records=new Map()){
     const storyByApp = new Map(stories.map(s => [s.application_id, s]));
     const guests = applications.map(application => {
-      applicantById[application.id] = normalizeApplicant(application);
+      applicantById[application.id] = normalizeApplicant(application, records.get(application.member_id));
       const story = storyByApp.get(application.id);
       const storyState = !story ? null
         : story.verdict === "pending" ? (story.media_url ? SS.review : SS.due)
@@ -2905,7 +2851,12 @@ const { useState, useRef, useEffect, useCallback } = React;
       if (renderEpoch !== epoch.current) return null;
       const seq = ++hydrateStarted.current;
       const stale = () => renderEpoch !== epoch.current || seq < hydrateFloor.current || seq <= hydrateLanded.current;
-      try { return await loadVenue(uid, replaceVenue, seq, stale); }
+      try {
+        const loaded = await loadVenue(uid, replaceVenue, seq, stale);
+        // A session found at start-up or login opens the app, whichever refresh lands first.
+        if (loaded === true) setStep(step => step === "intro" || step === "login" ? "done" : step);
+        return loaded;
+      }
       catch (error) { if (stale()) return null; throw error; }
     };
 
@@ -2928,9 +2879,9 @@ const { useState, useRef, useEffect, useCallback } = React;
         .eq("venue_id", venueRow.id).order("starts_at", {ascending:true});
       if (eventResult.error) throw eventResult.error;
       const ownRows = eventResult.data || [];
-      const liveEvents = await Promise.all(ownRows.map(async row => {
+      const loaded = await Promise.all(ownRows.map(async row => {
         const applicationResult = await supabaseClient.from("applications")
-          .select("*, profiles(full_name, ig_handle, avatar_url, creator_data, reputation)")
+          .select("*, profiles(full_name, ig_handle, avatar_url, creator_data)")
           .eq("event_id", row.id);
         if (applicationResult.error) throw applicationResult.error;
         const apps = applicationResult.data || [];
@@ -2941,8 +2892,13 @@ const { useState, useRef, useEffect, useCallback } = React;
         ]);
         if (storyResult.error) throw storyResult.error;
         if (bookingResult.error) throw bookingResult.error;
-        return liveEvent(row, apps, storyResult.data || [], bookingResult.data || null);
+        return [row, apps, storyResult.data || [], bookingResult.data || null];
       }));
+      // One score lookup per load. If it fails the venue still loads and scores read "Not available".
+      const memberIds = [...new Set(loaded.flatMap(([, apps]) => apps.map(a => a.member_id)))];
+      const recordResult = memberIds.length ? await supabaseClient.rpc("member_records", {p_members:memberIds}) : {data:[]};
+      const records = new Map((recordResult.data || []).map(r => [r.member_id, r.record]));
+      const liveEvents = loaded.map(parts => liveEvent(...parts, records));
       const gallery = Array.isArray(venueRow.gallery) ? venueRow.gallery : [];
       const images = gallery.slice(0,4).map(item => {
         const src = typeof item === "string" ? item : item?.src;
@@ -2955,14 +2911,16 @@ const { useState, useRef, useEffect, useCallback } = React;
         heroImage:venueRow.image_url ? {src:venueRow.image_url,scale:1,x:0,y:0,remote:true} : null,
         images,
       });
+      const liveNotifications = (notificationResult.data || []).map(n => ({
+        id:n.id, kind:n.kind, text:[n.title,n.body].filter(Boolean).join(" · "), eventId:n.event_id,
+        action:venueNotificationAction(n.kind), read:n.read === true,
+      }));
+      // Everything that can throw is above this line: once a refresh is marked landed, an error would look stale.
       if (stale()) return null;
       hydrateLanded.current = seq;
       if (replaceVenue || currentStep.current !== "onboard-venue") setVenue(refreshedVenue);
       setEvents(liveEvents);
-      setNotifications((notificationResult.data || []).map(n => ({
-        id:n.id, kind:n.kind, text:[n.title,n.body].filter(Boolean).join(" · "), eventId:n.event_id,
-        action:venueNotificationAction(n.kind), read:n.read === true,
-      })));
+      setNotifications(liveNotifications);
       setRoleMismatch(false);
       setSyncNotice(null);
       return true;
