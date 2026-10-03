@@ -1,4 +1,5 @@
 import { supabaseClient } from './client.js';
+import { memberScore } from './v3/score.js';
 
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
@@ -35,15 +36,18 @@ async function loadMembers() {
   const q = $('#member-search').value.trim().replace(/[,()]/g, '');
   const status = $('#member-status').value;
   let query = supabaseClient.from('profiles')
-    .select('id,member_no,full_name,ig_handle,phone,status,reputation,created_at')
+    .select('id,member_no,full_name,ig_handle,phone,status,created_at')
     .eq('role', 'member').order('member_no').limit(200);
   if (status !== 'all') query = query.eq('status', status);
   if (q) query = query.or(`full_name.ilike.%${q}%,ig_handle.ilike.%${q}%`);
   const { data, error } = await query;
   if (error) throw error;
+  // The same score the member and venues see; a failed lookup shows a dash.
+  const records = data.length ? await supabaseClient.rpc('member_records', { p_members: data.map(row => row.id) }) : { data: [] };
+  const scores = new Map((records.data || []).map(r => [r.member_id, memberScore(r.record).score]));
   $('#members').innerHTML = empty(data.map(row => {
     const pause = row.status === 'approved' ? `<button class="secondary" data-pause="${esc(row.id)}">Pause</button>` : '';
-    return `<tr><td>${esc(row.member_no ?? '—')}</td><td>${esc(row.full_name)}</td><td>${igLink(row.ig_handle)}</td><td>${esc(row.phone)}</td><td>${esc(row.status)}</td><td>${esc(row.reputation ?? '—')}</td><td>${date(row.created_at)}</td><td class="actions"><div>${pause}</div></td></tr>`;
+    return `<tr><td>${esc(row.member_no ?? '—')}</td><td>${esc(row.full_name)}</td><td>${igLink(row.ig_handle)}</td><td>${esc(row.phone)}</td><td>${esc(row.status)}</td><td>${esc(scores.get(row.id)?.toFixed(1) ?? '—')}</td><td>${date(row.created_at)}</td><td class="actions"><div>${pause}</div></td></tr>`;
   }).join(''), 8);
 }
 
