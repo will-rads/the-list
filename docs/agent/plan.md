@@ -2,6 +2,8 @@
 
 ## Where we are right now
 
+**Next session (2026-10-10):** continue the UGLYCASH / Paper + pink mockup in `design-explorations/ugly-light/`. Read `HANDOFF.md` and that folder's README, then inspect `index.html` and the three font screenshots. Work on the isolated exploration first; do not reskin `web/`, change backend behavior or merge branches before visual approval. Current branch `member-score` is pushed and includes `venue-ux-simple`; `main` is still `25e1162`. Historical checklist entries below are not current deployment claims.
+
 Release tracker: [App Store launch checklist](../app-store-launch-checklist.md). Provider research: [Phyllo feasibility report](../phyllo-feasibility.md).
 
 **Phyllo direction (2026-07-11):** preferred provider for the first sandbox trial. Onboarding uses handle-only public estimates with no Instagram login. Members can later use **Connect Instagram** from Profile through either Instagram Direct or the richer professional-account + Facebook Page route. This connection verifies Instagram data; it does not replace Supabase login. Production price, exact fields, IG Direct enablement, and full white-label terms still need written confirmation from Phyllo.
@@ -48,7 +50,7 @@ Release tracker: [App Store launch checklist](../app-store-launch-checklist.md).
 [done]      One member score on the Profile and venue screens + member reload ordering (2026-10-03, branch member-score; read-only member_records live)
 [next]      Will reviews venue-ux-simple and member-score; merge and deploy only on his say-so
 [next]      Launch blocker: export the live Supabase schema into supabase/migrations (see launch checklist)
-[next]      Visual redesign across venue and member (after the venue UX is approved)
+[next]      Continue Paper + pink exploration for both sides; choose fonts and approve the mockup before porting visuals into web/
 [next]      Validate member + venue flows, mobile layouts, and the production build; record remaining failures
 [next]      Review local V3; push/deploy only after explicit approval
 [next]      Build/sign Capacitor on Mac; verify keyboard, safe areas, uploads and links on real iPhones

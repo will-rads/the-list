@@ -4,7 +4,9 @@ A Lebanese clone of *The Secret Society* (Dubai). An invite-only nightlife marke
 
 iPhone-first. V3 is the only active product: React for the browser and Capacitor for iOS packaging. The existing SwiftUI scaffold is preserved and paused.
 
-**Venue UX, 2026-09-23 (branch `venue-ux-simple`, not deployed):** the venue side was rebuilt around three jobs (post an event, pick who comes, let them in) with Home, Events and Venue tabs, a real swipe deck, a door list and a summary. Spec: [`docs/superpowers/specs/2026-09-23-venue-ux-simple-design.md`](docs/superpowers/specs/2026-09-23-venue-ux-simple-design.md).
+**Resume here (2026-10-10):** read [`HANDOFF.md`](HANDOFF.md), then [`design-explorations/ugly-light/README.md`](design-explorations/ugly-light/README.md). Will wants to continue the UGLYCASH-inspired Paper + pink exploration, not restart the redesign. Current code is on pushed branch `member-score`, which includes `venue-ux-simple`; neither is merged into `main`. The exploration itself is local and untracked. No font combination or production redesign is approved yet.
+
+**Venue UX, 2026-09-23 (branch `venue-ux-simple`, preview only, not production):** the venue side was rebuilt around three jobs (post an event, pick who comes, let them in) with Home, Events and Venue tabs, a real swipe deck, a door list and a summary. Spec: [`docs/superpowers/specs/2026-09-23-venue-ux-simple-design.md`](docs/superpowers/specs/2026-09-23-venue-ux-simple-design.md).
 
 **Member score, 2026-10-03 (branch `member-score`, not deployed):** one score out of 10 (show-up rate, Story completion and venue rating) sits at the top of the member Profile and on the venue's swipe card and profile sheet. Both sides compute it with `web/v3/score.js` from the live read-only `member_records` RPC, so they always show the same number.
 

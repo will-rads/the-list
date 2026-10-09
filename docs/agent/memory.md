@@ -4,6 +4,14 @@ Running log. Newest entry on top. Date format: `YYYY-MM-DD`.
 
 ---
 
+## 2026-10-10 - Current handoff: continue UGLYCASH exploration
+
+- Start with `HANDOFF.md`, then `design-explorations/ugly-light/README.md`, its `index.html` and `font-a/b/c.png`. Will wants to continue this design, not start from scratch. Light paper/white/black with small pink accents; glass only on the dock. Font choice and production adoption remain open.
+- Feature-code tips before this documentation commit: `member-score` at `fbf700e`, containing `venue-ux-simple` at `e14ab0b`; `main` remains `25e1162`. Earlier "not pushed" notes below are historical, not current. Vercel deployment status was not rechecked in this documentation pass.
+- The exploration is untracked/local, so a fresh chat must use this checkout. A fresh clone will not contain it. Will explicitly requested committing/pushing the four tracked handoff Markdown files only, excluding the UGLYCASH folder.
+- Active runtime remains React/Vite + Capacitor in `web/`, not paused root `ios/`. Continue visual exploration without changing working flows, shared member score or backend. Older dated architecture/design instructions below are history when contradicted by this handoff.
+- Will approved cleanup: deleted six merged local branches and five remote counterparts after ancestry checks; removed `.ds-sync`, `.design-sync` and `ds-bundle`. Kept all other files, including design drafts and app dependencies. Three branches remain: `main`, `member-score`, `venue-ux-simple`. Details in `HANDOFF.md`.
+
 ## 2026-10-03 — One member score on the Profile and the venue screens; member reload fixes
 
 Will: member side first. Bring back scoring in the Profile and keep it in sync with the venue backend. Ponytail, with Opus and Sonnet helpers. Branch `member-score`, stacked on `venue-ux-simple`, not pushed.
