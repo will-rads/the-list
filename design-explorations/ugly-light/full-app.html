@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The List · Full app mockup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap">
+<link rel="stylesheet" href="full-app.css">
+</head>
+<body data-theme="light">
+<aside class="review" aria-label="Mockup controls">
+  <a class="brand" href="#member/home">THE LIST<span></span></a>
+  <p class="muted">Whole app exploration<br>White, black, one light pink.</p>
+  <label>Preview side<select id="role"><option value="member">Member</option><option value="venue">Venue</option><option value="public">Public event</option><option value="founder">Founder</option></select></label>
+  <label>Screen<select id="screen"></select></label>
+  <div class="review-extra">
+    <label>Preview state<select id="scene"><option value="normal">Normal</option><option value="empty">Empty</option><option value="error">Load error</option></select></label>
+    <button class="plain reset" data-action="reset">Reset sample data</button>
+    <div class="review-note"><b>Click through the whole loop</b><p>Apply as a member. Switch to Venue and pick Sara. Confirm as Member, check in at the Door, then submit a Story.</p><p>All actions are local simulations. No accounts, messages, uploads or payments leave this mockup.</p></div>
+    <details><summary>Mobbin references</summary><div id="refs"></div></details>
+    <a class="previous" href="/home">Previous Home study ↗</a>
+  </div>
+</aside>
+<main class="stage"><div class="device" aria-label="The List app preview"><div class="demo-label">THE LIST <button id="mode" class="mode" type="button" aria-pressed="false">Dark mode</button></div><header id="header"></header><div id="content" tabindex="-1"></div><div id="footer"></div><nav id="nav" aria-label="App navigation"></nav><div id="toast" role="status"></div></div></main>
+<dialog id="dialog" aria-labelledby="dialog-title"></dialog>
+<script type="module" src="full-app.js"></script>
+</body></html>

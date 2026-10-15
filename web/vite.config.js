@@ -28,6 +28,8 @@ export default defineConfig({
     closeBundle() {
       cpSync(file('assets'), file('dist/assets'), { recursive: true });
       cpSync(file('manifest.webmanifest'), file('dist/manifest.webmanifest'));
+      // ponytail: design-exploration branch only; serves the static redesign mockup at /design/full-app.
+      for (const f of ['full-app.html', 'full-app.css', 'full-app.js']) cpSync(file(`../design-explorations/ugly-light/${f}`), file(`dist/design/${f}`));
     },
   }],
   build: {
