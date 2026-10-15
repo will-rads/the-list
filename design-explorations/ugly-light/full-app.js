@@ -146,3 +146,11 @@ $('#mode').onclick=ev=>{const dark=document.body.dataset.theme!=='black';documen
 $('#scene').onchange=ev=>{state.scene=ev.target.value;render();};
 $('#refs').innerHTML='<p>Visible Mobbin previews informed the layout. Deeper flows require Pro.</p>'+[['Luma · event list & detail','https://mobbin.com/screens/4e0f5ef3-de35-450a-b8b8-f8e7ac192e6a'],['Partiful · event identity & invitations','https://mobbin.com/apps/partiful-ios-8d86fde9-d2bf-43ad-9a45-62818f75d1aa/cf9efc2a-4499-484b-861e-bbe8d79873a8/screens'],['DICE · entry and account access','https://mobbin.com/screens/fa3b8a86-aff6-4075-8a8a-b2cd9e7b1165'],['OpenTable · compact search filters','https://mobbin.com/screens/13b96c8e-dbc6-463a-82f1-eef1a8735d0f']].map(([name,url])=>`<a href="${url}" target="_blank" rel="noreferrer">${name} ↗</a>`).join('');
 const [role,screen,id]=location.hash.slice(1).split('/');go(routes[role]?role:'member',routes[role]?.[screen]?screen:role==='public'?'event':'home',state.events.some(e=>e.id===id)?id:undefined);
+
+// Style picker: writes CSS variables only.
+{const root=document.documentElement.style,lum=c=>{const n=parseInt(c.slice(1),16);return .299*(n>>16)+.587*(n>>8&255)+.114*(n&255)},dark=c=>lum(c)<150,
+apply=()=>{const p=$('#primary').value,sc=$('#secondary').value;root.setProperty('--brand',p);root.setProperty('--brand-text',dark(p)?'#fff':'#000');
+const pd=lum(p)<60?'#ffffff':p;/* near-black primaries flip to white on the black theme */root.setProperty('--brand-dark',pd);root.setProperty('--brand-dark-text',dark(pd)?'#fff':'#000');
+root.setProperty('--sec',sc);root.setProperty('--font',`'${$('#fontpick').value}'`);root.setProperty('--bw',$('#bw').value+'px');root.setProperty('--scale',$('#ts').value);};
+$('#palette').onchange=ev=>{const[p,sc]=ev.target.value.split(',');$('#primary').value=p;$('#secondary').value=sc;apply();};
+$('#style-panel').oninput=apply;$('#style-panel').onreset=()=>setTimeout(apply);}

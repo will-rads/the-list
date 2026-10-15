@@ -11,15 +11,15 @@ body,.device,#footer,dialog{background:var(--ground)}.device{color:var(--fg);bor
 .muted,.eyebrow,.subhead,.event-copy p,.metadata,.row small,.stats small,.person p,.facts dt,.empty p,.entry-title p,.label-above,.form-hint,.timeline small,.ticket-code small,dialog p,.notice,.notice strong,.upload,#footer small,.demo-label span,#nav button{color:var(--fg)}
 .review-note p{color:var(--ink)}
 h1{letter-spacing:-.01em}h1:focus{outline:none}
-.card,.stats,.ticket,.upload,.black{background:var(--card);border:1px solid var(--edge);border-radius:28px}dialog{border:1px solid var(--edge);border-radius:32px}
-.icon,.badge,.chip,.search,.device input,.device select,.device textarea,dialog input,dialog textarea,.btn.secondary,.btn.danger{background:var(--card);border:1px solid var(--edge);color:var(--fg)}
+.card,.stats,.ticket,.upload,.black{background:var(--card);border:var(--bw) solid var(--edge);border-radius:28px}dialog{border:var(--bw) solid var(--edge);border-radius:32px}
+.icon,.badge,.chip,.search,.device input,.device select,.device textarea,dialog input,dialog textarea,.btn.secondary,.btn.danger{background:var(--card);border:var(--bw) solid var(--edge);color:var(--fg)}
 .btn,.search,input,select,.chip,.badge{border-radius:999px}textarea{border-radius:22px}
 .btn,.btn.primary,.chip.on,#nav button[aria-current=page],#toast{background:var(--do);border-color:var(--do);color:var(--do-text)}
 .badge.active{background:var(--accent);border-color:var(--ink);color:var(--ink)}.badge.active:before{background:var(--ink)}.dot:after{box-shadow:0 0 0 1px var(--ink)}
 .black{background:var(--loud);border-color:var(--edge)}.black,.black p,.black .eyebrow{color:#fff}.black .btn.secondary{background:#fff;color:#0b0b0c;border-color:#fff}
 .hero,.profile-photo,.upload img{border-radius:22px}.content-grid img{border-radius:18px}.row img{border-radius:14px}.avatar,.avatar.mini{border-radius:50%;background:var(--accent);color:var(--ink)}
 .metric-bar{background:var(--ground)}.metric-bar i,.timeline li:before{background:var(--fg)}.timeline li{border-left-color:var(--fg)}
-#nav{border:1px solid var(--edge);background:color-mix(in oklab,var(--card) 70%,transparent)}#toast{border-radius:999px}
+#nav{border:var(--bw) solid var(--edge);background:color-mix(in oklab,var(--card) 70%,transparent)}#toast{border-radius:999px}
 button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,.search:focus-within{outline-color:var(--fg)}
 /* apple-design pass: content scrolls under a glass tab bar, tighter big titles, dialogs arrive as a material, solid bar when transparency is reduced. */
 #nav{position:absolute;left:0;right:0;bottom:0;z-index:5;-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6)}
@@ -37,8 +37,17 @@ body,.brand{font-family:'Plus Jakarta Sans',system-ui,sans-serif}.brand{font-wei
 .review{background:#fff;border-right-color:#000;color:#000}.review *,.review p,.review-note p,.muted{color:#000}.review-note{border-top-color:#000}.review select{border:1px solid #000;background:#fff}
 ::placeholder{color:var(--fg);opacity:1}
 .badge.active,.avatar,.avatar.mini,.brand span{background:var(--pink);border-color:#000;color:#000}.dot:after{background:var(--pink);box-shadow:0 0 0 1px var(--edge)}
-.demo-label{align-items:center;color:var(--fg)}.mode{min-height:32px;padding:4px 12px;border:1px solid var(--edge);border-radius:999px;font-size:10px;letter-spacing:.08em;font-weight:700;text-transform:uppercase;color:var(--fg);background:var(--card)}
+.demo-label{align-items:center;color:var(--fg)}.mode{min-height:32px;padding:4px 12px;border:var(--bw) solid var(--edge);border-radius:999px;font-size:10px;letter-spacing:.08em;font-weight:700;text-transform:uppercase;color:var(--fg);background:var(--card)}
 .form-two>*,.form-two input{min-width:0}
 /* More pink: selected tab, selected chips, every badge, the pass. Black text and an edge line on all of it. */
 #nav button[aria-current=page],.chip.on,.badge,.ticket{background:var(--pink);color:#000;border-color:var(--edge)}#nav button[aria-current=page] svg{stroke:#000}
 .ticket *{color:#000}.ticket-code{border-color:#000}
+/* Style picker: palette (primary action + secondary accent), font, line thickness, title size. */
+:root{--bw:1px;--font:'Plus Jakarta Sans';--display:var(--font);--do:var(--brand,#000);--do-text:var(--brand-text,#fff);--pink:linear-gradient(135deg,color-mix(in oklab,var(--sec,#ff7fbf) 32%,#fff),var(--sec,#ff7fbf))}
+body[data-theme=black]{--do:var(--brand-dark,#fff);--do-text:var(--brand-dark-text,#000)}
+body,.brand{font-family:var(--font),system-ui,sans-serif}
+.top-tools{display:flex;gap:6px}
+.style-panel{position:fixed;inset:12px 12px auto auto;width:min(300px,calc(100vw - 24px));margin:0;padding:18px;border:1px solid #000;border-radius:24px;background:#fff;color:#000;font-size:13px}
+.style-panel label{margin-bottom:14px}.style-panel select{min-height:40px;border:1px solid #000;border-radius:999px;padding:6px 12px;background:#fff}
+.style-panel .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}.style-panel input[type=color]{min-height:40px;padding:2px;border:1px solid #000;border-radius:999px}
+.style-panel input[type=range]{min-height:24px;padding:0;border:0;accent-color:#000}.style-panel .btn{min-height:44px}
